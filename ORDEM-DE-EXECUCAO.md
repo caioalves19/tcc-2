@@ -18,7 +18,7 @@ Infra, não é RF, mas nada sobe sem isso: repo, Docker Compose, Postgres, Prism
 | 4 | RF04 | Recuperação de senha por e-mail | P0 |
 | 5 | RF06 | Edição de perfil | P0 |
 | 6 | RF05 | Verificação de e-mail | P1 |
-| 7 | RF03 | Login com Google | P1 |
+| 7 | RF03 | Login com Google2 | P1 |
 
 **Pronto quando:** qualquer integrante sobe o ambiente, cadastra e entra.
 
