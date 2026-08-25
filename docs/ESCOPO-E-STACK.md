@@ -450,7 +450,7 @@ IA, VPS barata e necessidade de conteúdo 3D.
 | Contêineres | **Docker + Docker Compose** | Ambiente idêntico em máquina local e VPS (RNF25). |
 | Proxy reverso e TLS | **Caddy** | Certificado Let's Encrypt automático, sem Certbot nem cron manual, e cabeçalhos de segurança em configuração curta (RNF01, RNF07). Substitui o Nginx com menos superfície de erro. |
 | Observabilidade | **pino + Sentry** | Log estruturado e captura de exceções em produção (RNF26). |
-| Contexto para a IA | `AGENTS.md` + regras em `.cursor/rules` no repositório | Convenções, esquema e padrões documentados no próprio projeto, para que o código gerado saia consistente desde a primeira tentativa. |
+| Contexto para a IA | `AGENTS.md` + `CLAUDE.md`; regras/skills em `.cursor/` e `.claude/` | Convenções, esquema e padrões documentados no próprio projeto, para que o código gerado saia consistente desde a primeira tentativa (Cursor ou Claude Code). |
 
 ### 9.6 Resumo em uma linha
 
