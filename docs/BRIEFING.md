@@ -12,10 +12,10 @@ Plataforma web para o **Kolô Ateliê & Estúdio**: catálogo e venda de obras d
 | **Galeria 3D** | Sala virtual navegável; clique na obra abre ficha e compra; fallback 2D se o dispositivo não aguentar WebGL |
 | **E-commerce** | Carrinho, checkout, Mercado Pago (Pix/cartão/boleto), reserva da peça única, e-mail de status, rastreio |
 | **Agendamento** | Wizard (artista → estilo → tamanho → referências → horário); horários reais; aprovação do artista; Google Calendar; lembrete por e-mail; WhatsApp só como link `wa.me` |
-| **Conformidade** | Anamnese, termo de consentimento, bloqueio de menor de 18, LGPD básico |
+| **Conformidade** | Alertas e checks de anamnese, termo e maioridade (conferência presencial); LGPD básico, sem dado de saúde |
 | **Back-office** | CRUD de obras/artistas/portfólio, pedidos, agenda, dashboard, papéis Cliente / Artista / Admin |
 
-**Não entra:** tour 360°, chatbot com IA, API oficial de WhatsApp, marketplace com split, app nativo, NF-e.
+**Não entra:** tour 360°, chatbot com IA, API oficial de WhatsApp, marketplace com split, app nativo, NF-e, ficha de anamnese digital nem armazenamento de dado de saúde.
 
 ---
 
@@ -23,7 +23,7 @@ Plataforma web para o **Kolô Ateliê & Estúdio**: catálogo e venda de obras d
 
 **Sim.** O conjunto fecha o problema do TCC 1 (operação manual + ausência de canal assíncrono) e ainda ganha justificativa mais forte: sem espaço físico, a galeria 3D deixa de ser “enfeite” e passa a ser a exposição.
 
-O recorte está coerente com prazo e prioridade acadêmica: loja única (sem split), pagamentos em sandbox, WhatsApp sem burocracia da Meta, wizard determinístico em vez de LLM. Anamnese e LGPD preenchem uma lacuna real do documento anterior e protegem a banca.
+O recorte está coerente com prazo e prioridade acadêmica: loja única (sem split), pagamentos em sandbox, WhatsApp sem burocracia da Meta, wizard determinístico em vez de LLM. Conformidade da tatuagem fica no mundo real (documentos na sessão); o sistema só avisa e registra o aceite. LGPD básico cobre conta, pedido e agenda — sem dado de saúde — e fecha a lacuna do TCC 1.
 
 O risco não é o desenho — é **volume**. Núcleo obrigatório (P0): autenticação, catálogo, compra completa, agendamento completo, galeria 3D + fallback, back-office mínimo. Cupons, recomendações, múltiplas salas e exportação CSV são incrementos; cortar esses primeiro se o prazo apertar.
 

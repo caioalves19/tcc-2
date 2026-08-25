@@ -5,7 +5,7 @@
 > Tecnologias) e 5 (Modelagem e Arquitetura) do `TCC.md`, que foram escritos com apoio intensivo de IA
 > e contêm imprecisões técnicas, requisitos incompletos e escolhas tecnológicas sem critério explícito.
 >
-> **Versão:** 1.0 · **Data:** agosto de 2026 · **Fase:** TCC 2 — implementação
+> **Versão:** 1.1 · **Data:** agosto de 2026 · **Fase:** TCC 2 — implementação
 > **Equipe:** Caio Scorsoni, Caio Vinicius, Guilherme Salustiano, Gustavo Magalhães, Robert Estevan
 
 ---
@@ -91,7 +91,7 @@ a tese é boa, a redação e o embasamento técnico precisam de correção.
 | Recomendações personalizadas (Resumo) | Não | Virou **RF58** |
 | Cadastro e autenticação de clientes | Não (só citado em RN01) | Virou **RF01–RF08** |
 | Histórico de clientes (Introdução) | Não | Virou **RF65** |
-| Termo de consentimento e anamnese | Não | Virou **RF51–RF55** |
+| Termo de consentimento e anamnese | Não | Virou **RF51–RF55**: avisos e checks no sistema; conferência presencial. Sem ficha de saúde digital. |
 
 Os requisitos originais também são vagos onde importa. O RF05 ("permitir a definição de horários e
 regras para agendamentos") não diz quem define, com que granularidade, nem como o sistema impede
@@ -105,10 +105,15 @@ testes.
 
 ### Lacuna crítica: conformidade legal
 
-O TCC 1 não menciona **LGPD** nem **termo de consentimento e anamnese**, ambos obrigatórios na
-operação real de um estúdio de tatuagem (dados de saúde são dados pessoais sensíveis, art. 5º, II da
-Lei 13.709/2018). Isso é um ponto que a banca pode cobrar. Coberto aqui em RF51–RF55, RNF18–RNF21 e
-RN15–RN18.
+O TCC 1 não menciona **LGPD** nem o fluxo de **anamnese, termo de consentimento e maioridade**.
+Na operação do estúdio esses documentos são obrigatórios, mas **dado de saúde é dado pessoal
+sensível** (art. 5º, II da Lei 13.709/2018). Coletá-lo no sistema aumentaria o ônus de conformidade
+sem substituir a conferência na sessão (identidade e idade só se provam com documento).
+
+A decisão deste documento: o software **não armazena dado de saúde**. O wizard exige alertas e
+checks (anamnese, termo e maioridade serão apresentados presencialmente, sob risco de cancelamento);
+artista/admin confirma a conferência na hora. LGPD cobre só dado pessoal comum (conta, pedido,
+agenda) — RF51–RF55, RNF18–RNF21 e RN15–RN18.
 
 ---
 
@@ -124,6 +129,7 @@ Decisões tomadas com o grupo, que delimitam este documento:
 | Pagamentos | **Mercado Pago em sandbox**, com código pronto para produção (troca de credenciais). |
 | WhatsApp | **Sem API oficial.** Notificações transacionais por e-mail + deep links `wa.me` com mensagem pré-preenchida para contato humano. |
 | Assistente de agendamento | **Wizard guiado por regras** (determinístico, auditável, testável). Sem LLM. |
+| Conformidade da tatuagem | **Presencial.** O sistema alerta e exige checks; anamnese, termo e identidade/maioridade são conferidos na sessão. **Não armazena dado de saúde.** |
 | Hospedagem | **VPS própria** (~R$ 30–60/mês), administrada pela equipe, com Docker Compose. |
 | Prazo e capacidade | **8 semanas**, com desenvolvimento fortemente assistido por IA. |
 
@@ -142,7 +148,7 @@ Uma aplicação web única, responsiva, com três frentes de valor:
 |-----------------|-----------------|-------------|
 | Galeria 3D das obras | Meus pedidos e rastreio | Dashboard e indicadores |
 | Catálogo com filtros e busca | Meus agendamentos | Acervo e curadoria da galeria |
-| Portfólio de tatuagens | Anamnese e termos | Portfólio e estilos |
+| Portfólio de tatuagens | Avisos e checks do agendamento | Portfólio e estilos |
 | Artistas residentes | Endereços de entrega | Artistas |
 | Wizard de agendamento | Meus dados e LGPD | Agenda e regras de disponibilidade |
 | Carrinho e checkout | Favoritos | Pedidos e envios |
@@ -155,7 +161,7 @@ Uma aplicação web única, responsiva, com três frentes de valor:
 | Tempo para agendar uma tatuagem | Negociação por mensagens, horas/dias | Autoatendimento em < 5 min |
 | Registro de venda | Planilha/anotação manual | 100% das vendas com pedido rastreável |
 | Catálogo consultável | Inexistente | Todas as obras com ficha, foto e preço |
-| Histórico de cliente | Inexistente | Perfil com compras, tatuagens e anamnese |
+| Histórico de cliente | Inexistente | Perfil com compras, tatuagens e conferências presenciais |
 | Disponibilidade de vendas | Horário de atendimento | 24/7, assíncrono |
 
 ---
@@ -230,7 +236,7 @@ Uma aplicação web única, responsiva, com três frentes de valor:
 
 | ID | Requisito | Prio |
 |----|-----------|------|
-| RF37 | Wizard de solicitação em etapas: artista → estilo → região do corpo → tamanho → referências → data/horário → dados e termos → confirmação | P0 |
+| RF37 | Wizard de solicitação em etapas: artista → estilo → região do corpo → tamanho → referências → data/horário → checks de conformidade (anamnese, termo e maioridade presenciais) → confirmação | P0 |
 | RF38 | Upload de imagens de referência pelo cliente, com limite de quantidade e tamanho | P0 |
 | RF39 | Estimativa automática de duração e de valor a partir de estilo e faixa de tamanho, apresentada como orçamento prévio | P1 |
 | RF40 | Exibição apenas dos horários realmente livres, considerando regras de disponibilidade, agendamentos existentes, intervalo entre sessões e bloqueios | P0 |
@@ -239,21 +245,25 @@ Uma aplicação web única, responsiva, com três frentes de valor:
 | RF43 | Fluxo de aprovação: solicitação → aprovada/recusada pelo artista → confirmada com o cliente | P0 |
 | RF44 | Cobrança de sinal opcional via Mercado Pago para confirmar o horário | P1 |
 | RF45 | Remarcação e cancelamento pelo cliente respeitando a antecedência mínima da política | P1 |
-| RF46 | Registro de comparecimento: concluído ou não comparecimento (*no-show*) | P1 |
+| RF46 | Registro de comparecimento: concluído (somente após conferência presencial, RN15) ou não comparecimento (*no-show*) | P1 |
 | RF47 | Sincronização do agendamento confirmado com o Google Calendar do estúdio, refletindo alterações e cancelamentos | P0 |
 | RF48 | Lembrete automático por e-mail com antecedência configurável | P0 |
 | RF49 | Botão de contato via WhatsApp com mensagem pré-preenchida contendo o código do agendamento | P0 |
 | RF50 | Painel de agenda do artista, em visão semanal, com as solicitações pendentes | P0 |
 
-### 5.7 Conformidade e saúde do cliente
+### 5.7 Conformidade
+
+O sistema **não coleta ficha de saúde**. Anamnese, termo de consentimento informado e documento de
+identidade/maioridade são apresentados e conferidos **na sessão**. O software só alerta, exige o
+aceite dos avisos e registra a conferência feita pelo estúdio.
 
 | ID | Requisito | Prio |
 |----|-----------|------|
-| RF51 | Ficha de anamnese digital (alergias, condições de saúde, medicações, gestação) preenchida antes da sessão | P0 |
-| RF52 | Termo de consentimento aceito digitalmente, com registro de data, hora e IP | P0 |
-| RF53 | Bloqueio de agendamento para menores de 18 anos, com aviso sobre a exigência de responsável legal | P0 |
-| RF54 | Consentimento explícito e separado para uso de imagem do trabalho no portfólio | P1 |
-| RF55 | Autoatendimento LGPD: o cliente consulta, exporta e solicita exclusão dos seus dados | P1 |
+| RF51 | Alerta e checkbox obrigatórios: a ficha de anamnese será preenchida presencialmente; ausência pode cancelar o horário. Nenhuma resposta clínica é armazenada | P0 |
+| RF52 | Alerta e checkbox obrigatórios: o termo de consentimento será assinado presencialmente; ausência pode cancelar o horário. O sistema registra só o aceite do aviso (data e hora), não o teor do termo | P0 |
+| RF53 | Alerta e checkbox obrigatórios de declaração de maioridade (18+); identidade e idade conferidas na sessão mediante documento; falta de documento cancela o horário | P0 |
+| RF54 | Uso de imagem no portfólio tratado presencialmente; artista/admin marca no agendamento se o cliente autorizou após a sessão | P1 |
+| RF55 | Autoatendimento LGPD sobre dado pessoal comum: o cliente consulta, exporta e solicita exclusão da conta, pedidos anonimizados e agenda | P1 |
 
 ### 5.8 Fidelização
 
@@ -273,7 +283,7 @@ Uma aplicação web única, responsiva, com três frentes de valor:
 | RF62 | Upload de imagens com validação de tipo e tamanho, geração de miniaturas e otimização | P0 |
 | RF63 | CRUD de artistas, estilos e tags | P0 |
 | RF64 | Gestão de pedidos: alterar status, registrar rastreio, ver dados de pagamento e reenviar e-mails | P0 |
-| RF65 | Gestão de clientes: perfil unificado com compras, agendamentos, anamnese e anotações internas | P1 |
+| RF65 | Gestão de clientes: perfil unificado com compras, agendamentos, conferências presenciais e anotações internas (sem dado de saúde) | P1 |
 | RF66 | Configurações do site: dados de contato, horários, textos institucionais e políticas | P1 |
 | RF67 | Log de auditoria de todas as ações administrativas sensíveis, com autor, data e valores alterados | P1 |
 | RF68 | Exportação de pedidos e agendamentos em CSV | P2 |
@@ -316,9 +326,9 @@ tecnicamente equivocado ou amarrado a uma tecnologia.
 
 | ID | Requisito | Verificação |
 |----|-----------|-------------|
-| RNF18 | Coleta limitada ao mínimo necessário, com finalidade declarada na política de privacidade | Inventário de dados |
-| RNF19 | Dados de anamnese tratados como dados sensíveis, com acesso restrito ao artista responsável e ao admin, e todo acesso registrado | Log de auditoria |
-| RNF20 | Consentimento registrado com data, hora, versão do termo e IP | Inspeção do banco |
+| RNF18 | Coleta limitada ao mínimo necessário, com finalidade declarada na política de privacidade. Dado de saúde fica fora do sistema | Inventário de dados |
+| RNF19 | O sistema não persiste anamnese nem outras respostas clínicas; fichas e termos permanecem no fluxo presencial do estúdio | Inspeção do esquema e do banco |
+| RNF20 | Checks de aviso (anamnese presencial, termo presencial, maioridade) e conferência do staff registrados no agendamento com data e hora. Não substituem o documento físico | Inspeção do banco |
 | RNF21 | Exclusão de conta anonimiza o cliente preservando a integridade contábil dos pedidos | Teste funcional |
 
 ### Usabilidade e manutenção
@@ -351,9 +361,9 @@ tecnicamente equivocado ou amarrado a uma tecnologia.
 | RN12 | Solicitação de agendamento nasce como pendente e só ocupa a agenda de forma definitiva após aprovação do artista. |
 | RN13 | Se houver exigência de sinal, o horário só é confirmado após a aprovação do pagamento do sinal. |
 | RN14 | Cancelamento com menos de 48 horas de antecedência implica perda do sinal, conforme a política publicada. |
-| RN15 | Nenhuma sessão pode ser marcada como concluída sem anamnese preenchida e termo de consentimento aceito. |
-| RN16 | Menores de 18 anos não concluem agendamento pelo sistema. |
-| RN17 | Uso de imagem no portfólio depende de consentimento específico, revogável a qualquer momento pelo cliente. |
+| RN15 | Nenhuma sessão pode ser marcada como concluída sem o staff confirmar a conferência presencial de anamnese, termo de consentimento e documento de identidade/maioridade. |
+| RN16 | Agendamento exige declaração de maioridade no wizard. A prova é o documento na sessão; sem documento o horário é cancelado. |
+| RN17 | Foto no portfólio só após consentimento de imagem obtido presencialmente e registrado no agendamento pelo estúdio. Revogação pelo cliente impede novas publicações. |
 | RN18 | Todos os horários são armazenados em UTC e apresentados em `America/Sao_Paulo`. |
 | RN19 | Artista acessa e edita apenas o próprio portfólio, a própria agenda e os agendamentos dos quais é responsável. |
 | RN20 | Toda alteração de preço, situação de obra ou status de pedido é registrada em auditoria com o autor. |
@@ -372,7 +382,7 @@ tecnicamente equivocado ou amarrado a uma tecnologia.
 | Ver os próprios pedidos e agendamentos | — | ✓ | ✓ | ✓ |
 | Gerenciar o próprio portfólio e agenda | — | — | ✓ | ✓ |
 | Aprovar/recusar agendamento próprio | — | — | ✓ | ✓ |
-| Ver anamnese do cliente atendido | — | — | ✓ (só dos seus) | ✓ |
+| Confirmar conferência presencial no agendamento | — | — | ✓ (só dos seus) | ✓ |
 | Gerenciar obras, artistas, cupons e curadoria 3D | — | — | — | ✓ |
 | Gerenciar pedidos e envios | — | — | — | ✓ |
 | Configurações do site e auditoria | — | — | — | ✓ |
@@ -402,7 +412,7 @@ IA, VPS barata e necessidade de conteúdo 3D.
 
 | Camada | Escolha | Justificativa |
 |--------|---------|---------------|
-| Banco | **PostgreSQL 17** | Três recursos decidem contra o MySQL neste domínio: **(a)** restrição de exclusão com intervalos de tempo, que impede fisicamente agendamentos sobrepostos (RN10) em vez de confiar em verificação na aplicação; **(b)** busca textual nativa com remoção de acentos e similaridade, resolvendo RF22 em português sem serviço externo; **(c)** JSONB indexável para payloads de webhook e respostas de anamnese. |
+| Banco | **PostgreSQL 17** | Três recursos decidem contra o MySQL neste domínio: **(a)** restrição de exclusão com intervalos de tempo, que impede fisicamente agendamentos sobrepostos (RN10) em vez de confiar em verificação na aplicação; **(b)** busca textual nativa com remoção de acentos e similaridade, resolvendo RF22 em português sem serviço externo; **(c)** JSONB indexável para payloads de webhook. |
 | ORM e migrações | **Prisma 7** | Esquema declarativo em arquivo único, que funciona como contrato legível e como o melhor contexto possível para a IA gerar consultas corretas. Migrações versionadas com detecção de perda de dados e um navegador visual de dados útil na demonstração para a banca. A versão 7 eliminou o *engine* em Rust, reduzindo drasticamente o tamanho da imagem Docker. |
 | Migrações em produção | `prisma migrate deploy` no start do contêiner | Banco sempre coerente com o código implantado. |
 
@@ -558,7 +568,7 @@ src/
     scheduling/             # disponibilidade, slots, agendamento, Google Calendar
     portfolio/              # trabalhos de tatuagem
     artists/                # artistas e estilos
-    customers/              # perfil, endereços, anamnese, consentimento, LGPD
+    customers/              # perfil, endereços, exclusão LGPD
     notifications/          # e-mail, templates, links wa.me
     admin/                  # dashboard, auditoria, configurações
   components/ui/            # design system (shadcn/ui)
@@ -595,12 +605,13 @@ payload em JSONB) · `webhook_event` (id do evento único, garantindo idempotên
 `size_tier` (faixa de tamanho com duração e preço-base) · `availability_rule` (artista, dia da semana,
 início, fim, duração de sessão, intervalo) · `time_block` (bloqueios e compromissos externos) ·
 `appointment` (código, cliente, artista, situação, início, fim, duração estimada, região do corpo,
-estilo, descrição, orçamento, sinal, id do evento no Google) · `appointment_reference` (imagens de
-referência)
+estilo, descrição, orçamento, sinal, id do evento no Google; aceites dos avisos no wizard com data e
+hora; flags de conferência presencial pelo staff: anamnese apresentada, termo assinado, identidade
+conferida, autorização de imagem) · `appointment_reference` (imagens de referência)
 
 **Conformidade**
-`health_form` (respostas em JSONB, assinatura, data) · `consent` (tipo, versão do termo, aceite, IP,
-data, revogação)
+Sem entidades de ficha clínica. Os checks e a conferência presencial ficam no próprio `appointment`.
+Não há `health_form` nem armazenamento do teor do termo.
 
 **Operação**
 `site_setting` · `contact_message` · `email_log` · `audit_log` (autor, ação, entidade, valores antes e
@@ -707,7 +718,7 @@ especialmente importante quando parte do código é gerada por IA.
 | 2 | Catálogo público e administração de acervo: CRUD de obras, imagens no R2, artistas, tags, filtros e busca | Obra cadastrada no admin aparece no catálogo com filtro e busca |
 | 3 | E-commerce: carrinho, checkout, Mercado Pago em sandbox, webhook, pedidos e e-mails | Compra de ponta a ponta com pagamento aprovado, obra marcada como vendida |
 | 4 | Agendamento: regras de disponibilidade, bloqueios, geração de horários, wizard, restrição anti-sobreposição, aprovação | Agendamento concluído sem sobreposição possível |
-| 5 | Google Calendar, lembretes, anamnese, termo de consentimento, links de WhatsApp, painel de agenda do artista | Agendamento confirmado aparece no Google Calendar e gera lembrete |
+| 5 | Google Calendar, lembretes, checks de conformidade presencial, links de WhatsApp, painel de agenda do artista | Agendamento confirmado aparece no Google Calendar e gera lembrete |
 | 6 | Galeria 3D com curadoria e fallback 2D, portfólio de tatuagens, cupons | Galeria navegável levando à compra da obra |
 | 7 | Dashboard administrativo, LGPD, endurecimento de segurança, testes E2E, acessibilidade e desempenho | CI verde, Lighthouse ≥ 90, sem violação crítica de acessibilidade |
 | 8 | Deploy em produção na VPS, backup testado, validação com o cliente, ajustes finais, redação do TCC 2 e material de defesa | URL pública em HTTPS e roteiro de demonstração ensaiado |
@@ -743,7 +754,9 @@ Aplicativo móvel nativo · marketplace com contas de vendedor e divisão autom�
 tour virtual 360° · chatbot com IA conversacional · emissão de nota fiscal e integração contábil ·
 integração com Correios em tempo real ou etiqueta de envio · controle de estoque de insumos do estúdio ·
 múltiplos idiomas e moedas · funcionamento offline como PWA · integração com maquininha ou ponto de
-venda físico · assinatura ou clube de membros.
+venda físico · assinatura ou clube de membros · ficha de anamnese digital e armazenamento de dados de
+saúde · termo de consentimento com valor jurídico no sistema (o papel na sessão continua sendo o
+documento).
 
 Vários desses itens são bons candidatos à seção "Trabalhos Futuros" do TCC 2.
 

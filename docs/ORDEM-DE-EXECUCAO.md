@@ -78,7 +78,7 @@ Artistas e obras existem antes de loja, agenda e 3D.
 | 33 | RF41 | Disponibilidade semanal do artista | P0 |
 | 34 | RF42 | Bloqueio de datas (férias, feriados) | P0 |
 | 35 | RF40 | Só horários realmente livres | P0 |
-| 36 | RF37 | Wizard (artista → estilo → tamanho → refs → horário → termos) | P0 |
+| 36 | RF37 | Wizard (artista → estilo → tamanho → refs → horário → checks presenciais) | P0 |
 | 37 | RF38 | Upload de referências | P0 |
 | 38 | RF43 | Solicitação → aprovação/recusa → confirmação | P0 |
 | 39 | RF50 | Painel semanal do artista + pendentes | P0 |
@@ -90,18 +90,18 @@ Artistas e obras existem antes de loja, agenda e 3D.
 
 ---
 
-## Fase 4 — Integrações da agenda + saúde (semana 5)
+## Fase 4 — Integrações da agenda + conferência presencial (semana 5)
 
 | # | ID | Feature | P |
 |---|----|---------|---|
 | 43 | RF47 | Google Calendar (criar / atualizar / cancelar) | P0 |
 | 44 | RF48 | Lembrete por e-mail | P0 |
 | 45 | RF49 | Link `wa.me` com código do agendamento | P0 |
-| 46 | RF53 | Bloqueio de menor de 18 | P0 |
-| 47 | RF52 | Termo de consentimento (data, hora, IP) | P0 |
-| 48 | RF51 | Anamnese antes da sessão | P0 |
+| 46 | RF53 | Check de maioridade + aviso de documento na sessão | P0 |
+| 47 | RF52 | Check: termo de consentimento será assinado presencialmente | P0 |
+| 48 | RF51 | Check: anamnese será preenchida presencialmente (sem dado de saúde no sistema) | P0 |
 | 49 | RF44 | Sinal opcional via Mercado Pago | P1 |
-| 50 | RF54 | Consentimento de uso de imagem | P1 |
+| 50 | RF54 | Autorização de imagem marcada pelo staff após a sessão | P1 |
 
 **Pronto quando:** agendamento confirmado aparece no Calendar e gera lembrete.
 
@@ -138,7 +138,7 @@ Galeria 3D por último entre os P0 visuais: o catálogo 2D já cobre a banca se 
 | 64 | RF60 | Dashboard (faturamento, ticket, agenda, no-show) | P0 |
 | 65 | RF65 | Perfil unificado do cliente no admin | P1 |
 | 66 | RF67 | Auditoria de ações sensíveis | P1 |
-| 67 | RF55 | LGPD: consultar, exportar, excluir dados | P1 |
+| 67 | RF55 | LGPD básico: consultar, exportar, excluir conta | P1 |
 | 68 | RF68 | Exportação CSV | P2 |
 
 Em paralelo (não são RF, mas fecham a defesa): endurecer segurança, testes E2E, acessibilidade, Lighthouse.
