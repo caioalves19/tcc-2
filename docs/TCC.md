@@ -140,24 +140,25 @@ nos proporcionaram momentos de alegria.
 
 
 O presente Trabalho de Conclusão de Curso (TCC) visa solucionar os gargalos
-operacionais do Kolô Ateliê & Estúdio, um estabelecimento em Pinheiros, São Paulo,
-que integra estúdio de tatuagem e galeria de arte. Apesar do crescimento exponencial
-impulsionado pela presença virtual, o diagnóstico revelou que o controle de vendas é
-exclusivamente manual e há ausência de uma plataforma unificada para consulta de
-catálogos e agendamentos, limitando a capacidade de expansão do negócio. Diante
-disso, este trabalho propõe o desenvolvimento e a implementação de um sistema web
-robusto, integrado e monolítico, utilizando React no front-end e Laravel no back-end
-com  MySQL,  para  simplificar  os  processos  administrativos  e  oferecer  um  ambiente
-seguro  para  o  consumo  de  arte. A  hipótese  central  é  que  a  centralização  de  um
-catálogo digital, aliada à integração de um sistema de gerenciamento de pedidos via
-API de gateway de pagamento (Mercado Pago), aumentará as vendas assíncronas.
-Adicionalmente, a unificação a um módulo de agendamentos automatizado, integrado
-ao Google Calendar e ao WhatsApp, elevará a eficiência operacional do estúdio de
-tatuagem. Os objetivos específicos incluem o levantamento de requisitos, o projeto de
-interfaces  UI/UX,  a  modelagem  de  dados  e  a  validação  por testes  funcionais,
-consolidando  competências  de  Engenharia  de  Software  para  fomentar  a  economia
-criativa local. Palavras-chave: Sistema Web. Ateliê de Tatuagem. E-commerce. React.
-## Laravel.
+operacionais do Kolô Ateliê & Estúdio, ateliê e estúdio de tatuagem originário de
+Pinheiros, São Paulo, que integra produção artística e serviços de tatuagem. Apesar
+do crescimento impulsionado pela presença virtual, o diagnóstico revelou controle de
+vendas exclusivamente manual, ausência de plataforma unificada para catálogos e
+agendamentos e a perda do espaço físico de exposição, limitando a operação do
+negócio. Diante disso, este trabalho propõe o desenvolvimento e a implementação de
+um sistema web robusto, integrado e monolítico modular, utilizando Next.js e React
+com TypeScript e PostgreSQL, para simplificar os processos administrativos, oferecer
+uma galeria virtual no lugar da sala física e um ambiente seguro para o consumo de
+arte. A hipótese central é que a centralização de um catálogo digital, aliada à
+integração de um sistema de gerenciamento de pedidos via API de gateway de
+pagamento (Mercado Pago), aumentará as vendas assíncronas. Adicionalmente, a
+unificação a um módulo de agendamentos automatizado, integrado ao Google Calendar,
+ao e-mail transacional e a links de contato via WhatsApp, elevará a eficiência
+operacional do estúdio de tatuagem. Os objetivos específicos incluem o levantamento
+de requisitos, o projeto de interfaces UI/UX, a modelagem de dados e a validação por
+testes funcionais, consolidando competências de Engenharia de Software para fomentar
+a economia criativa local. Palavras-chave: Sistema Web. Ateliê de Tatuagem.
+E-commerce. React. Next.js.
 
 
 
@@ -169,24 +170,25 @@ criativa local. Palavras-chave: Sistema Web. Ateliê de Tatuagem. E-commerce. Re
 
 
 This Final Project (TCC) aims to solve the operational bottlenecks of Kolô Ateliê
-& Estúdio, an establishment in Pinheiros, São Paulo, which integrates a tattoo studio
-and an art gallery. Despite exponential growth driven by virtual presence, the diagnosis
-revealed that sales control is exclusively manual and there is an absence of a unified
-platform for consulting catalogs and scheduling appointments, limiting the business's
-capacity   for   expansion.   Therefore,   this   work   proposes   the   development   and
-implementation of a robust, integrated, and monolithic web system, using React for the
-front-end  and  Laravel  with  MySQL  for  the  back-end,  to  simplify  administrative
-processes and offer a safe environment for art consumption. The central hypothesis is
+& Estúdio, a tattoo studio and art atelier originally based in Pinheiros, São Paulo.
+Despite growth driven by virtual presence, the diagnosis revealed that sales control is
+exclusively manual, there is no unified platform for catalogs and scheduling, and the
+business lost its physical exhibition space, limiting its operation. Therefore, this work
+proposes the development and implementation of a robust, integrated, modular
+monolithic web system, using Next.js and React with TypeScript and PostgreSQL, to
+simplify administrative processes, provide a virtual gallery in place of the physical
+room, and offer a safe environment for art consumption. The central hypothesis is
 that  the  centralization  of  a  digital  catalog,  combined  with  the  integration  of  an  order
 management  system  via  a  payment  gateway  API  (Mercado  Pago),  will  increase
 asynchronous  sales.  Additionally,  the  unification  with  an  automated  scheduling
-module,  integrated  with  Google  Calendar  and  WhatsApp,  will  raise  the  operational
-efficiency of the tattoo studio. The specific objectives include requirements gathering,
-UI/UX  interface  design,  data  modeling,  and  validation  through  functional  tests,
-consolidating Software Engineering competencies to foster the local creative economy.
+module,  integrated  with  Google  Calendar,  transactional  email  and  WhatsApp  contact
+links,  will  raise  the  operational  efficiency  of  the  tattoo  studio.  The  specific  objectives
+include requirements gathering, UI/UX interface design, data modeling, and validation
+through functional tests, consolidating Software Engineering competencies to foster
+the local creative economy.
 
 
-## Key-words: Web System. Tattoo Studio. E-commerce. React. Laravel
+## Key-words: Web System. Tattoo Studio. E-commerce. React. Next.js.
 
 
 
@@ -207,7 +209,7 @@ consolidating Software Engineering competencies to foster the local creative eco
 3.1. Definição da Metodologia ..................................................................................... 15
 3.2. Procedimento de Coletas de Dados ..................................................................... 15
 3.3. Definição de Requisito .......................................................................................... 16
-3.4. Definição de Requisito .......................................................................................... 17
+3.4. Metodologia de Desenvolvimento (Scrum) ........................................................... 17
 3.5. Modelagem e Planejamento do Sistema .............................................................. 17
 3.6. Estratégia de Testes e Validação ......................................................................... 17
 3.7. Procedimentos de Implementação ....................................................................... 18
@@ -237,9 +239,11 @@ consolidating Software Engineering competencies to foster the local creative eco
 O Kolô é um Ateliê e Estúdio de Tatuagem com uma proposta inovadora
 de integração entre artistas plásticos, tatuadores residentes e a comunidade artística
 de Pinheiros, região central do cenário cultural da capital paulista. O estabelecimento
-promove  eventos  de  integração  que  atraem  centenas  de  apreciadores  para  seus
-corredores e salas, criando um modelo de negócio que permite a imersão contínua na
-arte e a capitalização de diferentes produtos e serviços em um único espaço físico.
+promoveu eventos de integração que atraíam apreciadores para seus corredores e
+salas,  criando  um  modelo  de  negócio  que  permitia  a  imersão  contínua  na  arte  e  a
+capitalização de diferentes produtos e serviços em um único espaço físico. Sem esse
+espaço, a exposição de obras e o atendimento passam a depender de um canal digital
+próprio.
 Impulsionado   pela   produção de   conteúdo   audiovisual   no   Instagram,   o   Kolô
 experimentou um crescimento substancial em sua presença virtual, resultando em um
 aumento  considerável  na  demanda  por  agendamentos  de  tatuagens  e  venda  de
@@ -252,14 +256,17 @@ constatou   que   os   processos   tecnológicos   internos   não   acompanhara
 expansão, gerando um severo gargalo operacional. Atualmente, o controle de vendas
 é  feito  de  forma  exclusivamente manual,  não  há  uma  plataforma  para  consulta  de
 catálogos  e  informações  cruciais  sobre  o  perfil  dos  clientes  não  são  devidamente
-armazenadas,  limitando  a  capacidade  de  expansão  do  negócio.  Sob  a  ótica  da
+armazenadas;  somou-se  a  isso  a  perda  do  espaço  físico  em  Pinheiros,  de  modo
+que a operação de exposição, venda e agendamento deixa de ter um ponto presencial
+fixo.  Sob  a  ótica  da
 investigação  metódica,  Prodanov  e  Freitas  (2013)  esclarecem  que  a  pesquisa
 científica opera essencialmente como uma atividade humana direcionada a conhecer,
 explicar  e  resolver  problemas  reais  da  sociedade.  Diante  desse  cenário  e  da
 necessidade  latente  de  modernização  tecnológica,  o  presente  trabalho  levanta  o
 seguinte  problema  de  pesquisa:  Como  o  desenvolvimento  de  uma  plataforma  web
-dedicada  e  integrada  pode  solucionar  os  gargalos  de  gestão  manual  e  otimizar  os
-fluxos  de  agendamento  e  e-commerce  do  Kolô  Ateliê  &  Estúdio?  Como  hipótese,
+dedicada  e  integrada  pode  absorver  a  operação  de  um  ateliê  que  perdeu  seu
+espaço  físico,  sustentando  exposição,  venda  de  obras  e  agendamento  de
+tatuagens de forma assíncrona?  Como  hipótese,
 acredita-se  que  a  centralização  de  um  catálogo  digital  aliado  a  um  sistema  de
 gerenciamento de pedidos via API de gateway aumentará as vendas assíncronas de
 obras,  otimizando  o  desempenho  comercial  sem  demandar  novas  contratações
@@ -269,8 +276,9 @@ operacionais. Adicionalmente, presume-se que a unificação deste ecossistema a 
 
 
 
-módulo  de   agendamentos   automatizado,  integrado  ao   Google   Calendar   e   ao
-WhatsApp,  aumentará  a  eficiência  operacional  do  estúdio  de  tatuagem.  A  partir  do
+módulo  de   agendamentos   automatizado,  integrado  ao   Google   Calendar,   ao
+e-mail transacional e a links de contato via WhatsApp, aumentará a eficiência
+operacional do estúdio de tatuagem.  A  partir  do
 histórico de dados gerado, a plataforma viabilizará a oferta inteligente de cupons de
 desconto  e  recomendações  personalizadas,  estimulando  o  consumo  de  ambos  os
 serviços de maneira orgânica.
@@ -282,13 +290,13 @@ o  levantamento  detalhado  de  requisitos  com  os  artistas  e  gestores,  eta
 segundo Pressman e Maxim (2021), estabelece as bases lógicas de comunicação e
 as  restrições  que  guiarão  o  sucesso  e  a  estabilidade  da  engenharia  do  software;
 projetar  as  interfaces com  foco  em  usabilidade  (UI/UX);  modelar  o  banco de  dados
-relacional  e  a  arquitetura  cliente-servidor  em  ambiente  monolítico — estrutura  que,
-conforme  ressaltado  por  Sommerville  (2019), oferece  vantagens  significativas  de
+relacional  e  a  arquitetura  cliente-servidor  em  ambiente  monolítico  modular — estrutura
+que,  conforme  ressaltado  por  Sommerville  (2019), oferece  vantagens  significativas  de
 coesão,  simplicidade  de  implantação  e  facilidade  de  manutenção  para  sistemas
-integrados  de  médio  porte;  desenvolver  o  front-end  em  React  e  o  back-end  em
-Laravel;  integrar  APIs  externas  para  automação  de  rotinas  (Google Calendar  e
-WhatsApp)  e  processamento  de  checkout  de  pagamentos;  e  validar  o  software  por
-meio de testes funcionais.
+integrados  de  médio  porte;  desenvolver  a  aplicação  em  Next.js  e  React  com
+TypeScript  e  PostgreSQL;  integrar  APIs  externas  para  automação  de  rotinas
+(Google Calendar  e  gateway  de  pagamento)  e  canais  de  contato  (e-mail  e  links
+WhatsApp);  e  validar  o  software  por  meio  de  testes  funcionais.
 A   justificativa   do   projeto   reside   no   seu   valor   prático   e   técnico:
 comercialmente,  elimina  processos  manuais  e  abre  canais  assíncronos  de  receita;
 academicamente, consolida competências essenciais de Engenharia de Software no
@@ -350,12 +358,13 @@ esse  paradigma.  Pesquisas  em  psicologia  ambiental  demonstram  que  experi�
 espacialmente  ricas  intensificam  o  engajamento  emocional  e  a  memorabilidade
 (BITNER, 1992). Jiang e Benbasat (2007) verificaram que a visualização interativa em
 3D  aumenta  a  intenção  de  compra  e  reduz  a  incerteza  perceptual — efeito
-especialmente  relevante  para  obras  de  arte  de  alto  valor  estético.  Tours  virtuais
-baseados  em  fotografia  panorâmica  de  360  graus  também  demonstram  ampliar  o
-tempo  de  permanência  do  usuário  na  plataforma  e  reforçar  a  percepção  de
-credibilidade do estabelecimento (JUNG; TOM DIECK, 2017). No sistema do Kolô, a
-galeria  3D  e  o  tour  virtual  pelo  ateliê  respondem  diretamente  a  essas  evidências,
-diferenciando a plataforma de e-commerces convencionais.
+especialmente  relevante  para  obras  de  arte  de  alto  valor  estético.  Experiências
+espacialmente  ricas  também  reforçam  a  percepção  de  credibilidade  do
+estabelecimento (JUNG; TOM DIECK, 2017). No sistema do Kolô, a galeria 3D
+assume função estrutural: substitui a sala de exposição que o ateliê deixou de ter,
+diferenciando a plataforma de e-commerces convencionais. O tour virtual por
+fotografia panorâmica de 360 graus fica fora do escopo, pois não há mais espaço
+físico a fotografar.
 2.3. Integração de Sistemas e Web APIs
 A Application Programming Interface (API) constitui o contrato formal que
 define   como   diferentes   módulos   de   software   trocam   informações   e   invocam
@@ -367,10 +376,12 @@ que  aderem  a  essas  restrições  são  denominados  RESTful  e  utilizam  ti
 HTTP com JSON para serialização de dados (RICHARDSON; RUBY, 2007).
 APIs  RESTful  viabilizam  a  integração  de  sistemas  heterogêneos  sem
 acoplamento  rígido,  permitindo  que  cada  serviço  seja  desenvolvido,  implantado  e
-escalado de forma independente (NEWMAN, 2015). No sistema do Kolô, esse modelo
-se  manifesta  na  comunicação  entre  front-end  e  back-end,  na  integração  com
-gateways de pagamento, em serviços de notificação (WhatsApp Business API, Google
-Calendar  API)  e  no  armazenamento  de  mídias.  Do  ponto  de  vista  da  segurança,  o
+escalado de forma independente (NEWMAN, 2015). No sistema do Kolô, REST
+manifesta-se sobretudo nas fronteiras externas — gateway de pagamento, Google
+Calendar  API  e  armazenamento  de  mídias —,  enquanto  a  aplicação  em  si  permanece
+um  monolito  modular.  Notificações  transacionais  ocorrem  por  e-mail;  o  WhatsApp
+permanece como canal humano, por meio de links com mensagem pré-preenchida.
+Do  ponto  de  vista  da  segurança,  o
 padrão OAuth 2.0 (IETF, 2012) delega autorização sem expor credenciais, enquanto
 JSON  Web  Tokens  permitem  gerenciar  sessões  de  forma  stateless  (JONES  et  al.,
 ## 2015).
@@ -422,7 +433,7 @@ o  DOM  real  a  cada  atualização  de  estado.  O  algoritmo  de  reconcilia�
 identifica apenas os nós alterados e aplica cirurgicamente as mudanças no DOM do
 navegador, evitando re-renderizações desnecessárias e garantindo fluidez mesmo em
 interfaces  complexas  (STEFANOV,  2016).  Esse  comportamento  é  especialmente
-relevante para o sistema do Kolô, cuja galeria tridimensional e tour virtual demandam
+relevante para o sistema do Kolô, cuja galeria tridimensional demanda
 atualizações frequentes de estado sem comprometer a responsividade da página.
 A  escolha  do  React  para  o  front-end  do  sistema  Kolô  justifica-se  pela
 maturidade  do  ecossistema,  pelo  amplo  suporte  comunitário,  pela  compatibilidade
@@ -430,6 +441,11 @@ nativa com bibliotecas de renderização 3D como Three.js — integrada via Reac
 Fiber  (POIMANDRES,  2024) — e  pela  possibilidade  de  evolução  futura  para
 aplicações  móveis  por  meio  do  React  Native,  reutilizando  grande  parte  da  base  de
 código já desenvolvida (EISENMAN, 2015).
+A interface do Kolô é servida pelo Next.js, framework React que reúne
+apresentação  e  regras  de  servidor  no  mesmo  projeto — um  monolito  modular  com
+um único processo de construção e implantação (VERCEL, 2026). A escolha preserva
+o  embasamento  deste  capítulo  e  elimina  a  fronteira  entre  duas  linguagens  no
+back-end.
 
 ## 15
 
@@ -448,7 +464,7 @@ métodos técnicos (como pesquisa bibliográfica, documental, estudo de caso, pe
 de  campo  etc.)  e  o  universo  ou  amostra,  caso  existam  participantes.  Também  é
 relevante explicar como os dados serão estruturados e analisados.
 A  metodologia  utilizada  neste  trabalho  tem  como  seu  objetivo  principal
-desenvolver um sistema web para o Kalo Ateliê e Estúdio de Tatuagem, garantindo
+desenvolver um sistema web para o Kolô Ateliê e Estúdio de Tatuagem, garantindo
 que  todas  as  necessidades  principais  do  estabelecimento  sejam  identificadas,
 analisadas e transformadas em uma solução funcional na qual sejam atendidos todos
 os requisitos desejados pelo cliente. A pesquisa é de natureza aplicada, uma vez que
@@ -500,7 +516,7 @@ melhor alinhamento entre a equipe de desenvolvimento e as expectativas do ateli�
 
 
 
-3.4. Definição de Requisito
+3.4. Metodologia de Desenvolvimento (Scrum)
 O   sistema   será   desenvolvido   com   base   em   uma   metodologia   ágil,
 empregando  os  princípios  do  Scrum,  o  que  possibilitará  entregas  incrementais  e
 ajustes  contínuos  de  acordo  com  as  demandas  identificadas  em  parceria  com  o
@@ -534,10 +550,12 @@ projeto.
 Após o desenvolvimento das funcionalidades, serão realizados testes para
 verificar  o  correto  funcionamento  do  sistema.  O  objetivo  dos  testes  serão  detectar
 erros, confirmar requisitos e assegurar a estabilidade da aplicação. Serão utilizados:
+- Testes unitários das regras de negócio.
 - Testes de funcionalidade.
-- Testes de integração.
+- Testes de integração, inclusive com o banco de dados real nas escritas
+transacionais (reserva de obra, agenda e webhook de pagamento).
+- Testes de ponta a ponta e de responsividade em dispositivos móveis e desktops.
 - Testes de facilidade de uso.
-- Testes de responsividade em dispositivos móveis e desktops.
 Além disso, o sistema será validado com os responsáveis pelo Kolô Ateliê,
 o  que  permitirá  verificar  se  a  solução  atende  às  demandas  identificadas  durante  o
 levantamento de requisitos.
@@ -548,7 +566,8 @@ A  implementação  será  realizada  de  forma  incremental,  iniciando  pelas
 funcionalidades  essenciais  do  sistema,  como  cadastro  de  obras,  gerenciamento  de
 portfólio e sistema de agendamento.
 Posteriormente, serão integradas funcionalidades complementares, como
-integração com APIs externas, notificações automatizadas e sistema de pagamentos.
+integração com o gateway de pagamento, Google Calendar, notificações por e-mail
+e links de contato via WhatsApp.
 O  desenvolvimento  seguirá  boas  práticas  de  Engenharia  de  Software,
 priorizando  organização  do  código,  reutilização  de  componentes,  segurança  da
 informação e facilidade de manutenção futura.
@@ -588,10 +607,16 @@ agendamentos.
 
 
 
-RF06 - O  sistema  deve  possuir  integração  com  WhatsApp  e  Google
-## Calendar.
-RF07 - O sistema deve possuir um assistente automatizado para auxiliar
-no processo de agendamento.
+RF06 - O  sistema  deve  sincronizar  agendamentos  confirmados  com  o
+Google Calendar e oferecer contato via WhatsApp por link com mensagem
+pré-preenchida, sem uso da API oficial da Meta.
+RF07 - O sistema deve possuir um assistente de agendamento em etapas
+(wizard), guiado por regras determinísticas, sem modelo de linguagem.
+RF08 - O sistema deve permitir cadastro e autenticação de clientes.
+RF09 - O sistema deve oferecer galeria 3D navegável das obras, com
+alternativa em grade 2D quando o dispositivo não suportar a experiência.
+RF10 - O sistema deve permitir a compra de obras via gateway de
+pagamento (Mercado Pago), sem armazenar dados de cartão.
 ## 4.3. Requisitos Não Funcionais
 Os Requisitos Não Funcionais são aqueles que definem o comportamento
 de  um  software,  e  incluem  tópicos  sobre  desempenho,  segurança,  escalabilidade,
@@ -600,8 +625,8 @@ desenvolvimento  define  os  RNFs.  Seguindo  tais  definições,  os  Requisito
 Funcionais são:
 RNF01 - O  sistema  deve  possuir  certificado  SSL  para  o  site  rodar  em
 ## HTTPS.
-RNF02 - O  sistema  deve  utilizar  uma  versão  de  PHP  que  receba
-atualizações de segurança.
+RNF02 - O  runtime,  o  framework  e  as  dependências  devem  estar  em
+versões com suporte ativo de segurança.
 RNF03 - O  sistema  deve  ser  responsivo  e  se  adaptar  ao  layout  de
 dispositivos móveis e desktops.
 RNF04 - O sistema deve estar disponível no mínimo durante o horário de
@@ -619,25 +644,33 @@ comuns (XSS, SQL Injection).
 4.4. Regras de Negócio
 Regras  de  Negócio  tratam  sobre  instruções,  restrições  e  políticas  que
 definem como o sistema deve operar. As Regras de Negócio são:
-RN01 - Um   usuário   não   pode   acessar   funcionalidades   sem   estar
-autenticado.
-RN02 - Um  usuário  não  pode  comprar  obras  de  arte  sem  ter  meios  de
-pagamento cadastrados.
+RN01 - Catálogo, galeria e portfólio são públicos; compra, agendamento
+e área pessoal exigem autenticação.
+RN02 - A compra de obras exige autenticação e checkout pelo gateway;
+dados de cartão não são armazenados pelo sistema.
+RN03 - O sistema não armazena dado de saúde; anamnese, termo de
+consentimento e conferência de maioridade ocorrem presencialmente na sessão.
 ## 4.5. Tecnologias Escolhidas
 Por se tratar de uma aplicação web, a escolha das tecnologias adequadas
 é essencial para um projeto bem-feito.
 No  frontend,  uma  solução  seria  utilizar  HTML,  CSS  e  Javascript  com  a
 biblioteca  JQuery.  No  entanto,  o  React  permite  criar  uma  interface  mais  avançada,
-com  maior  interatividade  e  maior  facilidade  para  manutenção  de  código, sendo,
-portanto, essa a melhor escolha para o frontend.
-No   backend,   a   linguagem   utilizada   é   o   PHP,   que   possui   maior
-confiabilidade e simplicidade no código. Mas utilizá-lo puro neste projeto juntamente
-com React é bastante trabalhoso, e por isso se utilizará o framework Laravel.
-O banco de dados é o MySQL, conhecido por sua confiabilidade e rapidez
-em atender volumes de dados comuns a aplicações como essa.
-O  servidor  web  utilizado  é  o  Nginx,  ferramenta  poderosa  que  permite
-gerenciamento de portas e segurança contra-ataques de XSS e SQL Injection através
-da configuração manual de um único arquivo.
+com  maior  interatividade  e  maior  facilidade  para  manutenção  de  código,  sendo,
+portanto, essa a melhor escolha para o frontend — inclusive para a galeria 3D, por
+meio do React Three Fiber (POIMANDRES, 2024).
+A aplicação reúne apresentação e back-end em Next.js com TypeScript,
+sobre o runtime Node.js, em um único projeto (NODE.JS, 2026; VERCEL, 2026). Essa decisão substitui a combinação React +
+Laravel + MySQL do TCC 1: uma só linguagem, um só processo de implantação e
+tipos compartilhados entre as camadas, o que reduz divergência de contrato e
+adequa-se ao prazo do TCC 2.
+O banco de dados é o PostgreSQL, escolhido pela restrição nativa contra
+agendamentos sobrepostos, pela busca textual com tratamento de acentos e pelo
+suporte a JSON para payloads de webhook (POSTGRESQL GLOBAL DEVELOPMENT
+GROUP, 2026).
+O proxy reverso utilizado é o Caddy, responsável por TLS automático,
+roteamento e cabeçalhos de segurança. Prevenção de XSS e de SQL Injection
+permanece nas camadas de apresentação e de persistência (escape/CSP e consultas
+parametrizadas), não no proxy. A implantação ocorre em VPS, com Docker Compose.
 
 
 ## 22
@@ -646,16 +679,18 @@ da configuração manual de um único arquivo.
 
 4.6. Arquitetura do Sistema
 O sistema será desenvolvido seguindo a arquitetura cliente-servidor, com
-uma divisão clara entre front-end e back-end. A interface disponível ao usuário envia
-requisições  ao  servidor  responsável  pelas  regras  de  negócio,  que  por  sua  vez  se
-comunica  com  o  banco  de  dados  para  armazenamento,  realização  de  consultas  e
-manipulação de dados.
-Além  dessa  divisão,  a  aplicação  também  haverá  integração  a  serviços
-externos como WhatsApp e Google Calendar, dos quais serão integrados por APIs.
-Também  terá  a  estrutura  monolítica,  pois  o  sistema  será  único  e  reunirá
-apresentação,   lógica,   regras   de   negócio,   persistência   de   dados   localmente   e
-integração  com  serviços  externos,  trazendo  mais  simplicidade  e  facilidade  de
-manutenção do projeto (SOMMERVILLE, 2019).
+separação lógica entre apresentação, regras de negócio e persistência, reunidas em
+um  monolito  modular  Next.js.  A  interface  disponível  ao  usuário  envia  requisições  ao
+servidor, que por sua vez se comunica com o PostgreSQL para armazenamento,
+consultas e manipulação de dados.
+Além  dessa  divisão,  a  aplicação  integra  serviços  externos:  Mercado  Pago
+(checkout e webhook), Google Calendar API, e-mail transacional e armazenamento
+de mídias. O WhatsApp permanece como canal humano, por links com mensagem
+pré-preenchida.
+A estrutura é monolítica modular, pois o sistema será único e reunirá
+apresentação,   lógica,   regras   de   negócio,   persistência   de   dados   e
+integração  com  serviços  externos  no  mesmo  deploy,  trazendo  mais  simplicidade  e
+facilidade de manutenção do projeto (SOMMERVILLE, 2019).
 
 
 ## 23
@@ -670,10 +705,11 @@ dos  dados.  Conforme  estabelecido  por  Pressman  e  Maxim  (2021),  a  modela
 técnica  é  um  passo  fundamental  para  garantir  a  viabilidade  e  a  qualidade  de  um
 projeto de software antes de sua implementação final.
 5.1. Arquitetura do Sistema
-O sistema adota uma arquitetura monolítica cliente-servidor. Esta escolha
-justifica-se pela necessidade de manter a lógica de negócio, a persistência de dados
-e a integração com serviços externos (WhatsApp e Google Calendar) em um ambiente
-coeso, facilitando a manutenção e o desenvolvimento ágil no TCC2.
+O sistema adota uma arquitetura monolítica modular cliente-servidor, em
+Next.js. Esta escolha justifica-se pela necessidade de manter a lógica de negócio, a
+persistência de dados e a integração com serviços externos (Mercado Pago, Google
+Calendar e e-mail) em um ambiente coeso, facilitando a manutenção e o
+desenvolvimento ágil no TCC 2.
 5.2. Diagrama de Casos de Uso
 O escopo funcional é delimitado pelo Diagrama de Casos de Uso (Figura
 1), que mapeia a interação dos atores (Cliente, Administrador e Tatuador/Artista) com
@@ -687,7 +723,8 @@ as funcionalidades do sistema, estabelecendo os limites de permissão de acesso.
 Figura 1 – Diagrama de Casos de Uso do sistema. Fonte: Elaborado pelos
 autores (2026).
 5.3. Modelagem de Dados
-A organização lógica dos dados segue o modelo relacional. O Modelo de
+A organização lógica dos dados segue o modelo relacional, persistido em
+PostgreSQL. O Modelo de
 Entidade-Relacionamento (DER) apresentado na Figura 2 demonstra a normalização
 
 ## 25
@@ -702,7 +739,8 @@ pelos autores (2026).
 5.4. Fluxos de Processos
 Para garantir uma experiência intuitiva, foram mapeados os fluxos lógicos
 de agendamento e compra. O fluxo de agendamento (Figura 3) detalha a jornada do
-cliente até a integração com o Google Calendar, enquanto o fluxo de compra (Figura
+cliente até a integração com o Google Calendar e o contato via WhatsApp, enquanto
+o fluxo de compra (Figura
 4) descreve o processo de checkout e integração com o gateway de pagamento.
 
 ## 26
@@ -748,9 +786,10 @@ banco de dados relacional, a criação dos diagramas de casos de uso e fluxos l�
 além  da  prototipação  das interfaces  gráficas.  Essa  etapa  funciona  como  alicerce
 estrutural para o progresso do aplicativo.
 Depois    da    fase    de    planejamento,    começaremos    as    etapas    de
-desenvolvimento do front-end com React e do back-end com Laravel e MySQL. Além
-disso,  serão  feitas  as  integrações  com  serviços  externos,  como  WhatsApp,  Google
-Calendar  e  gateway  de  pagamento  Mercado Pago,  permitindo  a  automação  dos
+desenvolvimento da aplicação em Next.js, React e PostgreSQL. Além
+disso,  serão  feitas  as  integrações  com  serviços  externos,  como  Google
+Calendar,  e-mail  transacional,  links  de  WhatsApp  e  gateway  de  pagamento
+Mercado Pago,  permitindo  a  automação  dos
 processos de agendamento e vendas online.
 
 ## 29
@@ -819,11 +858,15 @@ technologies as tools to advance tourism marketing. Tourism Planning & Developme
 Abingdon, v. 14, n. 1, p. 1-15, jan. 2017.
 LAUDON,  K.  C.;  LAUDON,  J.  P.  Management  Information  Systems:
 Managing the Digital Firm. 13. ed. New York: Pearson, 2014.
+LAUDON,  Kenneth  C.;  TRAVER,  Carol  Guercio.  E-commerce:  business,
+technology, society. 16. ed. Boston: Pearson, 2021.
 MERCADO PAGO. Documentação da API do Mercado Pago. São Paulo:
 Mercado Livre, 2024. Disponível em:
 https://www.mercadopago.com.br/developers/pt/docs. Acesso em: 5 maio 2026.
 NEWMAN,  S.  Building  Microservices:  Designing  Fine-Grained  Systems.
 Sebastopol: O'Reilly Media, 2015.
+NODE.JS. Node.js Documentation. OpenJS Foundation, 2026. Disponível em:
+https://nodejs.org/docs. Acesso em: 20 ago. 2026.
 PCI SECURITY STANDARDS COUNCIL. PCI DSS v. 4.0. Wakefield: PCI
 SSC, mar. 2022. Disponível em: https://www.pcisecuritystandards.org. Acesso em: 12
 abr. 2026.
@@ -834,31 +877,24 @@ abr. 2026.
 
 POIMANDRES.  React  Three  Fiber: A  React  Renderer  for  Three.js.  2024.
 Disponível em: https://docs.pmnd.rs/react-three-fiber. Acesso em: 12 abr. 2026.
+POSTGRESQL GLOBAL DEVELOPMENT GROUP. PostgreSQL 17 Documentation.
+2026. Disponível em: https://www.postgresql.org/docs/17/. Acesso em: 20 ago. 2026.
 PRESSMAN,  Roger  S.;  MAXIM,  Bruce  R.  Engenharia  de  Software:  uma
 abordagem profissional. 9. ed. Porto Alegre: AMGH, 2021.
 PRODANOV, Cleber Cristiano; FREITAS, Ernani Cesar de. Metodologia do
 Trabalho Científico: métodos e técnicas da pesquisa e do trabalho acadêmico.
-- ed. Novo Hamburgo: Feevale, 2013.
+2. ed. Novo Hamburgo: Feevale, 2013.
 RESCORLA,  E.  RFC  8446:  The  Transport  Layer  Security  (TLS)  Protocol
 Version 1.3. Fremont: IETF, ago. 2018. Disponível em:
 https://datatracker.ietf.org/doc/html/rfc8446. Acesso em: 10 mar. 2026.
 RICHARDSON, L.; RUBY, S. RESTful Web Services. Sebastopol: O'Reilly
 ## Media, 2007.
+SOMMERVILLE, Ian. Engenharia de Software. 10. ed. São Paulo: Pearson
+Education do Brasil, 2019.
 STEFANOV, S. React: Up & Running. Sebastopol: O'Reilly Media, 2016.
 TANENBAUM, A. S.; WETHERALL, D. J. Computer Networks. 5. ed. Upper
 ## Saddle River: Prentice Hall, 2011.
 TURBAN, E. et al. Electronic Commerce: A Managerial and Social Networks
 Perspective. 8. ed. New York: Springer, 2015.
-LAUDON,  Kenneth  C.;  TRAVER,  Carol  Guercio.  E-commerce:  business,
-technology, society. 16. ed. Boston: Pearson, 2021.
-
-PRESSMAN,  Roger  S.;  MAXIM,  Bruce  R.  Engenharia  de  Software:  uma
-abordagem profissional. 9. ed. Porto Alegre: AMGH, 2021.
-
-## 33
-
-
-
-
-SOMMERVILLE, Ian. Engenharia de Software. 10. ed. São Paulo: Pearson
-Education do Brasil, 2019.
+VERCEL. Next.js Documentation. 2026. Disponível em: https://nextjs.org/docs.
+Acesso em: 20 ago. 2026.
