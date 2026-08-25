@@ -8,11 +8,30 @@ Fonte: `ESCOPO-E-STACK.md` · 68 features · 8 semanas.
 
 ## Fase 0 — Fundação (semana 1)
 
-Infra, não é RF, mas nada sobe sem isso: repo, Docker Compose, Postgres, Prisma, layout, seed.
+Infra primeiro, login depois. Postgres sobe no Docker; não instala na máquina.
+
+### 0A — Contrato e ambiente (dias 1–2, antes de qualquer RF)
+
+| # | ID | Item | P |
+|---|----|------|---|
+| A1 | INFRA | Git/GitHub: `main` protegida, PR obrigatório, conventional commits | P0 |
+| A2 | INFRA | Node 24 LTS + Docker Desktop em todas as máquinas; registrar em `package.json` (`engines`), `.nvmrc` e README | P0 |
+| A3 | APP | `create-next-app` neste repo (Next 16, App Router, TypeScript, Tailwind) | P0 |
+| A4 | INFRA | Docker Compose com PostgreSQL 17 | P0 |
+| A5 | DADOS | `schema.prisma` completo a partir de `DER.md` (auth, acervo, pedido, agenda; sem `health_form`) | P0 |
+| A6 | DADOS | Revisão humana do modelo: papéis, RN02/RN10/RN15, LGPD | P0 |
+| A7 | INFRA | Migrate + seed: um `ADMIN`, um `CLIENTE`, um `ARTISTA` | P0 |
+| A8 | UI | Layout base e design system (shadcn/ui) | P0 |
+
+**Pronto 0A quando:** qualquer integrante clona, sobe o Compose e vê tabelas + seed. Ainda não precisa de tela de login.
+
+Papéis no seed e no schema (fecha o RF08 no banco, sem tela): cadastro público sempre cria `CLIENTE`; `ARTISTA` nasce no admin (RF63) ou no seed; o primeiro `ADMIN` só existe via seed.
+
+### 0B — Autenticação (dias 2–5)
 
 | # | ID | Feature | P |
 |---|----|---------|---|
-| 1 | RF08 | Papéis Cliente / Artista / Admin | P0 |
+| 1 | RF08 | Papéis Cliente / Artista / Admin (guarda de rota + Better Auth) | P0 |
 | 2 | RF01 | Cadastro (nome, e-mail, telefone, senha) | P0 |
 | 3 | RF02 | Login com sessão no banco, revogável | P0 |
 | 4 | RF04 | Recuperação de senha por e-mail | P0 |
@@ -20,7 +39,7 @@ Infra, não é RF, mas nada sobe sem isso: repo, Docker Compose, Postgres, Prism
 | 6 | RF05 | Verificação de e-mail | P1 |
 | 7 | RF03 | Login com Google | P1 |
 
-**Pronto quando:** qualquer integrante sobe o ambiente, cadastra e entra.
+**Pronto 0B quando:** qualquer integrante sobe o ambiente, cadastra e entra.
 
 ---
 

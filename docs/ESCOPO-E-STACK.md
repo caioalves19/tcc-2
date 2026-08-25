@@ -5,7 +5,7 @@
 > Tecnologias) e 5 (Modelagem e Arquitetura) do `TCC.md`, que foram escritos com apoio intensivo de IA
 > e contêm imprecisões técnicas, requisitos incompletos e escolhas tecnológicas sem critério explícito.
 >
-> **Versão:** 1.1 · **Data:** agosto de 2026 · **Fase:** TCC 2 — implementação
+> **Versão:** 1.2 · **Data:** agosto de 2026 · **Fase:** TCC 2 — implementação
 > **Equipe:** Caio Scorsoni, Caio Vinicius, Guilherme Salustiano, Gustavo Magalhães, Robert Estevan
 
 ---
@@ -712,9 +712,12 @@ especialmente importante quando parte do código é gerada por IA.
 
 ## 17. Cronograma de 8 semanas
 
+Detalhamento da semana 1 em `ORDEM-DE-EXECUCAO.md` (0A ambiente/schema, depois 0B auth). Postgres
+sobe no Docker Compose; não se instala na máquina do integrante.
+
 | Semana | Entrega | Marco verificável |
 |--------|---------|-------------------|
-| 1 | Fundação: repositório, Docker Compose, Postgres, esquema Prisma completo, Better Auth, layout base e design system, dados de exemplo | Login funcionando e ambiente reproduzível por qualquer integrante |
+| 1 | **0A:** Node 24 + Docker, `create-next-app`, Compose com Postgres 17, `schema.prisma` completo (DER), migrate, seed (admin/cliente/artista), layout base. **0B:** Better Auth, papéis, cadastro, sessão, recuperação de senha, edição de perfil | `docker compose up` reproduzível; qualquer integrante cadastra e entra |
 | 2 | Catálogo público e administração de acervo: CRUD de obras, imagens no R2, artistas, tags, filtros e busca | Obra cadastrada no admin aparece no catálogo com filtro e busca |
 | 3 | E-commerce: carrinho, checkout, Mercado Pago em sandbox, webhook, pedidos e e-mails | Compra de ponta a ponta com pagamento aprovado, obra marcada como vendida |
 | 4 | Agendamento: regras de disponibilidade, bloqueios, geração de horários, wizard, restrição anti-sobreposição, aprovação | Agendamento concluído sem sobreposição possível |
