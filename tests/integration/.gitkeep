@@ -1,0 +1,2 @@
+# Integração com Postgres real — popular na 0A (RN04, RN10, webhook).
+# Até lá: `npm run test:integration` passa sem testes (passWithNoTests).
