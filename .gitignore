@@ -18,3 +18,13 @@ test-results/
 !.cursor/rules/**
 !.cursor/skills/
 !.cursor/skills/**
+
+# Claude Code: versionar skills/rules/agents do projeto; ignorar overrides locais
+.claude/*
+!.claude/agents/
+!.claude/agents/**
+!.claude/rules/
+!.claude/rules/**
+!.claude/skills/
+!.claude/skills/**
+CLAUDE.local.md

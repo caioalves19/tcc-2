@@ -2,6 +2,8 @@
 
 Constituição para agentes de IA neste repositório. Spec canônica: `docs/ESCOPO-E-STACK.md`, `docs/DER.md`, `docs/ORDEM-DE-EXECUCAO.md`, `docs/BRIEFING.md`.
 
+Cursor lê `.cursor/`. Claude Code lê `CLAUDE.md` (importa este arquivo) + `.claude/`. Ao mudar uma skill, regra ou agent, atualize **os dois lados**.
+
 ## Pedido (4 blocos) — quem preenche
 
 Os 4 blocos são obrigatórios **antes de codar**. Quem digita pode ser o humano **ou** o agente.
