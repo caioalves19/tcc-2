@@ -1,10 +1,8 @@
 # Kolô — Diagrama Entidade-Relacionamento (DER)
 
-Fonte: seção 13 de `ESCOPO-E-STACK.md` (versão 1.1, agosto 2026).
+Fonte: seção 10 de `ESCOPO-E-STACK.md` (versão 2.1, agosto 2026), alinhado a `TCC.txt`.
 
-Convenções do modelo: identificadores UUID; valores monetários em centavos (`int`); datas em UTC;
-exclusão lógica onde houver relevância contábil. Não há entidade de ficha clínica (`health_form`)
-nem armazenamento do teor do termo — checks e conferência presencial ficam em `appointment`.
+Convenções do modelo: identificadores UUID; valores monetários em centavos (`int`, RN07); datas em UTC, apresentadas em `America/Sao_Paulo` (RN15); exclusão lógica onde houver relevância contábil. Não há entidade de ficha clínica (`health_form`) nem armazenamento do teor do termo — os aceites do wizard e a conferência presencial ficam em `appointment` (RN03, RNF19, RNF20).
 
 ```mermaid
 erDiagram
@@ -16,11 +14,9 @@ erDiagram
     user ||--o{ cart : "carrinhos"
     user ||--o{ order : "pedidos"
     user ||--o{ appointment : "agendamentos"
-    user ||--o{ coupon_redemption : "resgates"
-    user ||--o{ audit_log : "ações"
     user ||--o{ email_log : "e-mails"
 
-    %% ===== Acervo e galeria =====
+    %% ===== Acervo =====
     artist ||--o{ artwork : "obras"
     artist }o--o{ tattoo_style : "estilos"
     artist ||--o{ portfolio_item : "portfólio"
@@ -31,8 +27,6 @@ erDiagram
     artwork ||--o{ artwork_image : "imagens"
     artwork ||--o{ artwork_tag : "classificação"
     tag ||--o{ artwork_tag : "obras"
-    artwork ||--o{ gallery_placement : "nas salas"
-    gallery_room ||--o{ gallery_placement : "posicionamentos"
     artwork ||--o{ cart_item : "no carrinho"
     artwork ||--o{ order_item : "vendida em"
     artwork ||--o{ artwork_reservation : "reservas"
@@ -41,11 +35,7 @@ erDiagram
     cart ||--o{ cart_item : "itens"
     order ||--o{ order_item : "itens"
     order ||--o{ payment : "pagamentos"
-    order ||--o| coupon_redemption : "cupom"
-    coupon ||--o{ coupon_redemption : "usos"
-    appointment ||--o{ payment : "sinal"
-    appointment ||--o| coupon_redemption : "cupom"
-    session ||--o{ artwork_reservation : "sessão"
+    session ||--o{ artwork_reservation : "reserva"
 
     %% ===== Tatuagem e agenda =====
     portfolio_item }o--o{ tattoo_style : "estilos"
@@ -127,6 +117,7 @@ erDiagram
         int preco_centavos
         enum situacao "rascunho disponivel reservada vendida"
         boolean destaque
+        string modelo_3d_url
         timestamptz excluido_em
     }
 
@@ -148,25 +139,6 @@ erDiagram
     artwork_tag {
         uuid artwork_id PK_FK
         uuid tag_id PK_FK
-    }
-
-    gallery_room {
-        uuid id PK
-        string nome
-        string slug UK
-        text descricao
-        boolean ativa
-    }
-
-    gallery_placement {
-        uuid id PK
-        uuid gallery_room_id FK
-        uuid artwork_id FK
-        string parede
-        json posicao
-        float escala
-        json rotacao
-        int ordem
     }
 
     cart {
@@ -208,32 +180,9 @@ erDiagram
         int preco_centavos_copia
     }
 
-    coupon {
-        uuid id PK
-        string codigo UK
-        enum tipo "fixo percentual"
-        int valor
-        timestamptz valido_de
-        timestamptz valido_ate
-        int limite_usos
-        int valor_minimo_centavos
-        enum escopo "obras tatuagem ambos"
-        boolean ativo
-    }
-
-    coupon_redemption {
-        uuid id PK
-        uuid coupon_id FK
-        uuid user_id FK
-        uuid order_id FK
-        uuid appointment_id FK
-        timestamptz resgatado_em
-    }
-
     payment {
         uuid id PK
         uuid order_id FK
-        uuid appointment_id FK
         string provedor
         string id_externo
         enum metodo "pix cartao boleto"
@@ -254,7 +203,6 @@ erDiagram
         uuid id PK
         uuid artwork_id FK
         uuid session_id FK
-        uuid order_id FK
         timestamptz expira_em
     }
 
@@ -310,14 +258,13 @@ erDiagram
         uuid artist_id FK
         uuid tattoo_style_id FK
         uuid size_tier_id FK
-        enum situacao
+        enum situacao "pendente aprovada recusada confirmada cancelada concluida"
         timestamptz inicia_em
         timestamptz termina_em
         int duracao_estimada_min
         string regiao_corpo
         text descricao
         int orcamento_centavos
-        int sinal_centavos
         string google_event_id
         timestamptz aviso_anamnese_em
         timestamptz aviso_termo_em
@@ -325,8 +272,6 @@ erDiagram
         boolean anamnese_apresentada
         boolean termo_assinado
         boolean identidade_conferida
-        boolean autorizacao_imagem
-        enum comparecimento "concluido no_show"
         timestamptz excluido_em
     }
 
@@ -360,37 +305,26 @@ erDiagram
         jsonb metadados
         timestamptz enviado_em
     }
-
-    audit_log {
-        uuid id PK
-        uuid user_id FK
-        string acao
-        string entidade
-        uuid entidade_id
-        jsonb valores_antes
-        jsonb valores_depois
-        string ip
-        timestamptz em
-    }
 ```
 
 ## Restrições que o diagrama não desenha
 
 | Onde | Regra |
-|------|--------|
-| `appointment` | `EXCLUDE USING gist (artist_id WITH =, tstzrange(inicia_em, termina_em) WITH &&)` — impede sobreposição na agenda do mesmo artista (RN10) |
+|------|-------|
+| `appointment` | `EXCLUDE USING gist (artist_id WITH =, tstzrange(inicia_em, termina_em) WITH &&)` — impede sobreposição na agenda do mesmo artista (RN08) |
+| `appointment` | Nasce pendente e só ocupa a agenda de forma definitiva após aprovação do artista (RN10) |
+| `appointment` | Só pode ser marcado como concluído após o staff confirmar anamnese, termo e identidade/maioridade (RN12); aceites do wizard e conferências registrados com data e hora (RNF20) |
 | `artwork` | Peça única: estoque 1; no máximo uma venda (RN02, RN04) |
 | `artwork_reservation` | Reserva de 30 min no checkout; expira sem pagamento aprovado (RN03) |
+| `payment` | Pertence sempre a um `order` — não há cobrança de sinal para agendamento (fora de escopo, seção 14) |
 | `webhook_event.id_evento` | Único, para o webhook do Mercado Pago ser idempotente (RNF11) |
 | `order.endereco_copia` | Endereço congelado no pedido; não é FK viva para `address` |
 | `order_item` | Cópia de título e preço no momento da compra |
-| `payment` | XOR: pertence a um `order` **ou** a um `appointment` (sinal), nunca aos dois |
-| `coupon_redemption` | XOR: um resgate em `order` **ou** em `appointment`; cupom não é cumulativo (RN07) |
-| `user.excluido_em` | Exclusão LGPD anonimiza o cliente e preserva pedidos pagos (RN22) |
+| `user.excluido_em` | Exclusão LGPD anonimiza o cliente e preserva pedidos pagos (RN19) |
 
 ## Entidades isoladas de propósito
 
-- **`verification`** — tokens de verificação de e-mail e recuperação de senha (Better Auth); o identificador é o e-mail, sem FK para `user`.
+- **`verification`** — tokens de uso único do Better Auth (recuperação de senha, RF04); o identificador é o e-mail, sem FK para `user`.
 - **`webhook_event`** — log de idempotência do gateway; não precisa de FK para `payment`.
 - **`site_setting`** e **`contact_message`** — configuração e formulário de contato, sem dono no modelo.
-- **Não existem** `health_form` nem entidade de teor do termo de consentimento.
+- **Não existem** `health_form` nem entidade de teor do termo (RN03, RNF19). Também não existem cupom, sala de galeria, sinal de agendamento, log de auditoria, flag de autorização de imagem nem registro de comparecimento — fora de escopo (seção 14 de `ESCOPO-E-STACK.md`).
