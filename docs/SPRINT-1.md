@@ -87,9 +87,9 @@ Repo no GitHub com regras de colaboração da equipe.
 **Resp:** Caio S. · **Deps:** PBI-03
 `create-next-app` na raiz do repo: Next 16 (App Router), TypeScript strict, Tailwind 4.
 
-- [ ] `npm run dev` sobe a home padrão
-- [ ] `engines` (Node 24) no `package.json` + `.nvmrc`
-- [ ] ESLint 9 + Prettier configurados (`npm run lint`, `format`)
+- [x] `npm run dev` sobe a home padrão
+- [x] `engines` (Node 24) no `package.json` + `.nvmrc`
+- [x] ESLint 9 + Prettier configurados (`npm run lint`, `format`)
 
 
 
