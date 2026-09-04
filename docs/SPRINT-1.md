@@ -98,9 +98,9 @@ Repo no GitHub com regras de colaboração da equipe.
 **Resp:** Caio S. · **Deps:** PBI-04
 Compose com PostgreSQL 17 para dev local (Postgres só no Docker, nunca instalado na máquina).
 
-- [ ] `docker compose up` sobe o Postgres com volume persistente
-- [ ] `.env.example` com `DATABASE_URL` documentada
-- [ ] README: um comando do clone ao banco de pé
+- [x] `docker compose up` sobe o Postgres com volume persistente
+- [x] `.env.example` com `DATABASE_URL` documentada
+- [x] README: um comando do clone ao banco de pé
 
 ---
 
