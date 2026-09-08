@@ -76,9 +76,9 @@ O `DER.md` atual é rascunho da revisão assistida; este card o redesenha/valida
 **Resp:** Caio S.
 Repo no GitHub com regras de colaboração da equipe.
 
-- [ ] `main` protegida: push direto bloqueado, PR obrigatório
-- [ ] Conventional commits documentado no README
-- [ ] 5 integrantes com acesso de escrita
+- [x] `main` protegida: push direto bloqueado, PR obrigatório
+- [x] Conventional commits documentado no README
+- [x] 5 integrantes com acesso de escrita
 
 
 
