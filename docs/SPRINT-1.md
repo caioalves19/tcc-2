@@ -37,39 +37,29 @@ Blocos de dependência (dentro de cada bloco, a ordem importa; entre blocos, dá
 
 ---
 
-
-
 ## Bloco A — Spec (gate)
-
-
 
 ### PBI-01 — Revisão e aprovação dos requisitos
 
 **Resp:** os 5 integrantes
 Leitura crítica do `ESCOPO-E-STACK.md` v2.1 inteiro (RF, RNF, RN, fora de escopo) antes de qualquer código. O doc mudou muito na revisão — ninguém coda em cima de requisito não aprovado.
 
-- [ ] Cada integrante revisou individualmente e registrou divergências (comentário/issue)
-- [ ] Ajustes decididos em conjunto e aplicados ao doc
-- [ ] Versão final aprovada por unanimidade — gate para o PBI-02
-
-
+- [x] Cada integrante revisou individualmente e registrou divergências (comentário/issue)
+- [x] Ajustes decididos em conjunto e aplicados ao doc
+- [x] Versão final aprovada por unanimidade — gate para o PBI-02
 
 ### PBI-02 — Redesenho do DER
 
 **Resp:** Gustavo · **Deps:** PBI-01
-O `DER.md` atual é rascunho da revisão assistida; este card o redesenha/valida formalmente contra os requisitos aprovados.
+`DER.md` validado contra o `ESCOPO-E-STACK.md` v2.1 (seção 10 + RF/RN/RNF). Sem `health_form`, cupom, sinal, `audit_log` nem demais itens da seção 14.
 
-- [ ] Toda entidade tem RF/RN que a justifica; nada fora de escopo presente
-- [ ] Restrições (RN02, RN08, RN15, RN19) mapeadas na tabela de restrições
-- [ ] Revisão por ao menos 1 integrante ≠ autor; mermaid renderiza sem erro
+- [x] Toda entidade tem RF/RN que a justifica; nada fora de escopo presente
+- [x] Restrições (RN02, RN08, RN15, RN19) mapeadas na tabela de restrições
+- [x] Revisão por ao menos 1 integrante ≠ autor; mermaid renderiza sem erro
 
 ---
 
-
-
 ## Bloco B — Repositório
-
-
 
 ### PBI-03 — Repositório e proteções
 
@@ -80,8 +70,6 @@ Repo no GitHub com regras de colaboração da equipe.
 - [x] Conventional commits documentado no README
 - [x] 5 integrantes com acesso de escrita
 
-
-
 ### PBI-04 — App Next.js base
 
 **Resp:** Caio S. · **Deps:** PBI-03
@@ -90,8 +78,6 @@ Repo no GitHub com regras de colaboração da equipe.
 - [x] `npm run dev` sobe a home padrão
 - [x] `engines` (Node 24) no `package.json` + `.nvmrc`
 - [x] ESLint 9 + Prettier configurados (`npm run lint`, `format`)
-
-
 
 ### PBI-05 — Docker Compose + Postgres
 
@@ -104,32 +90,24 @@ Compose com PostgreSQL 17 para dev local (Postgres só no Docker, nunca instalad
 
 ---
 
-
-
 ## Bloco C — Dados
-
-
 
 ### PBI-06 — schema.prisma a partir do DER
 
-**Resp:** Gustavo · **Deps:** PBI-02, PBI-05
+**Resp:** Guilherme · **Deps:** PBI-02, PBI-05
 Modelo completo conforme o `DER.md` redesenhado (auth, acervo, pedido, agenda).
 
 - [ ] Todas as entidades do DER; sem `health_form`, cupom, `audit_log` ou sinal
 - [ ] Convenções: UUID, dinheiro em centavos (`int`), datas UTC
 - [ ] Constraint de agenda sem sobreposição (RN08) na migração SQL
 
-
-
 ### PBI-07 — Revisão humana do modelo
 
-**Resp:** Guilherme (não pode ser o autor do PBI-06) · **Deps:** PBI-06
+**Resp:** Gustavo (não pode ser o autor do PBI-06) · **Deps:** PBI-06
 Revisão do schema contra a spec antes de virar migração.
 
 - [ ] Checklist assinado: papéis, RN02, RN08, RN15, anonimização LGPD (RN19)
 - [ ] Divergências registradas e corrigidas no PR
-
-
 
 ### PBI-08 — Migração inicial + seed
 
@@ -142,11 +120,7 @@ Primeira migração aplicada e dados mínimos de trabalho.
 
 ---
 
-
-
 ## Bloco D — Marca e UI
-
-
 
 ### PBI-09 — Identidade visual e tokens
 
@@ -156,8 +130,6 @@ Definição mínima de marca antes de qualquer tela: paleta, tipografia, logo e 
 - [ ] Paleta (claro/escuro), tipografia e espaçamentos registrados como tokens (CSS variables / tema Tailwind)
 - [ ] Logo/ícone e uso básico definidos
 - [ ] Contraste AA verificado nos pares principais (RNF23)
-
-
 
 ### PBI-10 — Layout base + design system
 
@@ -170,11 +142,7 @@ shadcn/ui instalado sobre os tokens da marca e casca visual da aplicação.
 
 ---
 
-
-
 ## Bloco E — Autenticação
-
-
 
 ### PBI-11 — Better Auth + papéis
 
@@ -185,8 +153,6 @@ Better Auth configurado com sessão no banco e controle por papel (RF07).
 - [ ] Papel `CLIENTE`/`ARTISTA`/`ADMIN` no usuário
 - [ ] Guarda de rota: `/admin` só ADMIN; área do cliente exige login
 
-
-
 ### PBI-12 — Cadastro de cliente
 
 **Resp:** Caio V. · **Deps:** PBI-11
@@ -195,8 +161,6 @@ Cadastro público com nome, e-mail, telefone e senha (RF01).
 - [ ] Validação com Zod (e-mail válido, senha mínima, telefone)
 - [ ] Senha salva só como hash; e-mail duplicado dá erro amigável
 - [ ] Cadastro cria usuário `CLIENTE` e inicia sessão
-
-
 
 ### PBI-13 — Login/logout com sessão revogável
 
@@ -207,8 +171,6 @@ Login por e-mail e senha (RF02).
 - [ ] Logout revoga a sessão (nova requisição não autentica)
 - [ ] Rate limit na rota de login (RNF08)
 
-
-
 ### PBI-14 — Recuperação de senha
 
 **Resp:** Robert · **Deps:** PBI-12
@@ -218,8 +180,6 @@ Fluxo de "esqueci a senha" por e-mail (RF04).
 - [ ] Token inválido/expirado/reusado é rejeitado
 - [ ] Ao trocar a senha, sessões antigas são revogadas
 
-
-
 ### PBI-15 — Edição de perfil
 
 **Resp:** Guilherme · **Deps:** PBI-12
@@ -228,8 +188,6 @@ Cliente edita nome, telefone e senha (RF05).
 - [ ] Nome e telefone editáveis com validação
 - [ ] Troca de senha exige senha atual
 - [ ] Feedback de sucesso/erro visível
-
-
 
 ### PBI-16 — Login com Google (P1)
 
