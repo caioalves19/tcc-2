@@ -2,7 +2,7 @@
 
 Checklist de construção. Cada item depende do que está acima. **P0** = defesa · **P1** = se der tempo.
 
-Fonte: `ESCOPO-E-STACK.md` v2.1 · 51 features · 8 semanas.
+Fonte: `ESCOPO-E-STACK.md` v2.2 · RF01–RF31 · 8 semanas.
 
 ---
 
@@ -14,60 +14,55 @@ Infra primeiro, login depois. Postgres sobe no Docker; não instala na máquina.
 
 | # | ID | Item | P |
 |---|----|------|---|
-| A0 | SPEC | Revisão e aprovação do `ESCOPO-E-STACK.md` v2.1 pelos 5 integrantes; DER redesenhado na sequência | P0 |
+| A0 | SPEC | Revisão e aprovação do `ESCOPO-E-STACK.md` v2.2 pelos 5 integrantes; DER redesenhado na sequência | P0 |
 | A1 | INFRA | Git/GitHub: `main` protegida, PR obrigatório, conventional commits | P0 |
 | A2 | INFRA | Node 24 LTS + Docker Desktop em todas as máquinas; registrar em `package.json` (`engines`), `.nvmrc` e README | P0 |
 | A3 | APP | `create-next-app` neste repo (Next 16, App Router, TypeScript, Tailwind) | P0 |
 | A4 | INFRA | Docker Compose com PostgreSQL 17 | P0 |
-| A5 | DADOS | `schema.prisma` completo a partir de `DER.md` (auth, acervo, pedido, agenda; sem `health_form`) | P0 |
-| A6 | DADOS | Revisão humana do modelo: papéis, RN02/RN08/RN15, LGPD | P0 |
+| A5 | DADOS | `schema.prisma` completo a partir de `DER.md` (auth, acervo, pedido, agenda manual; sem `health_form`, slots, 3D) | P0 |
+| A6 | DADOS | Revisão humana do modelo: papéis, RN02/RN08/RN09, LGPD (RN12) | P0 |
 | A7 | INFRA | Migrate + seed: um `ADMIN`, um `CLIENTE`, um `ARTISTA` | P0 |
 | A8 | UI | Identidade visual: paleta, tipografia, logo e tokens | P0 |
 | A9 | UI | Layout base e design system (shadcn/ui) sobre os tokens da marca | P0 |
 
 **Pronto 0A quando:** qualquer integrante clona, sobe o Compose e vê tabelas + seed. Ainda não precisa de tela de login.
 
-Papéis no seed e no schema (fecha o RF07 no banco, sem tela): cadastro público sempre cria `CLIENTE`; `ARTISTA` nasce no admin (RF42) ou no seed; o primeiro `ADMIN` só existe via seed.
+Papéis no seed e no schema (fecha o RF06 no banco, sem tela): cadastro público sempre cria `CLIENTE`; `ARTISTA` nasce no admin (RF28) ou no seed; o primeiro `ADMIN` só existe via seed.
 
 ### 0B — Autenticação (dias 2–5)
 
 | # | ID | Feature | P |
 |---|----|---------|---|
-| 1 | RF07 | Papéis Cliente / Artista / Admin (guarda de rota + Better Auth) | P0 |
+| 1 | RF06 | Papéis Cliente / Artista / Admin (guarda de rota + Better Auth) | P0 |
 | 2 | RF01 | Cadastro (nome, e-mail, telefone, senha) | P0 |
 | 3 | RF02 | Login com sessão no banco, revogável | P0 |
-| 4 | RF04 | Recuperação de senha por e-mail | P0 |
-| 5 | RF05 | Edição de perfil | P0 |
-| 6 | RF03 | Login com Google | P1 |
+| 4 | RF03 | Recuperação de senha por e-mail | P0 |
+| 5 | RF04 | Edição de perfil | P0 |
 
-**Pronto 0B quando:** qualquer integrante sobe o ambiente, cadastra e entra.
+**Pronto 0B quando:** qualquer integrante sobe o ambiente, cadastra e entra. Sem login social.
 
 ---
 
 ## Fase 1 — Acervo (semana 2)
 
-Artistas e obras existem antes de loja, agenda e 3D.
+Artistas e obras existem antes de loja e agenda. Sem páginas públicas de artista e sem 3D.
 
 | # | ID | Feature | P |
 |---|----|---------|---|
-| 7 | RF42 | CRUD de artistas, estilos e tags | P0 |
-| 8 | RF41 | Upload de imagens (tipo, tamanho, miniatura) | P0 |
-| 9 | RF40 | CRUD de obras (ficha, preço, situação, destaque) | P0 |
-| 10 | RF09 | Listagem pública de artistas | P0 |
-| 11 | RF10 | Página do artista (obras + portfólio + agendar) | P0 |
-| 12 | RF12 | Catálogo em grade (paginação, ordenação) | P0 |
-| 13 | RF13 | Filtros (artista, técnica, faixa de preço, disponibilidade) | P0 |
-| 14 | RF14 | Página da obra (fotos, ficha técnica; o 3D entra na fase 5) | P0 |
-| 15 | RF08 | Home (destaques, chamada para o agendamento) | P0 |
-| 16 | RF11 | Privacidade, termos e cancelamento | P0 |
-| 17 | — | Busca textual no catálogo, tolerante a acento | P1 |
-| 18 | — | Contato com antibot | P1 |
-| 19 | RF45 | Configurações do site (contato, horários, textos institucionais, políticas) | P1 |
+| 6 | RF28 | CRUD de artistas, estilos e tags | P0 |
+| 7 | RF27 | Upload de imagens (tipo, tamanho, miniatura) | P0 |
+| 8 | RF26 | CRUD de obras (ficha, preço, estoque, situação, destaque) | P0 |
+| 9 | RF09 | Catálogo em grade (paginação, ordenação) | P0 |
+| 10 | RF10 | Página da obra (fotos e ficha técnica) | P0 |
+| 11 | RF07 | Home (destaques, chamada para o agendamento) | P0 |
+| 12 | RF08 | Privacidade, termos e cancelamento | P0 |
+| 13 | — | Busca textual no catálogo, tolerante a acento | P1 |
+| 14 | — | Contato com antibot | P1 |
+| 15 | RF31 | Configurações do site (contato, horários, textos institucionais, políticas) | P1 |
 
 **Pronto quando:** admin cadastra uma obra e ela aparece no catálogo.
 
-> Itens 17 e 18 não têm RF próprio na v2.1: a busca textual está implícita na seção 10 (índices em `artwork`) e o contato na visão do produto + `contact_message` + Turnstile. Se fizerem falta na defesa, viram RF46/RF47 no ESCOPO.
-> O portfólio exibido na página do artista (item 11) é alimentado por seed até a fase 5.
+> Itens 13 e 14 não têm RF próprio na v2.2: a busca textual está implícita na seção 10 (índices em `artwork`) e o contato na visão do produto + `contact_message` + Turnstile.
 
 ---
 
@@ -75,82 +70,62 @@ Artistas e obras existem antes de loja, agenda e 3D.
 
 | # | ID | Feature | P |
 |---|----|---------|---|
-| 20 | RF06 | Endereços de entrega | P0 |
-| 21 | RF16 | Carrinho persistente | P0 |
-| 22 | RF20 | Reserva temporária da obra no checkout | P0 |
-| 23 | RF17 | Checkout (resumo, endereço, frete) | P0 |
-| 24 | RF18 | Mercado Pago (Pix, cartão, boleto) | P0 |
-| 25 | RF19 | Pedido confirmado só no webhook aprovado | P0 |
-| 26 | RF21 | E-mail a cada status do pedido | P0 |
-| 27 | RF22 | Acompanhamento e rastreio pelo cliente | P0 |
-| 28 | RF43 | Gestão de pedidos no admin | P0 |
-| 29 | RF17 | Frete (retirada / valor fixo / tabela) | P1 |
-| 30 | RF43 | Cancelar pedido não pago; estorno no admin | P1 |
+| 16 | RF05 | Um endereço de entrega | P0 |
+| 17 | RF11 | Carrinho persistente | P0 |
+| 18 | RF15 | Reserva temporária das unidades no checkout (10 min) | P0 |
+| 19 | RF12 | Checkout (resumo, endereço, frete) | P0 |
+| 20 | RF13 | Mercado Pago (Pix, cartão, boleto) | P0 |
+| 21 | RF14 | Pedido confirmado só no webhook aprovado | P0 |
+| 22 | RF16 | Acompanhamento e rastreio pelo cliente | P0 |
+| 23 | RF29 | Gestão de pedidos no admin | P0 |
+| 24 | RF12 | Frete (retirada / valor fixo / tabela) | P1 |
+| 25 | RF29 | Cancelar pedido não pago; estorno no admin | P1 |
 
-**Pronto quando:** compra sandbox fecha, obra fica vendida, e-mail chega.
+**Pronto quando:** compra sandbox fecha e o estoque da obra é baixado. Sem e-mail de pedido.
 
 ---
 
 ## Fase 3 — Agenda (semana 4)
 
-| # | ID | Feature | P |
-|---|----|---------|---|
-| 31 | RF29 | Disponibilidade semanal do artista | P0 |
-| 32 | RF30 | Bloqueio de datas (férias, feriados) | P0 |
-| 33 | RF28 | Só horários realmente livres | P0 |
-| 34 | RF26 | Wizard (artista → estilo → região → tamanho → referências → horário → checks → confirmação) | P0 |
-| 35 | RF27 | Upload de referências | P0 |
-| 36 | RF31 | Solicitação → aprovação/recusa → confirmação | P0 |
-| 37 | RF35 | Painel semanal do artista + pendentes | P0 |
-
-**Pronto quando:** cliente solicita, artista aprova, não há horário duplicado.
-
----
-
-## Fase 4 — Integrações da agenda + conferência presencial (semana 5)
+Wizard público → WhatsApp. O tatuador cadastra o horário depois. Sem motor de slots, Calendar ou lembrete.
 
 | # | ID | Feature | P |
 |---|----|---------|---|
-| 38 | RF32 | Google Calendar (criar / atualizar / cancelar) | P0 |
-| 39 | RF33 | Lembrete por e-mail | P0 |
-| 40 | RF34 | Link `wa.me` com código do agendamento | P0 |
-| 41 | RF38 | Check de maioridade + aviso de documento na sessão | P0 |
-| 42 | RF37 | Check: termo de consentimento será assinado presencialmente | P0 |
-| 43 | RF36 | Check: anamnese será preenchida presencialmente (sem dado de saúde no sistema) | P0 |
+| 26 | RF20 | Wizard público: nome → artista → estilo → região → tamanho → data/horário (preferência) → checks | P0 |
+| 27 | RF23–RF25 | Checks obrigatórios (anamnese, termo, maioridade) para liberar o link | P0 |
+| 28 | RF21 | Redirect `wa.me` com a mensagem pré-preenchida | P0 |
+| 29 | RF22 | Cadastro manual de horário pelo artista/admin (RN08) | P0 |
 
-**Pronto quando:** agendamento confirmado aparece no Calendar e gera lembrete.
+**Pronto quando:** o visitante termina o wizard e abre o Zap com os dados; o artista grava um horário sem sobrepor outro.
 
 ---
 
-## Fase 5 — Portfólio e visualização 3D (semana 6)
-
-Visualização 3D por último entre os P0 visuais: a ficha com fotos já cobre a banca se o 3D atrasar.
+## Fase 4 — Portfólio (semana 5)
 
 | # | ID | Feature | P |
 |---|----|---------|---|
-| 44 | RF23 | Portfólio de tatuagens com filtros | P0 |
-| 45 | RF24 | Busca no portfólio | P0 |
-| 46 | RF25 | Gestão do portfólio (admin e artista) | P0 |
-| 47 | RF15 | Fallback 2D da ficha da obra (entregar **antes** do 3D) | P0 |
-| 48 | RF14 | Visualizador 3D na ficha da obra (rotação e zoom) | P0 |
+| 30 | RF17 | Portfólio de tatuagens com filtros | P0 |
+| 31 | RF18 | Busca no portfólio | P0 |
+| 32 | RF19 | Gestão do portfólio (admin e artista) | P0 |
 
-**Pronto quando:** a ficha da obra abre o modelo em 3D com rotação e zoom. Se o 3D falhar, a ficha com fotos (RF15) já vale.
+**Pronto quando:** a galeria pública lista trabalhos e o artista/admin consegue incluir, editar e remover fotos.
 
 ---
 
-## Fase 6 — Fechamento (semana 7)
+## Fase 5 — Fechamento (semanas 6–7)
+
+Sem dashboard. Semana extra aproveitada para qualidade da defesa.
 
 | # | ID | Feature | P |
 |---|----|---------|---|
-| 49 | RF39 | Dashboard (faturamento, obras vendidas, agendamentos por status) | P0 |
-| 50 | RF44 | Perfil unificado do cliente no admin | P1 |
-| 51 | RN19 | LGPD: exclusão da própria conta com anonimização | P1 |
+| 33 | RF30 | Perfil unificado do cliente no admin | P1 |
+| 34 | RN12 | LGPD: exclusão da própria conta com anonimização | P1 |
 
-Em paralelo (não são RF, mas fecham a defesa): endurecer segurança, testes E2E, acessibilidade, Lighthouse.
+Em paralelo (não são RF, mas fecham a defesa): endurecer segurança, testes E2E (compra sandbox + wizard até `wa.me`), acessibilidade, Lighthouse.
 
 ---
 
-## Fase 7 — Produção (semana 8)
+## Fase 6 — Produção (semana 8)
 
 Deploy na VPS, HTTPS, backup restaurado, validação com o cliente, roteiro da banca. Sem feature nova.
 
@@ -160,7 +135,7 @@ Deploy na VPS, HTTPS, backup restaurado, validação com o cliente, roteiro da b
 
 Se o prazo apertar, pare de baixo para cima:
 
-1. **P1 de loja/vitrine** — 6 (RF03), 17 (busca textual), 18 (contato), 29 (frete), 30 (estorno)
-2. **P1 de admin/conta** — 19 (RF45), 50 (RF44), 51 (RN19)
+1. **P1 de loja/vitrine** — 13 (busca textual), 14 (contato), 24 (frete), 25 (estorno)
+2. **P1 de admin/conta** — 15 (RF31), 33 (RF30), 34 (RN12)
 
-**Não cortar:** Fases 0–4 P0 + fallback 2D (RF15) + visualizador 3D na ficha (RF14) + dashboard (RF39). Sem isso a tese não fecha.
+**Não cortar:** Fases 0–4 P0 (auth, acervo 2D, loja, wizard → WhatsApp + cadastro manual, portfólio). Sem isso a tese não fecha.
