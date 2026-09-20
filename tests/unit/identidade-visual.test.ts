@@ -83,7 +83,10 @@ const PARES_DE_INTERFACE = [
   ["--kolo-borda-campo", "--kolo-superficie"],
 ] as const;
 
-const MODOS = [["Ateliê", ":root"]] as const;
+const MODOS = [
+  ["Ateliê", ":root"],
+  ["Tattoo", '[data-brand="tattoo"]'],
+] as const;
 
 describe("razão de contraste (WCAG 2.1)", () => {
   it("preto sobre branco é 21:1", () => {

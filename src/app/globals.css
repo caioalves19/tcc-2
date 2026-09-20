@@ -68,6 +68,32 @@
   --kolo-erro-texto: var(--color-erro-forte);
 }
 
+[data-brand="tattoo"] {
+  --kolo-fundo: var(--color-tattoo-marinho);
+  --kolo-texto: var(--color-neutro-branco);
+  --kolo-texto-suave: var(--color-tattoo-bruma);
+  --kolo-link: var(--color-tattoo-ouro);
+  --kolo-foco: var(--color-tattoo-ouro);
+
+  --kolo-superficie: var(--color-neutro-branco);
+  --kolo-superficie-texto: var(--color-tattoo-marinho);
+  --kolo-superficie-suave: var(--color-neutro-ardosia);
+  --kolo-superficie-link: var(--color-tattoo-royal);
+  --kolo-superficie-foco: var(--color-tattoo-royal);
+  --kolo-borda-campo: var(--color-neutro-cinza);
+
+  --kolo-acao: var(--color-tattoo-ouro);
+  --kolo-acao-texto: var(--color-tattoo-marinho);
+  --kolo-acao-hover: var(--color-tattoo-ouro-claro);
+
+  --kolo-marca: var(--color-tattoo-royal);
+  --kolo-marca-texto: var(--color-neutro-branco);
+
+  --kolo-erro: var(--color-erro);
+  --kolo-erro-fundo: var(--color-erro-fundo);
+  --kolo-erro-texto: var(--color-erro-forte);
+}
+
 @layer base {
   body {
     background-color: var(--kolo-fundo);
