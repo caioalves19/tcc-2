@@ -76,12 +76,14 @@ const PARES_DE_TEXTO = [
   ["--kolo-marca-texto", "--kolo-marca"],
   ["--kolo-erro", "--kolo-superficie"],
   ["--kolo-erro-texto", "--kolo-erro-fundo"],
+  ["--kolo-contorno-texto", "--kolo-fundo"],
 ] as const;
 
 const PARES_DE_INTERFACE = [
   ["--kolo-foco", "--kolo-fundo"],
   ["--kolo-superficie-foco", "--kolo-superficie"],
   ["--kolo-borda-campo", "--kolo-superficie"],
+  ["--kolo-contorno", "--kolo-fundo"],
 ] as const;
 
 /** Papeis do shadcn/ui: apontam para os tokens da marca, nunca para o tema padrao dele. */

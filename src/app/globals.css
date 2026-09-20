@@ -139,6 +139,10 @@
 
   --kolo-raio-acao: 0.25rem;
   --kolo-sombra-acao: var(--shadow-adesivo);
+  --kolo-sombra-acao-hover: 6px 6px 0 0 var(--color-neutro-grafite);
+  --kolo-borda-acao: var(--color-neutro-grafite);
+  --kolo-contorno: var(--color-neutro-grafite);
+  --kolo-contorno-texto: var(--color-neutro-grafite);
 
   /* shadcn/ui: os componentes dele leem estes nomes */
   --radius: var(--radius-campo);
@@ -204,6 +208,10 @@
 
   --kolo-raio-acao: 9999px;
   --kolo-sombra-acao: var(--shadow-ouro);
+  --kolo-sombra-acao-hover: 0 6px 24px rgb(245 183 26 / 0.45);
+  --kolo-borda-acao: transparent;
+  --kolo-contorno: var(--color-tattoo-ouro);
+  --kolo-contorno-texto: var(--color-tattoo-ouro);
 
   /* shadcn/ui: os componentes dele leem estes nomes */
   --radius: var(--radius-campo);
