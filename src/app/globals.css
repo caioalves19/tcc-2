@@ -1,1 +1,76 @@
 @import "tailwindcss";
+
+/*
+  Identidade visual do Kolô — PBI-09.
+  Regras de uso, contraste e mapa para o shadcn/ui: docs/IDENTIDADE-VISUAL.md
+  Nunca escreva cor solta em componente: use um token daqui.
+*/
+
+/* ── Paleta bruta: vira utilitário do Tailwind (bg-atelie-amarelo, text-neutro-cinza…) ── */
+@theme {
+  /* Ateliê — cerúleo e amarelo */
+  --color-atelie-ceruleo: #0088cc;
+  --color-atelie-azul: #006193;
+  --color-atelie-amarelo: #ffd600;
+  --color-atelie-amarelo-claro: #ffe170;
+
+  /* Tattoo — marinho e ouro */
+  --color-tattoo-marinho: #0b2d6f;
+  --color-tattoo-marinho-fundo: #082052;
+  --color-tattoo-royal: #0a35a0;
+  --color-tattoo-ouro: #f5b71a;
+  --color-tattoo-ouro-claro: #f9c846;
+  --color-tattoo-laranja: #f58a1f;
+  --color-tattoo-vermelho: #e5382b;
+  --color-tattoo-bruma: #c3d0ec;
+
+  /* Neutros — compartilhados pelos dois modos */
+  --color-neutro-grafite: #1a1a1a;
+  --color-neutro-ardosia: #3f4850;
+  --color-neutro-cinza: #5f6872;
+  --color-neutro-linha: #e5e2e1;
+  --color-neutro-nevoa: #f0eded;
+  --color-neutro-gelo: #f6f8fa;
+  --color-neutro-papel: #fcf9f8;
+  --color-neutro-branco: #ffffff;
+
+  /* Feedback */
+  --color-erro: #ba1a1a;
+  --color-erro-fundo: #ffdad6;
+  --color-erro-forte: #93000a;
+}
+
+/* ── Papéis: o que os componentes usam. Trocam de valor conforme o modo de marca. ── */
+:root,
+[data-brand="atelie"] {
+  --kolo-fundo: var(--color-neutro-papel);
+  --kolo-texto: var(--color-neutro-grafite);
+  --kolo-texto-suave: var(--color-neutro-cinza);
+  --kolo-link: var(--color-atelie-azul);
+  --kolo-foco: var(--color-atelie-ceruleo);
+
+  --kolo-superficie: var(--color-neutro-branco);
+  --kolo-superficie-texto: var(--color-neutro-grafite);
+  --kolo-superficie-suave: var(--color-neutro-cinza);
+  --kolo-superficie-link: var(--color-atelie-azul);
+  --kolo-superficie-foco: var(--color-atelie-ceruleo);
+  --kolo-borda-campo: var(--color-neutro-grafite);
+
+  --kolo-acao: var(--color-atelie-amarelo);
+  --kolo-acao-texto: var(--color-neutro-grafite);
+  --kolo-acao-hover: var(--color-atelie-amarelo-claro);
+
+  --kolo-marca: var(--color-atelie-azul);
+  --kolo-marca-texto: var(--color-neutro-branco);
+
+  --kolo-erro: var(--color-erro);
+  --kolo-erro-fundo: var(--color-erro-fundo);
+  --kolo-erro-texto: var(--color-erro-forte);
+}
+
+@layer base {
+  body {
+    background-color: var(--kolo-fundo);
+    color: var(--kolo-texto);
+  }
+}
