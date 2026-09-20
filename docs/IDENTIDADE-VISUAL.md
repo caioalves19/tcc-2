@@ -93,6 +93,9 @@ O verde do WhatsApp (`#25D366`) é marca de terceiro: só no ícone do botão, n
 | `--kolo-marca` · `--kolo-marca-texto`             | azul · branco       | royal · branco    |
 | `--kolo-raio-acao`                                | `0.25rem` (adesivo) | `9999px` (pílula) |
 | `--kolo-sombra-acao`                              | `shadow-adesivo`    | `shadow-ouro`     |
+| `--kolo-sombra-acao-hover`                        | adesivo maior       | brilho maior      |
+| `--kolo-borda-acao`                               | grafite             | transparente      |
+| `--kolo-contorno` · `--kolo-contorno-texto`       | grafite             | ouro              |
 
 O foco tem dois tokens porque a cor muda conforme onde o elemento está: `--kolo-foco` sobre o fundo
 da página e `--kolo-superficie-foco` dentro de card branco. No Tattoo, ouro sobre branco dá 1,8:1.
@@ -196,9 +199,10 @@ Não use jargão interno na tela: "Modo Ateliê" e "Modo Tattoo" são nomes do s
 
 ---
 
-## 9. Para o PBI-10 (shadcn/ui)
+## 9. shadcn/ui
 
-O shadcn não deve entrar com o tema padrão. Aponte as variáveis dele para os papéis daqui:
+Feito no PBI-10: o tema padrão do shadcn (os blocos `:root` e `.dark` em oklch que o `init` escreve)
+foi removido, e as variáveis dele apontam para os papéis da marca, dentro de cada modo:
 
 | shadcn                                    | Kolô                                            |
 | ----------------------------------------- | ----------------------------------------------- |
@@ -211,6 +215,13 @@ O shadcn não deve entrar com o tema padrão. Aponte as variáveis dele para os 
 | `--ring`                                  | `--kolo-foco`                                   |
 | `--destructive`                           | `--kolo-erro`                                   |
 | `--radius`                                | `--radius-campo`                                |
+
+Por isso o `Button` não tem variante por marca: `default` é a ação (amarelo com sombra de adesivo
+no Ateliê, ouro em pílula no Tattoo) e `contorno` é a ação secundária. Quem adicionar um componente
+novo com `npx shadcn@latest add` não precisa fazer nada: ele já nasce na paleta certa.
+
+Duas coisas que o `init` injeta e não devem voltar: a fonte Geist (temos as nossas) e um
+`--font-sans: var(--font-sans)` circular no `@theme inline`.
 
 ---
 
