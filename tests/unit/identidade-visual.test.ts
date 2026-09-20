@@ -25,8 +25,9 @@ function bloco(marcador: string): Map<string, string> {
   if (abre === -1 || fecha === -1) throw new Error(`Bloco "${marcador}" está malformado`);
 
   const declaracoes = new Map<string, string>();
-  for (const [, nome, valor] of css.slice(abre, fecha).matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) {
-    declaracoes.set(nome, valor.trim());
+  for (const declaracao of css.slice(abre, fecha).matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) {
+    const [, nome, valor] = declaracao;
+    if (nome && valor) declaracoes.set(nome, valor.trim());
   }
   return declaracoes;
 }
