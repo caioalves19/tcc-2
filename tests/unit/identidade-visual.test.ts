@@ -84,6 +84,17 @@ const PARES_DE_INTERFACE = [
   ["--kolo-borda-campo", "--kolo-superficie"],
 ] as const;
 
+/** Papeis do shadcn/ui: apontam para os tokens da marca, nunca para o tema padrao dele. */
+const PARES_DO_SHADCN = [
+  ["--foreground", "--background"],
+  ["--card-foreground", "--card"],
+  ["--popover-foreground", "--popover"],
+  ["--primary-foreground", "--primary"],
+  ["--secondary-foreground", "--secondary"],
+  ["--muted-foreground", "--muted"],
+  ["--accent-foreground", "--accent"],
+] as const;
+
 const MODOS = [
   ["Ateliê", ":root"],
   ["Tattoo", '[data-brand="tattoo"]'],
@@ -108,5 +119,9 @@ describe.each(MODOS)("modo %s — contraste dos tokens (RNF23)", (_nome, seletor
 
   it.each(PARES_DE_INTERFACE)("interface %s sobre %s tem ao menos 3:1", (frente, fundo) => {
     expect(razao(hex(frente, modo), hex(fundo, modo))).toBeGreaterThanOrEqual(AA_INTERFACE);
+  });
+
+  it.each(PARES_DO_SHADCN)("shadcn %s sobre %s tem ao menos 4,5:1", (frente, fundo) => {
+    expect(razao(hex(frente, modo), hex(fundo, modo))).toBeGreaterThanOrEqual(AA_TEXTO);
   });
 });
