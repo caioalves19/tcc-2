@@ -1,11 +1,10 @@
 # Kolô — Sprint 1 (semana 1): Fundação + Autenticação
 
-**Meta da sprint:** spec aprovada pelos 5, DER redesenhado, e qualquer integrante clona, sobe o ambiente, cadastra e entra.
-**Fonte:** `ORDEM-DE-EXECUCAO.md` (Fase 0) · `ESCOPO-E-STACK.md` v2.1 · `DER.md`.
+**Meta da sprint:** spec v2.2 aprovada pelos 5, DER redesenhado, e qualquer integrante clona, sobe o ambiente, cadastra e entra.
+**Fonte:** `ORDEM-DE-EXECUCAO.md` (Fase 0) · `ESCOPO-E-STACK.md` v2.2 · `DER.md`.
 **DoD (vale para todo card):** `npm run lint` + `npm run typecheck` + `npm test` verdes; PR aprovado.
 
 ## Visão geral
-
 
 | PBI | Título                             | Resp.     | Deps   |
 | --- | ---------------------------------- | --------- | ------ |
@@ -14,7 +13,7 @@
 | 03  | Repositório e proteções            | Caio S.   | —      |
 | 04  | App Next.js base                   | Caio S.   | 03     |
 | 05  | Docker Compose + Postgres          | Caio S.   | 04     |
-| 06  | schema.prisma a partir do DER      | Gustavo   | 02, 05 |
+| 06  | schema.prisma a partir do DER      | Guilherme | 02, 05 |
 | 07  | Revisão humana do modelo           | Guilherme | 06     |
 | 08  | Migração inicial + seed            | Gustavo   | 07     |
 | 09  | Identidade visual e tokens         | Robert    | —      |
@@ -24,8 +23,8 @@
 | 13  | Login/logout com sessão revogável  | Caio V.   | 11     |
 | 14  | Recuperação de senha               | Robert    | 12     |
 | 15  | Edição de perfil                   | Guilherme | 12     |
-| 16  | Login com Google (P1)              | Guilherme | 13     |
 
+Login com Google saiu na v2.2 (adiado, seção 14 do ESCOPO). Não há PBI-16 nesta sprint.
 
 Blocos de dependência (dentro de cada bloco, a ordem importa; entre blocos, dá para paralelizar):
 
@@ -33,7 +32,7 @@ Blocos de dependência (dentro de cada bloco, a ordem importa; entre blocos, dá
 - **B — Repo:** 03 → 04 → 05
 - **C — Dados:** 06 → 07 → 08 (começa quando 02 e 05 fecham)
 - **D — Marca e UI:** 09 → 10 (10 também precisa de 04)
-- **E — Auth:** 11 → 12 → 13 → {14, 15, 16} (começa quando 06 fecha)
+- **E — Auth:** 11 → 12 → 13 → {14, 15} (começa quando 06 fecha)
 
 ---
 
@@ -42,20 +41,20 @@ Blocos de dependência (dentro de cada bloco, a ordem importa; entre blocos, dá
 ### PBI-01 — Revisão e aprovação dos requisitos
 
 **Resp:** os 5 integrantes
-Leitura crítica do `ESCOPO-E-STACK.md` v2.1 inteiro (RF, RNF, RN, fora de escopo) antes de qualquer código. O doc mudou muito na revisão — ninguém coda em cima de requisito não aprovado.
+Leitura crítica do `ESCOPO-E-STACK.md` v2.2 inteiro (RF, RNF, RN, fora de escopo) antes de qualquer código. A v2.2 enxugou agendamento, 3D e IDs — ninguém coda em cima da v2.1.
 
-- [x] Cada integrante revisou individualmente e registrou divergências (comentário/issue)
-- [x] Ajustes decididos em conjunto e aplicados ao doc
-- [x] Versão final aprovada por unanimidade — gate para o PBI-02
+- [x] Cada integrante revisou individualmente e registrou divergências (comentário/issue) — ciclo v2.1
+- [ ] Ajustes da v2.2 (wizard → WhatsApp, cortes listados na seção 14) revisados pelos 5
+- [ ] Versão 2.2 aprovada por unanimidade — gate para o PBI-02
 
 ### PBI-02 — Redesenho do DER
 
 **Resp:** Gustavo · **Deps:** PBI-01
-`DER.md` validado contra o `ESCOPO-E-STACK.md` v2.1 (seção 10 + RF/RN/RNF). Sem `health_form`, cupom, sinal, `audit_log` nem demais itens da seção 14.
+`DER.md` validado contra o `ESCOPO-E-STACK.md` v2.2 (seção 10 + RF/RN/RNF). Sem `health_form`, slots (`availability_rule`, `time_block`), referências de agendamento, 3D, cupom, sinal, `audit_log` nem demais itens da seção 14.
 
-- [x] Toda entidade tem RF/RN que a justifica; nada fora de escopo presente
-- [x] Restrições (RN02, RN08, RN15, RN19) mapeadas na tabela de restrições
-- [x] Revisão por ao menos 1 integrante ≠ autor; mermaid renderiza sem erro
+- [ ] Toda entidade tem RF/RN que a justifica; nada fora de escopo presente
+- [ ] Restrições (RN02, RN08, RN09, RN12) mapeadas na tabela de restrições
+- [ ] Revisão por ao menos 1 integrante ≠ autor; mermaid renderiza sem erro
 
 ---
 
@@ -95,18 +94,19 @@ Compose com PostgreSQL 17 para dev local (Postgres só no Docker, nunca instalad
 ### PBI-06 — schema.prisma a partir do DER
 
 **Resp:** Guilherme · **Deps:** PBI-02, PBI-05
-Modelo completo conforme o `DER.md` redesenhado (auth, acervo, pedido, agenda).
+Modelo completo conforme o `DER.md` v2.2 (auth, acervo com estoque, pedido, agenda manual). Sem `health_form`, `availability_rule`, `time_block`, `appointment_reference` nem `modelo_3d_url`.
 
-- [ ] Todas as entidades do DER; sem `health_form`, cupom, `audit_log` ou sinal
+- [ ] Todas as entidades do DER; sem itens da seção 14
 - [ ] Convenções: UUID, dinheiro em centavos (`int`), datas UTC
 - [ ] Constraint de agenda sem sobreposição (RN08) na migração SQL
+- [ ] `appointment.user_id` opcional; estoque e quantidade no carrinho/pedido/reserva
 
 ### PBI-07 — Revisão humana do modelo
 
 **Resp:** Gustavo (não pode ser o autor do PBI-06) · **Deps:** PBI-06
 Revisão do schema contra a spec antes de virar migração.
 
-- [ ] Checklist assinado: papéis, RN02, RN08, RN15, anonimização LGPD (RN19)
+- [ ] Checklist assinado: papéis, RN02, RN08, RN09, anonimização LGPD (RN12)
 - [ ] Divergências registradas e corrigidas no PR
 
 ### PBI-08 — Migração inicial + seed
@@ -129,7 +129,7 @@ Definição mínima de marca antes de qualquer tela: paleta, tipografia, logo e 
 
 - [ ] Paleta (claro/escuro), tipografia e espaçamentos registrados como tokens (CSS variables / tema Tailwind)
 - [ ] Logo/ícone e uso básico definidos
-- [ ] Contraste AA verificado nos pares principais (RNF23)
+- [ ] Contraste AA verificado nos pares principais (RNF21)
 
 ### PBI-10 — Layout base + design system
 
@@ -147,7 +147,7 @@ shadcn/ui instalado sobre os tokens da marca e casca visual da aplicação.
 ### PBI-11 — Better Auth + papéis
 
 **Resp:** Caio V. · **Deps:** PBI-06
-Better Auth configurado com sessão no banco e controle por papel (RF07).
+Better Auth configurado com sessão no banco e controle por papel (RF06).
 
 - [ ] Sessão persistida no Postgres e revogável
 - [ ] Papel `CLIENTE`/`ARTISTA`/`ADMIN` no usuário
@@ -174,7 +174,7 @@ Login por e-mail e senha (RF02).
 ### PBI-14 — Recuperação de senha
 
 **Resp:** Robert · **Deps:** PBI-12
-Fluxo de "esqueci a senha" por e-mail (RF04).
+Fluxo de "esqueci a senha" por e-mail (RF03).
 
 - [ ] Token de uso único com expiração, enviado via Resend (sandbox)
 - [ ] Token inválido/expirado/reusado é rejeitado
@@ -183,16 +183,8 @@ Fluxo de "esqueci a senha" por e-mail (RF04).
 ### PBI-15 — Edição de perfil
 
 **Resp:** Guilherme · **Deps:** PBI-12
-Cliente edita nome, telefone e senha (RF05).
+Cliente edita nome, telefone e senha (RF04).
 
 - [ ] Nome e telefone editáveis com validação
 - [ ] Troca de senha exige senha atual
 - [ ] Feedback de sucesso/erro visível
-
-### PBI-16 — Login com Google (P1)
-
-**Resp:** Guilherme · **Deps:** PBI-13
-Login social via Better Auth (RF03). **Só começar se os P0 da sprint estiverem fechados.**
-
-- [ ] Botão "Entrar com Google" no login
-- [ ] Conta Google vinculada pelo e-mail; usuário novo nasce `CLIENTE`
