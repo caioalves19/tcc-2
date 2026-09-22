@@ -96,10 +96,10 @@ Compose com PostgreSQL 17 para dev local (Postgres só no Docker, nunca instalad
 **Resp:** Guilherme · **Deps:** PBI-02, PBI-05
 Modelo completo conforme o `DER.md` v2.2 (auth, acervo com estoque, pedido, agenda manual). Sem `health_form`, `availability_rule`, `time_block`, `appointment_reference` nem `modelo_3d_url`.
 
-- [ ] Todas as entidades do DER; sem itens da seção 14
-- [ ] Convenções: UUID, dinheiro em centavos (`int`), datas UTC
-- [ ] Constraint de agenda sem sobreposição (RN08) na migração SQL
-- [ ] `appointment.user_id` opcional; estoque e quantidade no carrinho/pedido/reserva
+- [X] Todas as entidades do DER; sem itens da seção 14
+- [X] Convenções: UUID, dinheiro em centavos (`int`), datas UTC
+- [X] Constraint de agenda sem sobreposição (RN08) na migração SQL
+- [X] `appointment.user_id` opcional; estoque e quantidade no carrinho/pedido/reserva
 
 ### PBI-07 — Revisão humana do modelo
 

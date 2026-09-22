@@ -1,0 +1,425 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  CLIENTE
+  ARTISTA
+  ADMIN
+
+  @@map("user_role")
+}
+
+enum UserStatus {
+  ATIVO
+  INATIVO
+
+  @@map("user_status")
+}
+
+enum ArtworkStatus {
+  RASCUNHO
+  DISPONIVEL
+  ESGOTADA
+}
+
+enum OrderStatus {
+  PENDENTE
+  PAGO
+  PROCESSANDO
+  ENVIADO
+  ENTREGUE
+  CANCELADO
+}
+
+enum PaymentMethod {
+  PIX
+  CARTAO
+  BOLETO
+}
+
+enum PaymentStatus {
+  PENDENTE
+  APROVADO
+  RECUSADO
+  ESTORNADO
+}
+
+enum AppointmentStatus {
+  AGENDADO
+  CANCELADO
+  CONCLUIDO
+}
+
+enum EmailLogStatus {
+  PENDENTE
+  ENVIADO
+  FALHO
+}
+
+model User {
+  id              String       @id @default(uuid()) @db.Uuid
+  role            UserRole     @map("papel")
+  name            String       @map("nome")
+  email           String       @unique
+  phone           String?      @map("telefone")
+  status          UserStatus   @default(ATIVO) @map("situacao")
+  emailVerified   Boolean      @default(false) @map("email_verificado")
+  deletedAt       DateTime?    @map("excluido_em") @db.Timestamptz(3)
+  sessions        Session[]
+  accounts        Account[]
+  address         Address?
+  artist          Artist?
+  carts           Cart[]
+  orders          Order[]
+  appointments    Appointment[]
+  emailLogs       EmailLog[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique
+  expiresAt DateTime @map("expira_em") @db.Timestamptz(3)
+  ip        String?
+  userAgent String?  @map("user_agent")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  artworkReservations ArtworkReservation[]
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id            String  @id @default(uuid()) @db.Uuid
+  userId        String  @map("user_id") @db.Uuid
+  provider      String  @map("provedor")
+  externalId    String  @map("id_externo")
+  passwordHash  String? @map("senha_hash")
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, externalId])
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(uuid()) @db.Uuid
+  identifier String   @map("identificador")
+  value      String   @map("valor")
+  expiresAt  DateTime @map("expira_em") @db.Timestamptz(3)
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model Address {
+  id           String  @id @default(uuid()) @db.Uuid
+  userId       String  @unique @map("user_id") @db.Uuid
+  recipient    String  @map("destinatario")
+  street       String  @map("logradouro")
+  number       String  @map("numero")
+  complement   String? @map("complemento")
+  neighborhood String  @map("bairro")
+  city         String  @map("cidade")
+  state        String  @map("uf")
+  postalCode   String  @map("cep")
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("address")
+}
+
+model Artist {
+  id             String        @id @default(uuid()) @db.Uuid
+  userId         String        @unique @map("user_id") @db.Uuid
+  slug           String        @unique
+  bio            String?
+  avatarUrl      String?       @map("avatar_url")
+  instagram      String?
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  styles         ArtistStyle[]
+  artworks       Artwork[]
+  portfolioItems PortfolioItem[]
+  appointments   Appointment[]
+
+  @@map("artist")
+}
+
+model ArtistStyle {
+  artistId      String      @map("artist_id") @db.Uuid
+  tattooStyleId String      @map("tattoo_style_id") @db.Uuid
+  artist        Artist      @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  tattooStyle   TattooStyle @relation(fields: [tattooStyleId], references: [id], onDelete: Cascade)
+
+  @@id([artistId, tattooStyleId])
+  @@map("artist_style")
+}
+
+model Artwork {
+  id                 String                @id @default(uuid()) @db.Uuid
+  artistId           String                @map("artist_id") @db.Uuid
+  title              String                @map("titulo")
+  slug               String                @unique
+  description        String?               @map("descricao")
+  technique          String?               @map("tecnica")
+  dimensions         String?               @map("dimensoes")
+  year               Int?                  @map("ano")
+  priceCents         Int                   @map("preco_centavos")
+  stockQuantity      Int                   @default(1) @map("quantidade_estoque")
+  status             ArtworkStatus         @default(RASCUNHO) @map("situacao")
+  featured           Boolean               @default(false) @map("destaque")
+  deletedAt          DateTime?             @map("excluido_em") @db.Timestamptz(3)
+  artist             Artist                @relation(fields: [artistId], references: [id], onDelete: Restrict)
+  images             ArtworkImage[]
+  tags               ArtworkTag[]
+  cartItems          CartItem[]
+  orderItems         OrderItem[]
+  reservations       ArtworkReservation[]
+
+  @@index([artistId])
+  @@map("artwork")
+}
+
+model ArtworkImage {
+  id            String  @id @default(uuid()) @db.Uuid
+  artworkId     String  @map("artwork_id") @db.Uuid
+  url           String
+  order         Int     @map("ordem")
+  primary       Boolean @default(false) @map("principal")
+  altText       String? @map("texto_alternativo")
+  artwork       Artwork @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+
+  @@unique([artworkId, order])
+  @@index([artworkId])
+  @@map("artwork_image")
+}
+
+model Tag {
+  id       String        @id @default(uuid()) @db.Uuid
+  name     String        @unique @map("nome")
+  slug     String        @unique
+  artworks ArtworkTag[]
+
+  @@map("tag")
+}
+
+model ArtworkTag {
+  artworkId String  @map("artwork_id") @db.Uuid
+  tagId     String  @map("tag_id") @db.Uuid
+  artwork   Artwork @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([artworkId, tagId])
+  @@map("artwork_tag")
+}
+
+model Cart {
+  id          String     @id @default(uuid()) @db.Uuid
+  userId      String?    @map("user_id") @db.Uuid
+  cookieToken String?    @unique @map("cookie_token")
+  updatedAt   DateTime   @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items       CartItem[]
+
+  @@index([userId])
+  @@map("cart")
+}
+
+model CartItem {
+  id         String   @id @default(uuid()) @db.Uuid
+  cartId     String   @map("cart_id") @db.Uuid
+  artworkId  String   @map("artwork_id") @db.Uuid
+  quantity   Int      @map("quantidade")
+  addedAt    DateTime @default(now()) @map("adicionado_em") @db.Timestamptz(3)
+  cart       Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  artwork    Artwork  @relation(fields: [artworkId], references: [id], onDelete: Restrict)
+
+  @@unique([cartId, artworkId])
+  @@map("cart_item")
+}
+
+model Order {
+  id               String      @id @default(uuid()) @db.Uuid
+  number           String      @unique @map("numero")
+  userId           String      @map("user_id") @db.Uuid
+  status           OrderStatus @default(PENDENTE) @map("situacao")
+  subtotalCents    Int         @map("subtotal_centavos")
+  discountCents    Int         @default(0) @map("desconto_centavos")
+  shippingCents    Int         @default(0) @map("frete_centavos")
+  totalCents       Int         @map("total_centavos")
+  addressSnapshot  Json        @map("endereco_copia")
+  trackingCode     String?     @map("codigo_rastreio")
+  createdAt        DateTime    @default(now()) @map("criado_em") @db.Timestamptz(3)
+  paidAt           DateTime?   @map("pago_em") @db.Timestamptz(3)
+  shippedAt        DateTime?   @map("enviado_em") @db.Timestamptz(3)
+  deletedAt        DateTime?   @map("excluido_em") @db.Timestamptz(3)
+  user             User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  items            OrderItem[]
+  payments         Payment[]
+
+  @@index([userId])
+  @@map("order")
+}
+
+model OrderItem {
+  id             String  @id @default(uuid()) @db.Uuid
+  orderId        String  @map("order_id") @db.Uuid
+  artworkId      String  @map("artwork_id") @db.Uuid
+  titleSnapshot  String  @map("titulo_copia")
+  priceCents     Int     @map("preco_centavos_copia")
+  quantity       Int     @map("quantidade")
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  artwork        Artwork @relation(fields: [artworkId], references: [id], onDelete: Restrict)
+
+  @@index([artworkId])
+  @@map("order_item")
+}
+
+model Payment {
+  id            String        @id @default(uuid()) @db.Uuid
+  orderId       String        @map("order_id") @db.Uuid
+  provider      String        @map("provedor")
+  externalId    String?       @map("id_externo")
+  method        PaymentMethod @map("metodo")
+  status        PaymentStatus @default(PENDENTE) @map("situacao")
+  amountCents   Int           @map("valor_centavos")
+  payload       Json?
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("payment")
+}
+
+model WebhookEvent {
+  id          String    @id @default(uuid()) @db.Uuid
+  eventId     String    @unique @map("id_evento")
+  source      String    @map("origem")
+  payload     Json
+  processedAt DateTime? @map("processado_em") @db.Timestamptz(3)
+
+  @@map("webhook_event")
+}
+
+model ArtworkReservation {
+  id         String   @id @default(uuid()) @db.Uuid
+  artworkId  String   @map("artwork_id") @db.Uuid
+  sessionId  String   @map("session_id") @db.Uuid
+  quantity   Int      @map("quantidade")
+  expiresAt  DateTime @map("expira_em") @db.Timestamptz(3)
+  artwork    Artwork  @relation(fields: [artworkId], references: [id], onDelete: Cascade)
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([artworkId, expiresAt])
+  @@index([sessionId])
+  @@map("artwork_reservation")
+}
+
+model TattooStyle {
+  id             String              @id @default(uuid()) @db.Uuid
+  name           String              @unique @map("nome")
+  slug           String              @unique
+  description    String?             @map("descricao")
+  artists        ArtistStyle[]
+  portfolioItems PortfolioItemStyle[]
+  appointments   Appointment[]
+
+  @@map("tattoo_style")
+}
+
+model PortfolioItem {
+  id             String              @id @default(uuid()) @db.Uuid
+  artistId       String              @map("artist_id") @db.Uuid
+  title          String              @map("titulo")
+  description    String?             @map("descricao")
+  imageUrl       String              @map("imagem_url")
+  bodyRegion     String?             @map("regiao_corpo")
+  durationMins   Int?                @map("duracao_minutos")
+  featured       Boolean             @default(false) @map("destaque")
+  order          Int                 @map("ordem")
+  artist         Artist              @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  styles         PortfolioItemStyle[]
+
+  @@index([artistId])
+  @@map("portfolio_item")
+}
+
+model PortfolioItemStyle {
+  portfolioItemId String        @map("portfolio_item_id") @db.Uuid
+  tattooStyleId   String        @map("tattoo_style_id") @db.Uuid
+  portfolioItem   PortfolioItem @relation(fields: [portfolioItemId], references: [id], onDelete: Cascade)
+  tattooStyle     TattooStyle   @relation(fields: [tattooStyleId], references: [id], onDelete: Cascade)
+
+  @@id([portfolioItemId, tattooStyleId])
+  @@map("portfolio_item_style")
+}
+
+model SizeTier {
+  id           String        @id @default(uuid()) @db.Uuid
+  name         String        @map("nome")
+  order        Int           @map("ordem")
+  appointments Appointment[]
+
+  @@map("size_tier")
+}
+
+model Appointment {
+  id            String            @id @default(uuid()) @db.Uuid
+  code          String            @unique @map("codigo")
+  userId        String?           @map("user_id") @db.Uuid
+  contactName   String            @map("nome_contato")
+  contactPhone  String            @map("telefone_contato")
+  artistId      String            @map("artist_id") @db.Uuid
+  tattooStyleId String?           @map("tattoo_style_id") @db.Uuid
+  sizeTierId    String?           @map("size_tier_id") @db.Uuid
+  status        AppointmentStatus @default(AGENDADO) @map("situacao")
+  startsAt      DateTime          @map("inicia_em") @db.Timestamptz(3)
+  endsAt        DateTime          @map("termina_em") @db.Timestamptz(3)
+  bodyRegion    String?           @map("regiao_corpo")
+  description   String?           @map("descricao")
+  deletedAt     DateTime?         @map("excluido_em") @db.Timestamptz(3)
+  user          User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  artist        Artist            @relation(fields: [artistId], references: [id], onDelete: Restrict)
+  tattooStyle   TattooStyle?      @relation(fields: [tattooStyleId], references: [id], onDelete: SetNull)
+  sizeTier      SizeTier?         @relation(fields: [sizeTierId], references: [id], onDelete: SetNull)
+
+  @@index([artistId, startsAt])
+  @@map("appointment")
+}
+
+model SiteSetting {
+  id    String @id @default(uuid()) @db.Uuid
+  key   String @unique @map("chave")
+  value Json   @map("valor")
+
+  @@map("site_setting")
+}
+
+model ContactMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @map("nome")
+  email     String
+  message   String   @map("mensagem")
+  createdAt DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  @@map("contact_message")
+}
+
+model EmailLog {
+  id          String         @id @default(uuid()) @db.Uuid
+  userId      String         @map("user_id") @db.Uuid
+  recipient   String         @map("destinatario")
+  template    String
+  status      EmailLogStatus @map("situacao")
+  metadata    Json?          @map("metadados")
+  sentAt      DateTime?      @map("enviado_em") @db.Timestamptz(3)
+  user        User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@map("email_log")
+}
