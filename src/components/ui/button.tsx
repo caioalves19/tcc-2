@@ -26,7 +26,7 @@ const buttonVariants = cva(
         link: "border border-transparent text-[var(--kolo-link)] underline-offset-4 hover:underline",
       },
       size: {
-        // Alvo de toque de no mínimo 48px (RNF23).
+        // Alvo de toque de no mínimo 48px: regra do nosso design system, acima do RNF21.
         default: "h-12 gap-2 px-5",
         sm: "h-10 gap-1.5 px-4 text-etiqueta",
         lg: "h-14 gap-2.5 px-7",

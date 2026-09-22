@@ -4,7 +4,7 @@
 > Regras de produto (o que existe ou não na tela) continuam em `docs/ESCOPO-E-STACK.md`.
 
 **Verificação:** `npm run test:unit -- identidade-visual` lê o `globals.css` e reprova qualquer
-token que quebre o contraste mínimo do RNF23 (4,5:1 em texto, 3:1 em foco e borda de campo).
+token que quebre o contraste mínimo do RNF21 (4,5:1 em texto, 3:1 em foco e borda de campo).
 
 ---
 
@@ -102,7 +102,7 @@ da página e `--kolo-superficie-foco` dentro de card branco. No Tattoo, ouro sob
 
 ---
 
-## 4. Contraste (RNF23)
+## 4. Contraste (RNF21)
 
 Todos os pares abaixo passam no teste automático. Valores em razão de contraste WCAG 2.1.
 
@@ -127,9 +127,9 @@ Todos os pares abaixo passam no teste automático. Valores em razão de contrast
 | Laranja sobre branco                  | 2,5:1  | no card branco, o ícone de alerta é vermelho                                   |
 | Vermelho sobre royal                  | 2,4:1  | ícone vermelho só sobre marinho ou branco                                      |
 
-Além do contraste, o RNF23 pede foco de teclado visível (anel de 2px), texto alternativo em imagem,
-alvo de toque de no mínimo 48px e nenhuma informação transmitida só pela cor: status sempre com
-texto ou ícone junto.
+Além do contraste, o RNF21 pede navegação por teclado, foco visível e texto alternativo em imagem.
+O design system acrescenta duas regras próprias: alvo de toque de no mínimo 48px e nenhuma
+informação transmitida só pela cor, com status sempre acompanhado de texto ou ícone.
 
 ---
 

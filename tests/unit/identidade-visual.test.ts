@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
  * Contrato testado: as variáveis `--kolo-*` de cada modo de marca em
  * `src/app/globals.css` — é o que os componentes consomem.
  *
- * Mínimos do RNF23 (WCAG 2.1 AA): 4,5:1 para texto e 3:1 para elementos de
+ * Mínimos do RNF21 (WCAG 2.1 AA): 4,5:1 para texto e 3:1 para elementos de
  * interface (anel de foco, borda de campo) e texto grande.
  * Regras de uso: docs/IDENTIDADE-VISUAL.md
  */
@@ -112,7 +112,7 @@ describe("razão de contraste (WCAG 2.1)", () => {
   });
 });
 
-describe.each(MODOS)("modo %s — contraste dos tokens (RNF23)", (_nome, seletor) => {
+describe.each(MODOS)("modo %s — contraste dos tokens (RNF21)", (_nome, seletor) => {
   const modo = bloco(seletor);
 
   it.each(PARES_DE_TEXTO)("texto %s sobre %s tem ao menos 4,5:1", (frente, fundo) => {
