@@ -111,8 +111,8 @@ model Account {
 
 model Verification {
   id         String   @id @default(uuid()) @db.Uuid
-  identifier String
-  value      String
+  identifier String   @map("identificador")
+  value      String   @map("valor")
   expiresAt  DateTime @map("expira_em") @db.Timestamptz(3)
 
   @@index([identifier])
@@ -120,17 +120,17 @@ model Verification {
 }
 
 model Address {
-  id           String @id @default(uuid()) @db.Uuid
-  userId       String @unique @map("user_id") @db.Uuid
-  recipient    String @map("destinatario")
-  street       String @map("logradouro")
-  number       String @map("numero")
-  complement   String?
-  neighborhood String @map("bairro")
-  city         String @map("cidade")
-  state        String @map("uf")
-  postalCode   String @map("cep")
-  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String  @id @default(uuid()) @db.Uuid
+  userId       String  @unique @map("user_id") @db.Uuid
+  recipient    String  @map("destinatario")
+  street       String  @map("logradouro")
+  number       String  @map("numero")
+  complement   String? @map("complemento")
+  neighborhood String  @map("bairro")
+  city         String  @map("cidade")
+  state        String  @map("uf")
+  postalCode   String  @map("cep")
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("address")
 }
@@ -166,10 +166,10 @@ model Artwork {
   artistId           String                @map("artist_id") @db.Uuid
   title              String                @map("titulo")
   slug               String                @unique
-  description        String?
-  technique          String?
-  dimensions         String?
-  year               Int?
+  description        String?               @map("descricao")
+  technique          String?               @map("tecnica")
+  dimensions         String?               @map("dimensoes")
+  year               Int?                  @map("ano")
   priceCents         Int                   @map("preco_centavos")
   stockQuantity      Int                   @default(1) @map("quantidade_estoque")
   status             ArtworkStatus         @default(RASCUNHO) @map("situacao")
@@ -324,7 +324,7 @@ model TattooStyle {
   id             String              @id @default(uuid()) @db.Uuid
   name           String              @unique @map("nome")
   slug           String              @unique
-  description    String?
+  description    String?             @map("descricao")
   artists        ArtistStyle[]
   portfolioItems PortfolioItemStyle[]
   appointments   Appointment[]
@@ -336,7 +336,7 @@ model PortfolioItem {
   id             String              @id @default(uuid()) @db.Uuid
   artistId       String              @map("artist_id") @db.Uuid
   title          String              @map("titulo")
-  description    String?
+  description    String?             @map("descricao")
   imageUrl       String              @map("imagem_url")
   bodyRegion     String?             @map("regiao_corpo")
   durationMins   Int?                @map("duracao_minutos")
@@ -381,7 +381,7 @@ model Appointment {
   startsAt      DateTime          @map("inicia_em") @db.Timestamptz(3)
   endsAt        DateTime          @map("termina_em") @db.Timestamptz(3)
   bodyRegion    String?           @map("regiao_corpo")
-  description   String?
+  description   String?           @map("descricao")
   deletedAt     DateTime?         @map("excluido_em") @db.Timestamptz(3)
   user          User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   artist        Artist            @relation(fields: [artistId], references: [id], onDelete: Restrict)
@@ -404,7 +404,7 @@ model ContactMessage {
   id        String   @id @default(uuid()) @db.Uuid
   name      String   @map("nome")
   email     String
-  message   String
+  message   String   @map("mensagem")
   createdAt DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
 
   @@map("contact_message")
@@ -415,8 +415,8 @@ model EmailLog {
   userId      String         @map("user_id") @db.Uuid
   recipient   String         @map("destinatario")
   template    String
-  status      EmailLogStatus  @map("situacao")
-  metadata    Json?
+  status      EmailLogStatus @map("situacao")
+  metadata    Json?          @map("metadados")
   sentAt      DateTime?      @map("enviado_em") @db.Timestamptz(3)
   user        User           @relation(fields: [userId], references: [id], onDelete: Restrict)
 
