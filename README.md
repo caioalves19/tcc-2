@@ -1,5 +1,17 @@
 # Kolô
 
+## Banco local
+
+Postgres sobe no Docker. A migração inicial e o seed (um `ADMIN`, um `CLIENTE`, um `ARTISTA`) usam a URL de `.env` ou, se ela não existir, `postgresql://kolo_user:kolo_password@localhost:5432/kolo_db`.
+
+```bash
+docker compose up -d postgres
+npm run db:migrate
+npm run db:seed
+```
+
+O cadastro público, quando existir, nasce `CLIENTE`. O primeiro `ADMIN` só entra por este seed.
+
 ## 📌 Padronização de Commits
 
 Este projeto utiliza o padrão [Conventional Commits](https://www.conventionalcommits.org/).

@@ -114,9 +114,9 @@ Revisão do schema contra a spec antes de virar migração.
 **Resp:** Gustavo · **Deps:** PBI-07
 Primeira migração aplicada e dados mínimos de trabalho.
 
-- [ ] `migrate` roda limpo do zero
-- [ ] Seed cria 1 `ADMIN`, 1 `CLIENTE`, 1 `ARTISTA` (artista com perfil vinculado)
-- [ ] Cadastro público sempre nasce `CLIENTE`; primeiro `ADMIN` só via seed
+- [X] `migrate` roda limpo do zero
+- [X] Seed cria 1 `ADMIN`, 1 `CLIENTE`, 1 `ARTISTA` (artista com perfil vinculado)
+- [X] Cadastro público sempre nasce `CLIENTE`; primeiro `ADMIN` só via seed
 
 ---
 
