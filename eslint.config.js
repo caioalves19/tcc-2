@@ -12,6 +12,6 @@ export default defineConfig(
     },
   },
   {
-    ignores: ["node_modules/**", "dist/**", "coverage/**", ".next/**"],
+    ignores: ["node_modules/**", "dist/**", "coverage/**", ".next/**", "generated/**"],
   },
 );

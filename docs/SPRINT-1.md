@@ -96,10 +96,10 @@ Compose com PostgreSQL 17 para dev local (Postgres só no Docker, nunca instalad
 **Resp:** Guilherme · **Deps:** PBI-02, PBI-05
 Modelo completo conforme o `DER.md` v2.2 (auth, acervo com estoque, pedido, agenda manual). Sem `health_form`, `availability_rule`, `time_block`, `appointment_reference` nem `modelo_3d_url`.
 
-- [ ] Todas as entidades do DER; sem itens da seção 14
-- [ ] Convenções: UUID, dinheiro em centavos (`int`), datas UTC
-- [ ] Constraint de agenda sem sobreposição (RN08) na migração SQL
-- [ ] `appointment.user_id` opcional; estoque e quantidade no carrinho/pedido/reserva
+- [X] Todas as entidades do DER; sem itens da seção 14
+- [X] Convenções: UUID, dinheiro em centavos (`int`), datas UTC
+- [X] Constraint de agenda sem sobreposição (RN08) na migração SQL
+- [X] `appointment.user_id` opcional; estoque e quantidade no carrinho/pedido/reserva
 
 ### PBI-07 — Revisão humana do modelo
 
@@ -114,9 +114,9 @@ Revisão do schema contra a spec antes de virar migração.
 **Resp:** Gustavo · **Deps:** PBI-07
 Primeira migração aplicada e dados mínimos de trabalho.
 
-- [ ] `migrate` roda limpo do zero
-- [ ] Seed cria 1 `ADMIN`, 1 `CLIENTE`, 1 `ARTISTA` (artista com perfil vinculado)
-- [ ] Cadastro público sempre nasce `CLIENTE`; primeiro `ADMIN` só via seed
+- [X] `migrate` roda limpo do zero
+- [X] Seed cria 1 `ADMIN`, 1 `CLIENTE`, 1 `ARTISTA` (artista com perfil vinculado)
+- [X] Cadastro público sempre nasce `CLIENTE`; primeiro `ADMIN` só via seed
 
 ---
 
