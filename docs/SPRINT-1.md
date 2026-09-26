@@ -127,18 +127,18 @@ Primeira migração aplicada e dados mínimos de trabalho.
 **Resp:** Robert
 Definição mínima de marca antes de qualquer tela: paleta, tipografia, logo e tom. Sem este card, o design system nasce sem identidade.
 
-- [ ] Paleta (claro/escuro), tipografia e espaçamentos registrados como tokens (CSS variables / tema Tailwind)
-- [ ] Logo/ícone e uso básico definidos
-- [ ] Contraste AA verificado nos pares principais (RNF21)
+- [X] Paleta (claro/escuro), tipografia e espaçamentos registrados como tokens (CSS variables / tema Tailwind)
+- [ ] Logo/ícone e uso básico definidos — regras de uso escritas; **falta o SVG do logo e do mascote das duas marcas**
+- [X] Contraste AA verificado nos pares principais (RNF21) — teste automático em `tests/unit/identidade-visual.test.ts`
 
 ### PBI-10 — Layout base + design system
 
 **Resp:** Robert · **Deps:** PBI-04, PBI-09
 shadcn/ui instalado sobre os tokens da marca e casca visual da aplicação.
 
-- [ ] Tema do shadcn/ui consome os tokens do PBI-09 (nada de tema padrão)
-- [ ] Layout com header/nav responsivo (320 px a 1920 px, sem rolagem horizontal)
-- [ ] Home placeholder renderizando com o layout
+- [X] Tema do shadcn/ui consome os tokens do PBI-09 (nada de tema padrão)
+- [X] Layout com header/nav responsivo (320 px a 1920 px, sem rolagem horizontal)
+- [X] Home placeholder renderizando com o layout
 
 ---
 
