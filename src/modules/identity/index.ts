@@ -4,6 +4,25 @@ export function papelDoCadastroPublico(): "CLIENTE" {
 
 export type PapelFundacao = "ADMIN" | "CLIENTE" | "ARTISTA";
 
+export type RotaProtegida = "/conta" | "/admin";
+
+export type DecisaoAcesso = "permitido" | "nao_autenticado" | "proibido";
+
+export function decidirAcesso(
+  papel: PapelFundacao | null,
+  rota: RotaProtegida,
+): DecisaoAcesso {
+  if (papel === null) {
+    return "nao_autenticado";
+  }
+
+  if (rota === "/admin" && papel !== "ADMIN") {
+    return "proibido";
+  }
+
+  return "permitido";
+}
+
 export type UsuarioSeed = {
   papel: PapelFundacao;
   nome: string;
