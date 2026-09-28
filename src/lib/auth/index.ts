@@ -95,3 +95,8 @@ export async function papelDaSessao(token: string): Promise<PapelFundacao | null
   }
   return papelConhecido(encontrada.user.role);
 }
+
+export async function revogarSessao(token: string): Promise<void> {
+  const contexto = await obterAuth().$context;
+  await contexto.internalAdapter.deleteSession(token);
+}

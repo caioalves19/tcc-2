@@ -29,7 +29,7 @@ function runPrisma(command: string): void {
   });
 }
 
-async function criarClienteComSenha(): Promise<void> {
+async function criarClienteComSenha(email: string): Promise<void> {
   const { hashPassword } = await import("better-auth/crypto");
   const pool = new Pool({ connectionString: TEST_URL });
   const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
@@ -38,7 +38,7 @@ async function criarClienteComSenha(): Promise<void> {
     data: {
       role: "CLIENTE",
       name: "Cliente Sessao",
-      email: EMAIL,
+      email,
     },
   });
   await prisma.account.create({
@@ -72,7 +72,7 @@ describe("sessão Better Auth no Postgres (RF06)", () => {
 
   it("grava a sessão no Postgres e devolve o papel CLIENTE", async () => {
     const { abrirSessao, papelDaSessao } = await import("../../src/lib/auth");
-    await criarClienteComSenha();
+    await criarClienteComSenha(EMAIL);
 
     const { token } = await abrirSessao({ email: EMAIL, senha: SENHA });
     const sessoes = await db.query<{ token: string }>(
@@ -85,5 +85,24 @@ describe("sessão Better Auth no Postgres (RF06)", () => {
 
     expect(sessoes.rows).toEqual([{ token }]);
     expect(await papelDaSessao(token)).toBe("CLIENTE");
+  }, 60_000);
+
+  it("revoga a sessão e a leitura seguinte não autentica", async () => {
+    const email = "cliente.revoga@kolo.test";
+    const { abrirSessao, papelDaSessao, revogarSessao } = await import("../../src/lib/auth");
+    await criarClienteComSenha(email);
+    const { token } = await abrirSessao({ email, senha: SENHA });
+
+    await revogarSessao(token);
+
+    expect(await papelDaSessao(token)).toBeNull();
+    const sessoes = await db.query<{ token: string }>(
+      `SELECT session.token
+       FROM session
+       JOIN "user" ON "user".id = session.user_id
+       WHERE "user".email = $1`,
+      [email],
+    );
+    expect(sessoes.rows).toEqual([]);
   }, 60_000);
 });
