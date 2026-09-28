@@ -8,10 +8,7 @@ export type RotaProtegida = "/conta" | "/admin";
 
 export type DecisaoAcesso = "permitido" | "nao_autenticado" | "proibido";
 
-export function decidirAcesso(
-  papel: PapelFundacao | null,
-  rota: RotaProtegida,
-): DecisaoAcesso {
+export function decidirAcesso(papel: PapelFundacao | null, rota: RotaProtegida): DecisaoAcesso {
   if (papel === null) {
     return "nao_autenticado";
   }
