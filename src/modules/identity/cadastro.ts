@@ -22,8 +22,7 @@ export type CampoCadastro = keyof DadosCadastro;
 export type ErrosCadastro = Partial<Record<CampoCadastro, string>>;
 
 export type ResultadoValidacao =
-  | { ok: true; dados: DadosCadastro }
-  | { ok: false; campos: ErrosCadastro };
+  { ok: true; dados: DadosCadastro } | { ok: false; campos: ErrosCadastro };
 
 export function validarCadastro(entrada: EntradaCadastro): ResultadoValidacao {
   const resultado = schemaCadastro.safeParse(entrada);
