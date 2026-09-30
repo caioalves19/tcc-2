@@ -8,7 +8,7 @@ import { PrismaClient } from "../../../generated/prisma/client";
 import {
   validarCadastro,
   type EntradaCadastro,
-  type ErrosCadastro,
+  type FalhaCadastro,
   type PapelFundacao,
 } from "../../modules/identity";
 import { databaseUrl } from "../database-url";
@@ -88,10 +88,7 @@ export async function abrirSessao(input: {
   return { token: resultado.token };
 }
 
-export type ResultadoCadastro =
-  | { ok: true; token: string }
-  | { ok: false; erro: "invalido"; campos: ErrosCadastro }
-  | { ok: false; erro: "email_duplicado" };
+export type ResultadoCadastro = { ok: true; token: string } | FalhaCadastro;
 
 function emailJaCadastrado(erro: unknown): boolean {
   return isAPIError(erro) && erro.body?.code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL";

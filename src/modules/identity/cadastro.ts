@@ -24,6 +24,11 @@ export type ErrosCadastro = Partial<Record<CampoCadastro, string>>;
 export type ResultadoValidacao =
   { ok: true; dados: DadosCadastro } | { ok: false; campos: ErrosCadastro };
 
+export type FalhaCadastro =
+  { ok: false; erro: "invalido"; campos: ErrosCadastro } | { ok: false; erro: "email_duplicado" };
+
+export const MENSAGEM_EMAIL_DUPLICADO = "Este e-mail já está cadastrado.";
+
 export function validarCadastro(entrada: EntradaCadastro): ResultadoValidacao {
   const resultado = schemaCadastro.safeParse(entrada);
   if (resultado.success) {

@@ -1,4 +1,5 @@
 export {
+  MENSAGEM_EMAIL_DUPLICADO,
   SENHA_MAXIMA,
   SENHA_MINIMA,
   schemaCadastro,
@@ -7,6 +8,7 @@ export {
   type DadosCadastro,
   type EntradaCadastro,
   type ErrosCadastro,
+  type FalhaCadastro,
   type ResultadoValidacao,
 } from "./cadastro";
 
