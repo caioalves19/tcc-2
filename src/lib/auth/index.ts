@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { isAPIError } from "better-auth/api";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
@@ -88,7 +89,13 @@ export async function abrirSessao(input: {
 }
 
 export type ResultadoCadastro =
-  { ok: true; token: string } | { ok: false; erro: "invalido"; campos: ErrosCadastro };
+  | { ok: true; token: string }
+  | { ok: false; erro: "invalido"; campos: ErrosCadastro }
+  | { ok: false; erro: "email_duplicado" };
+
+function emailJaCadastrado(erro: unknown): boolean {
+  return isAPIError(erro) && erro.body?.code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL";
+}
 
 export async function cadastrarCliente(entrada: EntradaCadastro): Promise<ResultadoCadastro> {
   const validacao = validarCadastro(entrada);
@@ -96,9 +103,17 @@ export async function cadastrarCliente(entrada: EntradaCadastro): Promise<Result
     return { ok: false, erro: "invalido", campos: validacao.campos };
   }
   const { nome, email, telefone, senha } = validacao.dados;
-  const resultado = await obterAuth().api.signUpEmail({
-    body: { name: nome, email, password: senha, phone: telefone },
-  });
+  let resultado;
+  try {
+    resultado = await obterAuth().api.signUpEmail({
+      body: { name: nome, email, password: senha, phone: telefone },
+    });
+  } catch (erro) {
+    if (emailJaCadastrado(erro)) {
+      return { ok: false, erro: "email_duplicado" };
+    }
+    throw erro;
+  }
   if (resultado.token === null) {
     throw new Error("Cadastro sem sessão aberta");
   }

@@ -86,4 +86,24 @@ describe("cadastro público de cliente (RF01)", () => {
     expect(sessoes.rows[0]?.token).toBe(token);
     expect(await papelDaSessao(token)).toBe("CLIENTE");
   }, 60_000);
+
+  it("e-mail já cadastrado (mesmo com maiúsculas) devolve erro amigável e não duplica", async () => {
+    const { cadastrarCliente } = await import("../../src/lib/auth");
+    const entrada = {
+      nome: "Joana Souza",
+      email: "joana@kolo.test",
+      telefone: "11987654321",
+      senha: SENHA,
+    };
+    expect((await cadastrarCliente(entrada)).ok).toBe(true);
+
+    const repetido = await cadastrarCliente({ ...entrada, email: "Joana@KOLO.test" });
+
+    expect(repetido).toEqual({ ok: false, erro: "email_duplicado" });
+    const contagem = await db.query<{ total: string }>(
+      `SELECT COUNT(*) AS total FROM "user" WHERE email = $1`,
+      ["joana@kolo.test"],
+    );
+    expect(contagem.rows).toEqual([{ total: "1" }]);
+  }, 60_000);
 });
