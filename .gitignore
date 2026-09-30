@@ -29,3 +29,7 @@ test-results/
 !.claude/skills/
 !.claude/skills/**
 CLAUDE.local.md
+
+# TypeScript / Next.js: gerados automaticamente
+*.tsbuildinfo
+next-env.d.ts

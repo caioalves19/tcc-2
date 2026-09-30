@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
  * Contrato testado: as variáveis `--kolo-*` de cada modo de marca em
  * `src/app/globals.css` — é o que os componentes consomem.
  *
- * Mínimos do RNF23 (WCAG 2.1 AA): 4,5:1 para texto e 3:1 para elementos de
+ * Mínimos do RNF21 (WCAG 2.1 AA): 4,5:1 para texto e 3:1 para elementos de
  * interface (anel de foco, borda de campo) e texto grande.
  * Regras de uso: docs/IDENTIDADE-VISUAL.md
  */
@@ -76,12 +76,25 @@ const PARES_DE_TEXTO = [
   ["--kolo-marca-texto", "--kolo-marca"],
   ["--kolo-erro", "--kolo-superficie"],
   ["--kolo-erro-texto", "--kolo-erro-fundo"],
+  ["--kolo-contorno-texto", "--kolo-fundo"],
 ] as const;
 
 const PARES_DE_INTERFACE = [
   ["--kolo-foco", "--kolo-fundo"],
   ["--kolo-superficie-foco", "--kolo-superficie"],
   ["--kolo-borda-campo", "--kolo-superficie"],
+  ["--kolo-contorno", "--kolo-fundo"],
+] as const;
+
+/** Papeis do shadcn/ui: apontam para os tokens da marca, nunca para o tema padrao dele. */
+const PARES_DO_SHADCN = [
+  ["--foreground", "--background"],
+  ["--card-foreground", "--card"],
+  ["--popover-foreground", "--popover"],
+  ["--primary-foreground", "--primary"],
+  ["--secondary-foreground", "--secondary"],
+  ["--muted-foreground", "--muted"],
+  ["--accent-foreground", "--accent"],
 ] as const;
 
 const MODOS = [
@@ -99,7 +112,7 @@ describe("razão de contraste (WCAG 2.1)", () => {
   });
 });
 
-describe.each(MODOS)("modo %s — contraste dos tokens (RNF23)", (_nome, seletor) => {
+describe.each(MODOS)("modo %s — contraste dos tokens (RNF21)", (_nome, seletor) => {
   const modo = bloco(seletor);
 
   it.each(PARES_DE_TEXTO)("texto %s sobre %s tem ao menos 4,5:1", (frente, fundo) => {
@@ -108,5 +121,9 @@ describe.each(MODOS)("modo %s — contraste dos tokens (RNF23)", (_nome, seletor
 
   it.each(PARES_DE_INTERFACE)("interface %s sobre %s tem ao menos 3:1", (frente, fundo) => {
     expect(razao(hex(frente, modo), hex(fundo, modo))).toBeGreaterThanOrEqual(AA_INTERFACE);
+  });
+
+  it.each(PARES_DO_SHADCN)("shadcn %s sobre %s tem ao menos 4,5:1", (frente, fundo) => {
+    expect(razao(hex(frente, modo), hex(fundo, modo))).toBeGreaterThanOrEqual(AA_TEXTO);
   });
 });
