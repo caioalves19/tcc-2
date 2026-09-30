@@ -106,4 +106,45 @@ describe("cadastro público de cliente (RF01)", () => {
     );
     expect(contagem.rows).toEqual([{ total: "1" }]);
   }, 60_000);
+
+  it("ignora papel enviado pelo cliente: cadastro público é sempre CLIENTE", async () => {
+    const { cadastrarCliente } = await import("../../src/lib/auth");
+    const entrada = {
+      nome: "Intrusa",
+      email: "intrusa@kolo.test",
+      telefone: "11987654321",
+      senha: SENHA,
+      role: "ADMIN",
+    };
+
+    expect((await cadastrarCliente(entrada)).ok).toBe(true);
+
+    const usuarios = await db.query<{ papel: string }>(
+      `SELECT papel FROM "user" WHERE email = $1`,
+      ["intrusa@kolo.test"],
+    );
+    expect(usuarios.rows).toEqual([{ papel: "CLIENTE" }]);
+  }, 60_000);
+
+  it("revalida no servidor: telefone curto não grava nada", async () => {
+    const { cadastrarCliente } = await import("../../src/lib/auth");
+
+    const resultado = await cadastrarCliente({
+      nome: "Telefone Curto",
+      email: "curto@kolo.test",
+      telefone: "119",
+      senha: SENHA,
+    });
+
+    expect(resultado).toEqual({
+      ok: false,
+      erro: "invalido",
+      campos: { telefone: "Informe o telefone com DDD." },
+    });
+    const contagem = await db.query<{ total: string }>(
+      `SELECT COUNT(*) AS total FROM "user" WHERE email = $1`,
+      ["curto@kolo.test"],
+    );
+    expect(contagem.rows).toEqual([{ total: "0" }]);
+  }, 60_000);
 });
