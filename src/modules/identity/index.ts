@@ -1,3 +1,15 @@
+export {
+  SENHA_MAXIMA,
+  SENHA_MINIMA,
+  schemaCadastro,
+  validarCadastro,
+  type CampoCadastro,
+  type DadosCadastro,
+  type EntradaCadastro,
+  type ErrosCadastro,
+  type ResultadoValidacao,
+} from "./cadastro";
+
 export function papelDoCadastroPublico(): "CLIENTE" {
   return "CLIENTE";
 }
