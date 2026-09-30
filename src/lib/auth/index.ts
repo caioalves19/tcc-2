@@ -93,8 +93,20 @@ export async function abrirSessao(input: {
 
 export type ResultadoCadastro = { ok: true; token: string } | FalhaCadastro;
 
-function emailJaCadastrado(erro: unknown): boolean {
-  return isAPIError(erro) && erro.body?.code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL";
+async function emailJaCadastrado(erro: unknown, email: string): Promise<boolean> {
+  if (!isAPIError(erro)) {
+    return false;
+  }
+  if (erro.body?.code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL") {
+    return true;
+  }
+  // Cadastro simultâneo: os dois passam pela checagem e o segundo bate no
+  // UNIQUE do banco, que o Better Auth devolve como FAILED_TO_CREATE_USER.
+  if (erro.body?.code === "FAILED_TO_CREATE_USER") {
+    const contexto = await obterAuth().$context;
+    return (await contexto.internalAdapter.findUserByEmail(email)) !== null;
+  }
+  return false;
 }
 
 export async function cadastrarCliente(entrada: EntradaCadastro): Promise<ResultadoCadastro> {
@@ -109,7 +121,7 @@ export async function cadastrarCliente(entrada: EntradaCadastro): Promise<Result
       body: { name: nome, email, password: senha, phone: telefone },
     });
   } catch (erro) {
-    if (emailJaCadastrado(erro)) {
+    if (await emailJaCadastrado(erro, email)) {
       return { ok: false, erro: "email_duplicado" };
     }
     throw erro;

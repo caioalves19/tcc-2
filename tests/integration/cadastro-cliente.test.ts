@@ -147,4 +147,26 @@ describe("cadastro público de cliente (RF01)", () => {
     );
     expect(contagem.rows).toEqual([{ total: "0" }]);
   }, 60_000);
+
+  it("dois cadastros simultâneos com o mesmo e-mail: um entra, o outro recebe email_duplicado", async () => {
+    const { cadastrarCliente } = await import("../../src/lib/auth");
+
+    // A corrida depende do agendamento; várias rodadas deixam o teste determinístico na prática.
+    for (let rodada = 0; rodada < 8; rodada++) {
+      const email = `corrida${rodada}@kolo.test`;
+      const entrada = { nome: "Corrida", email, telefone: "11987654321", senha: SENHA };
+
+      const resultados = await Promise.all([cadastrarCliente(entrada), cadastrarCliente(entrada)]);
+
+      expect(resultados.filter((resultado) => resultado.ok)).toHaveLength(1);
+      expect(resultados.filter((resultado) => !resultado.ok)).toEqual([
+        { ok: false, erro: "email_duplicado" },
+      ]);
+      const contagem = await db.query<{ total: string }>(
+        `SELECT COUNT(*) AS total FROM "user" WHERE email = $1`,
+        [email],
+      );
+      expect(contagem.rows).toEqual([{ total: "1" }]);
+    }
+  }, 60_000);
 });
