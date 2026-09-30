@@ -4,7 +4,12 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
 import { PrismaClient } from "../../../generated/prisma/client";
-import type { PapelFundacao } from "../../modules/identity";
+import {
+  validarCadastro,
+  type EntradaCadastro,
+  type ErrosCadastro,
+  type PapelFundacao,
+} from "../../modules/identity";
 import { databaseUrl } from "../database-url";
 
 const PAPEIS = ["CLIENTE", "ARTISTA", "ADMIN"] as const;
@@ -32,6 +37,11 @@ function criarInstancia() {
           required: true,
           defaultValue: "CLIENTE",
           input: false,
+        },
+        phone: {
+          type: "string",
+          required: true,
+          input: true,
         },
       },
     },
@@ -75,6 +85,24 @@ export async function abrirSessao(input: {
     },
   });
   return { token: resultado.token };
+}
+
+export type ResultadoCadastro =
+  { ok: true; token: string } | { ok: false; erro: "invalido"; campos: ErrosCadastro };
+
+export async function cadastrarCliente(entrada: EntradaCadastro): Promise<ResultadoCadastro> {
+  const validacao = validarCadastro(entrada);
+  if (!validacao.ok) {
+    return { ok: false, erro: "invalido", campos: validacao.campos };
+  }
+  const { nome, email, telefone, senha } = validacao.dados;
+  const resultado = await obterAuth().api.signUpEmail({
+    body: { name: nome, email, password: senha, phone: telefone },
+  });
+  if (resultado.token === null) {
+    throw new Error("Cadastro sem sessão aberta");
+  }
+  return { ok: true, token: resultado.token };
 }
 
 function papelConhecido(valor: unknown): PapelFundacao | null {
