@@ -149,9 +149,9 @@ shadcn/ui instalado sobre os tokens da marca e casca visual da aplicação.
 **Resp:** Caio V. · **Deps:** PBI-06
 Better Auth configurado com sessão no banco e controle por papel (RF06).
 
-- [ ] Sessão persistida no Postgres e revogável
-- [ ] Papel `CLIENTE`/`ARTISTA`/`ADMIN` no usuário
-- [ ] Guarda de rota: `/admin` só ADMIN; área do cliente exige login
+- [x] Sessão persistida no Postgres e revogável
+- [x] Papel `CLIENTE`/`ARTISTA`/`ADMIN` no usuário
+- [x] Guarda de rota: `/admin` só ADMIN; área do cliente exige login
 
 ### PBI-12 — Cadastro de cliente
 
