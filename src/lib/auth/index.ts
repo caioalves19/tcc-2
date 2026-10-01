@@ -131,9 +131,13 @@ export type ResultadoLogin = { ok: true; token: string } | FalhaLogin;
 // RNF08: 5 tentativas sem sucesso em 15 min por IP + e-mail bloqueiam o login até a janela passar.
 const LIMITE_LOGIN: RegraLimite = { maximo: 5, janelaMs: 15 * 60 * 1000 };
 
-function chaveLogin(ip: string, email: string): string {
+// RNF08: 3 pedidos de recuperação por hora por IP + e-mail.
+const LIMITE_RECUPERACAO: RegraLimite = { maximo: 3, janelaMs: 60 * 60 * 1000 };
+
+// Hash na chave: o rate_limit não guarda e-mail nem IP legíveis.
+function chaveLimite(prefixo: "login" | "recuperacao", ip: string, email: string): string {
   const hash = createHash("sha256").update(`${ip}|${email.trim().toLowerCase()}`).digest("hex");
-  return `login:${hash}`;
+  return `${prefixo}:${hash}`;
 }
 
 export async function entrar(input: {
@@ -146,7 +150,7 @@ export async function entrar(input: {
     return { ok: false, erro: "credenciais_invalidas" };
   }
   const { email, senha } = validacao.dados;
-  const chave = chaveLogin(input.ip, email);
+  const chave = chaveLimite("login", input.ip, email);
   const agora = new Date();
   // A tentativa é reservada antes de verificar a senha (ver consumirTentativa).
   const situacao = await consumirTentativa(chave, LIMITE_LOGIN, agora);
@@ -177,7 +181,15 @@ export async function solicitarRecuperacao(input: {
   if (!validacao.ok) {
     return { ok: false, erro: "invalido", campos: validacao.campos };
   }
-  await obterAuth().api.requestPasswordReset({ body: { email: validacao.dados.email } });
+  const { email } = validacao.dados;
+  // Estourou o limite: mesma resposta neutra, mas nenhum e-mail sai.
+  const situacao = await consumirTentativa(
+    chaveLimite("recuperacao", input.ip, email),
+    LIMITE_RECUPERACAO,
+  );
+  if (!situacao.bloqueado) {
+    await obterAuth().api.requestPasswordReset({ body: { email } });
+  }
   return { ok: true };
 }
 

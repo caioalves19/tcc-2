@@ -113,4 +113,20 @@ describe("recuperação de senha (RF03)", () => {
       verificacoesAntes.rows,
     );
   }, 60_000);
+
+  it("o 4º pedido na mesma hora (IP + e-mail) recebe a mesma resposta e não envia", async () => {
+    const { solicitarRecuperacao } = await import("../../src/lib/auth");
+    const email = "recupera.limite@kolo.test";
+    await criarCliente(email);
+
+    const respostas = [];
+    for (let pedido = 0; pedido < 4; pedido++) {
+      respostas.push(await solicitarRecuperacao({ email, ip: "198.51.100.40" }));
+    }
+
+    expect(respostas).toEqual([{ ok: true }, { ok: true }, { ok: true }, { ok: true }]);
+    expect(caixa).toHaveLength(3);
+    expect((await solicitarRecuperacao({ email, ip: "198.51.100.41" })).ok).toBe(true);
+    expect(caixa).toHaveLength(4);
+  }, 60_000);
 });
