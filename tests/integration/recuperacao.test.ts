@@ -129,4 +129,29 @@ describe("recuperação de senha (RF03)", () => {
     expect((await solicitarRecuperacao({ email, ip: "198.51.100.41" })).ok).toBe(true);
     expect(caixa).toHaveLength(4);
   }, 60_000);
+
+  it("provedor fora do ar: email_log fica FALHO e a resposta continua neutra", async () => {
+    const { solicitarRecuperacao } = await import("../../src/lib/auth");
+    const email = "recupera.falha@kolo.test";
+    await criarCliente(email);
+    provedorFora = true;
+
+    const resposta = await solicitarRecuperacao({ email, ip: IP });
+
+    expect(resposta).toEqual({ ok: true });
+    const logs = await db.query(
+      `SELECT email_log.situacao::text AS situacao, email_log.metadados,
+              email_log.enviado_em IS NULL AS sem_envio
+       FROM email_log JOIN "user" ON "user".id = email_log.user_id
+       WHERE "user".email = $1`,
+      [email],
+    );
+    expect(logs.rows).toEqual([
+      {
+        situacao: "FALHO",
+        metadados: { provedor: "teste", erro: "provedor fora do ar" },
+        sem_envio: true,
+      },
+    ]);
+  }, 60_000);
 });
