@@ -238,13 +238,16 @@ describe("recuperação de senha (RF03)", () => {
     ).toEqual({ ok: true });
   }, 60_000);
 
-  it("trocar a senha invalida todos os links pedidos antes", async () => {
+  it("trocar a senha invalida todos os links pedidos antes, só da própria conta", async () => {
     const { redefinirSenha, solicitarRecuperacao } = await import("../../src/lib/auth");
     const email = "recupera.links@kolo.test";
+    const outraConta = "recupera.vizinha@kolo.test";
     await criarCliente(email);
+    await criarCliente(outraConta);
     await solicitarRecuperacao({ email, ip: "198.51.100.80" });
     await solicitarRecuperacao({ email, ip: "198.51.100.80" });
-    const [primeiro, segundo] = caixa.map((mensagem) => tokenDoLink(mensagem.texto));
+    await solicitarRecuperacao({ email: outraConta, ip: "198.51.100.80" });
+    const [primeiro, segundo, daVizinha] = caixa.map((mensagem) => tokenDoLink(mensagem.texto));
     const nova = { senha: "senha-nova-123", confirmacao: "senha-nova-123" };
 
     expect(await redefinirSenha({ token: segundo ?? "", ...nova })).toEqual({ ok: true });
@@ -253,6 +256,7 @@ describe("recuperação de senha (RF03)", () => {
       ok: false,
       erro: "token_invalido",
     });
+    expect(await redefinirSenha({ token: daVizinha ?? "", ...nova })).toEqual({ ok: true });
   }, 60_000);
 
   it("entrada malformada vinda da action vira invalido, não erro 500", async () => {
