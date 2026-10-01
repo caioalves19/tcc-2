@@ -1,3 +1,17 @@
+export {
+  MENSAGEM_EMAIL_DUPLICADO,
+  SENHA_MAXIMA,
+  SENHA_MINIMA,
+  schemaCadastro,
+  validarCadastro,
+  type CampoCadastro,
+  type DadosCadastro,
+  type EntradaCadastro,
+  type ErrosCadastro,
+  type FalhaCadastro,
+  type ResultadoValidacao,
+} from "./cadastro";
+
 export function papelDoCadastroPublico(): "CLIENTE" {
   return "CLIENTE";
 }

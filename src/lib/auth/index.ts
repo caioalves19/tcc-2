@@ -1,10 +1,17 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { isAPIError } from "better-auth/api";
+import { nextCookies } from "better-auth/next-js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
 import { PrismaClient } from "../../../generated/prisma/client";
-import type { PapelFundacao } from "../../modules/identity";
+import {
+  validarCadastro,
+  type EntradaCadastro,
+  type FalhaCadastro,
+  type PapelFundacao,
+} from "../../modules/identity";
 import { databaseUrl } from "../database-url";
 
 const PAPEIS = ["CLIENTE", "ARTISTA", "ADMIN"] as const;
@@ -33,6 +40,11 @@ function criarInstancia() {
           defaultValue: "CLIENTE",
           input: false,
         },
+        phone: {
+          type: "string",
+          required: true,
+          input: true,
+        },
       },
     },
     session: {
@@ -52,6 +64,8 @@ function criarInstancia() {
         generateId: "uuid",
       },
     },
+    // Precisa ser o último plugin: grava o Set-Cookie nas Server Actions.
+    plugins: [nextCookies()],
   });
 }
 
@@ -75,6 +89,47 @@ export async function abrirSessao(input: {
     },
   });
   return { token: resultado.token };
+}
+
+export type ResultadoCadastro = { ok: true; token: string } | FalhaCadastro;
+
+async function emailJaCadastrado(erro: unknown, email: string): Promise<boolean> {
+  if (!isAPIError(erro)) {
+    return false;
+  }
+  if (erro.body?.code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL") {
+    return true;
+  }
+  // Cadastro simultâneo: os dois passam pela checagem e o segundo bate no
+  // UNIQUE do banco, que o Better Auth devolve como FAILED_TO_CREATE_USER.
+  if (erro.body?.code === "FAILED_TO_CREATE_USER") {
+    const contexto = await obterAuth().$context;
+    return (await contexto.internalAdapter.findUserByEmail(email)) !== null;
+  }
+  return false;
+}
+
+export async function cadastrarCliente(entrada: EntradaCadastro): Promise<ResultadoCadastro> {
+  const validacao = validarCadastro(entrada);
+  if (!validacao.ok) {
+    return { ok: false, erro: "invalido", campos: validacao.campos };
+  }
+  const { nome, email, telefone, senha } = validacao.dados;
+  let resultado;
+  try {
+    resultado = await obterAuth().api.signUpEmail({
+      body: { name: nome, email, password: senha, phone: telefone },
+    });
+  } catch (erro) {
+    if (await emailJaCadastrado(erro, email)) {
+      return { ok: false, erro: "email_duplicado" };
+    }
+    throw erro;
+  }
+  if (resultado.token === null) {
+    throw new Error("Cadastro sem sessão aberta");
+  }
+  return { ok: true, token: resultado.token };
 }
 
 function papelConhecido(valor: unknown): PapelFundacao | null {

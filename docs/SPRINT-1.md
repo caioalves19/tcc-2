@@ -158,9 +158,9 @@ Better Auth configurado com sessão no banco e controle por papel (RF06).
 **Resp:** Caio V. · **Deps:** PBI-11
 Cadastro público com nome, e-mail, telefone e senha (RF01).
 
-- [ ] Validação com Zod (e-mail válido, senha mínima, telefone)
-- [ ] Senha salva só como hash; e-mail duplicado dá erro amigável
-- [ ] Cadastro cria usuário `CLIENTE` e inicia sessão
+- [x] Validação com Zod (e-mail válido, senha mínima, telefone)
+- [x] Senha salva só como hash; e-mail duplicado dá erro amigável
+- [x] Cadastro cria usuário `CLIENTE` e inicia sessão
 
 ### PBI-13 — Login/logout com sessão revogável
 
