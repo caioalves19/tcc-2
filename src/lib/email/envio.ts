@@ -17,16 +17,16 @@ function obterEnviador(): EnviadorEmail {
 
 // Numa requisição do Next, a tarefa roda depois da resposta (after): o tempo de envio
 // não revela se o e-mail tem conta. Fora de requisição (testes, scripts), roda na hora.
-export function despacharForaDaResposta(tarefa: () => Promise<void>): Promise<void> {
+export async function despacharForaDaResposta(tarefa: () => Promise<void>): Promise<void> {
   try {
     after(tarefa);
   } catch (erro) {
     if (erro instanceof Error && erro.message.includes("outside a request scope")) {
-      return tarefa();
+      await tarefa();
+      return;
     }
     throw erro;
   }
-  return Promise.resolve();
 }
 
 // Registra em email_log (PENDENTE → ENVIADO/FALHO) sem nunca gravar o link.

@@ -69,15 +69,14 @@ function criarInstancia() {
           });
         }
       },
+      // Já roda fora da resposta (ver solicitarRecuperacao): envia direto.
       sendResetPassword: async ({ user, token }) => {
-        await despacharForaDaResposta(() =>
-          enviarEmailDeRecuperacao({
-            userId: user.id,
-            nome: user.name,
-            para: user.email,
-            link: linkDeRedefinicao(token),
-          }),
-        );
+        await enviarEmailDeRecuperacao({
+          userId: user.id,
+          nome: user.name,
+          para: user.email,
+          link: linkDeRedefinicao(token),
+        });
       },
     },
     // O token de recuperação fica no banco só como hash.
@@ -202,7 +201,11 @@ export async function solicitarRecuperacao(input: {
     LIMITE_RECUPERACAO,
   );
   if (!situacao.bloqueado) {
-    await obterAuth().api.requestPasswordReset({ body: { email } });
+    // Consulta, token e e-mail rodam depois da resposta: o tempo de resposta depende só
+    // da validação e do limite, nunca de o e-mail ter conta.
+    await despacharForaDaResposta(async () => {
+      await obterAuth().api.requestPasswordReset({ body: { email } });
+    });
   }
   return { ok: true };
 }
