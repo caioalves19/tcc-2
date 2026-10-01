@@ -24,6 +24,15 @@ export {
   type ResultadoValidacaoLogin,
 } from "./login";
 
+export {
+  MENSAGEM_PEDIDO_RECUPERACAO,
+  schemaPedidoRecuperacao,
+  validarPedidoRecuperacao,
+  type DadosPedidoRecuperacao,
+  type EntradaPedidoRecuperacao,
+  type ErrosPedidoRecuperacao,
+} from "./recuperacao";
+
 export function papelDoCadastroPublico(): "CLIENTE" {
   return "CLIENTE";
 }

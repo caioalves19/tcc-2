@@ -5,18 +5,20 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { isAPIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
 
 import { PrismaClient } from "../../../generated/prisma/client";
 import {
   validarCadastro,
   validarLogin,
+  validarPedidoRecuperacao,
   type EntradaCadastro,
+  type ErrosPedidoRecuperacao,
   type FalhaCadastro,
   type FalhaLogin,
   type PapelFundacao,
 } from "../../modules/identity";
-import { databaseUrl } from "../database-url";
+import { obterPool } from "../db";
+import { despacharForaDaResposta, enviarEmailDeRecuperacao } from "../email";
 import { consumirTentativa, limparTentativas, type RegraLimite } from "../rate-limit";
 
 const PAPEIS = ["CLIENTE", "ARTISTA", "ADMIN"] as const;
@@ -29,14 +31,40 @@ function segredo(): string {
   return valor;
 }
 
+function urlBase(): string {
+  return process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
+}
+
+// Link para a nossa página; a rota HTTP do Better Auth não é montada.
+function linkDeRedefinicao(token: string): string {
+  const link = new URL("/redefinir-senha", urlBase());
+  link.searchParams.set("token", token);
+  return link.toString();
+}
+
 function criarInstancia() {
-  const pool = new Pool({ connectionString: databaseUrl() });
-  const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
+  const prisma = new PrismaClient({ adapter: new PrismaPg(obterPool()) });
   return betterAuth({
     secret: segredo(),
-    baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
+    baseURL: urlBase(),
     database: prismaAdapter(prisma, { provider: "postgresql" }),
-    emailAndPassword: { enabled: true },
+    emailAndPassword: {
+      enabled: true,
+      // RF03: link de uso único, válido por 1 hora.
+      resetPasswordTokenExpiresIn: 60 * 60,
+      sendResetPassword: async ({ user, token }) => {
+        await despacharForaDaResposta(() =>
+          enviarEmailDeRecuperacao({
+            userId: user.id,
+            nome: user.name,
+            para: user.email,
+            link: linkDeRedefinicao(token),
+          }),
+        );
+      },
+    },
+    // O token de recuperação fica no banco só como hash.
+    verification: { storeIdentifier: "hashed" },
     user: {
       additionalFields: {
         role: {
@@ -136,6 +164,21 @@ export async function entrar(input: {
     }
     throw erro;
   }
+}
+
+export type ResultadoPedidoRecuperacao =
+  { ok: true } | { ok: false; erro: "invalido"; campos: ErrosPedidoRecuperacao };
+
+export async function solicitarRecuperacao(input: {
+  email: string;
+  ip: string;
+}): Promise<ResultadoPedidoRecuperacao> {
+  const validacao = validarPedidoRecuperacao(input);
+  if (!validacao.ok) {
+    return { ok: false, erro: "invalido", campos: validacao.campos };
+  }
+  await obterAuth().api.requestPasswordReset({ body: { email: validacao.dados.email } });
+  return { ok: true };
 }
 
 export type ResultadoCadastro = { ok: true; token: string } | FalhaCadastro;
