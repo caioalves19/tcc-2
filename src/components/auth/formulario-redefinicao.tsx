@@ -22,10 +22,10 @@ declare const window: {
   history: { replaceState(estado: null, titulo: string, url: string): void };
 };
 
-export function AvisoLinkInvalido() {
+export function AvisoLinkInvalido({ mensagem = MENSAGEM_TOKEN_INVALIDO }: { mensagem?: string }) {
   return (
     <p role="alert" className="text-nota text-destructive">
-      {MENSAGEM_TOKEN_INVALIDO}{" "}
+      {mensagem}{" "}
       <a href="/esqueci-senha" className="text-[var(--kolo-link)] underline underline-offset-4">
         Pedir novo link
       </a>

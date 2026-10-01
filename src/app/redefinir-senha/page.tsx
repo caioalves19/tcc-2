@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AvisoLinkInvalido, FormularioRedefinicao } from "@/components/auth/formulario-redefinicao";
+import { MENSAGEM_SEM_TOKEN } from "@/modules/identity";
 
 import { redefinirSenhaAcao } from "./actions";
 
@@ -27,7 +28,7 @@ export default async function PaginaRedefinirSenha({
         {typeof token === "string" && token !== "" ? (
           <FormularioRedefinicao token={token} acao={redefinirSenhaAcao} />
         ) : (
-          <AvisoLinkInvalido />
+          <AvisoLinkInvalido mensagem={MENSAGEM_SEM_TOKEN} />
         )}
       </div>
     </section>

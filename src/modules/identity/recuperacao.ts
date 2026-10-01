@@ -40,6 +40,10 @@ export type FalhaRedefinicao =
 
 export const MENSAGEM_TOKEN_INVALIDO = "Link inválido ou expirado. Peça um novo.";
 
+// Sem token na URL: a página tira o token da barra ao abrir, então recarregar cai aqui
+// mesmo com o link do e-mail ainda valendo.
+export const MENSAGEM_SEM_TOKEN = "Abra de novo o link que enviamos por e-mail ou peça um novo.";
+
 export function validarRedefinicao(
   entrada: EntradaRedefinicao,
 ): ResultadoValidacaoDe<DadosRedefinicao> {

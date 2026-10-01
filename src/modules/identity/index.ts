@@ -27,6 +27,7 @@ export {
 
 export {
   MENSAGEM_PEDIDO_RECUPERACAO,
+  MENSAGEM_SEM_TOKEN,
   MENSAGEM_TOKEN_INVALIDO,
   schemaPedidoRecuperacao,
   schemaRedefinicao,
