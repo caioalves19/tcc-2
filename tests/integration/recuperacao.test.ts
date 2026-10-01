@@ -96,4 +96,21 @@ describe("recuperação de senha (RF03)", () => {
     ]);
     expect(JSON.stringify(logs.rows)).not.toContain(token);
   }, 60_000);
+
+  it("e-mail sem conta recebe a mesma resposta e nada é enviado nem registrado", async () => {
+    const { solicitarRecuperacao } = await import("../../src/lib/auth");
+    const antes = await db.query("SELECT count(*)::int AS total FROM email_log");
+    const verificacoesAntes = await db.query("SELECT count(*)::int AS total FROM verification");
+
+    const resposta = await solicitarRecuperacao({ email: "ninguem@kolo.test", ip: IP });
+
+    expect(resposta).toEqual({ ok: true });
+    expect(caixa).toEqual([]);
+    expect((await db.query("SELECT count(*)::int AS total FROM email_log")).rows).toEqual(
+      antes.rows,
+    );
+    expect((await db.query("SELECT count(*)::int AS total FROM verification")).rows).toEqual(
+      verificacoesAntes.rows,
+    );
+  }, 60_000);
 });
