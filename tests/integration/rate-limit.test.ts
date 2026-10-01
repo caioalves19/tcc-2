@@ -59,15 +59,27 @@ describe("limite de tentativas no Postgres (RNF08)", () => {
     expect(situacoes.filter((situacao) => !situacao.bloqueado)).toHaveLength(5);
   }, 60_000);
 
-  it("limparFalhas zera a contagem da chave", async () => {
-    const { consumirTentativa, limparFalhas } = await import("../../src/lib/rate-limit");
+  it("limparTentativas zera a contagem da chave", async () => {
+    const { consumirTentativa, limparTentativas } = await import("../../src/lib/rate-limit");
     const chave = "teste:limpar";
     for (let tentativa = 0; tentativa < 6; tentativa++) {
       await consumirTentativa(chave, REGRA, AGORA);
     }
 
-    await limparFalhas(chave);
+    await limparTentativas(chave);
 
     expect(await consumirTentativa(chave, REGRA, AGORA)).toEqual({ bloqueado: false });
+  }, 60_000);
+
+  it("durante o bloqueio o contador para em maximo + 1", async () => {
+    const { consumirTentativa } = await import("../../src/lib/rate-limit");
+    const chave = "teste:teto";
+
+    for (let tentativa = 0; tentativa < 20; tentativa++) {
+      await consumirTentativa(chave, REGRA, AGORA);
+    }
+
+    const linha = await db.query("SELECT tentativas FROM rate_limit WHERE chave = $1", [chave]);
+    expect(linha.rows).toEqual([{ tentativas: 6 }]);
   }, 60_000);
 });

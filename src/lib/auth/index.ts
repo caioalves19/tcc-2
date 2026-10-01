@@ -17,7 +17,7 @@ import {
   type PapelFundacao,
 } from "../../modules/identity";
 import { databaseUrl } from "../database-url";
-import { consumirTentativa, limparFalhas, type RegraLimite } from "../rate-limit";
+import { consumirTentativa, limparTentativas, type RegraLimite } from "../rate-limit";
 
 const PAPEIS = ["CLIENTE", "ARTISTA", "ADMIN"] as const;
 
@@ -128,7 +128,7 @@ export async function entrar(input: {
   }
   try {
     const { token } = await abrirSessao({ email, senha });
-    await limparFalhas(chave);
+    await limparTentativas(chave);
     return { ok: true, token };
   } catch (erro) {
     if (isAPIError(erro) && erro.body?.code === "INVALID_EMAIL_OR_PASSWORD") {

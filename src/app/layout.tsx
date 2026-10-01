@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
 import { headers } from "next/headers";
+import { unstable_rethrow } from "next/navigation";
 
 import "./globals.css";
 import { Cabecalho } from "@/components/layout/cabecalho";
@@ -35,6 +36,7 @@ async function estaLogado(): Promise<boolean> {
   try {
     return (await sessaoDaRequisicao(cabecalhos)) !== null;
   } catch (erro) {
+    unstable_rethrow(erro);
     console.error("Falha ao ler a sessão no layout", erro);
     return false;
   }
