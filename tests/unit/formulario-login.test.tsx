@@ -47,4 +47,13 @@ describe("formulário de login (RF02)", () => {
     expect(await screen.findByText("Informe sua senha.")).toBeDefined();
     expect(acao).not.toHaveBeenCalled();
   });
+
+  it("falha inesperada do servidor mostra aviso em vez de sumir calada", async () => {
+    const acao = vi.fn().mockRejectedValue(new Error("banco fora"));
+    render(<FormularioLogin acao={acao} />);
+
+    await preencher({ email: "maria@kolo.test", senha: "senha-certa" });
+
+    expect(await screen.findByText("Não foi possível entrar agora. Tente de novo.")).toBeDefined();
+  });
 });

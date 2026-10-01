@@ -198,13 +198,14 @@ export async function papelDaSessao(token: string): Promise<PapelFundacao | null
   return papelConhecido(encontrada.user.role);
 }
 
-// Lê a sessão pelo cookie assinado da requisição (sem cache de cookie: sempre o banco).
+// Lê a sessão pelo cookie assinado da requisição: sempre no banco (sem cache de cookie)
+// e sem prorrogar a validade, porque numa renderização o cookie não pode ser renovado.
 export async function sessaoDaRequisicao(
   cabecalhos: Headers,
 ): Promise<{ token: string; papel: PapelFundacao } | null> {
   const encontrada = await obterAuth().api.getSession({
     headers: cabecalhos,
-    query: { disableCookieCache: true },
+    query: { disableCookieCache: true, disableRefresh: true },
   });
   if (encontrada === null) {
     return null;

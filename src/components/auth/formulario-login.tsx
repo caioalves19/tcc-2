@@ -1,5 +1,6 @@
 "use client";
 
+import { unstable_rethrow } from "next/navigation";
 import { useForm, type FieldErrors, type Resolver } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,15 @@ export function FormularioLogin({
   } = useForm<EntradaLogin, unknown, DadosLogin>({ resolver });
 
   async function enviar(dados: DadosLogin) {
-    const falha = await acao(dados);
+    let falha: FalhaLogin | undefined;
+    try {
+      falha = await acao(dados);
+    } catch (erro) {
+      // O redirect de sucesso chega aqui como erro interno do Next: precisa seguir adiante.
+      unstable_rethrow(erro);
+      setError("root.servidor", { message: "Não foi possível entrar agora. Tente de novo." });
+      return;
+    }
     if (falha !== undefined) {
       setError("root.servidor", { message: mensagemFalhaLogin(falha) });
     }

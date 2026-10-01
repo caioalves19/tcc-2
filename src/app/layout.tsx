@@ -29,13 +29,24 @@ export const metadata: Metadata = {
     "Arte urbana autêntica, feita por pessoas reais: obras originais, murais e estúdio de tatuagem em São Paulo.",
 };
 
+// Se o banco falhar, o site segue no ar como deslogado em vez de virar 500 inteiro.
+async function estaLogado(): Promise<boolean> {
+  const cabecalhos = await headers();
+  try {
+    return (await sessaoDaRequisicao(cabecalhos)) !== null;
+  } catch (erro) {
+    console.error("Falha ao ler a sessão no layout", erro);
+    return false;
+  }
+}
+
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const sessao = await sessaoDaRequisicao(await headers());
+  const logado = await estaLogado();
 
   return (
     <html lang="pt-BR" className={`${fonteCorpo.variable} ${fonteTitulo.variable}`}>
       <body className="flex min-h-screen flex-col">
-        <Cabecalho logado={sessao !== null} acaoSair={sairAcao} />
+        <Cabecalho logado={logado} acaoSair={sairAcao} />
         <main className="flex-1">{children}</main>
         <Rodape />
       </body>
