@@ -1,7 +1,7 @@
 "use client";
 
 import { unstable_rethrow } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { AvisoErro, Campo } from "@/components/auth/campo";
@@ -16,6 +16,11 @@ import {
 } from "@/modules/identity";
 
 const resolver = resolverDe(validarRedefinicao);
+
+// O tsconfig não inclui a lib "dom": tipamos só o pedaço do History que este arquivo usa.
+declare const window: {
+  history: { replaceState(estado: null, titulo: string, url: string): void };
+};
 
 export function AvisoLinkInvalido() {
   return (
@@ -36,6 +41,11 @@ export function FormularioRedefinicao({
   acao: (entrada: EntradaRedefinicao & { token: string }) => Promise<FalhaRedefinicao | undefined>;
 }) {
   const [linkInvalido, setLinkInvalido] = useState(false);
+
+  // O token já está no estado: some da barra de endereço (histórico, POST da action, logs).
+  useEffect(() => {
+    window.history.replaceState(null, "", "/redefinir-senha");
+  }, []);
   const {
     register,
     handleSubmit,

@@ -50,4 +50,12 @@ describe("formulário de nova senha (RF03)", () => {
 
     expect(await screen.findByText("Não foi possível salvar agora. Tente de novo.")).toBeDefined();
   });
+
+  it("tira o token da barra de endereço ao abrir: não fica no histórico nem vai no POST", () => {
+    window.history.replaceState(null, "", "/redefinir-senha?token=abc");
+
+    render(<FormularioRedefinicao token="abc" acao={vi.fn()} />);
+
+    expect(window.location.pathname + window.location.search).toBe("/redefinir-senha");
+  });
 });
