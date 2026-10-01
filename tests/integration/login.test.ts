@@ -61,4 +61,46 @@ describe("login e logout (RF02)", () => {
 
     expect(resultado).toEqual({ ok: false, erro: "credenciais_invalidas" });
   }, 60_000);
+
+  it("após 5 falhas no mesmo IP + e-mail, bloqueia até a senha certa e não abre sessão", async () => {
+    const { entrar } = await import("../../src/lib/auth");
+    const email = "login.bloqueio@kolo.test";
+    await criarCliente(email);
+    const antes = await sessoesDe(email);
+
+    for (let tentativa = 0; tentativa < 5; tentativa++) {
+      expect((await entrar({ email, senha: "senha-errada-1", ip: IP })).ok).toBe(false);
+    }
+    const bloqueado = await entrar({ email, senha: SENHA, ip: IP });
+
+    expect(bloqueado).toEqual({ ok: false, erro: "bloqueado", minutos: 15 });
+    expect(await sessoesDe(email)).toEqual(antes);
+    expect((await entrar({ email, senha: SENHA, ip: "198.51.100.7" })).ok).toBe(true);
+  }, 60_000);
+
+  it("login certo antes do bloqueio zera a contagem", async () => {
+    const { entrar } = await import("../../src/lib/auth");
+    const email = "login.zera@kolo.test";
+    await criarCliente(email);
+
+    for (let tentativa = 0; tentativa < 4; tentativa++) {
+      await entrar({ email, senha: "senha-errada-1", ip: IP });
+    }
+    expect((await entrar({ email, senha: SENHA, ip: IP })).ok).toBe(true);
+    for (let tentativa = 0; tentativa < 4; tentativa++) {
+      await entrar({ email, senha: "senha-errada-1", ip: IP });
+    }
+
+    expect((await entrar({ email, senha: SENHA, ip: IP })).ok).toBe(true);
+  }, 60_000);
+
+  it("a chave do limite não guarda e-mail nem IP legíveis", async () => {
+    const chaves = await db.query<{ chave: string }>("SELECT chave FROM rate_limit");
+
+    expect(chaves.rows.length).toBeGreaterThan(0);
+    for (const { chave } of chaves.rows) {
+      expect(chave).not.toContain("@");
+      expect(chave).not.toContain(IP);
+    }
+  }, 60_000);
 });
