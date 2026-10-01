@@ -193,4 +193,48 @@ describe("recuperação de senha (RF03)", () => {
       await redefinirSenha({ token, senha: "outra-senha-456", confirmacao: "outra-senha-456" }),
     ).toEqual({ ok: false, erro: "token_invalido" });
   }, 60_000);
+
+  it("token expirado ou inventado é recusado e a senha antiga continua valendo", async () => {
+    const { entrar, redefinirSenha, solicitarRecuperacao } = await import("../../src/lib/auth");
+    const email = "recupera.expira@kolo.test";
+    await criarCliente(email);
+    await solicitarRecuperacao({ email, ip: "198.51.100.60" });
+    const token = tokenDoLink(caixa[0]?.texto ?? "");
+    await db.query(
+      `UPDATE verification SET expira_em = now() - interval '1 minute'
+       WHERE criado_em = (SELECT max(criado_em) FROM verification)`,
+    );
+    const nova = { senha: "senha-nova-123", confirmacao: "senha-nova-123" };
+
+    expect(await redefinirSenha({ token, ...nova })).toEqual({ ok: false, erro: "token_invalido" });
+    expect(await redefinirSenha({ token: "token-inventado", ...nova })).toEqual({
+      ok: false,
+      erro: "token_invalido",
+    });
+    expect(await redefinirSenha({ token: "", ...nova })).toEqual({
+      ok: false,
+      erro: "token_invalido",
+    });
+    expect((await entrar({ email, senha: SENHA, ip: "198.51.100.61" })).ok).toBe(true);
+  }, 60_000);
+
+  it("senha inválida ou confirmação diferente não gastam o token", async () => {
+    const { redefinirSenha, solicitarRecuperacao } = await import("../../src/lib/auth");
+    const email = "recupera.valida@kolo.test";
+    await criarCliente(email);
+    await solicitarRecuperacao({ email, ip: "198.51.100.70" });
+    const token = tokenDoLink(caixa[0]?.texto ?? "");
+
+    expect(await redefinirSenha({ token, senha: "curta", confirmacao: "curta" })).toEqual({
+      ok: false,
+      erro: "invalido",
+      campos: { senha: "A senha precisa ter pelo menos 8 caracteres." },
+    });
+    expect(
+      await redefinirSenha({ token, senha: "senha-nova-123", confirmacao: "senha-outra-123" }),
+    ).toEqual({ ok: false, erro: "invalido", campos: { confirmacao: "As senhas não conferem." } });
+    expect(
+      await redefinirSenha({ token, senha: "senha-nova-123", confirmacao: "senha-nova-123" }),
+    ).toEqual({ ok: true });
+  }, 60_000);
 });
