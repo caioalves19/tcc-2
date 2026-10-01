@@ -237,4 +237,21 @@ describe("recuperação de senha (RF03)", () => {
       await redefinirSenha({ token, senha: "senha-nova-123", confirmacao: "senha-nova-123" }),
     ).toEqual({ ok: true });
   }, 60_000);
+
+  it("trocar a senha invalida todos os links pedidos antes", async () => {
+    const { redefinirSenha, solicitarRecuperacao } = await import("../../src/lib/auth");
+    const email = "recupera.links@kolo.test";
+    await criarCliente(email);
+    await solicitarRecuperacao({ email, ip: "198.51.100.80" });
+    await solicitarRecuperacao({ email, ip: "198.51.100.80" });
+    const [primeiro, segundo] = caixa.map((mensagem) => tokenDoLink(mensagem.texto));
+    const nova = { senha: "senha-nova-123", confirmacao: "senha-nova-123" };
+
+    expect(await redefinirSenha({ token: segundo ?? "", ...nova })).toEqual({ ok: true });
+
+    expect(await redefinirSenha({ token: primeiro ?? "", ...nova })).toEqual({
+      ok: false,
+      erro: "token_invalido",
+    });
+  }, 60_000);
 });

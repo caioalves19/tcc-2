@@ -56,6 +56,19 @@ function criarInstancia() {
       // RF03: link de uso único, válido por 1 hora; trocar a senha derruba todas as sessões.
       resetPasswordTokenExpiresIn: 60 * 60,
       revokeSessionsOnPasswordReset: true,
+      // O Better Auth só consome o token usado: os outros links pedidos antes seguiriam
+      // valendo. Hoje só a recuperação usa verification, e valor guarda o id do usuário.
+      onPasswordReset: async ({ user }) => {
+        try {
+          await obterPool().query("DELETE FROM verification WHERE valor = $1", [user.id]);
+        } catch (erro) {
+          // Não pode subir: a revogação das sessões roda logo depois deste hook.
+          console.error("Falha ao invalidar links antigos de recuperação", {
+            userId: user.id,
+            erro,
+          });
+        }
+      },
       sendResetPassword: async ({ user, token }) => {
         await despacharForaDaResposta(() =>
           enviarEmailDeRecuperacao({
