@@ -3,6 +3,7 @@ export {
   SENHA_MAXIMA,
   SENHA_MINIMA,
   schemaCadastro,
+  schemaSenhaNova,
   validarCadastro,
   type CampoCadastro,
   type DadosCadastro,
@@ -26,11 +27,17 @@ export {
 
 export {
   MENSAGEM_PEDIDO_RECUPERACAO,
+  MENSAGEM_TOKEN_INVALIDO,
   schemaPedidoRecuperacao,
+  schemaRedefinicao,
   validarPedidoRecuperacao,
+  validarRedefinicao,
   type DadosPedidoRecuperacao,
+  type DadosRedefinicao,
   type EntradaPedidoRecuperacao,
+  type EntradaRedefinicao,
   type ErrosPedidoRecuperacao,
+  type ErrosRedefinicao,
 } from "./recuperacao";
 
 export function papelDoCadastroPublico(): "CLIENTE" {

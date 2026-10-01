@@ -11,8 +11,11 @@ import {
   validarCadastro,
   validarLogin,
   validarPedidoRecuperacao,
+  validarRedefinicao,
   type EntradaCadastro,
+  type EntradaRedefinicao,
   type ErrosPedidoRecuperacao,
+  type ErrosRedefinicao,
   type FalhaCadastro,
   type FalhaLogin,
   type PapelFundacao,
@@ -50,8 +53,9 @@ function criarInstancia() {
     database: prismaAdapter(prisma, { provider: "postgresql" }),
     emailAndPassword: {
       enabled: true,
-      // RF03: link de uso único, válido por 1 hora.
+      // RF03: link de uso único, válido por 1 hora; trocar a senha derruba todas as sessões.
       resetPasswordTokenExpiresIn: 60 * 60,
+      revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, token }) => {
         await despacharForaDaResposta(() =>
           enviarEmailDeRecuperacao({
@@ -191,6 +195,36 @@ export async function solicitarRecuperacao(input: {
     await obterAuth().api.requestPasswordReset({ body: { email } });
   }
   return { ok: true };
+}
+
+export type ResultadoRedefinicao =
+  | { ok: true }
+  | { ok: false; erro: "token_invalido" }
+  | { ok: false; erro: "invalido"; campos: ErrosRedefinicao };
+
+export async function redefinirSenha(
+  input: EntradaRedefinicao & { token: string },
+): Promise<ResultadoRedefinicao> {
+  const validacao = validarRedefinicao({ senha: input.senha, confirmacao: input.confirmacao });
+  if (!validacao.ok) {
+    return { ok: false, erro: "invalido", campos: validacao.campos };
+  }
+  if (input.token.trim() === "") {
+    return { ok: false, erro: "token_invalido" };
+  }
+  try {
+    // O Better Auth consome o token numa transação: uso único mesmo com cliques simultâneos.
+    await obterAuth().api.resetPassword({
+      body: { token: input.token, newPassword: validacao.dados.senha },
+    });
+    return { ok: true };
+  } catch (erro) {
+    const codigo = isAPIError(erro) ? erro.body?.code : undefined;
+    if (codigo === "INVALID_TOKEN" || codigo === "USER_NOT_FOUND") {
+      return { ok: false, erro: "token_invalido" };
+    }
+    throw erro;
+  }
 }
 
 export type ResultadoCadastro = { ok: true; token: string } | FalhaCadastro;

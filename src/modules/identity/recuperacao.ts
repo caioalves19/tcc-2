@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { schemaSenhaNova } from "./cadastro";
 import { validarCom, type ErrosDe, type ResultadoValidacaoDe } from "./validacao";
 
 export const schemaPedidoRecuperacao = z.object({
@@ -18,4 +19,23 @@ export function validarPedidoRecuperacao(
   entrada: EntradaPedidoRecuperacao,
 ): ResultadoValidacaoDe<DadosPedidoRecuperacao> {
   return validarCom(schemaPedidoRecuperacao, entrada);
+}
+
+export const schemaRedefinicao = z
+  .object({ senha: schemaSenhaNova, confirmacao: z.string() })
+  .refine((dados) => dados.senha === dados.confirmacao, {
+    message: "As senhas não conferem.",
+    path: ["confirmacao"],
+  });
+
+export type EntradaRedefinicao = z.input<typeof schemaRedefinicao>;
+export type DadosRedefinicao = z.output<typeof schemaRedefinicao>;
+export type ErrosRedefinicao = ErrosDe<DadosRedefinicao>;
+
+export const MENSAGEM_TOKEN_INVALIDO = "Link inválido ou expirado. Peça um novo.";
+
+export function validarRedefinicao(
+  entrada: EntradaRedefinicao,
+): ResultadoValidacaoDe<DadosRedefinicao> {
+  return validarCom(schemaRedefinicao, entrada);
 }

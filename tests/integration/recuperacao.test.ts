@@ -59,6 +59,15 @@ describe("recuperação de senha (RF03)", () => {
     await db.end();
   });
 
+  async function sessoesDe(email: string): Promise<string[]> {
+    const resultado = await db.query<{ token: string }>(
+      `SELECT session.token FROM session JOIN "user" ON "user".id = session.user_id
+       WHERE "user".email = $1`,
+      [email],
+    );
+    return resultado.rows.map((linha) => linha.token);
+  }
+
   it("e-mail cadastrado recebe o link; o banco guarda só o hash do token", async () => {
     const { solicitarRecuperacao } = await import("../../src/lib/auth");
     const email = "recupera@kolo.test";
@@ -153,5 +162,35 @@ describe("recuperação de senha (RF03)", () => {
         sem_envio: true,
       },
     ]);
+  }, 60_000);
+
+  it("token válido troca a senha, derruba todas as sessões e não pode ser reusado", async () => {
+    const { entrar, papelDaSessao, redefinirSenha, solicitarRecuperacao } =
+      await import("../../src/lib/auth");
+    const email = "recupera.troca@kolo.test";
+    await criarCliente(email);
+    const login = await entrar({ email, senha: SENHA, ip: "198.51.100.50" });
+    const sessaoAntiga = login.ok ? login.token : "";
+    expect(await sessoesDe(email)).toHaveLength(2);
+    await solicitarRecuperacao({ email, ip: "198.51.100.50" });
+    const token = tokenDoLink(caixa[0]?.texto ?? "");
+
+    const resultado = await redefinirSenha({
+      token,
+      senha: "senha-nova-123",
+      confirmacao: "senha-nova-123",
+    });
+
+    expect(resultado).toEqual({ ok: true });
+    expect(await sessoesDe(email)).toEqual([]);
+    expect(await papelDaSessao(sessaoAntiga)).toBeNull();
+    expect(await entrar({ email, senha: SENHA, ip: "198.51.100.51" })).toEqual({
+      ok: false,
+      erro: "credenciais_invalidas",
+    });
+    expect((await entrar({ email, senha: "senha-nova-123", ip: "198.51.100.51" })).ok).toBe(true);
+    expect(
+      await redefinirSenha({ token, senha: "outra-senha-456", confirmacao: "outra-senha-456" }),
+    ).toEqual({ ok: false, erro: "token_invalido" });
   }, 60_000);
 });
