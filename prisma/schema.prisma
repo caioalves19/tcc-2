@@ -439,9 +439,10 @@ model EmailLog {
   @@index([userId])
   @@map("email_log")
 }
+
 model RateLimit {
   key         String   @id @map("chave")
-  failures    Int      @map("falhas")
+  attempts    Int      @map("tentativas")
   windowStart DateTime @map("janela_inicio") @db.Timestamptz(3)
 
   @@map("rate_limit")

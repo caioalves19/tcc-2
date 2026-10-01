@@ -3,7 +3,7 @@ import { Pool } from "pg";
 import { databaseUrl } from "../database-url";
 
 // Limite de tentativas por janela fixa, guardado no Postgres (RNF08).
-// A janela começa na primeira falha; passado janelaMs, a próxima falha reinicia a contagem.
+// A janela começa na primeira tentativa; passado janelaMs, a contagem reinicia.
 export type RegraLimite = { maximo: number; janelaMs: number };
 
 export type SituacaoLimite = { bloqueado: false } | { bloqueado: true; liberaEm: Date };
@@ -15,41 +15,29 @@ function obterPool(): Pool {
   return pool;
 }
 
-export async function registrarFalha(
-  chave: string,
-  regra: RegraLimite,
-  agora: Date = new Date(),
-): Promise<void> {
-  const inicioValido = new Date(agora.getTime() - regra.janelaMs);
-  // Um único statement: falhas concorrentes na mesma chave não se perdem.
-  await obterPool().query(
-    `INSERT INTO rate_limit (chave, falhas, janela_inicio)
-     VALUES ($1, 1, $2)
-     ON CONFLICT (chave) DO UPDATE SET
-       falhas = CASE WHEN rate_limit.janela_inicio <= $3 THEN 1 ELSE rate_limit.falhas + 1 END,
-       janela_inicio = CASE WHEN rate_limit.janela_inicio <= $3 THEN $2 ELSE rate_limit.janela_inicio END`,
-    [chave, agora, inicioValido],
-  );
-}
-
-export async function estaBloqueado(
+// Reserva a tentativa ANTES de fazer o trabalho caro (ex.: verificar senha).
+// Somar e decidir no mesmo statement impede que uma rajada simultânea passe
+// toda pela checagem antes de alguém gravar a contagem.
+export async function consumirTentativa(
   chave: string,
   regra: RegraLimite,
   agora: Date = new Date(),
 ): Promise<SituacaoLimite> {
-  const resultado = await obterPool().query<{ falhas: number; janela_inicio: Date }>(
-    "SELECT falhas, janela_inicio FROM rate_limit WHERE chave = $1",
-    [chave],
+  const inicioValido = new Date(agora.getTime() - regra.janelaMs);
+  const resultado = await obterPool().query<{ tentativas: number; janela_inicio: Date }>(
+    `INSERT INTO rate_limit (chave, tentativas, janela_inicio)
+     VALUES ($1, 1, $2)
+     ON CONFLICT (chave) DO UPDATE SET
+       tentativas = CASE WHEN rate_limit.janela_inicio <= $3 THEN 1 ELSE rate_limit.tentativas + 1 END,
+       janela_inicio = CASE WHEN rate_limit.janela_inicio <= $3 THEN $2 ELSE rate_limit.janela_inicio END
+     RETURNING tentativas, janela_inicio`,
+    [chave, agora, inicioValido],
   );
   const linha = resultado.rows[0];
-  if (linha === undefined) {
+  if (linha === undefined || linha.tentativas <= regra.maximo) {
     return { bloqueado: false };
   }
-  const liberaEm = new Date(linha.janela_inicio.getTime() + regra.janelaMs);
-  if (linha.falhas >= regra.maximo && liberaEm > agora) {
-    return { bloqueado: true, liberaEm };
-  }
-  return { bloqueado: false };
+  return { bloqueado: true, liberaEm: new Date(linha.janela_inicio.getTime() + regra.janelaMs) };
 }
 
 export async function limparFalhas(chave: string): Promise<void> {

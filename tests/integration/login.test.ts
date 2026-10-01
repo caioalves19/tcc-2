@@ -103,6 +103,9 @@ describe("login e logout (RF02)", () => {
   }, 60_000);
 
   it("a chave do limite não guarda e-mail nem IP legíveis", async () => {
+    const { entrar } = await import("../../src/lib/auth");
+    await entrar({ email: "chave.hash@kolo.test", senha: "senha-errada-1", ip: IP });
+
     const chaves = await db.query<{ chave: string }>("SELECT chave FROM rate_limit");
 
     expect(chaves.rows.length).toBeGreaterThan(0);
@@ -110,6 +113,29 @@ describe("login e logout (RF02)", () => {
       expect(chave).not.toContain("@");
       expect(chave).not.toContain(IP);
     }
+  }, 60_000);
+
+  it("variações de maiúsculas e espaços no e-mail contam na mesma chave", async () => {
+    const { entrar } = await import("../../src/lib/auth");
+    const email = "login.variacao@kolo.test";
+    await criarCliente(email);
+    const variacoes = [
+      email,
+      " Login.Variacao@kolo.test",
+      "LOGIN.VARIACAO@KOLO.TEST ",
+      email,
+      email,
+    ];
+
+    for (const variacao of variacoes) {
+      await entrar({ email: variacao, senha: "senha-errada-1", ip: IP });
+    }
+
+    expect(await entrar({ email, senha: SENHA, ip: IP })).toEqual({
+      ok: false,
+      erro: "bloqueado",
+      minutos: 15,
+    });
   }, 60_000);
 
   it("sair pelo cookie revoga a sessão: a requisição seguinte não autentica", async () => {
@@ -136,12 +162,28 @@ describe("login e logout (RF02)", () => {
 
   it("revalida no servidor: e-mail malformado não chega ao Better Auth nem conta falha", async () => {
     const { entrar } = await import("../../src/lib/auth");
-    const antes = await db.query("SELECT chave, falhas FROM rate_limit ORDER BY chave");
+    const antes = await db.query("SELECT chave, tentativas FROM rate_limit ORDER BY chave");
 
     const resultado = await entrar({ email: "sem-arroba", senha: SENHA, ip: "192.0.2.99" });
 
     expect(resultado).toEqual({ ok: false, erro: "credenciais_invalidas" });
-    const depois = await db.query("SELECT chave, falhas FROM rate_limit ORDER BY chave");
+    const depois = await db.query("SELECT chave, tentativas FROM rate_limit ORDER BY chave");
     expect(depois.rows).toEqual(antes.rows);
+  }, 60_000);
+
+  it("rajada simultânea de 20 senhas erradas: só 5 chegam a verificar, 15 são bloqueadas", async () => {
+    const { entrar } = await import("../../src/lib/auth");
+    const email = "login.rajada@kolo.test";
+    await criarCliente(email);
+
+    const resultados = await Promise.all(
+      Array.from({ length: 20 }, () =>
+        entrar({ email, senha: "senha-errada-1", ip: "198.51.100.20" }),
+      ),
+    );
+
+    const erros = resultados.map((resultado) => (resultado.ok ? "ok" : resultado.erro));
+    expect(erros.filter((erro) => erro === "credenciais_invalidas")).toHaveLength(5);
+    expect(erros.filter((erro) => erro === "bloqueado")).toHaveLength(15);
   }, 60_000);
 });

@@ -17,62 +17,57 @@ describe("limite de tentativas no Postgres (RNF08)", () => {
     await db.end();
   });
 
-  it("bloqueia na 5ª falha dentro da janela, não antes", async () => {
-    const { estaBloqueado, registrarFalha } = await import("../../src/lib/rate-limit");
+  it("libera 5 tentativas na janela e bloqueia a 6ª até a janela acabar", async () => {
+    const { consumirTentativa } = await import("../../src/lib/rate-limit");
     const chave = "teste:cinco";
 
-    for (let falha = 0; falha < 4; falha++) {
-      await registrarFalha(chave, REGRA, AGORA);
+    for (let tentativa = 0; tentativa < 5; tentativa++) {
+      expect(await consumirTentativa(chave, REGRA, AGORA)).toEqual({ bloqueado: false });
     }
-    expect((await estaBloqueado(chave, REGRA, AGORA)).bloqueado).toBe(false);
 
-    await registrarFalha(chave, REGRA, AGORA);
-
-    expect(await estaBloqueado(chave, REGRA, AGORA)).toEqual({
+    expect(await consumirTentativa(chave, REGRA, AGORA)).toEqual({
       bloqueado: true,
       liberaEm: new Date("2026-10-01T12:15:00.000Z"),
     });
   }, 60_000);
 
-  it("passada a janela, a próxima falha reinicia a contagem", async () => {
-    const { estaBloqueado, registrarFalha } = await import("../../src/lib/rate-limit");
+  it("passada a janela, a contagem reinicia", async () => {
+    const { consumirTentativa } = await import("../../src/lib/rate-limit");
     const chave = "teste:janela";
-    for (let falha = 0; falha < 5; falha++) {
-      await registrarFalha(chave, REGRA, AGORA);
+    for (let tentativa = 0; tentativa < 6; tentativa++) {
+      await consumirTentativa(chave, REGRA, AGORA);
     }
     const depois = new Date("2026-10-01T12:15:00.000Z");
 
-    expect((await estaBloqueado(chave, REGRA, depois)).bloqueado).toBe(false);
-    await registrarFalha(chave, REGRA, depois);
+    expect(await consumirTentativa(chave, REGRA, depois)).toEqual({ bloqueado: false });
 
-    const linha = await db.query("SELECT falhas, janela_inicio FROM rate_limit WHERE chave = $1", [
-      chave,
-    ]);
-    expect(linha.rows).toEqual([{ falhas: 1, janela_inicio: depois }]);
+    const linha = await db.query(
+      "SELECT tentativas, janela_inicio FROM rate_limit WHERE chave = $1",
+      [chave],
+    );
+    expect(linha.rows).toEqual([{ tentativas: 1, janela_inicio: depois }]);
   }, 60_000);
 
-  it("falhas simultâneas na mesma chave somam todas", async () => {
-    const { registrarFalha } = await import("../../src/lib/rate-limit");
+  it("20 tentativas simultâneas: exatamente 5 liberadas", async () => {
+    const { consumirTentativa } = await import("../../src/lib/rate-limit");
     const chave = "teste:concorrencia";
 
-    await Promise.all(Array.from({ length: 5 }, () => registrarFalha(chave, REGRA, AGORA)));
+    const situacoes = await Promise.all(
+      Array.from({ length: 20 }, () => consumirTentativa(chave, REGRA, AGORA)),
+    );
 
-    const linha = await db.query("SELECT falhas FROM rate_limit WHERE chave = $1", [chave]);
-    expect(linha.rows).toEqual([{ falhas: 5 }]);
+    expect(situacoes.filter((situacao) => !situacao.bloqueado)).toHaveLength(5);
   }, 60_000);
 
   it("limparFalhas zera a contagem da chave", async () => {
-    const { estaBloqueado, limparFalhas, registrarFalha } =
-      await import("../../src/lib/rate-limit");
+    const { consumirTentativa, limparFalhas } = await import("../../src/lib/rate-limit");
     const chave = "teste:limpar";
-    for (let falha = 0; falha < 5; falha++) {
-      await registrarFalha(chave, REGRA, AGORA);
+    for (let tentativa = 0; tentativa < 6; tentativa++) {
+      await consumirTentativa(chave, REGRA, AGORA);
     }
 
     await limparFalhas(chave);
 
-    expect((await estaBloqueado(chave, REGRA, AGORA)).bloqueado).toBe(false);
-    const linha = await db.query("SELECT falhas FROM rate_limit WHERE chave = $1", [chave]);
-    expect(linha.rows).toEqual([]);
+    expect(await consumirTentativa(chave, REGRA, AGORA)).toEqual({ bloqueado: false });
   }, 60_000);
 });

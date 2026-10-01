@@ -17,7 +17,7 @@ import {
   type PapelFundacao,
 } from "../../modules/identity";
 import { databaseUrl } from "../database-url";
-import { estaBloqueado, limparFalhas, registrarFalha, type RegraLimite } from "../rate-limit";
+import { consumirTentativa, limparFalhas, type RegraLimite } from "../rate-limit";
 
 const PAPEIS = ["CLIENTE", "ARTISTA", "ADMIN"] as const;
 
@@ -100,7 +100,7 @@ export async function abrirSessao(input: {
 
 export type ResultadoLogin = { ok: true; token: string } | FalhaLogin;
 
-// RNF08: 5 falhas em 15 min por IP + e-mail bloqueiam o login até a janela passar.
+// RNF08: 5 tentativas sem sucesso em 15 min por IP + e-mail bloqueiam o login até a janela passar.
 const LIMITE_LOGIN: RegraLimite = { maximo: 5, janelaMs: 15 * 60 * 1000 };
 
 function chaveLogin(ip: string, email: string): string {
@@ -120,7 +120,8 @@ export async function entrar(input: {
   const { email, senha } = validacao.dados;
   const chave = chaveLogin(input.ip, email);
   const agora = new Date();
-  const situacao = await estaBloqueado(chave, LIMITE_LOGIN, agora);
+  // A tentativa é reservada antes de verificar a senha (ver consumirTentativa).
+  const situacao = await consumirTentativa(chave, LIMITE_LOGIN, agora);
   if (situacao.bloqueado) {
     const minutos = Math.ceil((situacao.liberaEm.getTime() - agora.getTime()) / 60_000);
     return { ok: false, erro: "bloqueado", minutos };
@@ -131,7 +132,6 @@ export async function entrar(input: {
     return { ok: true, token };
   } catch (erro) {
     if (isAPIError(erro) && erro.body?.code === "INVALID_EMAIL_OR_PASSWORD") {
-      await registrarFalha(chave, LIMITE_LOGIN, agora);
       return { ok: false, erro: "credenciais_invalidas" };
     }
     throw erro;
