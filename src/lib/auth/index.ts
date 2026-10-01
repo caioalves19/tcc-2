@@ -91,6 +91,27 @@ export async function abrirSessao(input: {
   return { token: resultado.token };
 }
 
+export type ResultadoLogin =
+  | { ok: true; token: string }
+  | { ok: false; erro: "credenciais_invalidas" }
+  | { ok: false; erro: "bloqueado"; minutos: number };
+
+export async function entrar(input: {
+  email: string;
+  senha: string;
+  ip: string;
+}): Promise<ResultadoLogin> {
+  try {
+    const { token } = await abrirSessao(input);
+    return { ok: true, token };
+  } catch (erro) {
+    if (isAPIError(erro) && erro.body?.code === "INVALID_EMAIL_OR_PASSWORD") {
+      return { ok: false, erro: "credenciais_invalidas" };
+    }
+    throw erro;
+  }
+}
+
 export type ResultadoCadastro = { ok: true; token: string } | FalhaCadastro;
 
 async function emailJaCadastrado(erro: unknown, email: string): Promise<boolean> {
