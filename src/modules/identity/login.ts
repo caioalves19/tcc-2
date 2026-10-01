@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { validarCom } from "./validacao";
+
 import { SENHA_MAXIMA } from "./cadastro";
 
 export const schemaLogin = z.object({
@@ -27,14 +29,5 @@ export function mensagemFalhaLogin(falha: FalhaLogin): string {
 }
 
 export function validarLogin(entrada: EntradaLogin): ResultadoValidacaoLogin {
-  const resultado = schemaLogin.safeParse(entrada);
-  if (resultado.success) {
-    return { ok: true, dados: resultado.data };
-  }
-  const campos: ErrosLogin = {};
-  for (const problema of resultado.error.issues) {
-    const campo = problema.path[0] as CampoLogin;
-    campos[campo] ??= problema.message;
-  }
-  return { ok: false, campos };
+  return validarCom(schemaLogin, entrada);
 }

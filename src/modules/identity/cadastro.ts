@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { validarCom } from "./validacao";
+
 export const SENHA_MINIMA = 8;
 export const SENHA_MAXIMA = 128;
 
@@ -33,14 +35,5 @@ export type FalhaCadastro =
 export const MENSAGEM_EMAIL_DUPLICADO = "Este e-mail já está cadastrado.";
 
 export function validarCadastro(entrada: EntradaCadastro): ResultadoValidacao {
-  const resultado = schemaCadastro.safeParse(entrada);
-  if (resultado.success) {
-    return { ok: true, dados: resultado.data };
-  }
-  const campos: ErrosCadastro = {};
-  for (const problema of resultado.error.issues) {
-    const campo = problema.path[0] as CampoCadastro;
-    campos[campo] ??= problema.message;
-  }
-  return { ok: false, campos };
+  return validarCom(schemaCadastro, entrada);
 }
