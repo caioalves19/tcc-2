@@ -176,9 +176,9 @@ Login por e-mail e senha (RF02).
 **Resp:** Robert · **Deps:** PBI-12
 Fluxo de "esqueci a senha" por e-mail (RF03).
 
-- [ ] Token de uso único com expiração, enviado via Resend (sandbox)
-- [ ] Token inválido/expirado/reusado é rejeitado
-- [ ] Ao trocar a senha, sessões antigas são revogadas
+- [x] Token de uso único com expiração, enviado via Resend (sandbox)
+- [x] Token inválido/expirado/reusado é rejeitado
+- [x] Ao trocar a senha, sessões antigas são revogadas
 
 ### PBI-15 — Edição de perfil
 

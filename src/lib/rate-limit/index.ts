@@ -1,19 +1,10 @@
-import { Pool } from "pg";
-
-import { databaseUrl } from "../database-url";
+import { obterPool } from "../db";
 
 // Limite de tentativas por janela fixa, guardado no Postgres (RNF08).
 // A janela começa na primeira tentativa; passado janelaMs, a contagem reinicia.
 export type RegraLimite = { maximo: number; janelaMs: number };
 
 export type SituacaoLimite = { bloqueado: false } | { bloqueado: true; liberaEm: Date };
-
-let pool: Pool | undefined;
-
-function obterPool(): Pool {
-  pool ??= new Pool({ connectionString: databaseUrl() });
-  return pool;
-}
 
 // Reserva a tentativa ANTES de fazer o trabalho caro (ex.: verificar senha).
 // Somar e decidir no mesmo statement impede que uma rajada simultânea passe
