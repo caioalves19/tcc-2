@@ -254,4 +254,16 @@ describe("recuperação de senha (RF03)", () => {
       erro: "token_invalido",
     });
   }, 60_000);
+
+  it("entrada malformada vinda da action vira invalido, não erro 500", async () => {
+    const { redefinirSenha } = await import("../../src/lib/auth");
+    const entradaDoNavegador: unknown = null;
+
+    const resultado = await redefinirSenha(
+      entradaDoNavegador as Parameters<typeof redefinirSenha>[0],
+    );
+
+    expect(resultado.ok).toBe(false);
+    expect(!resultado.ok && resultado.erro).toBe("invalido");
+  }, 60_000);
 });

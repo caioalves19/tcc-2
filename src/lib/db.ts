@@ -2,7 +2,7 @@ import { Pool } from "pg";
 
 import { databaseUrl } from "./database-url";
 
-// Pool único para o SQL direto (rate limit, e-mail). O Better Auth usa o Prisma dele.
+// Pool único do app: o Prisma do Better Auth, o rate limit e o e-mail usam o mesmo.
 let pool: Pool | undefined;
 
 export function obterPool(): Pool {

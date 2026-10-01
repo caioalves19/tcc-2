@@ -215,7 +215,8 @@ export type ResultadoRedefinicao = { ok: true } | FalhaRedefinicao;
 export async function redefinirSenha(
   input: EntradaRedefinicao & { token: string },
 ): Promise<ResultadoRedefinicao> {
-  const validacao = validarRedefinicao({ senha: input.senha, confirmacao: input.confirmacao });
+  // Valida a entrada inteira: vinda da action, pode nem ser um objeto.
+  const validacao = validarRedefinicao(input);
   if (!validacao.ok) {
     return { ok: false, erro: "invalido", campos: validacao.campos };
   }
