@@ -6,6 +6,14 @@ import { prepararBancoDeTeste } from "./banco-de-teste";
 const SENHA = "senha-segura-1";
 const IP = "203.0.113.10";
 
+// Monta o Cookie que o navegador devolveria depois do login (valor assinado com o segredo).
+async function cabecalhosComSessao(token: string): Promise<Headers> {
+  const { makeSignature } = await import("better-auth/crypto");
+  const assinatura = await makeSignature(token, process.env.BETTER_AUTH_SECRET ?? "");
+  const valor = encodeURIComponent(`${token}.${assinatura}`);
+  return new Headers({ cookie: `better-auth.session_token=${valor}` });
+}
+
 async function criarCliente(email: string): Promise<void> {
   const { cadastrarCliente } = await import("../../src/lib/auth");
   const resultado = await cadastrarCliente({
@@ -102,5 +110,27 @@ describe("login e logout (RF02)", () => {
       expect(chave).not.toContain("@");
       expect(chave).not.toContain(IP);
     }
+  }, 60_000);
+
+  it("sair pelo cookie revoga a sessão: a requisição seguinte não autentica", async () => {
+    const { entrar, sair, sessaoDaRequisicao } = await import("../../src/lib/auth");
+    const email = "login.sair@kolo.test";
+    await criarCliente(email);
+    const login = await entrar({ email, senha: SENHA, ip: IP });
+    const token = login.ok ? login.token : "";
+    const cabecalhos = await cabecalhosComSessao(token);
+    expect(await sessaoDaRequisicao(cabecalhos)).toEqual({ token, papel: "CLIENTE" });
+
+    await sair(cabecalhos);
+
+    expect(await sessoesDe(email)).not.toContain(token);
+    expect(await sessaoDaRequisicao(cabecalhos)).toBeNull();
+  }, 60_000);
+
+  it("sem cookie, não há sessão e sair não quebra", async () => {
+    const { sair, sessaoDaRequisicao } = await import("../../src/lib/auth");
+
+    expect(await sessaoDaRequisicao(new Headers())).toBeNull();
+    await expect(sair(new Headers())).resolves.toBeUndefined();
   }, 60_000);
 });

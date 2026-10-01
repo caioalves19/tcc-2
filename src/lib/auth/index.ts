@@ -192,6 +192,26 @@ export async function papelDaSessao(token: string): Promise<PapelFundacao | null
   return papelConhecido(encontrada.user.role);
 }
 
+// Lê a sessão pelo cookie assinado da requisição (sem cache de cookie: sempre o banco).
+export async function sessaoDaRequisicao(
+  cabecalhos: Headers,
+): Promise<{ token: string; papel: PapelFundacao } | null> {
+  const encontrada = await obterAuth().api.getSession({
+    headers: cabecalhos,
+    query: { disableCookieCache: true },
+  });
+  if (encontrada === null) {
+    return null;
+  }
+  const papel = papelConhecido(encontrada.user.role);
+  return papel === null ? null : { token: encontrada.session.token, papel };
+}
+
+// Revoga a sessão do cookie no banco; nas Server Actions o nextCookies apaga o cookie.
+export async function sair(cabecalhos: Headers): Promise<void> {
+  await obterAuth().api.signOut({ headers: cabecalhos });
+}
+
 export async function revogarSessao(token: string): Promise<void> {
   const contexto = await obterAuth().$context;
   await contexto.internalAdapter.deleteSession(token);
