@@ -133,4 +133,15 @@ describe("login e logout (RF02)", () => {
     expect(await sessaoDaRequisicao(new Headers())).toBeNull();
     await expect(sair(new Headers())).resolves.toBeUndefined();
   }, 60_000);
+
+  it("revalida no servidor: e-mail malformado não chega ao Better Auth nem conta falha", async () => {
+    const { entrar } = await import("../../src/lib/auth");
+    const antes = await db.query("SELECT chave, falhas FROM rate_limit ORDER BY chave");
+
+    const resultado = await entrar({ email: "sem-arroba", senha: SENHA, ip: "192.0.2.99" });
+
+    expect(resultado).toEqual({ ok: false, erro: "credenciais_invalidas" });
+    const depois = await db.query("SELECT chave, falhas FROM rate_limit ORDER BY chave");
+    expect(depois.rows).toEqual(antes.rows);
+  }, 60_000);
 });

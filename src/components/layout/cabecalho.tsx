@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { Menu, ShoppingBag, X } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Marca } from "@/components/layout/marca";
 
 // Itens do menu. O escopo do agendamento e das páginas de artista ainda está
@@ -16,7 +16,30 @@ const LINKS = [
   { rotulo: "Contato", href: "/contato" },
 ] as const;
 
-export function Cabecalho() {
+type PropsConta = {
+  logado?: boolean;
+  acaoSair?: () => Promise<void>;
+};
+
+// Entrar é link para /login; Sair é um form que dispara a Server Action de logout.
+function AcaoConta({ logado = false, acaoSair, className }: PropsConta & { className?: string }) {
+  if (logado) {
+    return (
+      <form action={acaoSair} className={className}>
+        <Button type="submit" size="sm" variant="contorno" className="w-full">
+          Sair
+        </Button>
+      </form>
+    );
+  }
+  return (
+    <a href="/login" className={buttonVariants({ size: "sm", className })}>
+      Entrar
+    </a>
+  );
+}
+
+export function Cabecalho({ logado = false, acaoSair }: PropsConta) {
   const [menuAberto, setMenuAberto] = useState(false);
 
   return (
@@ -42,9 +65,7 @@ export function Cabecalho() {
           <Button variant="contorno" size="icon-sm" aria-label="Carrinho">
             <ShoppingBag aria-hidden />
           </Button>
-          <Button size="sm" className="hidden sm:inline-flex">
-            Entrar
-          </Button>
+          <AcaoConta logado={logado} acaoSair={acaoSair} className="hidden sm:inline-flex" />
           <Button
             variant="contorno"
             size="icon-sm"
@@ -78,7 +99,7 @@ export function Cabecalho() {
               </li>
             ))}
             <li className="pt-2 sm:hidden">
-              <Button className="w-full">Entrar</Button>
+              <AcaoConta logado={logado} acaoSair={acaoSair} className="w-full" />
             </li>
           </ul>
         </nav>

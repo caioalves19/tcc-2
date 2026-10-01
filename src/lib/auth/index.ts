@@ -10,8 +10,10 @@ import { Pool } from "pg";
 import { PrismaClient } from "../../../generated/prisma/client";
 import {
   validarCadastro,
+  validarLogin,
   type EntradaCadastro,
   type FalhaCadastro,
+  type FalhaLogin,
   type PapelFundacao,
 } from "../../modules/identity";
 import { databaseUrl } from "../database-url";
@@ -63,6 +65,8 @@ function criarInstancia() {
       },
     },
     advanced: {
+      // RNF06: cookie só por HTTPS em produção; HttpOnly e SameSite=Lax já são o padrão.
+      useSecureCookies: process.env.NODE_ENV === "production",
       database: {
         generateId: "uuid",
       },
@@ -94,10 +98,7 @@ export async function abrirSessao(input: {
   return { token: resultado.token };
 }
 
-export type ResultadoLogin =
-  | { ok: true; token: string }
-  | { ok: false; erro: "credenciais_invalidas" }
-  | { ok: false; erro: "bloqueado"; minutos: number };
+export type ResultadoLogin = { ok: true; token: string } | FalhaLogin;
 
 // RNF08: 5 falhas em 15 min por IP + e-mail bloqueiam o login até a janela passar.
 const LIMITE_LOGIN: RegraLimite = { maximo: 5, janelaMs: 15 * 60 * 1000 };
@@ -112,7 +113,12 @@ export async function entrar(input: {
   senha: string;
   ip: string;
 }): Promise<ResultadoLogin> {
-  const chave = chaveLogin(input.ip, input.email);
+  const validacao = validarLogin(input);
+  if (!validacao.ok) {
+    return { ok: false, erro: "credenciais_invalidas" };
+  }
+  const { email, senha } = validacao.dados;
+  const chave = chaveLogin(input.ip, email);
   const agora = new Date();
   const situacao = await estaBloqueado(chave, LIMITE_LOGIN, agora);
   if (situacao.bloqueado) {
@@ -120,7 +126,7 @@ export async function entrar(input: {
     return { ok: false, erro: "bloqueado", minutos };
   }
   try {
-    const { token } = await abrirSessao(input);
+    const { token } = await abrirSessao({ email, senha });
     await limparFalhas(chave);
     return { ok: true, token };
   } catch (erro) {
