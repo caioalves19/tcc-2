@@ -38,7 +38,11 @@ export {
   type EntradaRedefinicao,
   type ErrosPedidoRecuperacao,
   type ErrosRedefinicao,
+  type FalhaRedefinicao,
+  type ResultadoPedidoRecuperacao,
 } from "./recuperacao";
+
+export { type ErrosDe, type ResultadoValidacaoDe } from "./validacao";
 
 export function papelDoCadastroPublico(): "CLIENTE" {
   return "CLIENTE";

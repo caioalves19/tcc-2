@@ -11,6 +11,9 @@ export type EntradaPedidoRecuperacao = z.input<typeof schemaPedidoRecuperacao>;
 export type DadosPedidoRecuperacao = z.output<typeof schemaPedidoRecuperacao>;
 export type ErrosPedidoRecuperacao = ErrosDe<DadosPedidoRecuperacao>;
 
+export type ResultadoPedidoRecuperacao =
+  { ok: true } | { ok: false; erro: "invalido"; campos: ErrosPedidoRecuperacao };
+
 // Mesma resposta para e-mail com ou sem conta, e também quando o limite estoura.
 export const MENSAGEM_PEDIDO_RECUPERACAO =
   "Se o e-mail estiver cadastrado, enviamos um link para redefinir a senha.";
@@ -31,6 +34,9 @@ export const schemaRedefinicao = z
 export type EntradaRedefinicao = z.input<typeof schemaRedefinicao>;
 export type DadosRedefinicao = z.output<typeof schemaRedefinicao>;
 export type ErrosRedefinicao = ErrosDe<DadosRedefinicao>;
+
+export type FalhaRedefinicao =
+  { ok: false; erro: "token_invalido" } | { ok: false; erro: "invalido"; campos: ErrosRedefinicao };
 
 export const MENSAGEM_TOKEN_INVALIDO = "Link inválido ou expirado. Peça um novo.";
 

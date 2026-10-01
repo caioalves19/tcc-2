@@ -14,8 +14,8 @@ import {
   validarRedefinicao,
   type EntradaCadastro,
   type EntradaRedefinicao,
-  type ErrosPedidoRecuperacao,
-  type ErrosRedefinicao,
+  type FalhaRedefinicao,
+  type ResultadoPedidoRecuperacao,
   type FalhaCadastro,
   type FalhaLogin,
   type PapelFundacao,
@@ -174,9 +174,6 @@ export async function entrar(input: {
   }
 }
 
-export type ResultadoPedidoRecuperacao =
-  { ok: true } | { ok: false; erro: "invalido"; campos: ErrosPedidoRecuperacao };
-
 export async function solicitarRecuperacao(input: {
   email: string;
   ip: string;
@@ -197,10 +194,7 @@ export async function solicitarRecuperacao(input: {
   return { ok: true };
 }
 
-export type ResultadoRedefinicao =
-  | { ok: true }
-  | { ok: false; erro: "token_invalido" }
-  | { ok: false; erro: "invalido"; campos: ErrosRedefinicao };
+export type ResultadoRedefinicao = { ok: true } | FalhaRedefinicao;
 
 export async function redefinirSenha(
   input: EntradaRedefinicao & { token: string },
@@ -209,7 +203,8 @@ export async function redefinirSenha(
   if (!validacao.ok) {
     return { ok: false, erro: "invalido", campos: validacao.campos };
   }
-  if (input.token.trim() === "") {
+  // O token vem do navegador: pode chegar com qualquer tipo.
+  if (typeof input.token !== "string" || input.token.trim() === "") {
     return { ok: false, erro: "token_invalido" };
   }
   try {
