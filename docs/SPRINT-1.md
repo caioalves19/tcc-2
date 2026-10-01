@@ -167,9 +167,9 @@ Cadastro público com nome, e-mail, telefone e senha (RF01).
 **Resp:** Caio V. · **Deps:** PBI-11
 Login por e-mail e senha (RF02).
 
-- [ ] Login cria sessão no banco; cookie `HttpOnly`/`Secure`/`SameSite`
-- [ ] Logout revoga a sessão (nova requisição não autentica)
-- [ ] Rate limit na rota de login (RNF08)
+- [x] Login cria sessão no banco; cookie `HttpOnly`/`Secure`/`SameSite`
+- [x] Logout revoga a sessão (nova requisição não autentica)
+- [x] Rate limit na rota de login (RNF08)
 
 ### PBI-14 — Recuperação de senha
 
