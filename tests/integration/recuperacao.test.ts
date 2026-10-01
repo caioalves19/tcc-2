@@ -266,4 +266,20 @@ describe("recuperação de senha (RF03)", () => {
     expect(resultado.ok).toBe(false);
     expect(!resultado.ok && resultado.erro).toBe("invalido");
   }, 60_000);
+
+  it("o mesmo link enviado duas vezes ao mesmo tempo só troca a senha uma vez", async () => {
+    const { redefinirSenha, solicitarRecuperacao } = await import("../../src/lib/auth");
+    const email = "recupera.simultaneo@kolo.test";
+    await criarCliente(email);
+    await solicitarRecuperacao({ email, ip: "198.51.100.90" });
+    const token = tokenDoLink(caixa[0]?.texto ?? "");
+    const nova = { token, senha: "senha-nova-123", confirmacao: "senha-nova-123" };
+
+    const resultados = await Promise.all([redefinirSenha(nova), redefinirSenha(nova)]);
+
+    expect(resultados.filter((resultado) => resultado.ok)).toHaveLength(1);
+    expect(resultados.filter((resultado) => !resultado.ok)).toEqual([
+      { ok: false, erro: "token_invalido" },
+    ]);
+  }, 60_000);
 });
