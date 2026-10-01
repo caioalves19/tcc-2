@@ -278,6 +278,12 @@ erDiagram
         jsonb metadados
         timestamptz enviado_em
     }
+
+    rate_limit {
+        string chave PK
+        int tentativas
+        timestamptz janela_inicio
+    }
 ```
 
 ## Justificativa por entidade
@@ -312,6 +318,7 @@ Cada entidade mapeia a RF/RN/RNF do ESCOPO v2.2. Nada da seção 14 entra no mod
 | `site_setting` | RF31 |
 | `contact_message` | visão §3, seção 10, RNF08 |
 | `email_log` | RF03 |
+| `rate_limit` | RNF08 |
 
 O wizard (RF20, RF21, RF23–RF25) **não** gera linha em `appointment`.
 
@@ -338,6 +345,7 @@ O wizard (RF20, RF21, RF23–RF25) **não** gera linha em `appointment`.
 ## Entidades isoladas de propósito
 
 - **`verification`** — tokens de uso único do Better Auth (recuperação de senha, RF03); o identificador é o e-mail, sem FK para `user`.
+- **`rate_limit`** — contador de tentativas por janela (RNF08: login e, depois, recuperação de senha, contato e wizard); a chave é um hash, sem FK e sem e-mail ou IP legíveis.
 - **`webhook_event`** — log de idempotência do gateway; não precisa de FK para `payment`.
 - **`site_setting`** e **`contact_message`** — configuração e formulário de contato, sem dono no modelo.
 - **`artist_style`** e **`portfolio_item_style`** — N:N explícitas (mesmo padrão de `artwork_tag`): artista↔estilos (RF20, RF28) e item de portfólio↔estilos (RF17, RF18).

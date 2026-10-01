@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { isAPIError } from "better-auth/api";
@@ -8,11 +10,14 @@ import { Pool } from "pg";
 import { PrismaClient } from "../../../generated/prisma/client";
 import {
   validarCadastro,
+  validarLogin,
   type EntradaCadastro,
   type FalhaCadastro,
+  type FalhaLogin,
   type PapelFundacao,
 } from "../../modules/identity";
 import { databaseUrl } from "../database-url";
+import { consumirTentativa, limparTentativas, type RegraLimite } from "../rate-limit";
 
 const PAPEIS = ["CLIENTE", "ARTISTA", "ADMIN"] as const;
 
@@ -60,6 +65,8 @@ function criarInstancia() {
       },
     },
     advanced: {
+      // RNF06: cookie só por HTTPS em produção; HttpOnly e SameSite=Lax já são o padrão.
+      useSecureCookies: process.env.NODE_ENV === "production",
       database: {
         generateId: "uuid",
       },
@@ -89,6 +96,46 @@ export async function abrirSessao(input: {
     },
   });
   return { token: resultado.token };
+}
+
+export type ResultadoLogin = { ok: true; token: string } | FalhaLogin;
+
+// RNF08: 5 tentativas sem sucesso em 15 min por IP + e-mail bloqueiam o login até a janela passar.
+const LIMITE_LOGIN: RegraLimite = { maximo: 5, janelaMs: 15 * 60 * 1000 };
+
+function chaveLogin(ip: string, email: string): string {
+  const hash = createHash("sha256").update(`${ip}|${email.trim().toLowerCase()}`).digest("hex");
+  return `login:${hash}`;
+}
+
+export async function entrar(input: {
+  email: string;
+  senha: string;
+  ip: string;
+}): Promise<ResultadoLogin> {
+  const validacao = validarLogin(input);
+  if (!validacao.ok) {
+    return { ok: false, erro: "credenciais_invalidas" };
+  }
+  const { email, senha } = validacao.dados;
+  const chave = chaveLogin(input.ip, email);
+  const agora = new Date();
+  // A tentativa é reservada antes de verificar a senha (ver consumirTentativa).
+  const situacao = await consumirTentativa(chave, LIMITE_LOGIN, agora);
+  if (situacao.bloqueado) {
+    const minutos = Math.ceil((situacao.liberaEm.getTime() - agora.getTime()) / 60_000);
+    return { ok: false, erro: "bloqueado", minutos };
+  }
+  try {
+    const { token } = await abrirSessao({ email, senha });
+    await limparTentativas(chave);
+    return { ok: true, token };
+  } catch (erro) {
+    if (isAPIError(erro) && erro.body?.code === "INVALID_EMAIL_OR_PASSWORD") {
+      return { ok: false, erro: "credenciais_invalidas" };
+    }
+    throw erro;
+  }
 }
 
 export type ResultadoCadastro = { ok: true; token: string } | FalhaCadastro;
@@ -149,6 +196,27 @@ export async function papelDaSessao(token: string): Promise<PapelFundacao | null
     return null;
   }
   return papelConhecido(encontrada.user.role);
+}
+
+// Lê a sessão pelo cookie assinado da requisição: sempre no banco (sem cache de cookie)
+// e sem prorrogar a validade, porque numa renderização o cookie não pode ser renovado.
+export async function sessaoDaRequisicao(
+  cabecalhos: Headers,
+): Promise<{ token: string; papel: PapelFundacao } | null> {
+  const encontrada = await obterAuth().api.getSession({
+    headers: cabecalhos,
+    query: { disableCookieCache: true, disableRefresh: true },
+  });
+  if (encontrada === null) {
+    return null;
+  }
+  const papel = papelConhecido(encontrada.user.role);
+  return papel === null ? null : { token: encontrada.session.token, papel };
+}
+
+// Revoga a sessão do cookie no banco; nas Server Actions o nextCookies apaga o cookie.
+export async function sair(cabecalhos: Headers): Promise<void> {
+  await obterAuth().api.signOut({ headers: cabecalhos });
 }
 
 export async function revogarSessao(token: string): Promise<void> {

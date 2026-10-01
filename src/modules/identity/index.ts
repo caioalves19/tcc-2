@@ -12,6 +12,18 @@ export {
   type ResultadoValidacao,
 } from "./cadastro";
 
+export {
+  mensagemFalhaLogin,
+  schemaLogin,
+  validarLogin,
+  type CampoLogin,
+  type DadosLogin,
+  type EntradaLogin,
+  type ErrosLogin,
+  type FalhaLogin,
+  type ResultadoValidacaoLogin,
+} from "./login";
+
 export function papelDoCadastroPublico(): "CLIENTE" {
   return "CLIENTE";
 }

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Cabecalho } from "@/components/layout/cabecalho";
 
@@ -38,5 +38,23 @@ describe("Cabeçalho", () => {
     expect(screen.getByRole("button", { name: /abrir menu/i }).getAttribute("aria-expanded")).toBe(
       "false",
     );
+  });
+
+  it("deslogado: mostra Entrar apontando para /login e nenhum Sair", () => {
+    render(<Cabecalho />);
+
+    expect(screen.getByRole("link", { name: "Entrar" }).getAttribute("href")).toBe("/login");
+    expect(screen.queryByRole("button", { name: "Sair" })).toBeNull();
+  });
+
+  it("logado: mostra Sair, que chama a action de logout", async () => {
+    const usuario = userEvent.setup();
+    const acaoSair = vi.fn().mockResolvedValue(undefined);
+    render(<Cabecalho logado acaoSair={acaoSair} />);
+
+    expect(screen.queryByRole("link", { name: "Entrar" })).toBeNull();
+    await usuario.click(screen.getByRole("button", { name: "Sair" }));
+
+    expect(acaoSair).toHaveBeenCalledOnce();
   });
 });
