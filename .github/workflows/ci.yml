@@ -16,7 +16,7 @@ jobs:
         env:
           POSTGRES_USER: kolo_user
           POSTGRES_PASSWORD: kolo_password
-          POSTGRES_DB: kolo_db_test
+          POSTGRES_DB: kolo_db
         ports:
           - 5432:5432
         options: >-
@@ -51,4 +51,4 @@ jobs:
       - name: Run Integration Tests
         run: npx vitest run --config vitest.integration.config.ts
         env:
-          DATABASE_URL: "postgresql://kolo_user:kolo_password@localhost:5432/kolo_db_test?schema=public"
+          DATABASE_URL: "postgresql://kolo_user:kolo_password@localhost:5432/kolo_db?schema=public"
