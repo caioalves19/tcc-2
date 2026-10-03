@@ -8,6 +8,13 @@ import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../../../generated/prisma/client";
 import {
+  validarTrocaSenha,
+  type EntradaTrocaSenha,
+  type ResultadoTrocaSenha,
+  validarPerfil,
+  type EntradaPerfil,
+  type DadosPerfil,
+  type ResultadoPerfil,
   validarCadastro,
   validarLogin,
   validarPedidoRecuperacao,
@@ -323,4 +330,57 @@ export async function sair(cabecalhos: Headers): Promise<void> {
 export async function revogarSessao(token: string): Promise<void> {
   const contexto = await obterAuth().$context;
   await contexto.internalAdapter.deleteSession(token);
+}
+
+// O usuário vem exclusivamente do cookie assinado, nunca de um id enviado pelo formulário.
+export async function perfilDaRequisicao(cabecalhos: Headers): Promise<DadosPerfil | null> {
+  const sessao = await obterAuth().api.getSession({
+    headers: cabecalhos,
+    query: { disableCookieCache: true, disableRefresh: true },
+  });
+  return sessao === null ? null : { nome: sessao.user.name, telefone: sessao.user.phone };
+}
+
+export async function atualizarPerfil(
+  entrada: EntradaPerfil,
+  cabecalhos: Headers,
+): Promise<ResultadoPerfil> {
+  const validacao = validarPerfil(entrada);
+  if (!validacao.ok) return { ok: false, erro: "invalido", campos: validacao.campos };
+  if ((await sessaoDaRequisicao(cabecalhos)) === null)
+    return { ok: false, erro: "nao_autenticado" };
+  try {
+    await obterAuth().api.updateUser({
+      headers: cabecalhos,
+      body: { name: validacao.dados.nome, phone: validacao.dados.telefone },
+    });
+    return { ok: true };
+  } catch (erro) {
+    if (isAPIError(erro) && erro.statusCode === 401) return { ok: false, erro: "nao_autenticado" };
+    throw erro;
+  }
+}
+
+export async function trocarSenha(
+  entrada: EntradaTrocaSenha,
+  cabecalhos: Headers,
+): Promise<ResultadoTrocaSenha> {
+  const validacao = validarTrocaSenha(entrada);
+  if (!validacao.ok) return { ok: false, erro: "invalido", campos: validacao.campos };
+  if ((await sessaoDaRequisicao(cabecalhos)) === null)
+    return { ok: false, erro: "nao_autenticado" };
+  try {
+    await obterAuth().api.changePassword({
+      headers: cabecalhos,
+      body: { currentPassword: validacao.dados.senhaAtual, newPassword: validacao.dados.senha },
+    });
+    return { ok: true };
+  } catch (erro) {
+    if (isAPIError(erro)) {
+      if (erro.statusCode === 401) return { ok: false, erro: "nao_autenticado" };
+      if (erro.body?.code === "INVALID_PASSWORD")
+        return { ok: false, erro: "senha_atual_incorreta" };
+    }
+    throw erro;
+  }
 }

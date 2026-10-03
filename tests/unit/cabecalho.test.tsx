@@ -53,6 +53,7 @@ describe("Cabeçalho", () => {
     render(<Cabecalho logado acaoSair={acaoSair} />);
 
     expect(screen.queryByRole("link", { name: "Entrar" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Minha conta" }).getAttribute("href")).toBe("/conta");
     await usuario.click(screen.getByRole("button", { name: "Sair" }));
 
     expect(acaoSair).toHaveBeenCalledOnce();

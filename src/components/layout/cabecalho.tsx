@@ -25,11 +25,19 @@ type PropsConta = {
 function AcaoConta({ logado = false, acaoSair, className }: PropsConta & { className?: string }) {
   if (logado) {
     return (
-      <form action={acaoSair} className={className}>
-        <Button type="submit" size="sm" variant="contorno" className="w-full">
-          Sair
-        </Button>
-      </form>
+      <div className={className}>
+        <a
+          href="/conta"
+          className={buttonVariants({ size: "sm", variant: "contorno", className: "mr-2" })}
+        >
+          Minha conta
+        </a>
+        <form action={acaoSair}>
+          <Button type="submit" size="sm" variant="contorno" className="w-full">
+            Sair
+          </Button>
+        </form>
+      </div>
     );
   }
   return (
