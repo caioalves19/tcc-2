@@ -25,13 +25,11 @@ it("exibe os dados existentes, salva e mostra sucesso ou erro do servidor", asyn
   expect(screen.queryByRole("status")).toBeNull();
 });
 it("valida campos antes do envio e mostra erros de validação devolvidos pelo servidor", async () => {
-  const acao = vi
-    .fn()
-    .mockResolvedValue({
-      ok: false,
-      erro: "invalido",
-      campos: { telefone: "Informe o telefone com DDD." },
-    });
+  const acao = vi.fn().mockResolvedValue({
+    ok: false,
+    erro: "invalido",
+    campos: { telefone: "Informe o telefone com DDD." },
+  });
   render(<FormularioPerfil dados={{ nome: "", telefone: "" }} acao={acao} />);
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Salvar dados" }));
