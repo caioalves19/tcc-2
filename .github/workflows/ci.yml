@@ -1,21 +1,40 @@
 name: CI
 
 on:
-  pull_request:
-    paths-ignore:
-      - "docs/**"
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verify:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: kolo_user
+          POSTGRES_PASSWORD: kolo_password
+          POSTGRES_DB: kolo_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kolo_user -d kolo_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install
@@ -30,8 +49,13 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Test
+      - name: Unit tests
         run: npm test
+
+      - name: Integration tests
+        run: npm run test:integration
+        env:
+          DATABASE_URL: postgresql://kolo_user:kolo_password@localhost:5432/kolo_db
 
       - name: Build
         run: npm run build
