@@ -185,6 +185,10 @@ Fluxo de "esqueci a senha" por e-mail (RF03).
 **Resp:** Guilherme · **Deps:** PBI-12
 Cliente edita nome, telefone e senha (RF04).
 
-- [ ] Nome e telefone editáveis com validação
-- [ ] Troca de senha exige senha atual
-- [ ] Feedback de sucesso/erro visível
+- [x] Nome e telefone editáveis com validação
+- [x] Troca de senha exige senha atual
+- [x] Feedback de sucesso/erro visível
+
+Implementado em `/conta`, com acesso pelo cabeçalho após login. Validação compartilhada com o cadastro e atualização via Better Auth (`updateUser` / `changePassword`), usando o usuário da sessão.
+
+Validação: `npm run lint`, `npm run typecheck` e `npm test` passaram (105 testes). `npm run test:integration` passou com Postgres real no Docker (36 testes em 8 arquivos, incluindo os 2 testes de perfil). A integração confirma persistência e isolamento entre usuários, rejeição da senha atual incorreta, login com a nova senha e rejeição de sessão revogada. Revisão independente de código sem achados. Aprovação do PR permanece pendente para o DoD.
