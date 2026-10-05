@@ -118,3 +118,17 @@ export async function seedFundacao(writer: SeedWriter): Promise<void> {
 
   await writer.upsertArtista({ userId: artistaUserId, slug: plano.artista.slug });
 }
+
+export {
+  validarPerfil,
+  type EntradaPerfil,
+  type DadosPerfil,
+  type ResultadoPerfil,
+} from "./perfil";
+
+export {
+  validarTrocaSenha,
+  type EntradaTrocaSenha,
+  type DadosTrocaSenha,
+  type ResultadoTrocaSenha,
+} from "./perfil";
