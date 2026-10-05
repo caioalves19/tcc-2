@@ -128,7 +128,7 @@ Primeira migração aplicada e dados mínimos de trabalho.
 Definição mínima de marca antes de qualquer tela: paleta, tipografia, logo e tom. Sem este card, o design system nasce sem identidade.
 
 - [X] Paleta (claro/escuro), tipografia e espaçamentos registrados como tokens (CSS variables / tema Tailwind)
-- [ ] Logo/ícone e uso básico definidos — regras de uso escritas; **falta o SVG do logo e do mascote das duas marcas**
+- [X] Logo/ícone e uso básico definidos — logos e mascotes em `public/marca/` (seção 7 do guia); **falta só o wordmark KOLÔ TATTOO**
 - [X] Contraste AA verificado nos pares principais (RNF21) — teste automático em `tests/unit/identidade-visual.test.ts`
 
 ### PBI-10 — Layout base + design system

@@ -171,20 +171,40 @@ Título vai em caixa-alta, com uma palavra em destaque: amarelo ou ouro sobre fu
 
 ## 7. Logo e mascotes
 
-|         | Ateliê                                                                      | Tattoo                                                     |
-| ------- | --------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| Logo    | selo amarelo com lettering de pincel "Kolô Ateliê" e a linha "Arte Urbana SP" | "KOLÔ" em ouro com "TATTOO" pequeno e espaçado abaixo      |
-| Mascote | lata de tinta amarela com boné, tênis e microfone                            | tatu em ouro e laranja                                      |
-| Fundos  | selo sobre claro ou grafite                                                  | wordmark sobre marinho ou royal                             |
+Arquivos em `public/marca/`, vetorizados a partir dos JPGs enviados pelo cliente. Os componentes
+ficam em `src/components/layout/`: `Marca` para as logos e `Mascote` para os mascotes.
+
+| Arquivo                | Componente                       | Fundos                                        | Uso                                  |
+| ---------------------- | -------------------------------- | --------------------------------------------- | ------------------------------------ |
+| `atelie-selo.svg`      | `<Marca />`                      | qualquer um (leva o próprio amarelo)          | logo principal: cabeçalho e favicon  |
+| `atelie-lettering.svg` | `<Marca variante="lettering" />` | **só escuro** (grafite ou marinho)            | rodapé                               |
+| `atelie-mascote.svg`   | `<Mascote marca="atelie" />`     | claro ou grafite. No marinho o contorno some  | abertura, estado vazio, erro         |
+| `tattoo-mascote.svg`   | `<Mascote marca="tattoo" />`     | os três; o natural dele é o marinho           | blocos do Tattoo                     |
+
+Cores medidas na própria arte (mediana dos pixels de cada cor):
+
+| Peça           | Cores                                                                                    |
+| -------------- | ---------------------------------------------------------------------------------------- |
+| Selo           | amarelo `#F8D448` · azul `#1840AF`                                                       |
+| Lettering      | amarelo `#FFD300` (o token `atelie-amarelo` é `#FFD600`)                                 |
+| Mascote Ateliê | amarelo `#FBD51C` · sombra `#CCAD17` · marinho `#11215C` · branco `#F0F0F0` · `#8A8359` |
+| Mascote Tattoo | ouro `#FBB600` · vermelho `#E01708`                                                      |
+
+A logo carrega as próprias cores e fica fora da regra "cada cor tem um dono": o azul do selo e o
+marinho do contorno do mascote fazem parte da arte. A regra vale para a interface.
 
 - Área de respiro em volta do logo: a altura da letra "K".
 - Tamanho mínimo: 32px de altura no selo, 24px no wordmark.
-- Nunca recolorir, distorcer, inclinar além dos 2 graus do selo, nem aplicar o selo sobre foto sem contorno.
-- Mascote aparece em hero, estado vazio, erro e confirmação. Nunca dentro de formulário nem como ícone de botão.
+- Nunca recolorir, distorcer ou inclinar, nem aplicar o selo sobre foto sem contorno.
+- O lettering amarelo sobre fundo claro reprova no contraste (cerca de 1,4:1). Nesse caso, use o selo.
+- Logo é imagem com texto alternativo ("Kolô Ateliê"). Mascote é decorativo (alt vazio) e nunca
+  substitui um texto.
+- Mascote aparece em abertura, estado vazio, erro e confirmação. Nunca dentro de formulário nem
+  como ícone de botão.
 
-> Pendente: os arquivos vetoriais não existem no repositório. Precisamos pedir os SVGs (logo e
-> mascote das duas marcas) para quem faz a arte do Instagram e guardar em `public/marca/`.
-> Até lá, as telas usam o lockup em texto.
+> Pendente: o wordmark "KOLÔ TATTOO" (o "KOLÔ" em ouro com "TATTOO" espaçado). Até chegar, ele é
+> texto no componente `Marca` (variante `tattoo`). Vale pedir também os originais em vetor (AI, SVG
+> ou PDF): os arquivos atuais são uma vetorização fiel dos JPGs, não a arte-fonte.
 
 ---
 
@@ -228,6 +248,8 @@ Duas coisas que o `init` injeta e não devem voltar: a fonte Geist (temos as nos
 ## 10. De onde isso veio
 
 - Instagram [@koloatelie](https://instagram.com/koloatelie) e [@kolotattoo](https://instagram.com/kolotattoo): cores, mascotes e tom.
+- Logos e mascotes: arquivos do cliente em JPG, vetorizados com a paleta medida na arte e fundo
+  transparente (seção 7).
 - Projeto no Google Stitch "Plataforma Kolô Ateliê & Tattoo" (tema KOLÔ Dual Universe), com as telas de referência.
 - Ajustes feitos em cima do Stitch, todos por contraste: legenda `#6F7881` para `#5F6872`; texto
   secundário do Tattoo `#92CCFF` para `#C3D0EC`; foco em card branco no Tattoo passou a royal; ícone
