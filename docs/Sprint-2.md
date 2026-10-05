@@ -1,4 +1,4 @@
-# Kolô — Sprint 2: Projeto completo em ordem de execução
+# Kolô — Sprint 2: Projeto completo e dependências técnicas
 
 **Período-alvo:** 05 a 18/10/2026.
 **Equipe:** Caio Alves, Caio Oliveira, Guilherme, Gustavo e Robert.
@@ -8,58 +8,84 @@
 
 ## Como executar
 
-A ordem é **estritamente sequencial: PBI-16 → PBI-17 → … → PBI-47**. Um integrante conclui o PBI-16, outra pessoa pode assumir o PBI-17 depois, e assim sucessivamente. Os responsáveis não são predefinidos neste documento.
+A numeração organiza o backlog; **o início de um PBI depende dos pré-requisitos técnicos da tabela, não do número anterior**. PBIs com as dependências atendidas podem ser executados em paralelo pelos integrantes. Os responsáveis não são predefinidos neste documento.
 
-- Iniciar um PBI somente depois do aceite e da integração do anterior. A dependência sequencial é uma regra de organização da equipe, mesmo quando não há dependência técnica direta.
-- Cada entrega inclui implementação, integração e testes do comportamento, revisão por outro integrante e PR aprovado. Não deixar todos os testes para o fechamento.
-- Na passagem, registrar PR, evidências, migrações/configurações necessárias e eventuais impedimentos. O próximo integrante parte da versão integrada.
-- P0 é indispensável à defesa; P1 também está contemplado no projeto completo, mas pode ser formalmente adiado se o prazo exigir. Um P1 adiado deve ter justificativa registrada antes de avançar, e não pode ser marcado como concluído.
-- Os números de PBI continuam a Sprint 1; não correspondem aos números da coluna “#” do roteiro original. Nesta revisão, o antigo PBI-23 de fechamento do acervo foi substituído pelo endereço de entrega; o fechamento global está nos PBIs 45–47.
+- A tabela mostra as entregas consumidas por cada PBI. Quando há vários pré-requisitos, todos precisam estar disponíveis para sua integração e aceite completos. As dependências transitivas continuam valendo, mesmo quando não são repetidas.
+- Interfaces e funções isoladas podem ser preparadas antes, com contratos combinados e dados de exemplo. Isso não elimina a dependência nem comprova a integração real. Compartilhar o contrato de campos, validações e API pública antes de dividir trabalho que usa os mesmos dados.
+- Cada entrega inclui implementação, testes do comportamento, revisão por outro integrante e PR aprovado. Integrar os pré-requisitos na base comum antes do aceite de seus dependentes; usar branches próprias por PBI e coordenar alterações nos arquivos compartilhados.
+- Registrar PR, evidências, migrações/configurações necessárias e impedimentos na passagem entre integrantes.
+- P0 é indispensável à defesa. P1 pode avançar em paralelo quando seus pré-requisitos estiverem prontos, mas a disponibilidade de um P1 não lhe dá prioridade sobre P0. Qualquer adiamento deve ter justificativa e permanecer registrado como pendência.
+- Os números continuam a Sprint 1 e não correspondem à coluna “#” do roteiro original. O fechamento global está nos PBIs 45–47.
 
-**Viabilidade:** o roteiro original prevê oito semanas para o projeto. Concentrar todo o restante entre 05 e 18/10, com execução serial, representa alto risco de prazo. As janelas abaixo são metas de acompanhamento, não estimativas validadas nem garantia de conclusão. Se houver atraso, registrar o desvio e revisar o prazo; não reduzir testes nem declarar P0 entregue parcialmente.
+**Viabilidade:** o roteiro original prevê oito semanas. As janelas até 18/10 são metas de acompanhamento, não estimativas validadas nem garantia de conclusão. O paralelismo reduz esperas, mas continua limitado à capacidade dos cinco integrantes e às revisões e integrações necessárias. Reavaliar a viabilidade a cada marco.
 
-## Visão geral — seguir de cima para baixo
+## Visão geral — dependências técnicas
 
-| PBI | Entrega | Requisitos | Prioridade | Só iniciar após |
-| --- | --- | --- | --- | --- |
-| 16 | CRUD de artistas, estilos e tags | RF28 | P0 | Sprint 1 |
-| 17 | Upload e tratamento de imagens | RF27 | P0 | PBI-16 |
-| 18 | CRUD de obras | RF26 | P0 | PBI-17 |
-| 19 | Catálogo público | RF09 | P0 | PBI-18 |
-| 20 | Página da obra | RF10 | P0 | PBI-19 |
-| 21 | Home com destaques | RF07 | P0 | PBI-20 |
-| 22 | Páginas institucionais | RF08 | P0 | PBI-21 |
-| 23 | Endereço de entrega | RF05 | P0 | PBI-22 |
-| 24 | Carrinho persistente | RF11 | P0 | PBI-23 |
-| 25 | Reserva temporária e concorrência de estoque | RF15; RN02–RN04, RN06 | P0 | PBI-24 |
-| 26 | Checkout e criação do pedido | RF12; RN01, RN07 | P0 | PBI-25 |
-| 27 | Pagamento Mercado Pago em sandbox | RF13; RNF10, RNF12 | P0 | PBI-26 |
-| 28 | Webhook e confirmação do pedido | RF14; RN05, RN06, RNF11 | P0 | PBI-27 |
-| 29 | Acompanhamento de pedidos pelo cliente | RF16 | P0 | PBI-28 |
-| 30 | Gestão administrativa de pedidos | RF29 | P0 | PBI-29 |
-| 31 | Wizard público de agendamento | RF20; RN01, RNF08 | P0 | PBI-30 |
-| 32 | Checks obrigatórios de conformidade | RF23–RF25; RNF18 | P0 | PBI-31 |
-| 33 | Conclusão pelo WhatsApp e integração da home | RF21; conclusão do RF07 | P0 | PBI-32 |
-| 34 | Agenda manual do artista e administrador | RF22; RN08–RN10 | P0 | PBI-33 |
-| 35 | Gestão do portfólio | RF19; RN10 | P0 | PBI-34 |
-| 36 | Galeria pública de tatuagens | RF17 | P0 | PBI-35 |
-| 37 | Busca no portfólio | RF18 | P0 | PBI-36 |
-| 38 | Perfil unificado do cliente no admin | RF30 | P1 | PBI-37 |
-| 39 | Configurações do site | RF31 | P1 | PBI-38 |
-| 40 | Exclusão de conta e anonimização | RN12; RNF19 | P1 | PBI-39 |
-| 41 | Busca textual no catálogo | Fase 1, item 13; modelo de dados | P1 | PBI-40 |
-| 42 | Modalidades adicionais de frete | Complemento do RF12 | P1 | PBI-41 |
-| 43 | Cancelamento e estorno administrativo | Complemento do RF29 | P1 | PBI-42 |
-| 44 | Contato com proteção antibot | Fase 1, item 14; RNF08 | P1 | PBI-43 |
-| 45 | Qualidade integrada e segurança | RNF02–RNF14, RNF17–RNF23, conforme aplicável | Entrega final | PBI-44 |
-| 46 | Deploy, operação e restauração | RNF01, RNF07, RNF12, RNF15, RNF16, RNF23, RNF24 | Entrega final | PBI-45 |
-| 47 | Validação com cliente e preparação da defesa | Fase 6; aceite global | Entrega final | PBI-46 |
+Todos os PBIs herdam a base da Sprint 1, já concluída. “Sprint 1” na última coluna significa que não há outro PBI desta sprint bloqueando o início. Nos PBIs 45 e 46, a tabela distingue preparação antecipada e fechamento/publicação.
+
+| PBI | Entrega                                      | Requisitos                                      | Prioridade    | Dependências técnicas                                         |
+| --- | -------------------------------------------- | ----------------------------------------------- | ------------- | ------------------------------------------------------------- |
+| 16  | CRUD de artistas, estilos e tags             | RF28                                            | P0            | Sprint 1 (concluída)                                          |
+| 17  | Upload e tratamento de imagens               | RF27                                            | P0            | Sprint 1 (concluída)                                          |
+| 18  | CRUD de obras                                | RF26                                            | P0            | PBI-16, PBI-17                                                |
+| 19  | Catálogo público                             | RF09                                            | P0            | PBI-18                                                        |
+| 20  | Página da obra                               | RF10                                            | P0            | PBI-18                                                        |
+| 21  | Home com destaques                           | RF07                                            | P0            | PBI-19, PBI-20                                                |
+| 22  | Páginas institucionais                       | RF08                                            | P0            | Sprint 1 (concluída)                                          |
+| 23  | Endereço de entrega                          | RF05                                            | P0            | Sprint 1 (concluída)                                          |
+| 24  | Carrinho persistente                         | RF11                                            | P0            | PBI-18                                                        |
+| 25  | Reserva temporária e concorrência de estoque | RF15; RN02–RN04, RN06                           | P0            | PBI-18                                                        |
+| 26  | Checkout e criação do pedido                 | RF12; RN01, RN07                                | P0            | PBI-23, PBI-24, PBI-25                                        |
+| 27  | Pagamento Mercado Pago em sandbox            | RF13; RNF10, RNF12                              | P0            | PBI-26                                                        |
+| 28  | Webhook e confirmação do pedido              | RF14; RN05, RN06, RNF11                         | P0            | PBI-25, PBI-26, PBI-27                                        |
+| 29  | Acompanhamento de pedidos pelo cliente       | RF16                                            | P0            | PBI-26                                                        |
+| 30  | Gestão administrativa de pedidos             | RF29                                            | P0            | PBI-26                                                        |
+| 31  | Wizard público de agendamento                | RF20; RN01, RNF08                               | P0            | PBI-16                                                        |
+| 32  | Checks obrigatórios de conformidade          | RF23–RF25; RNF18                                | P0            | PBI-31                                                        |
+| 33  | Conclusão pelo WhatsApp e integração da home | RF21; conclusão do RF07                         | P0            | PBI-21, PBI-31, PBI-32                                        |
+| 34  | Agenda manual do artista e administrador     | RF22; RN08–RN10                                 | P0            | PBI-16                                                        |
+| 35  | Gestão do portfólio                          | RF19; RN10                                      | P0            | PBI-16, PBI-17                                                |
+| 36  | Galeria pública de tatuagens                 | RF17                                            | P0            | PBI-35                                                        |
+| 37  | Busca no portfólio                           | RF18                                            | P0            | PBI-36                                                        |
+| 38  | Perfil unificado do cliente no admin         | RF30                                            | P1            | PBI-26                                                        |
+| 39  | Configurações do site                        | RF31                                            | P1            | PBI-21, PBI-22, PBI-33                                        |
+| 40  | Exclusão de conta e anonimização             | RN12; RNF19                                     | P1            | PBI-26                                                        |
+| 41  | Busca textual no catálogo                    | Fase 1, item 13; modelo de dados                | P1            | PBI-19                                                        |
+| 42  | Modalidades adicionais de frete              | Complemento do RF12                             | P1            | PBI-26                                                        |
+| 43  | Cancelamento e estorno administrativo        | Complemento do RF29                             | P1            | PBI-25, PBI-28, PBI-30                                        |
+| 44  | Contato com proteção antibot                 | Fase 1, item 14; RNF08                          | P1            | Sprint 1 (concluída)                                          |
+| 45  | Qualidade integrada e segurança              | RNF02–RNF14, RNF17–RNF23, conforme aplicável    | Entrega final | Sprint 1 para preparar; PBIs 16–37 e P1 incluídos para fechar |
+| 46  | Deploy, operação e restauração               | RNF01, RNF07, RNF12, RNF15, RNF16, RNF23, RNF24 | Entrega final | Sprint 1 para preparar; PBI-45 para publicar a versão final   |
+| 47  | Validação com cliente e preparação da defesa | Fase 6; aceite global                           | Entrega final | PBI-45, PBI-46                                                |
+
+## Quais PBIs podem avançar em paralelo
+
+Este quadro mostra a primeira liberação possível por dependências, não datas nem exigência de finalizar uma camada inteira. **Cada PBI é liberado assim que seus próprios pré-requisitos estiverem integrados**, mesmo que outros itens da mesma camada ainda estejam em andamento. Distribuir os itens liberados entre os cinco integrantes, respeitando prioridade e capacidade.
+
+| Liberação        | PBIs tecnicamente liberados em conjunto                |
+| ---------------- | ------------------------------------------------------ |
+| Base da Sprint 1 | PBI-16, PBI-17, PBI-22, PBI-23, PBI-44                 |
+| Camada 1         | PBI-18, PBI-31, PBI-34, PBI-35                         |
+| Camada 2         | PBI-19, PBI-20, PBI-24, PBI-25, PBI-32, PBI-36         |
+| Camada 3         | PBI-21, PBI-26, PBI-37, PBI-41                         |
+| Camada 4         | PBI-27, PBI-29, PBI-30, PBI-33, PBI-38, PBI-40, PBI-42 |
+| Camada 5         | PBI-28, PBI-39                                         |
+| Camada 6         | PBI-43                                                 |
+
+Além desses grupos, a preparação do PBI-45 e da infraestrutura do PBI-46 pode acompanhar todas as camadas. Esses dois PBIs só recebem aceite final nos gates indicados na tabela principal.
+
+Exemplos de divisão técnica:
+
+- **Agora:** PBI-17, PBI-22, PBI-23 e PBI-44 podem começar enquanto o PBI-16 aguarda aprovação/integração. Reservar capacidade também para a revisão do PBI-16 e para a preparação de testes/infraestrutura.
+- **Após 16 e 17:** uma frente trabalha no CRUD de obras (18), outra na gestão do portfólio (35); wizard (31) e agenda manual (34) precisam apenas de 16 e podem já estar em andamento.
+- **Após 18:** catálogo (19), ficha da obra (20), carrinho (24) e reservas (25) podem ser desenvolvidos por frentes diferentes.
+- **Após 26:** pagamento (27), consulta de pedidos (29), gestão de pedidos (30), perfil administrativo do cliente (38), anonimização (40) e frete adicional (42) estão liberados, com prioridade para P0.
 
 ## Etapa 1 — Acervo e vitrine
 
 ### PBI-16 — CRUD administrativo de artistas, estilos e tags
 
-**Requisito:** RF28 · **Deps:** Sprint 1.
+**Requisito:** RF28 · **Deps:** Sprint 1 (concluída).
 
 Construir as telas e operações administrativas sobre o modelo existente, reutilizando autenticação e controle de acesso.
 
@@ -70,7 +96,7 @@ Construir as telas e operações administrativas sobre o modelo existente, reuti
 - [x] Restringir telas e operações de gestão ao papel ADMIN, inclusive no servidor
 - [x] Cobrir persistência, validações e tentativas de acesso sem permissão com testes
 
-**Situação:** implementação local validada na branch `feat/pbi16-artistas-estilos-tags`; aprovação e integração do PR permanecem pendentes para encerrar o DoD e liberar o PBI-17.
+**Situação:** implementação local validada na branch `feat/pbi16-artistas-estilos-tags`; aprovação e integração do PR permanecem pendentes para encerrar o DoD e integrar os PBIs que consomem artistas, estilos e tags (18, 31, 34 e 35). O PBI-17 não depende tecnicamente desta entrega.
 
 **Entregas:** telas `/admin/artistas`, `/admin/estilos` e `/admin/tags`, com acesso pelo cabeçalho para ADMIN. Cadastro de artista cria conta, credencial e perfil em transação ou vincula uma conta CLIENTE/ARTISTA ativa sem perfil. Exclusão preserva a conta, bloqueia vínculos existentes e revoga sessões quando o papel passa de ARTISTA para CLIENTE. O primeiro acesso do ADMIN pode ser provisionado pelo seed usando `SEED_ADMIN_PASSWORD`, conforme o README.
 
@@ -78,7 +104,7 @@ Construir as telas e operações administrativas sobre o modelo existente, reuti
 
 ### PBI-17 — Upload e tratamento de imagens
 
-**Requisito:** RF27 · **Apoio:** RNF09, RNF12, RNF14 · **Deps:** PBI-16.
+**Requisito:** RF27 · **Apoio:** RNF09, RNF12, RNF14 · **Deps:** Sprint 1 (concluída).
 
 Integrar o armazenamento Cloudflare R2 ao fluxo de imagens do acervo, conforme a arquitetura prevista no escopo.
 
@@ -92,7 +118,7 @@ Integrar o armazenamento Cloudflare R2 ao fluxo de imagens do acervo, conforme a
 
 ### PBI-18 — CRUD administrativo de obras
 
-**Requisito:** RF26 · **Regras:** RN02, RN07, RN11 · **Deps:** PBI-17.
+**Requisito:** RF26 · **Regras:** RN02, RN07, RN11 · **Deps:** PBI-16, PBI-17.
 
 Permitir a gestão completa da obra, conectando os cadastros auxiliares e o upload de imagens.
 
@@ -107,7 +133,7 @@ Permitir a gestão completa da obra, conectando os cadastros auxiliares e o uplo
 
 ---
 
-## Bloco B — Vitrine pública
+## Vitrine pública
 
 ### PBI-19 — Catálogo público
 
@@ -125,7 +151,7 @@ Construir a grade pública de obras integrada ao acervo persistido.
 
 ### PBI-20 — Página da obra
 
-**Requisito:** RF10 · **Regras:** RN01, RN11 · **Deps:** PBI-19.
+**Requisito:** RF10 · **Regras:** RN01, RN11 · **Deps:** PBI-18.
 
 Apresentar a obra em uma página pública com galeria e ficha técnica.
 
@@ -138,7 +164,7 @@ Apresentar a obra em uma página pública com galeria e ficha técnica.
 
 ### PBI-21 — Home com destaques
 
-**Requisito:** RF07 · **Deps:** PBI-20.
+**Requisito:** RF07 · **Deps:** PBI-19, PBI-20.
 
 Substituir a home provisória pela vitrine institucional, reutilizando a identidade visual e os componentes existentes.
 
@@ -153,11 +179,11 @@ O contato WhatsApp é uma solução provisória para a chamada da home. O wizard
 
 ---
 
-## Bloco C — Institucional
+## Institucional
 
 ### PBI-22 — Páginas institucionais
 
-**Requisito:** RF08 · **Apoio:** RNF17, RNF18 · **Deps:** PBI-21.
+**Requisito:** RF08 · **Apoio:** RNF17, RNF18 · **Deps:** Sprint 1 (concluída).
 
 Disponibilizar as páginas de privacidade, termos de uso e política de cancelamento.
 
@@ -175,7 +201,7 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-23 — Endereço de entrega
 
-**Referências:** RF05 · **Prioridade:** P0 · **Deps:** PBI-22.
+**Referências:** RF05 · **Prioridade:** P0 · **Deps:** Sprint 1 (concluída).
 
 - [ ] Permitir cadastrar e editar um único endereço por usuário autenticado
 - [ ] Validar campos no servidor e impedir leitura ou alteração do endereço de outro usuário
@@ -183,7 +209,9 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-24 — Carrinho persistente
 
-**Referências:** RF11 · **Prioridade:** P0 · **Deps:** PBI-23.
+**Referências:** RF11 · **Prioridade:** P0 · **Deps:** PBI-18.
+
+Consome as obras, preços e disponibilidade do PBI-18. Não precisa esperar o endereço (23), o catálogo (19) ou a ficha (20) para implementar a persistência e as operações do carrinho; os pontos de entrada nas telas públicas serão integrados conforme elas estiverem prontas.
 
 - [ ] Adicionar, remover e alterar quantidades de obras disponíveis; recalcular valores no servidor
 - [ ] Persistir o carrinho do visitante por cookie e o do usuário no banco entre sessões; tratar a entrada na conta sem perder itens
@@ -191,7 +219,9 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-25 — Reserva temporária e concorrência de estoque
 
-**Referências:** RF15; RN02–RN04, RN06 · **Prioridade:** P0 · **Deps:** PBI-24.
+**Referências:** RF15; RN02–RN04, RN06 · **Prioridade:** P0 · **Deps:** PBI-18.
+
+Consome estoque e obras do PBI-18 e a sessão existente. A API de reserva pode ser construída em paralelo ao carrinho (24), recebendo obra e quantidade; a ligação entre ambos será feita no checkout (26).
 
 - [ ] Reservar unidades no checkout por transação no PostgreSQL, sem ultrapassar estoque em acessos concorrentes
 - [ ] Implementar expiração de 10 minutos e liberação por tarefa pg-boss, com reexecução segura
@@ -200,7 +230,7 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-26 — Checkout e criação do pedido
 
-**Referências:** RF12; RN01, RN07 · **Prioridade:** P0 · **Deps:** PBI-25.
+**Referências:** RF12; RN01, RN07 · **Prioridade:** P0 · **Deps:** PBI-23, PBI-24, PBI-25.
 
 - [ ] Exigir autenticação e apresentar resumo, endereço, quantidades, frete e total calculados no servidor
 - [ ] Usar retirada sem custo como modalidade mínima; opções adicionais entram no PBI-42
@@ -218,7 +248,7 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-28 — Webhook e confirmação do pedido
 
-**Referências:** RF14; RN05, RN06, RNF11 · **Prioridade:** P0 · **Deps:** PBI-27.
+**Referências:** RF14; RN05, RN06, RNF11 · **Prioridade:** P0 · **Deps:** PBI-25, PBI-26, PBI-27.
 
 - [ ] Validar assinatura do webhook e consultar o pagamento na API do provedor
 - [ ] Conferir vínculo e valor do pagamento; confirmar pedido e baixar estoque somente após aprovação
@@ -227,7 +257,9 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-29 — Acompanhamento de pedidos pelo cliente
 
-**Referências:** RF16 · **Prioridade:** P0 · **Deps:** PBI-28.
+**Referências:** RF16 · **Prioridade:** P0 · **Deps:** PBI-26.
+
+Consome o contrato de pedido e suas cópias de dados do PBI-26. Pode avançar junto com pagamento (27), webhook (28) e gestão administrativa (30), usando pedidos de teste. A confirmação real pelo gateway será verificada na integração global.
 
 - [ ] Listar e detalhar apenas pedidos do usuário autenticado
 - [ ] Exibir itens, valores, situação e rastreio quando disponível
@@ -235,7 +267,9 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-30 — Gestão administrativa de pedidos
 
-**Referências:** RF29 · **Prioridade:** P0 · **Deps:** PBI-29.
+**Referências:** RF29 · **Prioridade:** P0 · **Deps:** PBI-26.
+
+Consome pedidos do PBI-26. Pode avançar junto com a área do cliente (29) e o gateway (27–28); o contrato de status, pagamento e rastreio deve ser compartilhado. O fluxo completo com aprovação real depende também do PBI-28.
 
 - [ ] Permitir ao ADMIN consultar pedidos e dados de pagamento, registrar rastreio e atualizar situação operacional
 - [ ] Não permitir que alteração manual de status substitua a aprovação de pagamento pelo gateway
@@ -245,7 +279,9 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-31 — Wizard público de agendamento
 
-**Referências:** RF20; RN01, RNF08 · **Prioridade:** P0 · **Deps:** PBI-30.
+**Referências:** RF20; RN01, RNF08 · **Prioridade:** P0 · **Deps:** PBI-16.
+
+Consome artistas e estilos do PBI-16. Não depende da loja, da agenda manual (34) nem do portfólio.
 
 - [ ] Implementar etapas de nome, artista, estilo, região, tamanho e preferência de data/horário
 - [ ] Permitir avançar e voltar com validação e limitação de taxa aplicável
@@ -262,7 +298,9 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-33 — Conclusão pelo WhatsApp e integração da home
 
-**Referências:** RF21; conclusão do RF07 · **Prioridade:** P0 · **Deps:** PBI-32.
+**Referências:** RF21; conclusão do RF07 · **Prioridade:** P0 · **Deps:** PBI-21, PBI-31, PBI-32.
+
+A geração da mensagem e do link pode ser preparada enquanto a home é construída; o aceite completo exige os dados do wizard (31), os checks (32) e a conexão da chamada na home (21). O número pode vir da configuração de ambiente até a integração do PBI-39.
 
 - [ ] Gerar link wa.me com nome, artista, estilo, região, tamanho, preferência de data/horário e aceites
 - [ ] Codificar a mensagem corretamente e usar número de contato configurado
@@ -271,7 +309,9 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-34 — Agenda manual do artista e administrador
 
-**Referências:** RF22; RN08–RN10 · **Prioridade:** P0 · **Deps:** PBI-33.
+**Referências:** RF22; RN08–RN10 · **Prioridade:** P0 · **Deps:** PBI-16.
+
+Consome artistas e estilos do PBI-16 e a constraint de agenda da Sprint 1. O horário é cadastrado manualmente; não depende do wizard, do WhatsApp, da loja ou do portfólio.
 
 - [ ] Cadastrar horário combinado com contato, artista, início/fim e observações; usuário cliente é opcional
 - [ ] Permitir ao artista operar somente a própria agenda e ao ADMIN gerenciar as agendas
@@ -282,7 +322,9 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-35 — Gestão do portfólio
 
-**Referências:** RF19; RN10 · **Prioridade:** P0 · **Deps:** PBI-34.
+**Referências:** RF19; RN10 · **Prioridade:** P0 · **Deps:** PBI-16, PBI-17.
+
+Consome artistas/estilos (16) e upload (17). Pode avançar em paralelo ao CRUD de obras (18), à loja e à agenda. O upload precisa autorizar também o papel ARTISTA, respeitando a propriedade dos trabalhos.
 
 - [ ] Reutilizar upload para incluir, editar, ordenar, destacar e remover trabalhos
 - [ ] Associar artista, estilos e região do corpo aos trabalhos
@@ -309,7 +351,9 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-38 — Perfil unificado do cliente no admin
 
-**Referências:** RF30 · **Prioridade:** P1 · **Deps:** PBI-37.
+**Referências:** RF30 · **Prioridade:** P1 · **Deps:** PBI-26.
+
+Consome os pedidos e os dados do cliente definidos no PBI-26. Não depende do portfólio, da agenda ou das configurações do site.
 
 - [ ] Permitir ao ADMIN consultar dados do cliente e histórico de compras
 - [ ] Restringir acesso no servidor e exibir estados sem compras
@@ -317,7 +361,9 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-39 — Configurações do site
 
-**Referências:** RF31 · **Prioridade:** P1 · **Deps:** PBI-38.
+**Referências:** RF31 · **Prioridade:** P1 · **Deps:** PBI-21, PBI-22, PBI-33.
+
+O formulário e a persistência de configurações podem ser preparados com a base existente. As dependências listadas são para integrar todos os consumidores previstos: home (21), políticas (22) e WhatsApp (33). Esses PBIs usam configuração de ambiente/textos locais inicialmente e não ficam bloqueados pelo PBI-39.
 
 - [ ] Permitir ao ADMIN editar contato, horários, textos institucionais e políticas
 - [ ] Integrar os valores às páginas públicas e ao número usado no WhatsApp
@@ -325,7 +371,9 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-40 — Exclusão de conta e anonimização
 
-**Referências:** RN12; RNF19 · **Prioridade:** P1 · **Deps:** PBI-39.
+**Referências:** RN12; RNF19 · **Prioridade:** P1 · **Deps:** PBI-26.
+
+Consome o formato real do pedido e das cópias de dados pessoais definido no PBI-26 para anonimizar também esse conteúdo. Pode usar pedidos pagos de teste e não precisa esperar o webhook (28) ou as configurações (39); a integração global confirma a preservação de compras reais.
 
 - [ ] Permitir exclusão da própria conta com confirmação explícita na interface
 - [ ] Anonimizar dados pessoais preservando pedidos pagos e integridade contábil
@@ -333,7 +381,7 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-41 — Busca textual no catálogo
 
-**Referências:** Fase 1, item 13; modelo de dados · **Prioridade:** P1 · **Deps:** PBI-40.
+**Referências:** Fase 1, item 13; modelo de dados · **Prioridade:** P1 · **Deps:** PBI-19.
 
 - [ ] Adicionar busca textual tolerante a acentos, integrada à paginação e ordenação
 - [ ] Preservar regras de visibilidade de rascunhos e esgotadas
@@ -341,7 +389,9 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-42 — Modalidades adicionais de frete
 
-**Referências:** Complemento do RF12 · **Prioridade:** P1 · **Deps:** PBI-41.
+**Referências:** Complemento do RF12 · **Prioridade:** P1 · **Deps:** PBI-26.
+
+Consome o cálculo e o contrato de frete/total do checkout (26). Pode avançar junto com o gateway; validar as modalidades adicionais no fluxo integrado antes do fechamento.
 
 - [ ] Complementar retirada com valor fixo e tabela de frete
 - [ ] Calcular modalidade e valor no servidor e preservar cópia no pedido
@@ -349,7 +399,9 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-43 — Cancelamento e estorno administrativo
 
-**Referências:** Complemento do RF29 · **Prioridade:** P1 · **Deps:** PBI-42.
+**Referências:** Complemento do RF29 · **Prioridade:** P1 · **Deps:** PBI-25, PBI-28, PBI-30.
+
+Consome reservas (25), confirmação/reconciliação de pagamento (28) e operações administrativas de pedidos (30). Não depende das modalidades adicionais de frete (42).
 
 - [ ] Permitir ao ADMIN cancelar pedido não pago e solicitar estorno pelo gateway
 - [ ] Conciliar estado do pagamento, pedido e liberação de reserva sem duplicar operações
@@ -357,7 +409,9 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-44 — Contato com proteção antibot
 
-**Referências:** Fase 1, item 14; RNF08 · **Prioridade:** P1 · **Deps:** PBI-43.
+**Referências:** Fase 1, item 14; RNF08 · **Prioridade:** P1 · **Deps:** Sprint 1 (concluída).
+
+Usa autenticação/validação, banco e rate limit da base existente, além de credenciais Turnstile. Não depende de loja, agenda, portfólio ou estorno.
 
 - [ ] Disponibilizar formulário de contato com validação no servidor e persistência em contact_message
 - [ ] Validar Cloudflare Turnstile e limitar taxa de envio
@@ -367,7 +421,9 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-45 — Qualidade integrada e segurança
 
-**Referências:** RNF02–RNF14, RNF17–RNF23, conforme aplicável · **Prioridade:** Entrega final · **Deps:** PBI-44.
+**Referências:** RNF02–RNF14, RNF17–RNF23, conforme aplicável · **Prioridade:** Entrega final · **Deps:** Sprint 1 para preparar; PBIs 16–37 e P1 incluídos para fechar.
+
+Preparação de Playwright, axe-core, verificações de segurança e testes dos fluxos já disponíveis pode começar imediatamente e acompanhar as demais frentes. O aceite final exige todos os P0 dos PBIs 16–37 integrados e os P1 efetivamente incluídos testados; P1 formalmente adiados não bloqueiam o fechamento P0 e devem constar nas pendências.
 
 - [ ] Configurar Playwright real e axe-core; o script E2E atual é apenas placeholder
 - [ ] Automatizar compra sandbox até confirmação, wizard até wa.me, cadastro de obra e gestão/consulta do portfólio
@@ -378,7 +434,9 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-46 — Deploy, operação e restauração
 
-**Referências:** RNF01, RNF07, RNF12, RNF15, RNF16, RNF23, RNF24 · **Prioridade:** Entrega final · **Deps:** PBI-45.
+**Referências:** RNF01, RNF07, RNF12, RNF15, RNF16, RNF23, RNF24 · **Prioridade:** Entrega final · **Deps:** Sprint 1 para preparar; PBI-45 para publicar a versão final.
+
+Compose, CI, configuração da VPS, observabilidade e backups podem ser preparados em paralelo ao desenvolvimento com a aplicação existente. A publicação da versão final exige o gate de qualidade do PBI-45. As verificações de HTTPS, cabeçalhos, restauração e operação após deploy pertencem a este PBI, evitando uma dependência circular com o PBI-45.
 
 - [ ] Preparar Docker Compose, app, PostgreSQL, Caddy e HTTPS na VPS; não expor banco à internet
 - [ ] Configurar CI com lint, tipagem, testes e build; documentar publicação e rollback por imagem
@@ -388,7 +446,9 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ### PBI-47 — Validação com cliente e preparação da defesa
 
-**Referências:** Fase 6; aceite global · **Prioridade:** Entrega final · **Deps:** PBI-46.
+**Referências:** Fase 6; aceite global · **Prioridade:** Entrega final · **Deps:** PBI-45, PBI-46.
+
+O roteiro da banca, os dados de demonstração e o agendamento da validação podem ser preparados antecipadamente. O aceite com a versão final depende da qualidade integrada (45) e da aplicação publicada e validada em operação (46).
 
 - [ ] Executar roteiro assistido com o cliente e registrar feedback e correções
 - [ ] Preparar dados de demonstração, roteiro da banca e evidências dos fluxos completos
@@ -397,33 +457,34 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 ## Marcos até 18/10
 
-| Janela-alvo | Sequência | Marco |
-| --- | --- | --- |
-| 05–07/10 | 16 → 17 → 18 → 19 → 20 → 21 → 22 | Acervo e vitrine integrados |
-| 08–11/10 | 23 → 24 → 25 → 26 → 27 → 28 → 29 → 30 | Compra sandbox, confirmação e gestão de pedidos |
-| 12–13/10 | 31 → 32 → 33 → 34 | Wizard até WhatsApp e agenda manual |
-| 14/10 | 35 → 36 → 37 | Portfólio gerenciado e consultável |
-| 15–16/10 | 38 → 39 → 40 → 41 → 42 → 43 → 44 | Complementos P1 ou adiamentos explicitamente registrados |
-| 17–18/10 | 45 → 46 → 47 | Qualidade, operação, validação e defesa |
+As janelas se sobrepõem deliberadamente. O início real de cada card segue a tabela de dependências, e não apenas a data desejada. Trabalhar em no máximo cinco frentes por vez, incluindo a capacidade reservada para revisões e integração.
 
-Não há sobreposição planejada de PBIs. Se uma entrega ultrapassar sua janela, a seguinte continua bloqueada pelo aceite anterior. Registrar progresso e reavaliar a viabilidade a cada marco. Não preencher o período de fechamento com novas funcionalidades.
+| Janela-alvo | Frentes que podem avançar em paralelo                                                                 | Marco esperado                                     |
+| ----------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| 05–07/10    | Base do acervo (16, 17), institucional (22), endereço (23); preparar testes e infraestrutura (45, 46) | Bases integradas para obras, loja e tatuagem       |
+| 06–10/10    | Obras e vitrine (18–21), wizard e agenda (31–34), portfólio (35–37), conforme pré-requisitos          | Acervo público, agendamento e portfólio integrados |
+| 08–13/10    | Carrinho e reservas (24, 25), checkout (26), gateway (27, 28), áreas de pedidos (29, 30)              | Compra sandbox com confirmação e gestão de pedidos |
+| 10–16/10    | P1 liberados (38–44), em paralelo aos P0 restantes; testes e preparação de operação contínuos         | Complementos incluídos ou adiamentos registrados   |
+| 17–18/10    | Fechamento da qualidade (45), publicação final e verificação operacional (46), aceite e defesa (47)   | Evidências e entrega final registradas             |
+
+Um atraso bloqueia os dependentes técnicos daquele PBI; as frentes independentes podem continuar. Reavaliar os marcos e a capacidade sem retirar testes ou transformar entrega parcial em aceite. Não preencher o período de fechamento com novas funcionalidades.
 
 ## Cobertura do projeto
 
-| Parte do escopo | Onde está contemplada |
-| --- | --- |
-| Fundação, autenticação e perfil — RF01–RF04 e RF06 | Sprint 1, concluída |
-| Endereço — RF05 | PBI-23 |
-| Home, políticas, catálogo e ficha — RF07–RF10 | PBIs 19–22; home conectada ao wizard no 33 |
-| Carrinho, checkout, pagamento, reserva e pedidos — RF11–RF16 | PBIs 24–29; complemento de frete no 42 |
-| Portfólio — RF17–RF19 | PBIs 35–37 |
-| Wizard, WhatsApp, agenda e checks — RF20–RF25 | PBIs 31–34 |
-| Obras, imagens e cadastros — RF26–RF28 | PBIs 16–18 |
-| Administração de pedidos — RF29 | PBIs 30 e 43 |
-| Clientes e configurações — RF30–RF31 | PBIs 38–39 |
-| Anonimização — RN12/RNF19 | PBI-40 |
-| Busca no catálogo e contato — P1 do roteiro | PBIs 41 e 44 |
-| Qualidade, requisitos não funcionais, produção e defesa | Critérios de cada PBI e PBIs 45–47 |
+| Parte do escopo                                              | Onde está contemplada                      |
+| ------------------------------------------------------------ | ------------------------------------------ |
+| Fundação, autenticação e perfil — RF01–RF04 e RF06           | Sprint 1, concluída                        |
+| Endereço — RF05                                              | PBI-23                                     |
+| Home, políticas, catálogo e ficha — RF07–RF10                | PBIs 19–22; home conectada ao wizard no 33 |
+| Carrinho, checkout, pagamento, reserva e pedidos — RF11–RF16 | PBIs 24–29; complemento de frete no 42     |
+| Portfólio — RF17–RF19                                        | PBIs 35–37                                 |
+| Wizard, WhatsApp, agenda e checks — RF20–RF25                | PBIs 31–34                                 |
+| Obras, imagens e cadastros — RF26–RF28                       | PBIs 16–18                                 |
+| Administração de pedidos — RF29                              | PBIs 30 e 43                               |
+| Clientes e configurações — RF30–RF31                         | PBIs 38–39                                 |
+| Anonimização — RN12/RNF19                                    | PBI-40                                     |
+| Busca no catálogo e contato — P1 do roteiro                  | PBIs 41 e 44                               |
+| Qualidade, requisitos não funcionais, produção e defesa      | Critérios de cada PBI e PBIs 45–47         |
 
 “Projeto completo” significa o escopo v2.2, incluindo P1, qualidade e operação. Itens expressamente fora de escopo ou adiados na seção 14 da especificação não entram: 3D, páginas públicas de artista, filtros de catálogo, dados de saúde, API oficial WhatsApp, motor de slots, split de pagamentos e demais exclusões permanecem fora.
 
@@ -431,7 +492,7 @@ Não há sobreposição planejada de PBIs. Se uma entrega ultrapassar sua janela
 
 Reutilizar autenticação, tokens visuais e schema existentes. Respeitar APIs públicas dos módulos em `src/modules/*/index.ts`; mudanças de modelo exigem migração e revisão. Seguir o ciclo de desenvolvimento e revisão do repositório.
 
-Cada PBI só libera o próximo com critérios atendidos, testes pertinentes verdes e PR aprovado por integrante diferente do autor. No fechamento integrado, executar:
+Cada PBI disponibiliza sua entrega aos dependentes técnicos depois de atender aos critérios, passar nos testes pertinentes e ter o PR aprovado por integrante diferente do autor e integrado na base comum. PBIs independentes podem continuar em paralelo. No fechamento integrado, executar:
 
 ```bash
 npm run lint
@@ -455,5 +516,5 @@ Disponibilizar acesso a R2, Mercado Pago sandbox, número WhatsApp, VPS/domínio
 Registrar impedimentos e adiamentos com data, impacto e ação necessária. A ausência de registros não comprova disponibilidade das integrações.
 
 | Data | PBI | Impedimento ou adiamento | Impacto / ação necessária | Situação |
-| --- | --- | --- | --- | --- |
-| — | — | Nenhum registrado | — | — |
+| ---- | --- | ------------------------ | ------------------------- | -------- |
+| —    | —   | Nenhum registrado        | —                         | —        |
