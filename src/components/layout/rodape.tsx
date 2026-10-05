@@ -19,7 +19,7 @@ export function Rodape() {
     <footer className="bg-neutro-grafite text-neutro-branco">
       <div className="mx-auto flex max-w-pagina flex-col gap-10 px-margem py-12 md:flex-row md:justify-between md:px-margem-desktop">
         <div className="flex flex-col gap-3">
-          <Marca className="[--kolo-texto:var(--color-neutro-branco)] [--kolo-texto-suave:var(--color-neutro-linha)]" />
+          <Marca variante="lettering" className="w-32" />
           <p className="max-w-xs text-nota text-neutro-linha">
             Arte urbana autêntica, feita por pessoas reais. São Paulo.
           </p>

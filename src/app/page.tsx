@@ -1,4 +1,5 @@
 import { Marca } from "@/components/layout/marca";
+import { Mascote } from "@/components/layout/mascote";
 import { Button } from "@/components/ui/button";
 
 // Placeholder do PBI-10: existe para mostrar o layout base e os dois modos de
@@ -6,24 +7,27 @@ import { Button } from "@/components/ui/button";
 export default function Home() {
   return (
     <>
-      <section className="mx-auto max-w-pagina px-margem py-16 md:px-margem-desktop md:py-24">
-        <p className="font-display text-etiqueta uppercase text-[var(--kolo-link)]">
-          Modo Ateliê · placeholder
-        </p>
-        <h1 className="mt-4 max-w-3xl font-display text-display-mobile uppercase md:text-display">
-          Arte urbana autêntica, feita por{" "}
-          <span className="inline-block rounded-campo border-2 border-neutro-grafite bg-atelie-amarelo px-3 text-neutro-grafite shadow-adesivo">
-            pessoas reais
-          </span>
-        </h1>
-        <p className="mt-6 max-w-2xl text-corpo-lg text-[var(--kolo-texto-suave)]">
-          Esta página é um placeholder do layout base. Ela existe para conferir cabeçalho, rodapé,
-          tipografia e os dois modos de marca antes das telas reais.
-        </p>
-        <div className="mt-8 flex flex-wrap gap-4">
-          <Button>Ver obras</Button>
-          <Button variant="contorno">Falar no WhatsApp</Button>
+      <section className="mx-auto grid max-w-pagina items-center gap-10 px-margem py-16 md:grid-cols-[1fr_auto] md:px-margem-desktop md:py-24">
+        <div>
+          <p className="font-display text-etiqueta uppercase text-[var(--kolo-link)]">
+            Modo Ateliê · placeholder
+          </p>
+          <h1 className="mt-4 max-w-3xl font-display text-display-mobile uppercase md:text-display">
+            Arte urbana autêntica, feita por{" "}
+            <span className="inline-block rounded-campo border-2 border-neutro-grafite bg-atelie-amarelo px-3 text-neutro-grafite shadow-adesivo">
+              pessoas reais
+            </span>
+          </h1>
+          <p className="mt-6 max-w-2xl text-corpo-lg text-[var(--kolo-texto-suave)]">
+            Esta página é um placeholder do layout base. Ela existe para conferir cabeçalho, rodapé,
+            tipografia e os dois modos de marca antes das telas reais.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-4">
+            <Button>Ver obras</Button>
+            <Button variant="contorno">Falar no WhatsApp</Button>
+          </div>
         </div>
+        <Mascote marca="atelie" className="hidden w-64 md:block" />
       </section>
 
       <section
@@ -31,7 +35,10 @@ export default function Home() {
         className="bg-[var(--kolo-fundo)] text-[var(--kolo-texto)] shadow-brilho"
       >
         <div className="mx-auto flex max-w-pagina flex-col gap-6 px-margem py-16 md:px-margem-desktop md:py-24">
-          <Marca marca="tattoo" />
+          <div className="flex items-center gap-5">
+            <Mascote marca="tattoo" className="w-36 md:w-52" />
+            <Marca variante="tattoo" />
+          </div>
           <h2 className="max-w-2xl font-display text-titulo-xl-mobile uppercase md:text-titulo-xl">
             O mesmo sistema, <span className="text-[var(--kolo-link)]">outra marca</span>
           </h2>

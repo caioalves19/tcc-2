@@ -46,7 +46,7 @@ export function Cabecalho({ logado = false, acaoSair }: PropsConta) {
     <header className="sticky top-0 z-50 border-b-2 border-neutro-grafite bg-[var(--kolo-fundo)]">
       <div className="mx-auto flex h-20 max-w-pagina items-center justify-between gap-4 px-margem md:px-margem-desktop">
         <a href="/" className="rounded-campo focus-visible:ring-3 focus-visible:ring-ring/50">
-          <Marca />
+          <Marca preload />
         </a>
 
         <nav aria-label="Navegação principal" className="hidden items-center gap-1 lg:flex">
