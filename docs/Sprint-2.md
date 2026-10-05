@@ -63,12 +63,18 @@ A ordem é **estritamente sequencial: PBI-16 → PBI-17 → … → PBI-47**. Um
 
 Construir as telas e operações administrativas sobre o modelo existente, reutilizando autenticação e controle de acesso.
 
-- [ ] Cadastrar, listar, editar e excluir artistas, estilos e tags
-- [ ] Vincular o artista ao usuário correspondente e aos estilos
-- [ ] Validar entradas no servidor e apresentar erros de duplicidade de forma compreensível
-- [ ] Impedir exclusões que violem vínculos existentes, com mensagem explicativa
-- [ ] Restringir telas e operações de gestão ao papel ADMIN, inclusive no servidor
-- [ ] Cobrir persistência, validações e tentativas de acesso sem permissão com testes
+- [x] Cadastrar, listar, editar e excluir artistas, estilos e tags
+- [x] Vincular o artista ao usuário correspondente e aos estilos
+- [x] Validar entradas no servidor e apresentar erros de duplicidade de forma compreensível
+- [x] Impedir exclusões que violem vínculos existentes, com mensagem explicativa
+- [x] Restringir telas e operações de gestão ao papel ADMIN, inclusive no servidor
+- [x] Cobrir persistência, validações e tentativas de acesso sem permissão com testes
+
+**Situação:** implementação local validada na branch `feat/pbi16-artistas-estilos-tags`; aprovação e integração do PR permanecem pendentes para encerrar o DoD e liberar o PBI-17.
+
+**Entregas:** telas `/admin/artistas`, `/admin/estilos` e `/admin/tags`, com acesso pelo cabeçalho para ADMIN. Cadastro de artista cria conta, credencial e perfil em transação ou vincula uma conta CLIENTE/ARTISTA ativa sem perfil. Exclusão preserva a conta, bloqueia vínculos existentes e revoga sessões quando o papel passa de ARTISTA para CLIENTE. O primeiro acesso do ADMIN pode ser provisionado pelo seed usando `SEED_ADMIN_PASSWORD`, conforme o README.
+
+**Evidências:** `npm run lint`, `npm run typecheck` e `npm test` passaram (115 testes); `npm run test:integration` passou com PostgreSQL real (43 testes, incluindo 6 do CRUD e o novo teste de senha do seed). Revisão independente de código sem achados. `npm run build -- --webpack` passou; o build padrão com Turbopack encontrou restrição de porta interna no ambiente. Validação visual em navegador ainda não realizada.
 
 ### PBI-17 — Upload e tratamento de imagens
 

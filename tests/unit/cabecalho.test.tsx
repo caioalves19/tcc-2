@@ -59,3 +59,17 @@ describe("Cabeçalho", () => {
     expect(acaoSair).toHaveBeenCalledOnce();
   });
 });
+
+it("RF28 mostra acesso à administração para ADMIN também no menu mobile", async () => {
+  const usuario = userEvent.setup();
+  const { rerender } = render(<Cabecalho logado />);
+  expect(screen.queryByRole("link", { name: "Administração" })).toBeNull();
+  rerender(<Cabecalho logado administrador />);
+  expect(screen.getByRole("link", { name: "Administração" }).getAttribute("href")).toBe("/admin");
+  await usuario.click(screen.getByRole("button", { name: /abrir menu/i }));
+  expect(
+    within(screen.getByRole("navigation", { name: /menu mobile/i }))
+      .getByRole("link", { name: "Administração" })
+      .getAttribute("href"),
+  ).toBe("/admin");
+});

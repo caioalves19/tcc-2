@@ -18,14 +18,28 @@ const LINKS = [
 
 type PropsConta = {
   logado?: boolean;
+  administrador?: boolean;
   acaoSair?: () => Promise<void>;
 };
 
 // Entrar é link para /login; Sair é um form que dispara a Server Action de logout.
-function AcaoConta({ logado = false, acaoSair, className }: PropsConta & { className?: string }) {
+function AcaoConta({
+  logado = false,
+  administrador = false,
+  acaoSair,
+  className,
+}: PropsConta & { className?: string }) {
   if (logado) {
     return (
       <div className={className}>
+        {administrador && (
+          <a
+            href="/admin"
+            className={buttonVariants({ size: "sm", variant: "contorno", className: "mr-2" })}
+          >
+            Administração
+          </a>
+        )}
         <a
           href="/conta"
           className={buttonVariants({ size: "sm", variant: "contorno", className: "mr-2" })}
@@ -47,7 +61,7 @@ function AcaoConta({ logado = false, acaoSair, className }: PropsConta & { class
   );
 }
 
-export function Cabecalho({ logado = false, acaoSair }: PropsConta) {
+export function Cabecalho({ logado = false, administrador = false, acaoSair }: PropsConta) {
   const [menuAberto, setMenuAberto] = useState(false);
 
   return (
@@ -73,7 +87,12 @@ export function Cabecalho({ logado = false, acaoSair }: PropsConta) {
           <Button variant="contorno" size="icon-sm" aria-label="Carrinho">
             <ShoppingBag aria-hidden />
           </Button>
-          <AcaoConta logado={logado} acaoSair={acaoSair} className="hidden sm:inline-flex" />
+          <AcaoConta
+            logado={logado}
+            administrador={administrador}
+            acaoSair={acaoSair}
+            className="hidden sm:inline-flex"
+          />
           <Button
             variant="contorno"
             size="icon-sm"
@@ -107,7 +126,12 @@ export function Cabecalho({ logado = false, acaoSair }: PropsConta) {
               </li>
             ))}
             <li className="pt-2 sm:hidden">
-              <AcaoConta logado={logado} acaoSair={acaoSair} className="w-full" />
+              <AcaoConta
+                logado={logado}
+                administrador={administrador}
+                acaoSair={acaoSair}
+                className="w-full"
+              />
             </li>
           </ul>
         </nav>

@@ -62,3 +62,31 @@ describe("migrate e seed da fundação", () => {
     expect(artista.rows).toEqual([{ slug: "artista-exemplo", papel: "ARTISTA" }]);
   });
 });
+
+it("senha inicial do ADMIN é opcional, fica em hash e não é sobrescrita ao repetir o seed", async () => {
+  const db = new Client({ connectionString: TEST_URL });
+  await db.connect();
+  const { verifyPassword } = await import("better-auth/crypto");
+  const executarSeed = (senha: string) =>
+    execSync("npx prisma db seed", {
+      env: { ...process.env, DATABASE_URL: TEST_URL, SEED_ADMIN_PASSWORD: senha },
+      stdio: "pipe",
+    });
+  try {
+    executarSeed("senha-admin-inicial-123");
+    const senha = await db.query<{ senha_hash: string }>(
+      'SELECT a.senha_hash FROM account a JOIN "user" u ON u.id = a.user_id WHERE u.email = $1',
+      ["admin@kolo.test"],
+    );
+    expect(senha.rows).toHaveLength(1);
+    const hash = senha.rows[0]?.senha_hash;
+    if (!hash) throw new Error("Hash ausente");
+    expect(await verifyPassword({ hash, password: "senha-admin-inicial-123" })).toBe(true);
+    executarSeed("outra-senha-admin-123");
+    expect(
+      (await db.query("SELECT senha_hash FROM account WHERE senha_hash = $1", [hash])).rowCount,
+    ).toBe(1);
+  } finally {
+    await db.end();
+  }
+});
