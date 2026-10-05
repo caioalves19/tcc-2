@@ -31,24 +31,28 @@ export const metadata: Metadata = {
 };
 
 // Se o banco falhar, o site segue no ar como deslogado em vez de virar 500 inteiro.
-async function estaLogado(): Promise<boolean> {
+async function sessaoDoLayout() {
   const cabecalhos = await headers();
   try {
-    return (await sessaoDaRequisicao(cabecalhos)) !== null;
+    return await sessaoDaRequisicao(cabecalhos);
   } catch (erro) {
     unstable_rethrow(erro);
     console.error("Falha ao ler a sessão no layout", erro);
-    return false;
+    return null;
   }
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const logado = await estaLogado();
+  const sessao = await sessaoDoLayout();
 
   return (
     <html lang="pt-BR" className={`${fonteCorpo.variable} ${fonteTitulo.variable}`}>
       <body className="flex min-h-screen flex-col">
-        <Cabecalho logado={logado} acaoSair={sairAcao} />
+        <Cabecalho
+          logado={sessao !== null}
+          administrador={sessao?.papel === "ADMIN"}
+          acaoSair={sairAcao}
+        />
         <main className="flex-1">{children}</main>
         <Rodape />
       </body>
