@@ -5,7 +5,7 @@ import { validarCom } from "./validacao";
 export const SENHA_MINIMA = 8;
 export const SENHA_MAXIMA = 128;
 
-// Regra única de senha nova: cadastro e redefinição (RF01, RF03).
+// Regra única de senha nova: cadastro, redefinição e troca no perfil (RF01, RF03, RF04).
 export const schemaSenhaNova = z
   .string()
   .min(SENHA_MINIMA, `A senha precisa ter pelo menos ${SENHA_MINIMA} caracteres.`)
