@@ -18,7 +18,7 @@ async function recreateTestDatabase(): Promise<void> {
 
 function runPrisma(command: string): void {
   execSync(command, {
-    env: { ...process.env, DATABASE_URL: TEST_URL },
+    env: { ...process.env, DATABASE_URL: TEST_URL, SEED_ADMIN_PASSWORD: "" },
     stdio: "pipe",
     shell: process.platform === "win32" ? "cmd.exe" : "/bin/sh",
   });
@@ -61,18 +61,15 @@ describe("migrate e seed da fundação", () => {
     );
     expect(artista.rows).toEqual([{ slug: "artista-exemplo", papel: "ARTISTA" }]);
   });
-});
 
-it("senha inicial do ADMIN é opcional, fica em hash e não é sobrescrita ao repetir o seed", async () => {
-  const db = new Client({ connectionString: TEST_URL });
-  await db.connect();
-  const { verifyPassword } = await import("better-auth/crypto");
-  const executarSeed = (senha: string) =>
-    execSync("npx prisma db seed", {
-      env: { ...process.env, DATABASE_URL: TEST_URL, SEED_ADMIN_PASSWORD: senha },
-      stdio: "pipe",
-    });
-  try {
+  // Dois processos Prisma/tsx e hashing real precisam de margem no runner da CI.
+  it("senha inicial do ADMIN é opcional, fica em hash e não é sobrescrita ao repetir o seed", async () => {
+    const { verifyPassword } = await import("better-auth/crypto");
+    const executarSeed = (senha: string) =>
+      execSync("npx prisma db seed", {
+        env: { ...process.env, DATABASE_URL: TEST_URL, SEED_ADMIN_PASSWORD: senha },
+        stdio: "pipe",
+      });
     executarSeed("senha-admin-inicial-123");
     const senha = await db.query<{ senha_hash: string }>(
       'SELECT a.senha_hash FROM account a JOIN "user" u ON u.id = a.user_id WHERE u.email = $1',
@@ -86,7 +83,5 @@ it("senha inicial do ADMIN é opcional, fica em hash e não é sobrescrita ao re
     expect(
       (await db.query("SELECT senha_hash FROM account WHERE senha_hash = $1", [hash])).rowCount,
     ).toBe(1);
-  } finally {
-    await db.end();
-  }
+  }, 30_000);
 });
