@@ -19,6 +19,9 @@ export function criarClienteR2(): S3Client {
     region: "auto",
     endpoint: `https://${variavel("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com`,
     forcePathStyle: true,
+    // Sem isto o SDK embute na URL assinada o CRC32 de um corpo vazio, que não é o do arquivo.
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
     credentials: {
       accessKeyId: variavel("R2_ACCESS_KEY_ID"),
       secretAccessKey: variavel("R2_SECRET_ACCESS_KEY"),

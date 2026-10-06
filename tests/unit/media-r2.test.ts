@@ -33,3 +33,17 @@ it("RF27 falha citando a variável ausente quando o R2 não está configurado", 
     assinarComR2({ chave: "obras/x.jpg", tipo: "image/jpeg", tamanho: 1, expiraEmSegundos: 300 }),
   ).rejects.toThrow("R2_SECRET_ACCESS_KEY");
 });
+
+it("RF27 não embute na URL assinada o checksum de corpo vazio calculado pelo SDK", async () => {
+  configurarR2();
+  const url = new URL(
+    await assinarComR2({
+      chave: "obras/x/abc.jpg",
+      tipo: "image/jpeg",
+      tamanho: 2048,
+      expiraEmSegundos: 300,
+    }),
+  );
+  const nomes = [...url.searchParams.keys()].map((nome) => nome.toLowerCase());
+  expect(nomes.filter((nome) => nome.includes("checksum"))).toEqual([]);
+});

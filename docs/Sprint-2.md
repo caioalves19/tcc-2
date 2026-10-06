@@ -114,11 +114,13 @@ Integrar o armazenamento Cloudflare R2 ao fluxo de imagens do acervo, conforme a
 - [ ] Gerar miniaturas e entregar imagens otimizadas e responsivas
 - [x] Exibir feedback de envio, sucesso e falha, permitindo nova tentativa
 - [x] Documentar configuração e variáveis de ambiente sem versionar credenciais
-- [ ] Testar rejeição de arquivos e falhas de upload; registrar evidência de envio real ao R2
+- [x] Testar rejeição de arquivos e falhas de upload; registrar evidência de envio real ao R2
 
 **Decisões (registradas em 05/10/2026):** formatos JPEG, PNG e WebP, até 5 MB, sem SVG no upload. Miniatura fixa gerada com `sharp` (WebP, ~400 px), demais variantes pelo `next/image`; o `sharp` é uma dependência nova em relação à stack original do escopo. ADMIN envia para qualquer artista; ARTISTA só para as próprias obras e o próprio portfólio.
 
-**Situação (em andamento, branch `feat/pbi-17-upload-imagens`):** módulo `src/modules/media`, Server Actions em `src/app/imagens/actions.ts` e componente `UploadImagem` implementados e testados com o R2 simulado. Em aberto: (a) a referência do objeto (chave) é gravada em `artwork_image.url` e `portfolio_item.imagem_url` pelo CRUD de obras (PBI-18) e pela gestão do portfólio (PBI-35), por isso o item de persistência segue desmarcado; (b) a entrega otimizada e responsiva só se confirma quando uma página renderizar a imagem com `next/image` (o host do R2 já está liberado); (c) o envio real ao R2 ainda precisa ser feito e registrado como evidência.
+**Situação (em andamento, branch `feat/pbi-17-upload-imagens`):** módulo `src/modules/media`, Server Actions em `src/app/imagens/actions.ts` e componente `UploadImagem` implementados e testados com o R2 simulado. Em aberto: (a) a referência do objeto (chave) é gravada em `artwork_image.url` e `portfolio_item.imagem_url` pelo CRUD de obras (PBI-18) e pela gestão do portfólio (PBI-35), por isso o item de persistência segue desmarcado; (b) a entrega otimizada e responsiva só se confirma quando uma página renderizar a imagem com `next/image` (o host do R2 já está liberado); (c) o envio pela tela ainda não foi exercitado de ponta a ponta, porque nenhuma página usa o `UploadImagem` até o PBI-18/35.
+
+**Evidência de envio real ao R2 (05/10/2026, bucket `kolo-imagens`, artista fictício `00000000-0000-4000-8000-000000000017`):** com o código do módulo e sem simulação, uma URL assinada recusou com 403 um corpo de tamanho diferente e um `Content-Type` diferente do assinado e aceitou o correto com 200; o `armazenamentoR2()` leu o original e gravou a miniatura `image/webp` de 400×267; os dois objetos responderam 200 pela URL pública. No navegador, um `PUT` assinado feito a partir de `http://localhost:3000` retornou 200 (CORS), e o mesmo `PUT` a partir de `https://example.com` foi bloqueado. O painel do Cloudflare listou o PNG original, a miniatura e o PNG enviado pelo navegador. O teste revelou que o SDK embutia na URL assinada o checksum de um corpo vazio; corrigido com `requestChecksumCalculation: "WHEN_REQUIRED"` e coberto por teste. Os objetos de teste foram removidos do bucket ao final.
 
 ### PBI-18 — CRUD administrativo de obras
 
