@@ -1,26 +1,21 @@
+import { z } from "zod";
 import { autorizarUpload } from "./autorizacao";
 import type { DestinoImagem } from "./chave";
+import { MENSAGENS_PROCESSAMENTO } from "./mensagens";
 import { gerarMiniatura, type Armazenamento } from "./miniatura";
 import { armazenamentoR2 } from "./r2";
 
 export type ResultadoProcessamento =
   { ok: true; dados: { chaveMiniatura: string } } | { ok: false; erro: string; mensagem: string };
 
-// Só o formato que gerarChaveObjeto produz: nada de miniatura, subpasta ou extensão estranha.
+// RNF09: só o formato que gerarChaveObjeto produz, sem miniatura, subpasta ou extensão estranha.
 const CHAVE_ORIGINAL =
   /^(obras|portfolio)\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp)$/i;
-
-const MENSAGENS: Record<string, string> = {
-  chave_invalida: "Imagem inválida.",
-  nao_autenticado: "Sua sessão expirou. Entre novamente.",
-  proibido: "Você não tem permissão para processar esta imagem.",
-  artista_inexistente: "Artista não encontrado.",
-  imagem_invalida: "O arquivo enviado não é uma imagem JPEG, PNG ou WebP válida.",
-  indisponivel: "Não foi possível processar agora. Tente novamente.",
-};
+const schemaChave = z.string().regex(CHAVE_ORIGINAL);
 
 function falha(erro: string): ResultadoProcessamento {
-  return { ok: false, erro, mensagem: MENSAGENS[erro] ?? MENSAGENS.indisponivel! };
+  const mensagem = MENSAGENS_PROCESSAMENTO[erro] ?? MENSAGENS_PROCESSAMENTO.indisponivel!;
+  return { ok: false, erro, mensagem };
 }
 
 // O destino e o artista saem da própria chave, e a permissão é checada sobre eles: quem
@@ -30,7 +25,8 @@ export async function processarImagem(
   cabecalhos: Headers,
   armazenamento?: Armazenamento,
 ): Promise<ResultadoProcessamento> {
-  const partes = typeof chave === "string" ? CHAVE_ORIGINAL.exec(chave) : null;
+  const lida = schemaChave.safeParse(chave);
+  const partes = lida.success ? CHAVE_ORIGINAL.exec(lida.data) : null;
   if (!partes) return falha("chave_invalida");
   const permissao = await autorizarUpload(cabecalhos, {
     destino: partes[1] as DestinoImagem,

@@ -7,11 +7,7 @@ const chave = "obras/3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b/abc.png";
 function armazenamentoEmMemoria(inicial: Record<string, Buffer>) {
   const objetos = new Map(Object.entries(inicial));
   const armazenamento: Armazenamento = {
-    obter: async (c) => {
-      const objeto = objetos.get(c);
-      if (!objeto) throw new Error("objeto inexistente");
-      return objeto;
-    },
+    obter: async (c) => objetos.get(c) ?? null,
     gravar: async (c, corpo) => void objetos.set(c, corpo),
     remover: async (c) => void objetos.delete(c),
   };

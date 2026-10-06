@@ -1,7 +1,11 @@
+import { S3Client } from "@aws-sdk/client-s3";
 import { afterEach, expect, it, vi } from "vitest";
-import { assinarComR2 } from "../../src/modules/media";
+import { armazenamentoR2, assinarComR2 } from "../../src/modules/media";
 
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
+});
 
 function configurarR2() {
   vi.stubEnv("R2_ACCOUNT_ID", "conta123");
@@ -46,4 +50,16 @@ it("RF27 não embute na URL assinada o checksum de corpo vazio calculado pelo SD
   );
   const nomes = [...url.searchParams.keys()].map((nome) => nome.toLowerCase());
   expect(nomes.filter((nome) => nome.includes("checksum"))).toEqual([]);
+});
+
+it("RF27 lê objeto inexistente no R2 como ausente, e não como falha do provedor", async () => {
+  configurarR2();
+  const naoExiste = Object.assign(new Error("The specified key does not exist."), {
+    name: "NoSuchKey",
+  });
+  vi.spyOn(S3Client.prototype, "send").mockRejectedValueOnce(naoExiste as never);
+  expect(await armazenamentoR2().obter("portfolio/x/abc.png")).toBeNull();
+
+  vi.spyOn(S3Client.prototype, "send").mockRejectedValueOnce(new Error("rede") as never);
+  await expect(armazenamentoR2().obter("portfolio/x/abc.png")).rejects.toThrow("rede");
 });

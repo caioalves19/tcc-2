@@ -31,11 +31,7 @@ async function armazenamentoCom(chave: string) {
     .toBuffer();
   const objetos = new Map<string, Buffer>([[chave, original]]);
   const armazenamento: Armazenamento = {
-    obter: vi.fn(async (c: string) => {
-      const objeto = objetos.get(c);
-      if (!objeto) throw new Error("inexistente");
-      return objeto;
-    }),
+    obter: vi.fn(async (c: string) => objetos.get(c) ?? null),
     gravar: vi.fn(async (c: string, corpo: Buffer) => void objetos.set(c, corpo)),
     remover: vi.fn(async (c: string) => void objetos.delete(c)),
   };
@@ -99,4 +95,18 @@ it("RF27 devolve erro tratado quando o R2 não está configurado e a imagem inv�
     erro: "imagem_invalida",
   });
   expect(objetos.size).toBe(0);
+});
+
+it("RF27 avisa que a imagem não chegou ao bucket quando o envio não aconteceu, sem apagar nada", async () => {
+  const { processarImagem } = await import("../../src/modules/media");
+  const { armazenamento } = await armazenamentoCom(`portfolio/${idAna}/${UUID}.png`);
+  const outra = `portfolio/${idAna}/0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d.png`;
+
+  expect(await processarImagem(outra, ana, armazenamento)).toEqual({
+    ok: false,
+    erro: "objeto_inexistente",
+    mensagem: "A imagem não chegou ao armazenamento. Envie o arquivo de novo.",
+  });
+  expect(armazenamento.remover).not.toHaveBeenCalled();
+  expect(armazenamento.gravar).not.toHaveBeenCalled();
 });

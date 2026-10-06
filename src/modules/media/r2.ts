@@ -52,9 +52,14 @@ export function armazenamentoR2(): Armazenamento {
   const Bucket = variavel("R2_BUCKET");
   return {
     async obter(chave) {
-      const resposta = await cliente.send(new GetObjectCommand({ Bucket, Key: chave }));
-      if (!resposta.Body) throw new Error("Objeto sem conteúdo");
-      return Buffer.from(await resposta.Body.transformToByteArray());
+      try {
+        const resposta = await cliente.send(new GetObjectCommand({ Bucket, Key: chave }));
+        if (!resposta.Body) throw new Error("Objeto sem conteúdo");
+        return Buffer.from(await resposta.Body.transformToByteArray());
+      } catch (erro) {
+        if (erro instanceof Error && erro.name === "NoSuchKey") return null;
+        throw erro;
+      }
     },
     async gravar(chave, corpo, tipo) {
       await cliente.send(

@@ -1,13 +1,15 @@
 import sharp from "sharp";
 
 export type Armazenamento = {
-  obter(chave: string): Promise<Buffer>;
+  // null quando o objeto não existe (o navegador não chegou a enviar).
+  obter(chave: string): Promise<Buffer | null>;
   gravar(chave: string, corpo: Buffer, tipo: string): Promise<void>;
   remover(chave: string): Promise<void>;
 };
 
 export type ResultadoMiniatura =
-  { ok: true; chaveMiniatura: string } | { ok: false; motivo: "imagem_invalida" };
+  | { ok: true; chaveMiniatura: string }
+  | { ok: false; motivo: "imagem_invalida" | "objeto_inexistente" };
 
 const LARGURA_MINIATURA = 400;
 const LIMITE_PIXELS = 40_000_000;
@@ -22,6 +24,7 @@ export async function gerarMiniatura(
   armazenamento: Armazenamento,
 ): Promise<ResultadoMiniatura> {
   const original = await armazenamento.obter(chave);
+  if (original === null) return { ok: false, motivo: "objeto_inexistente" };
   let miniatura: Buffer;
   try {
     // O sharp também decodifica SVG e GIF: o formato real precisa ser um dos aceitos.
