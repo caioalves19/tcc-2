@@ -1,6 +1,7 @@
 import type { Prisma } from "../../../generated/prisma/client";
 import { comoAdmin, ErroGestao, validar } from "../artists/index";
-import { schemaObra } from "./validacao";
+import { situacaoPorEstoque } from "./regras";
+import { schemaEditarObra, schemaObra } from "./validacao";
 
 async function validarVinculos(tx: Prisma.TransactionClient, artistaId: string, tags: string[]) {
   const artista = await tx.artist.findUnique({ where: { id: artistaId }, include: { user: true } });
@@ -40,6 +41,41 @@ export function criarObra(entrada: unknown, cabecalhos: Headers) {
       },
     });
     return { id: obra.id };
+  });
+}
+
+// RF26/RN11: o admin escolhe rascunho ou publicada; disponível ou esgotada sai do estoque.
+// Publicar exige ao menos uma imagem, para não aparecer card vazio no catálogo.
+export function editarObra(entrada: unknown, cabecalhos: Headers) {
+  return comoAdmin(cabecalhos, async (tx) => {
+    const dados = validar(schemaEditarObra, entrada);
+    const atual = await tx.artwork.findUnique({
+      where: { id: dados.id },
+      include: { _count: { select: { images: true } } },
+    });
+    if (!atual || atual.deletedAt !== null)
+      throw new ErroGestao("nao_encontrado", "Obra não encontrada. Atualize a página.");
+    if (dados.publicada && atual._count.images === 0)
+      throw new ErroGestao("sem_imagem", "Adicione pelo menos uma imagem antes de publicar.");
+    await validarVinculos(tx, dados.artistaId, dados.tags);
+    await garantirSlugLivre(tx, dados.slug, dados.id);
+    await tx.artwork.update({
+      where: { id: dados.id },
+      data: {
+        artistId: dados.artistaId,
+        title: dados.titulo,
+        slug: dados.slug,
+        description: dados.descricao,
+        technique: dados.tecnica,
+        dimensions: dados.dimensoes,
+        year: dados.ano,
+        priceCents: dados.precoCentavos,
+        stockQuantity: dados.estoque,
+        status: situacaoPorEstoque(dados.publicada, dados.estoque),
+        featured: dados.destaque,
+        tags: { deleteMany: {}, create: dados.tags.map((tagId) => ({ tagId })) },
+      },
+    });
   });
 }
 
