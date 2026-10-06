@@ -15,10 +15,10 @@ describe("Formulário de Contato", () => {
   it("renderiza os campos corretamente", () => {
     render(<FormularioContato />);
     
-    expect(screen.getByLabelText("Nome")).toBeInTheDocument();
-    expect(screen.getByLabelText("E-mail")).toBeInTheDocument();
-    expect(screen.getByLabelText("Mensagem")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Enviar mensagem" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Nome")).toBeDefined();
+    expect(screen.getByLabelText("E-mail")).toBeDefined();
+    expect(screen.getByLabelText("Mensagem")).toBeDefined();
+    expect(screen.getByRole("button", { name: "Enviar mensagem" })).toBeDefined();
   });
 
   it("exibe erros de validação ao tentar enviar vazio", async () => {
@@ -26,9 +26,9 @@ describe("Formulário de Contato", () => {
     
     fireEvent.click(screen.getByRole("button", { name: "Enviar mensagem" }));
 
-    expect(await screen.findByText("Informe seu nome (mínimo de 2 caracteres).")).toBeInTheDocument();
-    expect(await screen.findByText("Informe um e-mail válido.")).toBeInTheDocument();
-    expect(await screen.findByText("Escreva uma mensagem (mínimo de 10 caracteres).")).toBeInTheDocument();
+    expect(await screen.findByText("Informe seu nome (mínimo de 2 caracteres).")).toBeDefined();
+    expect(await screen.findByText("Informe um e-mail válido.")).toBeDefined();
+    expect(await screen.findByText("Escreva uma mensagem (mínimo de 10 caracteres).")).toBeDefined();
     expect(enviarContatoMock).not.toHaveBeenCalled();
   });
 
@@ -49,6 +49,6 @@ describe("Formulário de Contato", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Enviar mensagem" }));
 
-    expect(await screen.findByText("Muitas tentativas. Tente novamente mais tarde.")).toBeInTheDocument();
+    expect(await screen.findByText("Muitas tentativas. Tente novamente mais tarde.")).toBeDefined();
   });
 });
