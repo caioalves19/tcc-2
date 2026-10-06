@@ -300,10 +300,12 @@ Consome pedidos do PBI-26. Pode avançar junto com a área do cliente (29) e o g
 
 Consome artistas e estilos do PBI-16. Não depende da loja, da agenda manual (34) nem do portfólio.
 
-- [ ] Implementar etapas de nome, artista, estilo, região, tamanho e preferência de data/horário
-- [ ] Permitir avançar e voltar com validação e limitação de taxa aplicável
-- [ ] Não persistir solicitação, reservar horário ou coletar imagens e dados clínicos
-- [ ] Testar navegação e validações; manter a conclusão indisponível até os PBIs 32 e 33
+- [x] Implementar etapas de nome, artista, estilo, região, tamanho e preferência de data/horário
+- [x] Permitir avançar e voltar com validação e limitação de taxa aplicável
+- [x] Não persistir solicitação, reservar horário ou coletar imagens e dados clínicos
+- [x] Testar navegação e validações; manter a conclusão indisponível até os PBIs 32 e 33
+
+Implementação em `/agendamento`, com tamanhos de `SizeTier`. Contrato, testes e limites registrados em [PBI-31](features/PBI-31.md). Revisão independente de código: PASS. Conferência visual nas larguras previstas, aceite humano e aprovação do PR continuam pendentes para encerramento.
 
 ### PBI-32 — Checks obrigatórios de conformidade
 

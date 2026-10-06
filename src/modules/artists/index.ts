@@ -14,3 +14,4 @@ export {
   excluirArtista,
 } from "./artistas";
 export { verificarAcessoAdmin } from "./acesso";
+export { listarArtistasParaWizard } from "./publico";
