@@ -1,15 +1,16 @@
 import { createHash } from "node:crypto";
 import type { Client } from "pg";
 import { afterAll, beforeAll, expect, it } from "vitest";
-import { prepararContas } from "./contas-pbi17";
+import { comCookie, prepararContas, SENHA } from "./contas-pbi17";
 
 let db: Client;
 let admin: Headers;
 let cliente: Headers;
 let idAna: string;
+let ana: Headers;
 
 beforeAll(async () => {
-  ({ db, admin, cliente, idAna } = await prepararContas("kolo_pbi24_carrinho_test"));
+  ({ db, admin, cliente, idAna, ana } = await prepararContas("kolo_pbi24_carrinho_test"));
 }, 120_000);
 afterAll(async () => {
   await db?.end();
@@ -126,4 +127,31 @@ it("RF11/RN02 recusa obra indisponível ou inexistente e quantidade inválida, s
   );
   expect(rows[0]).toEqual({ quantidade_estoque: 1, reservas: 0 });
   expect(cliente).toBeDefined();
+});
+
+async function novaSessaoDoCliente() {
+  const { abrirSessao } = await import("../../src/lib/auth");
+  return (await abrirSessao({ email: "cliente@pbi17.test", senha: SENHA })).token;
+}
+
+it("RF11 o carrinho da conta vale entre sessões e não aparece para outra pessoa", async () => {
+  const { adicionarAoCarrinho, lerCarrinho } = await import("../../src/modules/orders");
+  const obra = await obraPublicada("da-conta", "300,00", 2);
+
+  expect(
+    await adicionarAoCarrinho({ obraId: obra }, { cabecalhos: cliente, tokenVisitante: null }),
+  ).toEqual({ ok: true, dados: { tokenNovo: null } });
+  const outraSessao = await comCookie(await novaSessaoDoCliente());
+  expect(await lerCarrinho({ cabecalhos: outraSessao, tokenVisitante: null })).toMatchObject({
+    ok: true,
+    dados: { itens: [{ obraId: obra, quantidade: 1 }], totalCentavos: 30000 },
+  });
+  expect(await lerCarrinho({ cabecalhos: ana, tokenVisitante: null })).toMatchObject({
+    ok: true,
+    dados: { itens: [] },
+  });
+  const { rows } = await db.query(
+    "SELECT count(*)::int AS total FROM cart WHERE user_id IS NOT NULL AND cookie_token IS NULL",
+  );
+  expect(rows[0].total).toBe(1);
 });
