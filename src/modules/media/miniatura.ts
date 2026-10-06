@@ -23,6 +23,8 @@ export function chaveMiniatura(chave: string): string {
 // imagem). Qualquer outra falha (memória, por exemplo) não diz nada sobre o arquivo.
 const ERRO_DE_DECODIFICACAO =
   /^(VipsJpeg|vipspng|VipsForeignLoad|Input buffer (has corrupt|contains unsupported))/i;
+// O libjpeg usa o mesmo prefixo VipsJpeg para falta de memória.
+const FALTA_DE_MEMORIA = /insufficient memory|out of memory/i;
 
 // Só pelo cabeçalho: formato fora da lista (o sharp também lê SVG e GIF) ou pixels demais
 // (pequeno em bytes, enorme ao decodificar). Cabeçalho ilegível também é arquivo inválido.
@@ -54,7 +56,8 @@ export async function gerarMiniatura(
     } catch (erro) {
       // Só o arquivo que não decodifica é apagado; outra falha sobe e o original fica,
       // porque pode já estar em uso numa obra.
-      if (!(erro instanceof Error && ERRO_DE_DECODIFICACAO.test(erro.message))) throw erro;
+      const mensagem = erro instanceof Error ? erro.message : "";
+      if (!ERRO_DE_DECODIFICACAO.test(mensagem) || FALTA_DE_MEMORIA.test(mensagem)) throw erro;
     }
   }
   if (miniatura === null) {

@@ -3,13 +3,13 @@ import type sharpReal from "sharp";
 
 // Simula uma falha do sharp que não tem a ver com o arquivo (memória, por exemplo): a
 // leitura do cabeçalho funciona e só a geração da miniatura falha.
-const falha = vi.hoisted(() => ({ ativa: false }));
+const falha = vi.hoisted(() => ({ ativa: false, mensagem: "" }));
 vi.mock("sharp", async (importOriginal) => {
   const real = (await importOriginal<{ default: typeof sharpReal }>()).default;
   const comFalha = (...args: Parameters<typeof sharpReal>) => {
     const instancia = real(...args);
     if (falha.ativa)
-      instancia.toBuffer = (() => Promise.reject(new Error("vips: memória"))) as never;
+      instancia.toBuffer = (() => Promise.reject(new Error(falha.mensagem))) as never;
     return instancia;
   };
   return { default: Object.assign(comFalha, real) };
@@ -33,11 +33,14 @@ it("RF27 mantém o original quando a falha não é de formato: só imagem invál
     remover: async (c) => void objetos.delete(c),
   };
 
-  falha.ativa = true;
-  try {
-    await expect(gerarMiniatura(chave, armazenamento)).rejects.toThrow("vips: memória");
-  } finally {
-    falha.ativa = false;
+  // O libjpeg também põe o prefixo VipsJpeg na falta de memória: não é defeito do arquivo.
+  for (const mensagem of ["vips: memória", "VipsJpeg: Insufficient memory (case 4)"]) {
+    Object.assign(falha, { ativa: true, mensagem });
+    try {
+      await expect(gerarMiniatura(chave, armazenamento)).rejects.toThrow(mensagem);
+    } finally {
+      falha.ativa = false;
+    }
   }
 
   expect([...objetos.keys()]).toEqual([chave]);
