@@ -1,6 +1,6 @@
 import sharp from "sharp";
 import { expect, it } from "vitest";
-import { gerarMiniatura, type Armazenamento } from "../../src/modules/media";
+import { chaveMiniatura, gerarMiniatura, type Armazenamento } from "../../src/modules/media";
 
 const chave = "obras/3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b/abc.png";
 
@@ -103,4 +103,12 @@ it("RF27 respeita a orientação EXIF da foto: celular em pé não vira miniatur
   const miniatura = objetos.get("obras/3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b/abc_thumb.webp");
   const meta = await sharp(miniatura).metadata();
   expect([meta.width, meta.height]).toEqual([200, 300]);
+});
+
+// Contrato para o PBI-18 e o PBI-35: o DER guarda só a chave do original, então a da
+// miniatura é derivada por esta função pública, para exibir e para remover do bucket.
+it("RF27 deriva pela API pública a chave da miniatura a partir da chave do original", () => {
+  expect(chaveMiniatura("portfolio/3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b/abc.jpg")).toBe(
+    "portfolio/3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b/abc_thumb.webp",
+  );
 });

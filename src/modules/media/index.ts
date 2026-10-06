@@ -16,5 +16,5 @@ export { processarImagem } from "./processamento";
 export type { ResultadoProcessamento } from "./processamento";
 export { autorizarUpload } from "./autorizacao";
 export type { ResultadoAutorizacao } from "./autorizacao";
-export { gerarMiniatura } from "./miniatura";
+export { chaveMiniatura, gerarMiniatura } from "./miniatura";
 export type { Armazenamento, ResultadoMiniatura } from "./miniatura";
