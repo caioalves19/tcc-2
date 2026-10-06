@@ -56,7 +56,7 @@ it("RF27 recusa destino de artista que não existe, mesmo para ADMIN", async () 
   ).toEqual({ ok: false, erro: "artista_inexistente" });
 });
 
-it("RF27 só ADMIN envia para qualquer artista; ARTISTA só para si; visitante e CLIENTE não enviam", async () => {
+it("RF27 só ADMIN envia para qualquer artista; visitante e CLIENTE não enviam", async () => {
   const { autorizarUpload } = await import("../../src/modules/media");
 
   for (const destino of ["obras", "portfolio"] as const) {
@@ -70,14 +70,22 @@ it("RF27 só ADMIN envia para qualquer artista; ARTISTA só para si; visitante e
     });
     expect(await autorizarUpload(admin, { destino, artistId: idAna })).toEqual({ ok: true });
     expect(await autorizarUpload(admin, { destino, artistId: idBia })).toEqual({ ok: true });
-    expect(await autorizarUpload(ana, { destino, artistId: idAna })).toEqual({ ok: true });
-    expect(await autorizarUpload(ana, { destino, artistId: idBia })).toEqual({
-      ok: false,
-      erro: "proibido",
-    });
-    expect(await autorizarUpload(bia, { destino, artistId: idAna })).toEqual({
-      ok: false,
-      erro: "proibido",
-    });
+  }
+});
+
+// ESCOPO §7 e RN10: obras são geridas só pelo ADMIN; o artista gerencia o próprio portfólio.
+it("RN10 ARTISTA envia só para o próprio portfólio, nunca para obras", async () => {
+  const { autorizarUpload } = await import("../../src/modules/media");
+
+  expect(await autorizarUpload(ana, { destino: "portfolio", artistId: idAna })).toEqual({
+    ok: true,
+  });
+  for (const [cabecalhos, alvo] of [
+    [ana, { destino: "portfolio", artistId: idBia }],
+    [bia, { destino: "portfolio", artistId: idAna }],
+    [ana, { destino: "obras", artistId: idAna }],
+    [bia, { destino: "obras", artistId: idBia }],
+  ] as const) {
+    expect(await autorizarUpload(cabecalhos, alvo)).toEqual({ ok: false, erro: "proibido" });
   }
 });

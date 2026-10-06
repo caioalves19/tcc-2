@@ -116,7 +116,7 @@ Integrar o armazenamento Cloudflare R2 ao fluxo de imagens do acervo, conforme a
 - [x] Documentar configuração e variáveis de ambiente sem versionar credenciais
 - [x] Testar rejeição de arquivos e falhas de upload; registrar evidência de envio real ao R2
 
-**Decisões (registradas em 05/10/2026):** formatos JPEG, PNG e WebP, até 5 MB, sem SVG no upload. Miniatura fixa gerada com `sharp` (WebP, ~400 px), demais variantes pelo `next/image`; o `sharp` é uma dependência nova em relação à stack original do escopo. ADMIN envia para qualquer artista; ARTISTA só para as próprias obras e o próprio portfólio.
+**Decisões (registradas em 05/10/2026):** formatos JPEG, PNG e WebP, até 5 MB, sem SVG no upload. Miniatura fixa gerada com `sharp` (WebP, ~400 px), demais variantes pelo `next/image`; o `sharp` é uma dependência nova em relação à stack original do escopo. ADMIN envia para qualquer artista e destino; ARTISTA só para o próprio portfólio (obras são geridas só pelo ADMIN, ESCOPO §7 e RN10).
 
 **Situação (em andamento, branch `feat/pbi-17-upload-imagens`):** módulo `src/modules/media`, Server Actions em `src/app/imagens/actions.ts` e componente `UploadImagem` implementados e testados com o R2 simulado. Em aberto: (a) a referência do objeto (chave) é gravada em `artwork_image.url` e `portfolio_item.imagem_url` pelo CRUD de obras (PBI-18) e pela gestão do portfólio (PBI-35), por isso o item de persistência segue desmarcado; (b) a entrega otimizada e responsiva só se confirma quando uma página renderizar a imagem com `next/image` (o host do R2 já está liberado); (c) o envio pela tela ainda não foi exercitado de ponta a ponta, porque nenhuma página usa o `UploadImagem` até o PBI-18/35.
 

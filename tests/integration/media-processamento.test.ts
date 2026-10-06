@@ -58,17 +58,18 @@ it("RF27 gera a miniatura do objeto que o próprio usuário enviou e do de qualq
 
 it("RF27 não toca no armazenamento sem permissão ou com chave fora do formato gerado pelo servidor", async () => {
   const { processarImagem } = await import("../../src/modules/media");
-  const deAna = `obras/${idAna}/${UUID}.png`;
+  const deAna = `portfolio/${idAna}/${UUID}.png`;
   const { armazenamento } = await armazenamentoCom(deAna);
 
   const casos: [string, string, Headers, string][] = [
     ["visitante", deAna, new Headers(), "nao_autenticado"],
     ["CLIENTE", deAna, cliente, "proibido"],
-    ["artista de outro perfil", `obras/${idBia}/${UUID}.png`, ana, "proibido"],
-    ["chave de miniatura", `obras/${idAna}/${UUID}_thumb.webp`, ana, "chave_invalida"],
-    ["caminho com ..", `obras/${idAna}/../${idBia}/${UUID}.png`, ana, "chave_invalida"],
+    ["artista de outro perfil", `portfolio/${idBia}/${UUID}.png`, ana, "proibido"],
+    ["ARTISTA em obras", `obras/${idAna}/${UUID}.png`, ana, "proibido"],
+    ["chave de miniatura", `portfolio/${idAna}/${UUID}_thumb.webp`, ana, "chave_invalida"],
+    ["caminho com ..", `portfolio/${idAna}/../${idBia}/${UUID}.png`, ana, "chave_invalida"],
     ["destino fora da lista", `outros/${idAna}/${UUID}.png`, ana, "chave_invalida"],
-    ["extensão não aceita", `obras/${idAna}/${UUID}.svg`, ana, "chave_invalida"],
+    ["extensão não aceita", `portfolio/${idAna}/${UUID}.svg`, ana, "chave_invalida"],
   ];
   for (const [, chave, cabecalhos, erro] of casos) {
     expect(await processarImagem(chave, cabecalhos, armazenamento)).toMatchObject({
@@ -85,7 +86,7 @@ it("RF27 devolve erro tratado quando o R2 não está configurado e a imagem inv�
   const { processarImagem } = await import("../../src/modules/media");
   const erro = vi.spyOn(console, "error").mockImplementation(() => undefined);
   vi.stubEnv("R2_ACCOUNT_ID", "");
-  const chave = `obras/${idAna}/${UUID}.png`;
+  const chave = `portfolio/${idAna}/${UUID}.png`;
 
   expect(await processarImagem(chave, ana)).toMatchObject({ ok: false, erro: "indisponivel" });
 

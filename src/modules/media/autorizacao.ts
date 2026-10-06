@@ -23,8 +23,11 @@ export async function autorizarUpload(
   if (!atual || atual.expiresAt <= new Date()) return { ok: false, erro: "nao_autenticado" };
   const { user } = atual;
   if (user.status !== "ATIVO" || user.deletedAt !== null) return { ok: false, erro: "proibido" };
+  // ESCOPO §7 e RN10: obras são só do ADMIN; o artista envia apenas ao próprio portfólio.
   if (user.role === "ARTISTA") {
-    return user.artist?.id === alvo.artistId ? { ok: true } : { ok: false, erro: "proibido" };
+    return alvo.destino === "portfolio" && user.artist?.id === alvo.artistId
+      ? { ok: true }
+      : { ok: false, erro: "proibido" };
   }
   if (user.role !== "ADMIN") return { ok: false, erro: "proibido" };
   const existe =

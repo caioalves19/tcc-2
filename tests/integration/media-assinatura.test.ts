@@ -54,7 +54,13 @@ it("RF27 não assina arquivo inválido, destino malicioso nem operação sem per
     ["destino fora da lista", { ...valido, destino: "../x" as "obras" }, admin, "destino_invalido"],
     ["visitante", valido, new Headers(), "nao_autenticado"],
     ["CLIENTE", valido, cliente, "proibido"],
-    ["ARTISTA em outro artista", { ...valido, artistId: idBia }, ana, "proibido"],
+    [
+      "ARTISTA em outro artista",
+      { ...valido, destino: "portfolio", artistId: idBia },
+      ana,
+      "proibido",
+    ],
+    ["ARTISTA em obras", valido, ana, "proibido"],
     [
       "artista inexistente",
       { ...valido, artistId: "00000000-0000-4000-8000-000000000000" },
@@ -67,7 +73,9 @@ it("RF27 não assina arquivo inválido, destino malicioso nem operação sem per
   }
   expect(assinar).not.toHaveBeenCalled();
 
-  expect(await solicitarUpload(valido, ana, assinar)).toMatchObject({ ok: true });
+  expect(await solicitarUpload({ ...valido, destino: "portfolio" }, ana, assinar)).toMatchObject({
+    ok: true,
+  });
   expect(assinar).toHaveBeenCalledTimes(1);
 });
 

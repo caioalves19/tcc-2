@@ -53,7 +53,7 @@ Os testes de integração criam bancos descartáveis próprios no PostgreSQL loc
 
 ## Upload de imagens — PBI-17
 
-As imagens de obras e do portfólio vão do navegador direto para o Cloudflare R2, por URL assinada de 5 minutos. O servidor valida tipo e tamanho **antes** de assinar, gera a chave do objeto e guarda só essa chave. Formatos aceitos: JPEG, PNG e WebP, até 5 MB; SVG não é aceito. Depois do envio, o servidor gera uma miniatura WebP de até 400 px ao lado do original (`<chave sem extensão>_thumb.webp`) e rejeita, apagando o original, qualquer arquivo que não seja de fato JPEG, PNG ou WebP. ADMIN envia para qualquer artista; ARTISTA só para as próprias obras e o próprio portfólio.
+As imagens de obras e do portfólio vão do navegador direto para o Cloudflare R2, por URL assinada de 5 minutos. O servidor valida tipo e tamanho **antes** de assinar, gera a chave do objeto e guarda só essa chave. Formatos aceitos: JPEG, PNG e WebP, até 5 MB; SVG não é aceito. Depois do envio, o servidor gera uma miniatura WebP de até 400 px ao lado do original (`<chave sem extensão>_thumb.webp`) e rejeita, apagando o original, qualquer arquivo que não seja de fato JPEG, PNG ou WebP. ADMIN envia para qualquer artista e destino; ARTISTA só para o próprio portfólio.
 
 Configuração (variáveis no `.env` local, nunca versionadas; modelo em `.env.example`):
 
