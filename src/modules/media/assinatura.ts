@@ -1,5 +1,6 @@
 import { autorizarUpload } from "./autorizacao";
 import { gerarChaveObjeto, type DestinoImagem } from "./chave";
+import { MENSAGENS_UPLOAD } from "./mensagens";
 import { assinarComR2 } from "./r2";
 import { validarImagem } from "./validacao";
 
@@ -29,18 +30,8 @@ export type UploadAssinado = {
 export type ResultadoUpload =
   { ok: true; dados: UploadAssinado } | { ok: false; erro: string; mensagem: string };
 
-const MENSAGENS: Record<string, string> = {
-  destino_invalido: "Destino de imagem inválido.",
-  tipo_invalido: "Envie uma imagem JPEG, PNG ou WebP.",
-  tamanho_invalido: "A imagem deve ter até 5 MB.",
-  nao_autenticado: "Sua sessão expirou. Entre novamente.",
-  proibido: "Você não tem permissão para enviar imagens para este perfil.",
-  artista_inexistente: "Artista não encontrado.",
-  indisponivel: "Não foi possível enviar agora. Tente novamente.",
-};
-
 function falha(erro: string): ResultadoUpload {
-  return { ok: false, erro, mensagem: MENSAGENS[erro] ?? "Não foi possível enviar agora." };
+  return { ok: false, erro, mensagem: MENSAGENS_UPLOAD[erro] ?? "Não foi possível enviar agora." };
 }
 
 // A entrada vem de uma Server Action: nada dela é confiável até passar por aqui.
