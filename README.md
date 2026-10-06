@@ -50,3 +50,33 @@ npm run test:integration -- artistas seed-fundacao
 ```
 
 Os testes de integração criam bancos descartáveis próprios no PostgreSQL local e não usam o banco de desenvolvimento para os cadastros testados.
+
+## Upload de imagens — PBI-17
+
+As imagens de obras e do portfólio vão do navegador direto para o Cloudflare R2, por URL assinada de 5 minutos. O servidor valida tipo e tamanho **antes** de assinar, gera a chave do objeto e guarda só essa chave. Formatos aceitos: JPEG, PNG e WebP, até 5 MB; SVG não é aceito. Depois do envio, o servidor gera uma miniatura WebP de até 400 px ao lado do original (`<chave sem extensão>_thumb.webp`) e rejeita, apagando o original, qualquer arquivo que não seja de fato JPEG, PNG ou WebP. ADMIN envia para qualquer artista; ARTISTA só para as próprias obras e o próprio portfólio.
+
+Configuração (variáveis no `.env` local, nunca versionadas; modelo em `.env.example`):
+
+| Variável | O que é |
+| --- | --- |
+| `R2_ACCOUNT_ID` | Account ID do Cloudflare (painel → R2 → Overview) |
+| `R2_BUCKET` | Nome do bucket |
+| `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | Token de API do R2 com leitura e escrita **só nesse bucket** (R2 → Manage API Tokens) |
+| `R2_PUBLIC_URL` | URL pública do bucket; também libera o host no `next/image` |
+
+No bucket, configure o **CORS** para o navegador conseguir o `PUT` direto (Settings → CORS Policy). Em desenvolvimento:
+
+```json
+[{"AllowedOrigins":["http://localhost:3000"],"AllowedMethods":["GET","PUT","HEAD"],"AllowedHeaders":["*"],"ExposeHeaders":["ETag"],"MaxAgeSeconds":3600}]
+```
+
+Em produção, troque a origem pelo domínio do site e use um domínio próprio no bucket: a URL `r2.dev` tem limite de requisições e não é recomendada para produção. A mudança de `R2_PUBLIC_URL` exige reiniciar o servidor, porque o host entra na configuração do Next na inicialização.
+
+Verificações:
+
+```bash
+npm run test:unit -- media upload-imagem
+npm run test:integration -- media
+```
+
+Esses testes usam um armazenamento em memória no lugar do R2. O envio real ao bucket é conferido à mão, com as credenciais configuradas.
