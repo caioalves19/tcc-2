@@ -318,6 +318,7 @@ src/
       cron/                 # gatilhos protegidos de tarefas
   modules/
     catalog/                # obras, imagens, ordenação
+    media/                  # upload ao R2, validação, miniatura (index: servidor; cliente.ts: navegador)
     orders/                 # carrinho, pedido, frete
     payments/               # Mercado Pago, webhook, idempotência
     scheduling/             # wizard → wa.me; cadastro manual de horário
@@ -327,7 +328,7 @@ src/
     notifications/          # recuperação de senha, links wa.me
     admin/                  # configurações
   components/ui/            # design system (shadcn/ui)
-  lib/                      # db, auth, storage, env, logger, utilitários de data
+  lib/                      # db, auth, env, logger, utilitários de data
 prisma/schema.prisma        # contrato do modelo de dados
 tests/e2e/                  # Playwright
 ```

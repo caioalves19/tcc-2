@@ -70,7 +70,7 @@ No bucket, configure o **CORS** para o navegador conseguir o `PUT` direto (Setti
 [{"AllowedOrigins":["http://localhost:3000"],"AllowedMethods":["GET","PUT","HEAD"],"AllowedHeaders":["*"],"ExposeHeaders":["ETag"],"MaxAgeSeconds":3600}]
 ```
 
-Em produção, troque a origem pelo domínio do site e use um domínio próprio no bucket: a URL `r2.dev` tem limite de requisições e não é recomendada para produção. A mudança de `R2_PUBLIC_URL` exige reiniciar o servidor, porque o host entra na configuração do Next na inicialização.
+Em produção, troque a origem pelo domínio do site e use um domínio próprio no bucket: a URL `r2.dev` tem limite de requisições e não é recomendada para produção. A mudança de `R2_PUBLIC_URL` exige reiniciar o servidor: o `next start` lê o `next.config.ts` na subida e é dali que sai o host liberado para o `next/image`. Se o deploy passar a usar `output: "standalone"`, a configuração é congelada no build, e então a variável precisa existir também durante o `npm run build`.
 
 Verificações:
 
