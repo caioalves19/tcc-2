@@ -201,13 +201,30 @@ O contato WhatsApp é uma solução provisória para a chamada da home. O wizard
 
 Disponibilizar as páginas de privacidade, termos de uso e política de cancelamento.
 
-- [ ] Publicar as três páginas com leitura adequada em dispositivos móveis e desktop
-- [ ] Incluir links acessíveis no rodapé
+- [x] Publicar as três páginas com leitura adequada em dispositivos móveis e desktop
+- [x] Incluir links acessíveis no rodapé
 - [ ] Revisar os textos com a equipe para refletir o escopo, os dados tratados e as funcionalidades disponíveis
-- [ ] Não apresentar como implementados recursos futuros ou coleta de dados de saúde
-- [ ] Validar navegação, renderização e acessibilidade das páginas
+- [x] Não apresentar como implementados recursos futuros ou coleta de dados de saúde
+- [x] Validar navegação, renderização e acessibilidade das páginas
 
 Os textos serão mantidos no projeto nesta sprint; a edição administrativa de políticas será implementada no PBI-39 (RF31).
+
+**Situação:** implementação local validada na branch `feat/pbi-22-paginas-institucionais`. Para encerrar o DoD, faltam a revisão dos textos pela equipe, feita no próprio PR, e a aprovação do PR.
+
+**Entregas:** páginas `/politicas/privacidade`, `/politicas/termos` e `/politicas/cancelamento`, todas montadas pelo componente `DocumentoPolitica`, com índice das três políticas (a atual marcada), índice "Nesta página" com âncoras e cartão "Dúvidas?". Os textos ficam em `src/app/politicas/*/conteudo.ts` como dados puros, prontos para o `site_setting` do PBI-39, e cobrem o escopo P0 da v2.2. O inventário da privacidade vem do schema (RNF17). E-mail e WhatsApp vêm de `src/lib/contato.ts`, também usado pelo rodapé. Links dentro do texto só aceitam endereços seguros.
+
+**Evidências:** `npm run lint`, `npm run typecheck` e `npm test` passaram (139 testes, 24 novos). `npm run build` passou. No navegador, as três páginas foram conferidas:
+
+- em 320, 768 e 1920 px, sem rolagem horizontal;
+- com navegação por teclado e foco visível;
+- com as âncoras parando abaixo do cabeçalho fixo;
+- com o axe-core 4.10.2 (WCAG 2.0, 2.1 e 2.2 A/AA, mais boas práticas) sem violações.
+
+**Pendências registradas:**
+
+- Confirmar com o cliente razão social, CNPJ e endereço, que entram na privacidade, e as regras de remarcação da sessão de tatuagem.
+- Atualizar os textos quando entrarem o formulário de contato (PBI-44) e a exclusão de conta pelo site (PBI-40).
+- Revisar a seção de dados da privacidade se o PBI-28 guardar o payload completo do Mercado Pago, que pode trazer dados do pagador.
 
 ---
 
@@ -297,10 +314,12 @@ Consome pedidos do PBI-26. Pode avançar junto com a área do cliente (29) e o g
 
 Consome artistas e estilos do PBI-16. Não depende da loja, da agenda manual (34) nem do portfólio.
 
-- [ ] Implementar etapas de nome, artista, estilo, região, tamanho e preferência de data/horário
-- [ ] Permitir avançar e voltar com validação e limitação de taxa aplicável
-- [ ] Não persistir solicitação, reservar horário ou coletar imagens e dados clínicos
-- [ ] Testar navegação e validações; manter a conclusão indisponível até os PBIs 32 e 33
+- [x] Implementar etapas de nome, artista, estilo, região, tamanho e preferência de data/horário
+- [x] Permitir avançar e voltar com validação e limitação de taxa aplicável
+- [x] Não persistir solicitação, reservar horário ou coletar imagens e dados clínicos
+- [x] Testar navegação e validações; manter a conclusão indisponível até os PBIs 32 e 33
+
+Implementação em `/agendamento`, com tamanhos de `SizeTier`. Contrato, testes e limites registrados em [PBI-31](features/PBI-31.md). Revisão independente de código: PASS. Conferência visual nas larguras previstas, aceite humano e aprovação do PR continuam pendentes para encerramento.
 
 ### PBI-32 — Checks obrigatórios de conformidade
 
