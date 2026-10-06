@@ -155,3 +155,34 @@ it("RF11 o carrinho da conta vale entre sessões e não aparece para outra pesso
   );
   expect(rows[0].total).toBe(1);
 });
+
+it("RF11 ao entrar na conta, o carrinho do visitante se junta ao da conta sem perder itens", async () => {
+  const { adicionarAoCarrinho, juntarCarrinhos, lerCarrinho } =
+    await import("../../src/modules/orders");
+  const tiragem = await obraPublicada("juntar-tiragem", "50,00", 3);
+  const outra = await obraPublicada("juntar-outra", "80,00", 1);
+  const conta = { cabecalhos: cliente, tokenVisitante: null };
+  await adicionarAoCarrinho({ obraId: tiragem }, conta);
+
+  const inicio = await adicionarAoCarrinho({ obraId: tiragem, quantidade: 2 }, visitante());
+  if (!inicio.ok || !inicio.dados.tokenNovo) throw new Error("Carrinho do visitante não criado");
+  const token = inicio.dados.tokenNovo;
+  await adicionarAoCarrinho({ obraId: outra }, visitante(token));
+
+  expect(await juntarCarrinhos(await novaSessaoDoCliente(), token)).toMatchObject({ ok: true });
+  const lido = await lerCarrinho(conta);
+  if (!lido.ok) throw new Error(lido.mensagem);
+  const quantidade = (obraId: string) =>
+    lido.dados.itens.find((item) => item.obraId === obraId)?.quantidade;
+  expect(quantidade(tiragem)).toBe(2);
+  expect(quantidade(outra)).toBe(1);
+
+  const { createHash } = await import("node:crypto");
+  const { rows } = await db.query(
+    "SELECT count(*)::int AS total FROM cart WHERE cookie_token = $1",
+    [createHash("sha256").update(token).digest("hex")],
+  );
+  expect(rows[0].total).toBe(0);
+  expect(await juntarCarrinhos(await novaSessaoDoCliente(), token)).toMatchObject({ ok: true });
+  expect(await juntarCarrinhos("sessao-que-nao-existe", token)).toMatchObject({ ok: false });
+});
