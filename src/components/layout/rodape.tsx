@@ -1,4 +1,5 @@
 import { Marca } from "@/components/layout/marca";
+import { CONTATO } from "@/lib/contato";
 
 const POLITICAS = [
   { rotulo: "Privacidade", href: "/politicas/privacidade" },
@@ -7,8 +8,8 @@ const POLITICAS = [
 ] as const;
 
 const CONTATOS = [
-  { rotulo: "ateliekolo@gmail.com", href: "mailto:ateliekolo@gmail.com" },
-  { rotulo: "WhatsApp", href: "https://wa.me/5511950901191" },
+  { rotulo: CONTATO.email, href: `mailto:${CONTATO.email}` },
+  { rotulo: "WhatsApp", href: CONTATO.whatsapp },
   { rotulo: "@koloatelie", href: "https://instagram.com/koloatelie" },
   { rotulo: "@kolotattoo", href: "https://instagram.com/kolotattoo" },
 ] as const;
