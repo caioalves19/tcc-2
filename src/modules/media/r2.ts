@@ -1,6 +1,12 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type { PedidoAssinatura } from "./assinatura";
+import type { Armazenamento } from "./miniatura";
 
 function variavel(nome: string): string {
   const valor = process.env[nome];
@@ -36,4 +42,24 @@ export async function assinarComR2(pedido: PedidoAssinatura): Promise<string> {
       signableHeaders: new Set(["content-type", "content-length"]),
     },
   );
+}
+
+export function armazenamentoR2(): Armazenamento {
+  const cliente = criarClienteR2();
+  const Bucket = variavel("R2_BUCKET");
+  return {
+    async obter(chave) {
+      const resposta = await cliente.send(new GetObjectCommand({ Bucket, Key: chave }));
+      if (!resposta.Body) throw new Error("Objeto sem conteúdo");
+      return Buffer.from(await resposta.Body.transformToByteArray());
+    },
+    async gravar(chave, corpo, tipo) {
+      await cliente.send(
+        new PutObjectCommand({ Bucket, Key: chave, Body: corpo, ContentType: tipo }),
+      );
+    },
+    async remover(chave) {
+      await cliente.send(new DeleteObjectCommand({ Bucket, Key: chave }));
+    },
+  };
 }

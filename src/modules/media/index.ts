@@ -11,7 +11,9 @@ export type {
   ResultadoUpload,
   UploadAssinado,
 } from "./assinatura";
-export { assinarComR2 } from "./r2";
+export { assinarComR2, armazenamentoR2 } from "./r2";
+export { processarImagem } from "./processamento";
+export type { ResultadoProcessamento } from "./processamento";
 export { autorizarUpload } from "./autorizacao";
 export type { ResultadoAutorizacao } from "./autorizacao";
 export { gerarMiniatura } from "./miniatura";
