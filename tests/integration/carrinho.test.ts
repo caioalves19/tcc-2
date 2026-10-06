@@ -186,3 +186,43 @@ it("RF11 ao entrar na conta, o carrinho do visitante se junta ao da conta sem pe
   expect(await juntarCarrinhos(await novaSessaoDoCliente(), token)).toMatchObject({ ok: true });
   expect(await juntarCarrinhos("sessao-que-nao-existe", token)).toMatchObject({ ok: false });
 });
+
+it("RF11/RN11 obra que fica indisponível continua no carrinho, marcada e fora do total", async () => {
+  const { adicionarAoCarrinho, alterarQuantidade, lerCarrinho, removerDoCarrinho } =
+    await import("../../src/modules/orders");
+  const { editarObra, excluirObra } = await import("../../src/modules/catalog");
+  const mudara = await obraPublicada("vai-mudar", "200,00", 2);
+  const fica = await obraPublicada("fica", "100,00", 1);
+  const inicio = await adicionarAoCarrinho({ obraId: mudara }, visitante());
+  if (!inicio.ok || !inicio.dados.tokenNovo) throw new Error("Carrinho não criado");
+  const contexto = visitante(inicio.dados.tokenNovo);
+  await adicionarAoCarrinho({ obraId: fica }, contexto);
+  const ficha = { titulo: "Obra vai-mudar", slug: "vai-mudar", artistaId: idAna, preco: "200,00" };
+
+  const situacoes = [
+    () => editarObra({ ...ficha, estoque: "0", id: mudara, publicada: true }, admin),
+    () => editarObra({ ...ficha, estoque: "2", id: mudara, publicada: false }, admin),
+    () => excluirObra(mudara, admin),
+  ];
+  for (const mudar of situacoes) {
+    expect(await mudar()).toMatchObject({ ok: true });
+    expect(await lerCarrinho(contexto)).toMatchObject({
+      ok: true,
+      dados: {
+        itens: [
+          { obraId: mudara, disponivel: false },
+          { obraId: fica, disponivel: true },
+        ],
+        totalCentavos: 10000,
+        unidades: 1,
+        indisponiveis: 1,
+      },
+    });
+  }
+  expect(await alterarQuantidade({ obraId: mudara, quantidade: 1 }, contexto)).toMatchObject({
+    ok: false,
+    erro: "indisponivel",
+  });
+  expect(await removerDoCarrinho(mudara, contexto)).toMatchObject({ ok: true });
+  expect(await lerCarrinho(contexto)).toMatchObject({ ok: true, dados: { indisponiveis: 0 } });
+});
