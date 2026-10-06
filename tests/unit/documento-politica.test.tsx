@@ -34,6 +34,31 @@ it("RF08 mostra título, resumo e a data de atualização sem trocar o dia pelo 
   expect(screen.getByText("05/10/2026").getAttribute("datetime")).toBe("2026-10-05");
 });
 
+it("RF08 liga as três políticas e marca a página atual", () => {
+  render(<DocumentoPolitica politica={TERMOS} />);
+  const todas = within(screen.getByRole("navigation", { name: "Todas as políticas" }));
+  const privacidade = todas.getByRole("link", { name: "Privacidade" });
+  const termos = todas.getByRole("link", { name: "Termos de uso" });
+  const cancelamento = todas.getByRole("link", { name: "Política de cancelamento" });
+  expect(privacidade.getAttribute("href")).toBe("/politicas/privacidade");
+  expect(termos.getAttribute("href")).toBe("/politicas/termos");
+  expect(cancelamento.getAttribute("href")).toBe("/politicas/cancelamento");
+  expect(termos.getAttribute("aria-current")).toBe("page");
+  expect(privacidade.getAttribute("aria-current")).toBeNull();
+  expect(cancelamento.getAttribute("aria-current")).toBeNull();
+});
+
+it("oferece WhatsApp e e-mail do Kolô para quem ficou com dúvida", () => {
+  render(<DocumentoPolitica politica={TERMOS} />);
+  const duvidas = within(screen.getByRole("complementary", { name: "Dúvidas?" }));
+  expect(duvidas.getByRole("link", { name: /WhatsApp/ }).getAttribute("href")).toBe(
+    "https://wa.me/5511950901191",
+  );
+  expect(duvidas.getByRole("link", { name: /ateliekolo@gmail\.com/ }).getAttribute("href")).toBe(
+    "mailto:ateliekolo@gmail.com",
+  );
+});
+
 it("RF08 divide o texto em seções com índice de âncoras", () => {
   render(<DocumentoPolitica politica={TERMOS} />);
   const indice = within(screen.getByRole("navigation", { name: "Nesta página" }));
