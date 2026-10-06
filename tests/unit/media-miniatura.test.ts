@@ -112,3 +112,19 @@ it("RF27 deriva pela API pública a chave da miniatura a partir da chave do orig
     "portfolio/3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b/abc_thumb.webp",
   );
 });
+
+it("RF27 trata JPEG cortado no meio como imagem que não decodifica e remove o original", async () => {
+  const inteiro = await sharp({
+    create: { width: 800, height: 600, channels: 3, background: "#8e44ad" },
+  })
+    .jpeg()
+    .toBuffer();
+  const cortado = inteiro.subarray(0, Math.floor(inteiro.length / 2));
+  const { armazenamento, objetos } = armazenamentoEmMemoria({ [chave]: cortado });
+
+  expect(await gerarMiniatura(chave, armazenamento)).toEqual({
+    ok: false,
+    motivo: "imagem_invalida",
+  });
+  expect([...objetos.keys()]).toEqual([]);
+});
