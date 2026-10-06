@@ -131,6 +131,9 @@ it("RF27 trata entrada malformada da Server Action como erro, sem exceção nem 
     { destino: "obras", artistId: {}, tipo: "image/png", tamanho: 1024 },
     { destino: "obras", artistId: idAna, tipo: 7, tamanho: 1024 },
     { destino: "obras", artistId: idAna, tipo: "image/png", tamanho: "1024" },
+    // RNF09: o esquema exige UUID antes de qualquer consulta à sessão ou ao banco.
+    { destino: "obras", artistId: "../../outro", tipo: "image/png", tamanho: 1024 },
+    { destino: "obras", artistId: "", tipo: "image/png", tamanho: 1024 },
   ];
   for (const entrada of lixo) {
     const resultado = await solicitarUpload(

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { autorizarUpload } from "./autorizacao";
 import { gerarChaveObjeto, type DestinoImagem } from "./chave";
 import { MENSAGENS_UPLOAD } from "./mensagens";
@@ -5,7 +6,6 @@ import { assinarComR2 } from "./r2";
 import { validarImagem } from "./validacao";
 
 const EXPIRACAO_SEGUNDOS = 5 * 60;
-const DESTINOS: readonly string[] = ["obras", "portfolio"];
 
 export type PedidoAssinatura = {
   chave: string;
@@ -34,27 +34,27 @@ function falha(erro: string): ResultadoUpload {
   return { ok: false, erro, mensagem: MENSAGENS_UPLOAD[erro] ?? "Não foi possível enviar agora." };
 }
 
-// Os tipos do TypeScript não existem em tempo de execução: a Server Action recebe o que o
-// navegador mandar, inclusive null ou campos de outro tipo.
-function temFormaDeEntrada(entrada: unknown): entrada is EntradaUpload {
-  if (typeof entrada !== "object" || entrada === null) return false;
-  const e = entrada as Record<string, unknown>;
-  return (
-    typeof e.destino === "string" &&
-    typeof e.artistId === "string" &&
-    typeof e.tipo === "string" &&
-    typeof e.tamanho === "number"
-  );
-}
+// RNF09: os tipos do TypeScript não existem em tempo de execução; a Server Action recebe o
+// que o navegador mandar, inclusive null ou campos de outro tipo.
+const schemaEntradaUpload = z.object({
+  destino: z.enum(["obras", "portfolio"]),
+  artistId: z.uuid(),
+  tipo: z.string(),
+  tamanho: z.number(),
+});
 
 // A entrada vem de uma Server Action: nada dela é confiável até passar por aqui.
 export async function solicitarUpload(
-  entrada: EntradaUpload,
+  bruta: EntradaUpload,
   cabecalhos: Headers,
   assinar: Assinador = assinarComR2,
 ): Promise<ResultadoUpload> {
-  if (!temFormaDeEntrada(entrada)) return falha("entrada_invalida");
-  if (!DESTINOS.includes(entrada.destino)) return falha("destino_invalido");
+  const lida = schemaEntradaUpload.safeParse(bruta);
+  if (!lida.success) {
+    const soDestino = lida.error.issues.every((issue) => issue.path[0] === "destino");
+    return falha(soDestino ? "destino_invalido" : "entrada_invalida");
+  }
+  const entrada = lida.data;
   const arquivo = validarImagem({ tipo: entrada.tipo, tamanho: entrada.tamanho });
   if (!arquivo.ok) return falha(arquivo.motivo);
   const permissao = await autorizarUpload(cabecalhos, {
