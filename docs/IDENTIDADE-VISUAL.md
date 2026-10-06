@@ -251,6 +251,7 @@ Duas coisas que o `init` injeta e não devem voltar: a fonte Geist (temos as nos
 - Logos e mascotes: arquivos do cliente em JPG, vetorizados com a paleta medida na arte e fundo
   transparente (seção 7).
 - Projeto no Google Stitch "Plataforma Kolô Ateliê & Tattoo" (tema KOLÔ Dual Universe), com as telas de referência.
+  As imagens das telas, ligadas aos PBIs, estão em [telas/](telas/README.md).
 - Ajustes feitos em cima do Stitch, todos por contraste: legenda `#6F7881` para `#5F6872`; texto
   secundário do Tattoo `#92CCFF` para `#C3D0EC`; foco em card branco no Tattoo passou a royal; ícone
   laranja saiu dos fundos claros; corpo de texto de 15px para 16px.
