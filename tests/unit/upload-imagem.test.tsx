@@ -179,3 +179,49 @@ it("RF27 mostra o motivo devolvido pelo servidor quando nega a assinatura ou fal
     "Não foi possível enviar a imagem. Tente de novo.",
   );
 });
+
+// RF26 prevê várias imagens por obra: cada campo precisa do próprio rótulo (RNF21).
+it("RNF21 duas instâncias na mesma tela têm cada uma o seu campo rotulado", () => {
+  const props = {
+    destino: "portfolio" as const,
+    artistId,
+    solicitar: vi.fn(),
+    processar: vi.fn(),
+    aoConcluir: vi.fn(),
+  };
+  render(
+    <>
+      <UploadImagem {...props} />
+      <UploadImagem {...props} />
+    </>,
+  );
+
+  const campos = screen.getAllByLabelText("Imagem");
+  expect(campos).toHaveLength(2);
+  expect(new Set(campos).size).toBe(2);
+  expect(new Set(campos.map((campo) => campo.id)).size).toBe(2);
+});
+
+// O navegador só dispara "change" se o valor mudar: sem limpar o campo, escolher de novo o
+// mesmo arquivo (para trocar a imagem enviada, por exemplo) não faria nada.
+it("RF27 limpa o campo depois de cada tentativa para aceitar de novo o mesmo arquivo", async () => {
+  render(
+    <UploadImagem
+      destino="portfolio"
+      artistId={artistId}
+      solicitar={vi.fn().mockResolvedValue(assinado)}
+      processar={vi.fn().mockResolvedValue({ ok: true, dados: { chaveMiniatura } })}
+      enviar={vi.fn().mockResolvedValue({ ok: true })}
+      aoConcluir={vi.fn()}
+    />,
+  );
+  const campo = screen.getByLabelText<HTMLInputElement>("Imagem");
+
+  await userEvent.setup().upload(campo, arquivo());
+
+  expect(await screen.findByRole("status")).toHaveProperty(
+    "textContent",
+    "Imagem enviada com sucesso.",
+  );
+  expect(campo.value).toBe("");
+});

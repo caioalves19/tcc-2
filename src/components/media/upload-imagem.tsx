@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MENSAGENS_UPLOAD, validarImagem } from "@/modules/media/cliente";
 import type { EntradaUpload, ResultadoProcessamento, ResultadoUpload } from "@/modules/media";
@@ -28,6 +28,7 @@ export function UploadImagem({
   const [estado, setEstado] = useState<"ocioso" | "enviando" | "sucesso">("ocioso");
   const [erro, setErro] = useState<string | null>(null);
   const [imagem, setImagem] = useState<File | null>(null);
+  const idCampo = useId();
 
   function falhar(mensagem: string) {
     setEstado("ocioso");
@@ -66,14 +67,16 @@ export function UploadImagem({
 
   return (
     <div className="grid gap-3">
-      <label htmlFor="imagem">Imagem</label>
+      <label htmlFor={idCampo}>Imagem</label>
       <input
-        id="imagem"
+        id={idCampo}
         type="file"
         accept="image/jpeg,image/png,image/webp"
         disabled={estado === "enviando"}
         onChange={(evento) => {
           const escolhida = evento.target.files?.[0];
+          // Limpo já: a tentativa guarda o arquivo, e o mesmo arquivo pode ser escolhido de novo.
+          evento.target.value = "";
           if (escolhida) void iniciar(escolhida);
         }}
       />
