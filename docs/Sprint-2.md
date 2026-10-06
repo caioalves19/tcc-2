@@ -128,6 +128,8 @@ Integrar o armazenamento Cloudflare R2 ao fluxo de imagens do acervo, conforme a
 
 Permitir a gestão completa da obra, conectando os cadastros auxiliares e o upload de imagens.
 
+**Contrato do upload (PBI-17):** só gravar em `artwork_image.url` uma chave que `processarImagem` devolveu com sucesso, e nunca uma chave recebida direto do navegador: é o `processarImagem` que confirma que o objeto é uma imagem JPEG, PNG ou WebP de verdade. Ao remover uma imagem da obra, remover também o original e a miniatura do bucket.
+
 - [ ] Cadastrar, listar, editar e excluir obras respeitando vínculos existentes
 - [ ] Gerenciar título, slug, descrição, artista, técnica, dimensões, ano e tags
 - [ ] Gerenciar múltiplas imagens, imagem principal, ordem e texto alternativo
@@ -331,6 +333,8 @@ Consome artistas e estilos do PBI-16 e a constraint de agenda da Sprint 1. O hor
 **Referências:** RF19; RN10 · **Prioridade:** P0 · **Deps:** PBI-16, PBI-17.
 
 Consome artistas/estilos (16) e upload (17). Pode avançar em paralelo ao CRUD de obras (18), à loja e à agenda. O upload precisa autorizar também o papel ARTISTA, respeitando a propriedade dos trabalhos.
+
+**Contrato do upload (PBI-17):** só gravar em `portfolio_item.imagem_url` uma chave que `processarImagem` devolveu com sucesso, e nunca uma chave recebida direto do navegador: é o `processarImagem` que confirma que o objeto é uma imagem JPEG, PNG ou WebP de verdade.
 
 - [ ] Reutilizar upload para incluir, editar, ordenar, destacar e remover trabalhos
 - [ ] Associar artista, estilos e região do corpo aos trabalhos

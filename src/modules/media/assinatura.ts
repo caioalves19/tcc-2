@@ -34,12 +34,26 @@ function falha(erro: string): ResultadoUpload {
   return { ok: false, erro, mensagem: MENSAGENS_UPLOAD[erro] ?? "Não foi possível enviar agora." };
 }
 
+// Os tipos do TypeScript não existem em tempo de execução: a Server Action recebe o que o
+// navegador mandar, inclusive null ou campos de outro tipo.
+function temFormaDeEntrada(entrada: unknown): entrada is EntradaUpload {
+  if (typeof entrada !== "object" || entrada === null) return false;
+  const e = entrada as Record<string, unknown>;
+  return (
+    typeof e.destino === "string" &&
+    typeof e.artistId === "string" &&
+    typeof e.tipo === "string" &&
+    typeof e.tamanho === "number"
+  );
+}
+
 // A entrada vem de uma Server Action: nada dela é confiável até passar por aqui.
 export async function solicitarUpload(
   entrada: EntradaUpload,
   cabecalhos: Headers,
   assinar: Assinador = assinarComR2,
 ): Promise<ResultadoUpload> {
+  if (!temFormaDeEntrada(entrada)) return falha("entrada_invalida");
   if (!DESTINOS.includes(entrada.destino)) return falha("destino_invalido");
   const arquivo = validarImagem({ tipo: entrada.tipo, tamanho: entrada.tamanho });
   if (!arquivo.ok) return falha(arquivo.motivo);

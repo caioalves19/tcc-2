@@ -82,3 +82,29 @@ it("RF27 não amplia imagem menor que a miniatura", async () => {
   const meta = await sharp(miniatura).metadata();
   expect([meta.width, meta.height]).toEqual([200, 100]);
 });
+
+it("RF27 rejeita imagem com pixels demais para decodificar, mesmo pequena em bytes, e remove o original", async () => {
+  const { armazenamento, objetos } = armazenamentoEmMemoria({ [chave]: await imagem(7000, 6000) });
+
+  expect(await gerarMiniatura(chave, armazenamento)).toEqual({
+    ok: false,
+    motivo: "imagem_invalida",
+  });
+  expect([...objetos.keys()]).toEqual([]);
+}, 30_000);
+
+it("RF27 respeita a orientação EXIF da foto: celular em pé não vira miniatura deitada", async () => {
+  const jpeg = await sharp({
+    create: { width: 300, height: 200, channels: 3, background: "#16a085" },
+  })
+    .jpeg()
+    .withMetadata({ orientation: 6 })
+    .toBuffer();
+  const { armazenamento, objetos } = armazenamentoEmMemoria({ [chave]: jpeg });
+
+  await gerarMiniatura(chave, armazenamento);
+
+  const miniatura = objetos.get("obras/3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b/abc_thumb.webp");
+  const meta = await sharp(miniatura).metadata();
+  expect([meta.width, meta.height]).toEqual([200, 300]);
+});

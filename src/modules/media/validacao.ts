@@ -6,7 +6,11 @@ export type ResultadoValidacao =
 
 export function validarImagem(arquivo: { tipo: string; tamanho: number }): ResultadoValidacao {
   if (!TIPOS_ACEITOS.includes(arquivo.tipo)) return { ok: false, motivo: "tipo_invalido" };
-  if (!Number.isFinite(arquivo.tamanho) || arquivo.tamanho <= 0 || arquivo.tamanho > TAMANHO_MAXIMO)
+  if (
+    !Number.isInteger(arquivo.tamanho) ||
+    arquivo.tamanho <= 0 ||
+    arquivo.tamanho > TAMANHO_MAXIMO
+  )
     return { ok: false, motivo: "tamanho_invalido" };
   return { ok: true };
 }

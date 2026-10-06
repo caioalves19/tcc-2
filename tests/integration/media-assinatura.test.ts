@@ -111,3 +111,26 @@ it("RF27 sem assinador injetado, assina com o R2 configurado no ambiente", async
   expect(url.host).toBe("conta123.r2.cloudflarestorage.com");
   expect(url.pathname).toBe(`/kolo-imagens/${resultado.dados.chave}`);
 });
+
+it("RF27 trata entrada malformada da Server Action como erro, sem exceção nem assinatura", async () => {
+  const { solicitarUpload } = await import("../../src/modules/media");
+  const assinar = vi.fn(async () => "https://r2.test/assinada");
+  const lixo: unknown[] = [
+    null,
+    undefined,
+    "obras",
+    {},
+    { destino: "obras", artistId: {}, tipo: "image/png", tamanho: 1024 },
+    { destino: "obras", artistId: idAna, tipo: 7, tamanho: 1024 },
+    { destino: "obras", artistId: idAna, tipo: "image/png", tamanho: "1024" },
+  ];
+  for (const entrada of lixo) {
+    const resultado = await solicitarUpload(
+      entrada as Parameters<typeof solicitarUpload>[0],
+      admin,
+      assinar,
+    );
+    expect(resultado).toMatchObject({ ok: false, erro: "entrada_invalida" });
+  }
+  expect(assinar).not.toHaveBeenCalled();
+});

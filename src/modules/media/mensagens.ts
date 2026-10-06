@@ -1,5 +1,6 @@
 // Sem dependências de servidor: o componente de upload também importa este arquivo.
 export const MENSAGENS_UPLOAD: Record<string, string> = {
+  entrada_invalida: "Dados do envio inválidos.",
   destino_invalido: "Destino de imagem inválido.",
   tipo_invalido: "Envie uma imagem JPEG, PNG ou WebP.",
   tamanho_invalido: "A imagem deve ter até 5 MB.",
