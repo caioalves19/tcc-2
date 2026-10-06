@@ -1,5 +1,5 @@
 import type { Client } from "pg";
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, expect, it, vi } from "vitest";
 import { prepararBancoDeTeste } from "./banco-de-teste";
 
 let db: Client;
@@ -195,4 +195,78 @@ it("RF26 não edita obra inexistente, slug de outra obra nem sem ser ADMIN", asy
   expect(await editar({ titulo: "Mudou" }, cliente)).toMatchObject({ ok: false, erro: "proibido" });
   expect(await editar({ titulo: "Mesmo slug, título novo" })).toMatchObject({ ok: true });
   expect(await situacao(id)).toMatchObject({ titulo: "Mesmo slug, título novo" });
+});
+
+it("RF26 exclui de vez obra sem vínculo e apaga as imagens do R2", async () => {
+  const { excluirObra, listarObras } = await import("../../src/modules/catalog");
+  const id = await obraNova("sem-vinculo");
+  await comImagem(id);
+  const armazenamento = { obter: vi.fn(), gravar: vi.fn(), remover: vi.fn(async () => {}) };
+
+  expect(await excluirObra(id, cliente, armazenamento)).toMatchObject({
+    ok: false,
+    erro: "proibido",
+  });
+  expect(await excluirObra(id, admin, armazenamento)).toEqual({
+    ok: true,
+    dados: { modo: "apagada" },
+  });
+  const { rows } = await db.query("SELECT count(*)::int AS total FROM artwork WHERE id = $1", [id]);
+  expect(rows[0].total).toBe(0);
+  expect(armazenamento.remover).toHaveBeenCalledWith(`obras/${artistaId}/${id}.png`);
+  expect(armazenamento.remover).toHaveBeenCalledWith(`obras/${artistaId}/${id}_thumb.webp`);
+  const lista = await listarObras(admin);
+  expect(lista.ok && lista.dados.some((obra) => obra.id === id)).toBe(false);
+  expect(await excluirObra(id, admin, armazenamento)).toMatchObject({
+    ok: false,
+    erro: "nao_encontrado",
+  });
+});
+
+it("RF26 com carrinho ou pedido, faz exclusão lógica e preserva o histórico", async () => {
+  const { excluirObra, listarObras } = await import("../../src/modules/catalog");
+  const noCarrinho = await obraNova("no-carrinho");
+  const vendida = await obraNova("vendida");
+  const { rows: usuarios } = await db.query('SELECT id FROM "user" WHERE email = $1', [
+    "cliente@pbi18.test",
+  ]);
+  const clienteId = usuarios[0].id;
+  await db.query(
+    "INSERT INTO cart (id, user_id, atualizado_em) VALUES (gen_random_uuid(), $1, now())",
+    [clienteId],
+  );
+  await db.query(
+    "INSERT INTO cart_item (id, cart_id, artwork_id, quantidade) SELECT gen_random_uuid(), id, $1, 1 FROM cart WHERE user_id = $2",
+    [noCarrinho, clienteId],
+  );
+  await db.query(
+    `INSERT INTO "order" (id, numero, user_id, subtotal_centavos, total_centavos, endereco_copia)
+     VALUES (gen_random_uuid(), 'KOLO-0001', $1, 480000, 480000, '{}')`,
+    [clienteId],
+  );
+  await db.query(
+    `INSERT INTO order_item (id, order_id, artwork_id, titulo_copia, preco_centavos_copia, quantidade)
+     SELECT gen_random_uuid(), id, $1, 'Metrópole em chamas', 480000, 1 FROM "order" WHERE numero = 'KOLO-0001'`,
+    [vendida],
+  );
+  const armazenamento = { obter: vi.fn(), gravar: vi.fn(), remover: vi.fn(async () => {}) };
+
+  for (const id of [noCarrinho, vendida]) {
+    expect(await excluirObra(id, admin, armazenamento)).toEqual({
+      ok: true,
+      dados: { modo: "arquivada" },
+    });
+    const { rows } = await db.query(
+      "SELECT excluido_em IS NOT NULL AS excluida, situacao, destaque FROM artwork WHERE id = $1",
+      [id],
+    );
+    expect(rows[0]).toEqual({ excluida: true, situacao: "RASCUNHO", destaque: false });
+  }
+  expect(armazenamento.remover).not.toHaveBeenCalled();
+  const { rows: itens } = await db.query("SELECT count(*)::int AS total FROM order_item");
+  expect(itens[0].total).toBe(1);
+  const lista = await listarObras(admin);
+  expect(lista.ok && lista.dados.filter((obra) => [noCarrinho, vendida].includes(obra.id))).toEqual(
+    [],
+  );
 });

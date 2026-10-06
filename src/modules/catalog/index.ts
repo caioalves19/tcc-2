@@ -1,4 +1,4 @@
-export { criarObra, editarObra, listarObras } from "./obras";
+export { criarObra, editarObra, excluirObra, listarObras } from "./obras";
 export {
   adicionarImagem,
   definirImagemPrincipal,

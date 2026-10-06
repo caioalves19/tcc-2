@@ -1,8 +1,11 @@
 import type { Prisma } from "../../../generated/prisma/client";
 import { comoAdmin, ErroGestao, validar } from "../artists/index";
+import type { ResultadoGestao } from "../artists/index";
 import { chaveMiniatura } from "../media/index";
+import type { Armazenamento } from "../media/index";
+import { apagarDoArmazenamento } from "./imagens";
 import { situacaoPorEstoque } from "./regras";
-import { schemaEditarObra, schemaObra } from "./validacao";
+import { schemaEditarObra, schemaId, schemaObra } from "./validacao";
 
 async function validarVinculos(tx: Prisma.TransactionClient, artistaId: string, tags: string[]) {
   const artista = await tx.artist.findUnique({ where: { id: artistaId }, include: { user: true } });
@@ -78,6 +81,37 @@ export function editarObra(entrada: unknown, cabecalhos: Headers) {
       },
     });
   });
+}
+
+// Sem vínculo, a obra sai de vez, com as imagens no R2. Em carrinho ou pedido, a exclusão é
+// lógica (convenção do ESCOPO para dado com relevância contábil): some do admin e da vitrine,
+// volta a rascunho e o histórico dos pedidos fica intacto.
+export async function excluirObra(
+  id: unknown,
+  cabecalhos: Headers,
+  armazenamento?: Armazenamento,
+): Promise<ResultadoGestao<{ modo: "apagada" | "arquivada" }>> {
+  const excluida = await comoAdmin(cabecalhos, async (tx) => {
+    const where = { id: validar(schemaId, id) };
+    const obra = await tx.artwork.findUnique({
+      where,
+      include: { images: true, _count: { select: { cartItems: true, orderItems: true } } },
+    });
+    if (!obra || obra.deletedAt !== null)
+      throw new ErroGestao("nao_encontrado", "Obra não encontrada. Atualize a página.");
+    if (obra._count.cartItems > 0 || obra._count.orderItems > 0) {
+      await tx.artwork.update({
+        where,
+        data: { deletedAt: new Date(), status: "RASCUNHO", featured: false },
+      });
+      return { modo: "arquivada" as const, chaves: [] };
+    }
+    await tx.artwork.delete({ where });
+    return { modo: "apagada" as const, chaves: obra.images.map((imagem) => imagem.url) };
+  });
+  if (!excluida.ok) return excluida;
+  await apagarDoArmazenamento(excluida.dados.chaves, armazenamento);
+  return { ok: true, dados: { modo: excluida.dados.modo } };
 }
 
 export function listarObras(cabecalhos: Headers) {
