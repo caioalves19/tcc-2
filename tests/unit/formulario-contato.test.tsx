@@ -14,7 +14,7 @@ vi.mock("@/modules/contact/actions", () => ({
 describe("Formulário de Contato", () => {
   it("renderiza os campos corretamente", () => {
     render(<FormularioContato />);
-    
+
     expect(screen.getByLabelText("Nome")).toBeDefined();
     expect(screen.getByLabelText("E-mail")).toBeDefined();
     expect(screen.getByLabelText("Mensagem")).toBeDefined();
@@ -23,24 +23,31 @@ describe("Formulário de Contato", () => {
 
   it("exibe erros de validação ao tentar enviar vazio", async () => {
     render(<FormularioContato />);
-    
+
     fireEvent.click(screen.getByRole("button", { name: "Enviar mensagem" }));
 
     expect(await screen.findByText("Informe seu nome (mínimo de 2 caracteres).")).toBeDefined();
     expect(await screen.findByText("Informe um e-mail válido.")).toBeDefined();
-    expect(await screen.findByText("Escreva uma mensagem (mínimo de 10 caracteres).")).toBeDefined();
+    expect(
+      await screen.findByText("Escreva uma mensagem (mínimo de 10 caracteres)."),
+    ).toBeDefined();
     expect(enviarContatoMock).not.toHaveBeenCalled();
   });
 
   it("mostra mensagem de erro devolvida pelo servidor", async () => {
-    enviarContatoMock.mockResolvedValueOnce({ ok: false, mensagem: "Muitas tentativas. Tente novamente mais tarde." });
-    
+    enviarContatoMock.mockResolvedValueOnce({
+      ok: false,
+      mensagem: "Muitas tentativas. Tente novamente mais tarde.",
+    });
+
     render(<FormularioContato />);
-    
+
     fireEvent.change(screen.getByLabelText("Nome"), { target: { value: "Teste" } });
     fireEvent.change(screen.getByLabelText("E-mail"), { target: { value: "teste@kolo.test" } });
-    fireEvent.change(screen.getByLabelText("Mensagem"), { target: { value: "Mensagem de teste aqui." } });
-    
+    fireEvent.change(screen.getByLabelText("Mensagem"), {
+      target: { value: "Mensagem de teste aqui." },
+    });
+
     // Simulate turnstile callback
     const w = window as unknown as { onTurnstileSuccess?: (token: string) => void };
     if (w.onTurnstileSuccess) {

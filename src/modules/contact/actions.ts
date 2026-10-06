@@ -11,12 +11,10 @@ import { verificarTurnstile } from "./turnstile";
 const REGRA_LIMITE: RegraLimite = { maximo: 3, janelaMs: 15 * 60 * 1000 };
 
 export type ResultadoContato =
-  | { ok: true }
-  | { ok: false; mensagem: string }
-  | { ok: false; campos: ErrosContato };
+  { ok: true } | { ok: false; mensagem: string } | { ok: false; campos: ErrosContato };
 
 export async function enviarContato(entrada: EntradaContato): Promise<ResultadoContato> {
-  const ip = ipDaRequisicao(headers());
+  const ip = ipDaRequisicao(await headers());
 
   const limite = await consumirTentativa(`contato:${ip}`, REGRA_LIMITE);
   if (limite.bloqueado) {
@@ -37,7 +35,7 @@ export async function enviarContato(entrada: EntradaContato): Promise<ResultadoC
 
   await obterPool().query(
     "INSERT INTO contact_message (id, nome, email, mensagem) VALUES (gen_random_uuid(), $1, $2, $3)",
-    [nome, email, mensagem]
+    [nome, email, mensagem],
   );
 
   return { ok: true };

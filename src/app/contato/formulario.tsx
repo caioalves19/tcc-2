@@ -15,11 +15,13 @@ import {
 } from "@/modules/contact/validacao";
 import { enviarContato } from "@/modules/contact/actions";
 
-const resolver = resolverDe(validarContato);
+const resolver = resolverDe<EntradaContato, DadosContato>(validarContato);
 
 export function FormularioContato() {
-  const [mensagemServidor, setMensagemServidor] = useState<{ texto: string; erro: boolean } | null>(null);
-  
+  const [mensagemServidor, setMensagemServidor] = useState<{ texto: string; erro: boolean } | null>(
+    null,
+  );
+
   const {
     register,
     handleSubmit,
@@ -30,18 +32,21 @@ export function FormularioContato() {
   } = useForm<EntradaContato, unknown, DadosContato>({ resolver });
 
   useEffect(() => {
-    (window as unknown as { onTurnstileSuccess: (token: string) => void }).onTurnstileSuccess = (token: string) => {
+    (window as unknown as { onTurnstileSuccess: (token: string) => void }).onTurnstileSuccess = (
+      token: string,
+    ) => {
       setValue("tokenTurnstile", token, { shouldValidate: true });
     };
     return () => {
-      delete (window as unknown as { onTurnstileSuccess?: (token: string) => void }).onTurnstileSuccess;
+      delete (window as unknown as { onTurnstileSuccess?: (token: string) => void })
+        .onTurnstileSuccess;
     };
   }, [setValue]);
 
   async function enviar(dados: DadosContato) {
     setMensagemServidor(null);
     const resultado = await enviarContato(dados);
-    
+
     if (resultado.ok) {
       setMensagemServidor({ texto: "Mensagem enviada com sucesso!", erro: false });
       reset();
@@ -95,18 +100,22 @@ export function FormularioContato() {
             <p className="text-[0.8rem] font-medium text-destructive">{errors.mensagem.message}</p>
           )}
         </div>
-        
-        <div 
-          className="cf-turnstile" 
+
+        <div
+          className="cf-turnstile"
           data-sitekey={sitekey}
           data-callback="onTurnstileSuccess"
         ></div>
         {errors.tokenTurnstile?.message && (
-          <p className="text-[0.8rem] font-medium text-destructive">{errors.tokenTurnstile.message}</p>
+          <p className="text-[0.8rem] font-medium text-destructive">
+            {errors.tokenTurnstile.message}
+          </p>
         )}
 
         {mensagemServidor && (
-          <div className={`p-3 rounded-md text-sm font-medium ${mensagemServidor.erro ? "bg-destructive/15 text-destructive" : "bg-green-100 text-green-800"}`}>
+          <div
+            className={`p-3 rounded-md text-sm font-medium ${mensagemServidor.erro ? "bg-destructive/15 text-destructive" : "bg-green-100 text-green-800"}`}
+          >
             {mensagemServidor.texto}
           </div>
         )}
