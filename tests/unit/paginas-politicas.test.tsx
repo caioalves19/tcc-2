@@ -2,6 +2,9 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
+import PaginaCancelamento, {
+  metadata as metadataCancelamento,
+} from "@/app/politicas/cancelamento/page";
 import PaginaPrivacidade, {
   metadata as metadataPrivacidade,
 } from "@/app/politicas/privacidade/page";
@@ -110,4 +113,55 @@ describe("Termos de uso", () => {
     expect(secao("Obras, fotos e direitos autorais").textContent).toMatch(/Lei 9\.610\/1998/);
     expect(secao("Lei aplicável").textContent).toMatch(/Código de Defesa do Consumidor/);
   });
+});
+
+describe("Política de cancelamento", () => {
+  it("RF08 tem título na página e na aba do navegador", () => {
+    render(<PaginaCancelamento />);
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Política de cancelamento" }),
+    ).toBeDefined();
+    expect(metadataCancelamento.title).toBe("Política de cancelamento · Kolô");
+  });
+
+  it("RN03 e RN06: sem pagamento aprovado nada é cobrado e a obra volta a ficar disponível", () => {
+    render(<PaginaCancelamento />);
+    const naoPago = secao("Pedido ainda não pago").textContent ?? "";
+    expect(naoPago).toMatch(/nada é cobrado/i);
+    expect(naoPago).toMatch(/10 minutos/);
+    expect(naoPago).toMatch(/Pix/);
+    expect(naoPago).toMatch(/boleto/);
+  });
+
+  it("garante a desistência em 7 dias do CDC, com reembolso pelo Mercado Pago", () => {
+    render(<PaginaCancelamento />);
+    const arrependimento = secao("Desistir da compra em até 7 dias").textContent ?? "";
+    expect(arrependimento).toMatch(/art\. 49/);
+    expect(arrependimento).toMatch(/7 dias/);
+    expect(arrependimento).toMatch(/mesmo meio de pagamento/i);
+    expect(arrependimento).toMatch(/Mercado Pago/);
+  });
+
+  it("deixa remarcação e cancelamento da sessão de tatuagem para a conversa com o artista", () => {
+    render(<PaginaCancelamento />);
+    const tatuagem = secao("Sessões de tatuagem").textContent ?? "";
+    expect(tatuagem).toMatch(/não marca horário/i);
+    expect(tatuagem).toMatch(/combinad\w* diretamente com o artista/i);
+  });
+});
+
+describe("As três políticas", () => {
+  it.each([
+    ["privacidade", PaginaPrivacidade],
+    ["termos", PaginaTermos],
+    ["cancelamento", PaginaCancelamento],
+  ] as const)(
+    "%s não promete o que ficou fora da v2.2 nem o que o Stitch inventou",
+    (_, Pagina) => {
+      render(<Pagina />);
+      expect(document.body.textContent).not.toMatch(
+        /CPF|nota fiscal|Google Calendar|\b3D\b|certificado de autenticidade|formulário de contato|lembrete/i,
+      );
+    },
+  );
 });
