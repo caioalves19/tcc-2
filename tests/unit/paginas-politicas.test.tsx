@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import PaginaPrivacidade, {
   metadata as metadataPrivacidade,
 } from "@/app/politicas/privacidade/page";
+import PaginaTermos, { metadata as metadataTermos } from "@/app/politicas/termos/page";
 
 afterEach(cleanup);
 
@@ -73,5 +74,40 @@ describe("Política de privacidade", () => {
     expect(cookies).toMatch(/login/i);
     expect(cookies).toMatch(/carrinho/i);
     expect(cookies).toMatch(/não usamos cookies de publicidade/i);
+  });
+});
+
+describe("Termos de uso", () => {
+  it("RF08 tem título na página e na aba do navegador", () => {
+    render(<PaginaTermos />);
+    expect(screen.getByRole("heading", { level: 1, name: "Termos de uso" })).toBeDefined();
+    expect(metadataTermos.title).toBe("Termos de uso · Kolô");
+  });
+
+  it("RN01 a RN06 e RN11 explicam conta, estoque, reserva e aprovação do pagamento", () => {
+    render(<PaginaTermos />);
+    expect(secao("Sua conta").textContent).toMatch(/para comprar/i);
+    const compras = secao("Compra de obras").textContent ?? "";
+    expect(compras).toMatch(/peça única/i);
+    expect(compras).toMatch(/esgotadas/i);
+    expect(compras).toMatch(/10 minutos/);
+    expect(compras).toMatch(/Pix ou boleto/);
+    expect(compras).toMatch(/aprova/);
+  });
+
+  it("RN01 e RF23 a RF25: o pedido de tatuagem não marca horário e traz os três avisos", () => {
+    render(<PaginaTermos />);
+    const tatuagem = secao("Pedido de tatuagem").textContent ?? "";
+    expect(tatuagem).toMatch(/não marca horário/i);
+    expect(tatuagem).toMatch(/WhatsApp/);
+    expect(tatuagem).toMatch(/anamnese/i);
+    expect(tatuagem).toMatch(/termo de consentimento/i);
+    expect(tatuagem).toMatch(/18 anos/);
+  });
+
+  it("protege os direitos autorais e segue o Código de Defesa do Consumidor", () => {
+    render(<PaginaTermos />);
+    expect(secao("Obras, fotos e direitos autorais").textContent).toMatch(/Lei 9\.610\/1998/);
+    expect(secao("Lei aplicável").textContent).toMatch(/Código de Defesa do Consumidor/);
   });
 });
