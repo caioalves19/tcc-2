@@ -33,6 +33,18 @@ async function main(): Promise<void> {
     },
   });
 
+  // Categorias iniciais do RF20. Um catálogo já configurado permanece intacto.
+  if ((await prisma.sizeTier.count()) === 0) {
+    await prisma.sizeTier.createMany({
+      data: [
+        { id: "00000000-0000-4000-8000-000000000001", name: "Pequena", order: 1 },
+        { id: "00000000-0000-4000-8000-000000000002", name: "Média", order: 2 },
+        { id: "00000000-0000-4000-8000-000000000003", name: "Grande", order: 3 },
+      ],
+      skipDuplicates: true,
+    });
+  }
+
   // Só provisiona a credencial ausente: repetir o seed nunca troca a senha do ADMIN.
   const senhaInicial = process.env.SEED_ADMIN_PASSWORD;
   if (senhaInicial) {
