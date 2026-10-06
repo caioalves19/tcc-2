@@ -76,7 +76,7 @@ Além desses grupos, a preparação do PBI-45 e da infraestrutura do PBI-46 pode
 
 Exemplos de divisão técnica:
 
-- **Agora:** PBI-17, PBI-22, PBI-23 e PBI-44 podem começar enquanto o PBI-16 aguarda aprovação/integração. Reservar capacidade também para a revisão do PBI-16 e para a preparação de testes/infraestrutura.
+- **Agora:** PBI-17, PBI-22, PBI-23 e PBI-44 podem começar independentemente do PBI-16. Como o PBI-16 já foi integrado, wizard (31) e agenda manual (34) também estão liberados; obras (18) e gestão do portfólio (35) aguardam o upload (17). Reservar capacidade para revisões e preparação de testes/infraestrutura.
 - **Após 16 e 17:** uma frente trabalha no CRUD de obras (18), outra na gestão do portfólio (35); wizard (31) e agenda manual (34) precisam apenas de 16 e podem já estar em andamento.
 - **Após 18:** catálogo (19), ficha da obra (20), carrinho (24) e reservas (25) podem ser desenvolvidos por frentes diferentes.
 - **Após 26:** pagamento (27), consulta de pedidos (29), gestão de pedidos (30), perfil administrativo do cliente (38), anonimização (40) e frete adicional (42) estão liberados, com prioridade para P0.
@@ -96,7 +96,7 @@ Construir as telas e operações administrativas sobre o modelo existente, reuti
 - [x] Restringir telas e operações de gestão ao papel ADMIN, inclusive no servidor
 - [x] Cobrir persistência, validações e tentativas de acesso sem permissão com testes
 
-**Situação:** implementação local validada na branch `feat/pbi16-artistas-estilos-tags`; aprovação e integração do PR permanecem pendentes para encerrar o DoD e integrar os PBIs que consomem artistas, estilos e tags (18, 31, 34 e 35). O PBI-17 não depende tecnicamente desta entrega.
+**Situação:** implementação do PBI-16 integrada à `main` pelo PR #28. A entrega está disponível para integrar os PBIs que consomem artistas, estilos e tags (18, 31, 34 e 35). O PBI-17 não depende tecnicamente desta entrega.
 
 **Entregas:** telas `/admin/artistas`, `/admin/estilos` e `/admin/tags`, com acesso pelo cabeçalho para ADMIN. Cadastro de artista cria conta, credencial e perfil em transação ou vincula uma conta CLIENTE/ARTISTA ativa sem perfil. Exclusão preserva a conta, bloqueia vínculos existentes e revoga sessões quando o papel passa de ARTISTA para CLIENTE. O primeiro acesso do ADMIN pode ser provisionado pelo seed usando `SEED_ADMIN_PASSWORD`, conforme o README.
 
