@@ -1,5 +1,6 @@
 import type { Prisma } from "../../../generated/prisma/client";
 import { comoAdmin, ErroGestao, validar } from "../artists/index";
+import { chaveMiniatura } from "../media/index";
 import { situacaoPorEstoque } from "./regras";
 import { schemaEditarObra, schemaObra } from "./validacao";
 
@@ -83,7 +84,11 @@ export function listarObras(cabecalhos: Headers) {
   return comoAdmin(cabecalhos, async (tx) => {
     const obras = await tx.artwork.findMany({
       where: { deletedAt: null },
-      include: { artist: { include: { user: true } }, tags: true },
+      include: {
+        artist: { include: { user: true } },
+        tags: true,
+        images: { orderBy: { order: "asc" } },
+      },
       orderBy: { title: "asc" },
     });
     return obras.map((obra) => ({
@@ -101,6 +106,14 @@ export function listarObras(cabecalhos: Headers) {
       situacao: obra.status,
       destaque: obra.featured,
       tags: obra.tags.map((vinculo) => vinculo.tagId),
+      imagens: obra.images.map((imagem) => ({
+        id: imagem.id,
+        chave: imagem.url,
+        chaveMiniatura: chaveMiniatura(imagem.url),
+        ordem: imagem.order,
+        principal: imagem.primary,
+        textoAlternativo: imagem.altText ?? "",
+      })),
     }));
   });
 }
