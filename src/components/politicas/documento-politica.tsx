@@ -40,6 +40,10 @@ function dataBrasileira(iso: string): string {
 // continuar sendo string pura. Colchetes sem endereço ficam como texto.
 const LINK_NO_TEXTO = /\[([^\]]+)\]\(([^)\s]+)\)/g;
 
+// Só vira link o que é do próprio site (/, sem //), âncora, http(s) ou e-mail. Quando o
+// PBI-39 levar o texto para o banco, um [x](javascript:...) vindo do admin fica só texto.
+const ENDERECO_SEGURO = /^(\/(?!\/)|#|https?:\/\/|mailto:)/;
+
 function TextoComLinks({ texto }: { readonly texto: string }) {
   const partes: ReactNode[] = [];
   let inicio = 0;
@@ -47,6 +51,11 @@ function TextoComLinks({ texto }: { readonly texto: string }) {
     const [inteiro, rotulo, href] = encontro;
     if (rotulo === undefined || href === undefined) continue;
     partes.push(texto.slice(inicio, encontro.index));
+    inicio = encontro.index + inteiro.length;
+    if (!ENDERECO_SEGURO.test(href)) {
+      partes.push(rotulo);
+      continue;
+    }
     partes.push(
       <a
         key={encontro.index}
@@ -56,7 +65,6 @@ function TextoComLinks({ texto }: { readonly texto: string }) {
         {rotulo}
       </a>,
     );
-    inicio = encontro.index + inteiro.length;
   }
   partes.push(texto.slice(inicio));
   return partes;

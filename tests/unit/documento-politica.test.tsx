@@ -89,6 +89,33 @@ it("transforma [rótulo](endereço) do texto em link, em parágrafos e listas", 
   expect(contato.getByText("Colchetes sem endereço [ficam como texto].")).toBeDefined();
 });
 
+it("só vira link endereço seguro, para quando o PBI-39 deixar o admin editar o texto", () => {
+  const politica: Politica = {
+    ...TERMOS,
+    secoes: [
+      {
+        id: "enderecos",
+        titulo: "Endereços",
+        blocos: [
+          "Seguros: [site](https://kolo.art.br), [conta](/conta), [seção](#enderecos) e [e-mail](mailto:oi@kolo.art.br).",
+          "Perigosos: [script](javascript:alert), [dados](data:text/html,oi) e [outro site](//golpe.com).",
+        ],
+      },
+    ],
+  };
+  render(<DocumentoPolitica politica={politica} />);
+  const enderecos = secao("Endereços");
+  expect(enderecos.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+    "https://kolo.art.br",
+    "/conta",
+    "#enderecos",
+    "mailto:oi@kolo.art.br",
+  ]);
+  expect(enderecos.getByText(/Perigosos:/).textContent).toBe(
+    "Perigosos: script, dados e outro site.",
+  );
+});
+
 it("RF08 divide o texto em seções com índice de âncoras", () => {
   render(<DocumentoPolitica politica={TERMOS} />);
   const indice = within(screen.getByRole("navigation", { name: "Nesta página" }));
