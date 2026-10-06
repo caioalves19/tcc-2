@@ -28,3 +28,17 @@ export function centavosParaTexto(centavos: number): string {
   const reais = String(Math.floor(centavos / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   return `${reais},${String(centavos % 100).padStart(2, "0")}`;
 }
+
+export function formatarPreco(centavos: number): string {
+  return `R$ ${centavosParaTexto(centavos)}`;
+}
+
+// Sugestão de slug para o formulário: "Ação & Reação" vira "acao-reacao".
+export function slugDoTitulo(titulo: string): string {
+  return titulo
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}

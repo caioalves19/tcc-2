@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   centavosParaTexto,
+  formatarPreco,
   precoEmCentavos,
   situacaoPorEstoque,
+  slugDoTitulo,
 } from "../../src/modules/catalog/regras";
 import { schemaEditarObra, schemaObra } from "../../src/modules/catalog/validacao";
 
@@ -102,5 +104,18 @@ describe("RF26: ficha da obra", () => {
     });
     expect(schemaEditarObra.safeParse({ ...valida, publicada: true }).success).toBe(false);
     expect(schemaEditarObra.safeParse({ ...valida, id }).success).toBe(false);
+  });
+});
+
+describe("apoio ao formulário do admin", () => {
+  it("sugere o slug a partir do título, sem acento nem símbolo", () => {
+    expect(slugDoTitulo("Metrópole em Chamas")).toBe("metropole-em-chamas");
+    expect(slugDoTitulo("  Retalho Paulistano #2!  ")).toBe("retalho-paulistano-2");
+    expect(slugDoTitulo("Ação & Reação — 2024")).toBe("acao-reacao-2024");
+  });
+
+  it("mostra o preço em reais", () => {
+    expect(formatarPreco(480000)).toBe("R$ 4.800,00");
+    expect(formatarPreco(9990)).toBe("R$ 99,90");
   });
 });
