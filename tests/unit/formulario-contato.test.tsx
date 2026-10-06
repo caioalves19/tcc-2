@@ -8,7 +8,7 @@ import { FormularioContato } from "@/app/contato/formulario";
 
 const enviarContatoMock = vi.fn();
 vi.mock("@/modules/contact/actions", () => ({
-  enviarContato: (...args: any[]) => enviarContatoMock(...args),
+  enviarContato: (...args: unknown[]) => enviarContatoMock(...args),
 }));
 
 describe("Formulário de Contato", () => {
