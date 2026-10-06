@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { ResultadoGestao } from "@/modules/artists";
 import type { EntradaEditarObra, EntradaObra } from "@/modules/catalog";
@@ -11,6 +11,7 @@ import {
   type SituacaoObra,
 } from "@/modules/catalog/cliente";
 import { CampoAdmin, FormularioAdmin, classeCampo, texto, useGestao } from "./formulario";
+import { GestaoImagensObra, type AcoesImagemObra } from "./gestao-imagens-obra";
 
 export type ImagemObra = {
   id: string;
@@ -45,8 +46,9 @@ type Props = {
   criar: (entrada: EntradaObra) => Promise<ResultadoGestao<{ id: string }>>;
   editar: (entrada: EntradaEditarObra) => Promise<ResultadoGestao<unknown>>;
   excluir: (id: string) => Promise<ResultadoGestao<unknown>>;
-  // Gestão das imagens da obra em edição (PBI-18, T7); fica fora no cadastro.
-  imagens?: (obra: ObraAdmin) => ReactNode;
+  // Ações das imagens da obra em edição. Server Actions num objeto: uma função comum não
+  // atravessa a fronteira servidor/cliente, por isso não é um render prop.
+  acoesImagem?: AcoesImagemObra;
 };
 
 const ROTULO_SITUACAO: Record<SituacaoObra, string> = {
@@ -55,7 +57,15 @@ const ROTULO_SITUACAO: Record<SituacaoObra, string> = {
   ESGOTADA: "Esgotada",
 };
 
-export function GestaoObras({ registros, artistas, tags, criar, editar, excluir, imagens }: Props) {
+export function GestaoObras({
+  registros,
+  artistas,
+  tags,
+  criar,
+  editar,
+  excluir,
+  acoesImagem,
+}: Props) {
   // O id, não o objeto: depois do refresh a obra em edição vem atualizada (imagens novas).
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const editando = registros.find((obra) => obra.id === editandoId) ?? null;
@@ -241,7 +251,7 @@ export function GestaoObras({ registros, artistas, tags, criar, editar, excluir,
             </Button>
           )}
         </FormularioAdmin>
-        {editando && imagens?.(editando)}
+        {editando && acoesImagem && <GestaoImagensObra obra={editando} {...acoesImagem} />}
       </section>
       <section aria-labelledby="lista-titulo" className="min-w-0">
         <h2 id="lista-titulo" className="mb-4 font-display text-xl">

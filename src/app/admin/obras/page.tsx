@@ -2,7 +2,17 @@ import { headers } from "next/headers";
 import { listarArtistas, listarTaxonomias } from "@/modules/artists";
 import { listarObras } from "@/modules/catalog";
 import { GestaoObras } from "@/components/admin/gestao-obras";
-import { criarObraAcao, editarObraAcao, excluirObraAcao } from "./actions";
+import { solicitarUploadAcao } from "../../imagens/actions";
+import {
+  adicionarImagemAcao,
+  criarObraAcao,
+  definirImagemPrincipalAcao,
+  editarObraAcao,
+  editarTextoAlternativoAcao,
+  excluirObraAcao,
+  moverImagemAcao,
+  removerImagemAcao,
+} from "./actions";
 
 export default async function PaginaObras() {
   const cabecalhos = await headers();
@@ -28,6 +38,15 @@ export default async function PaginaObras() {
           criar={criarObraAcao}
           editar={editarObraAcao}
           excluir={excluirObraAcao}
+          acoesImagem={{
+            baseImagens: process.env.R2_PUBLIC_URL?.trim() || null,
+            solicitar: solicitarUploadAcao,
+            adicionar: adicionarImagemAcao,
+            definirPrincipal: definirImagemPrincipalAcao,
+            mover: moverImagemAcao,
+            editarTexto: editarTextoAlternativoAcao,
+            remover: removerImagemAcao,
+          }}
         />
       )}
     </>
