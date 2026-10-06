@@ -34,8 +34,11 @@ it("RF27 mantém o original quando a falha não é de formato: só imagem invál
   };
 
   falha.ativa = true;
-  await expect(gerarMiniatura(chave, armazenamento)).rejects.toThrow();
-  falha.ativa = false;
+  try {
+    await expect(gerarMiniatura(chave, armazenamento)).rejects.toThrow("vips: memória");
+  } finally {
+    falha.ativa = false;
+  }
 
   expect([...objetos.keys()]).toEqual([chave]);
 });

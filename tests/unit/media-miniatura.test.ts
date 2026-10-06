@@ -113,18 +113,40 @@ it("RF27 deriva pela API pública a chave da miniatura a partir da chave do orig
   );
 });
 
-it("RF27 trata JPEG cortado no meio como imagem que não decodifica e remove o original", async () => {
+it("RF27 trata JPEG e PNG cortados no meio como imagem que não decodifica e remove o original", async () => {
+  for (const formato of ["jpeg", "png"] as const) {
+    const tela = sharp({ create: { width: 800, height: 600, channels: 3, background: "#8e44ad" } });
+    const inteiro = await (formato === "jpeg" ? tela.jpeg() : tela.png()).toBuffer();
+    const cortado = inteiro.subarray(0, Math.floor(inteiro.length / 2));
+    const { armazenamento, objetos } = armazenamentoEmMemoria({ [chave]: cortado });
+
+    expect(await gerarMiniatura(chave, armazenamento)).toEqual({
+      ok: false,
+      motivo: "imagem_invalida",
+    });
+    expect([...objetos.keys()]).toEqual([]);
+  }
+});
+
+// Câmeras e editores gravam JPEG com avisos leves (bytes sobrando antes de um marcador):
+// a imagem decodifica e precisa virar miniatura, não "indisponível" para sempre.
+it("RF27 gera a miniatura de JPEG com aviso leve de corrupção que ainda decodifica", async () => {
   const inteiro = await sharp({
-    create: { width: 800, height: 600, channels: 3, background: "#8e44ad" },
+    create: { width: 800, height: 600, channels: 3, background: "#d35400" },
   })
     .jpeg()
     .toBuffer();
-  const cortado = inteiro.subarray(0, Math.floor(inteiro.length / 2));
-  const { armazenamento, objetos } = armazenamentoEmMemoria({ [chave]: cortado });
+  const sos = inteiro.indexOf(Buffer.from([0xff, 0xda]));
+  const comSobra = Buffer.concat([
+    inteiro.subarray(0, sos),
+    Buffer.from([1, 2, 3, 4]),
+    inteiro.subarray(sos),
+  ]);
+  const { armazenamento, objetos } = armazenamentoEmMemoria({ [chave]: comSobra });
 
   expect(await gerarMiniatura(chave, armazenamento)).toEqual({
-    ok: false,
-    motivo: "imagem_invalida",
+    ok: true,
+    chaveMiniatura: "obras/3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b/abc_thumb.webp",
   });
-  expect([...objetos.keys()]).toEqual([]);
+  expect(objetos.has(chave)).toBe(true);
 });
