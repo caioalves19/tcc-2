@@ -61,7 +61,12 @@ function AcaoConta({
   );
 }
 
-export function Cabecalho({ logado = false, administrador = false, acaoSair }: PropsConta) {
+export function Cabecalho({
+  logado = false,
+  administrador = false,
+  acaoSair,
+  itensNoCarrinho = 0,
+}: PropsConta & { itensNoCarrinho?: number }) {
   const [menuAberto, setMenuAberto] = useState(false);
 
   return (
@@ -84,9 +89,30 @@ export function Cabecalho({ logado = false, administrador = false, acaoSair }: P
         </nav>
 
         <div className="flex items-center gap-2">
-          <Button variant="contorno" size="icon-sm" aria-label="Carrinho">
+          {/* RF11: a contagem vem do servidor (layout), em unidades disponíveis. */}
+          <a
+            href="/carrinho"
+            aria-label={
+              itensNoCarrinho > 0
+                ? `Carrinho, ${itensNoCarrinho} ${itensNoCarrinho === 1 ? "item" : "itens"}`
+                : "Carrinho"
+            }
+            className={buttonVariants({
+              variant: "contorno",
+              size: "icon-sm",
+              className: "relative",
+            })}
+          >
             <ShoppingBag aria-hidden />
-          </Button>
+            {itensNoCarrinho > 0 && (
+              <span
+                aria-hidden
+                className="absolute -top-2 -right-2 grid min-w-5 place-items-center rounded-full border-2 border-neutro-grafite bg-atelie-amarelo px-1 font-display text-etiqueta text-neutro-grafite"
+              >
+                {itensNoCarrinho}
+              </span>
+            )}
+          </a>
           <AcaoConta
             logado={logado}
             administrador={administrador}

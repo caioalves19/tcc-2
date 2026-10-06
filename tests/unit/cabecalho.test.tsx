@@ -73,3 +73,13 @@ it("RF28 mostra acesso à administração para ADMIN também no menu mobile", as
       .getAttribute("href"),
   ).toBe("/admin");
 });
+
+it("RF11 o carrinho do cabeçalho leva a /carrinho e diz quantos itens tem", () => {
+  render(<Cabecalho itensNoCarrinho={2} />);
+  const carrinho = screen.getByRole("link", { name: "Carrinho, 2 itens" });
+  expect(carrinho.getAttribute("href")).toBe("/carrinho");
+  expect(carrinho.textContent).toContain("2");
+  cleanup();
+  render(<Cabecalho />);
+  expect(screen.getByRole("link", { name: "Carrinho" }).getAttribute("href")).toBe("/carrinho");
+});
