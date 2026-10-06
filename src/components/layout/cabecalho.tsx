@@ -7,12 +7,12 @@ import { Menu, ShoppingBag, X } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Marca } from "@/components/layout/marca";
 
-// Itens do menu. O escopo do agendamento e das páginas de artista ainda está
-// em discussão (docs/escopo-v2.2), então a lista mora aqui e muda em um lugar só.
+// Navegação compartilhada entre o menu desktop e mobile.
 const LINKS = [
   { rotulo: "Início", href: "/" },
   { rotulo: "Obras", href: "/obras" },
   { rotulo: "Tatuagem", href: "/tatuagem" },
+  { rotulo: "Agendar", href: "/agendamento" },
   { rotulo: "Contato", href: "/contato" },
 ] as const;
 
