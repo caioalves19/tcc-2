@@ -116,6 +116,8 @@ Integrar o armazenamento Cloudflare R2 ao fluxo de imagens do acervo, conforme a
 - [ ] Documentar configuração e variáveis de ambiente sem versionar credenciais
 - [ ] Testar rejeição de arquivos e falhas de upload; registrar evidência de envio real ao R2
 
+**Decisões (registradas em 05/10/2026):** formatos JPEG, PNG e WebP, até 5 MB, sem SVG no upload. Miniatura fixa gerada com `sharp` (WebP, ~400 px), demais variantes pelo `next/image`; o `sharp` é uma dependência nova em relação à stack original do escopo. ADMIN envia para qualquer artista; ARTISTA só para as próprias obras e o próprio portfólio.
+
 ### PBI-18 — CRUD administrativo de obras
 
 **Requisito:** RF26 · **Regras:** RN02, RN07, RN11 · **Deps:** PBI-16, PBI-17.

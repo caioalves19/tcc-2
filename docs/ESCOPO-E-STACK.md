@@ -380,6 +380,8 @@ Sem API oficial. O wizard gera `https://wa.me/<numero>?text=<mensagem>` com nome
 
 Upload direto do navegador para o R2 com URL assinada de curta duração, validando tipo e tamanho antes de emitir a assinatura. O servidor guarda apenas a chave do objeto. Entrega otimizada e responsiva pelo componente de imagem do Next.js (RNF14). Cobre obras e portfólio, não referências de agendamento.
 
+Formatos aceitos: JPEG, PNG e WebP, até 5 MB. SVG não é aceito no upload (risco de script e sem otimização); os SVG de marca ficam como arquivos estáticos em `public/marca/`. A miniatura fixa (WebP, ~400 px) é gerada no servidor com `sharp` depois do envio e gravada ao lado do original; as demais variantes responsivas ficam com o `next/image`. ADMIN envia para qualquer artista; ARTISTA envia apenas para as próprias obras e o próprio portfólio.
+
 ---
 
 ## 12. Infraestrutura e deploy
