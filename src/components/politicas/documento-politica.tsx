@@ -178,9 +178,10 @@ export function DocumentoPolitica({ politica }: { readonly politica: Politica })
             <a href={CONTATO.whatsapp} className={buttonVariants({ size: "sm" })}>
               Falar no WhatsApp
             </a>
+            {/* E-mail em caixa alta fica difícil de ler: o botão abre mão do uppercase. */}
             <a
               href={`mailto:${CONTATO.email}`}
-              className={buttonVariants({ size: "sm", variant: "contorno" })}
+              className={cn(buttonVariants({ size: "sm", variant: "contorno" }), "normal-case")}
             >
               {CONTATO.email}
             </a>
