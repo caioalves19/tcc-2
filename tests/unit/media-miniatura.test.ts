@@ -1,0 +1,152 @@
+import sharp from "sharp";
+import { expect, it } from "vitest";
+import { chaveMiniatura, gerarMiniatura, type Armazenamento } from "../../src/modules/media";
+
+const chave = "obras/3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b/abc.png";
+
+function armazenamentoEmMemoria(inicial: Record<string, Buffer>) {
+  const objetos = new Map(Object.entries(inicial));
+  const armazenamento: Armazenamento = {
+    obter: async (c) => objetos.get(c) ?? null,
+    gravar: async (c, corpo) => void objetos.set(c, corpo),
+    remover: async (c) => void objetos.delete(c),
+  };
+  return { armazenamento, objetos };
+}
+
+async function imagem(largura: number, altura: number) {
+  return sharp({
+    create: { width: largura, height: altura, channels: 3, background: "#c0392b" },
+  })
+    .png()
+    .toBuffer();
+}
+
+it("RF27 gera miniatura WebP de até 400 px, mantendo a proporção, ao lado do original", async () => {
+  const { armazenamento, objetos } = armazenamentoEmMemoria({ [chave]: await imagem(1200, 800) });
+
+  const resultado = await gerarMiniatura(chave, armazenamento);
+
+  expect(resultado).toEqual({
+    ok: true,
+    chaveMiniatura: "obras/3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b/abc_thumb.webp",
+  });
+  const miniatura = objetos.get("obras/3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b/abc_thumb.webp");
+  const meta = await sharp(miniatura).metadata();
+  expect([meta.format, meta.width, meta.height]).toEqual(["webp", 400, 267]);
+  expect(objetos.has(chave)).toBe(true);
+});
+
+it("RF27 rejeita arquivo que não decodifica como imagem e remove o original do bucket", async () => {
+  const falsa = "obras/3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b/falsa.jpg";
+  const { armazenamento, objetos } = armazenamentoEmMemoria({
+    [falsa]: Buffer.from("<html><script>alert(1)</script></html>"),
+  });
+
+  expect(await gerarMiniatura(falsa, armazenamento)).toEqual({
+    ok: false,
+    motivo: "imagem_invalida",
+  });
+  expect([...objetos.keys()]).toEqual([]);
+});
+
+it("RF27 rejeita SVG e GIF válidos enviados com extensão de imagem aceita", async () => {
+  const svg = Buffer.from(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><script>alert(1)</script></svg>',
+  );
+  const gif = await sharp({
+    create: { width: 10, height: 10, channels: 3, background: "#000" },
+  })
+    .gif()
+    .toBuffer();
+  for (const corpo of [svg, gif]) {
+    const { armazenamento, objetos } = armazenamentoEmMemoria({ [chave]: corpo });
+    expect(await gerarMiniatura(chave, armazenamento)).toEqual({
+      ok: false,
+      motivo: "imagem_invalida",
+    });
+    expect([...objetos.keys()]).toEqual([]);
+  }
+});
+
+it("RF27 não amplia imagem menor que a miniatura", async () => {
+  const { armazenamento, objetos } = armazenamentoEmMemoria({ [chave]: await imagem(200, 100) });
+
+  await gerarMiniatura(chave, armazenamento);
+
+  const miniatura = objetos.get("obras/3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b/abc_thumb.webp");
+  const meta = await sharp(miniatura).metadata();
+  expect([meta.width, meta.height]).toEqual([200, 100]);
+});
+
+it("RF27 rejeita imagem com pixels demais para decodificar, mesmo pequena em bytes, e remove o original", async () => {
+  const { armazenamento, objetos } = armazenamentoEmMemoria({ [chave]: await imagem(7000, 6000) });
+
+  expect(await gerarMiniatura(chave, armazenamento)).toEqual({
+    ok: false,
+    motivo: "imagem_invalida",
+  });
+  expect([...objetos.keys()]).toEqual([]);
+}, 30_000);
+
+it("RF27 respeita a orientação EXIF da foto: celular em pé não vira miniatura deitada", async () => {
+  const jpeg = await sharp({
+    create: { width: 300, height: 200, channels: 3, background: "#16a085" },
+  })
+    .jpeg()
+    .withMetadata({ orientation: 6 })
+    .toBuffer();
+  const { armazenamento, objetos } = armazenamentoEmMemoria({ [chave]: jpeg });
+
+  await gerarMiniatura(chave, armazenamento);
+
+  const miniatura = objetos.get("obras/3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b/abc_thumb.webp");
+  const meta = await sharp(miniatura).metadata();
+  expect([meta.width, meta.height]).toEqual([200, 300]);
+});
+
+// Contrato para o PBI-18 e o PBI-35: o DER guarda só a chave do original, então a da
+// miniatura é derivada por esta função pública, para exibir e para remover do bucket.
+it("RF27 deriva pela API pública a chave da miniatura a partir da chave do original", () => {
+  expect(chaveMiniatura("portfolio/3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b/abc.jpg")).toBe(
+    "portfolio/3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b/abc_thumb.webp",
+  );
+});
+
+it("RF27 trata JPEG e PNG cortados no meio como imagem que não decodifica e remove o original", async () => {
+  for (const formato of ["jpeg", "png"] as const) {
+    const tela = sharp({ create: { width: 800, height: 600, channels: 3, background: "#8e44ad" } });
+    const inteiro = await (formato === "jpeg" ? tela.jpeg() : tela.png()).toBuffer();
+    const cortado = inteiro.subarray(0, Math.floor(inteiro.length / 2));
+    const { armazenamento, objetos } = armazenamentoEmMemoria({ [chave]: cortado });
+
+    expect(await gerarMiniatura(chave, armazenamento)).toEqual({
+      ok: false,
+      motivo: "imagem_invalida",
+    });
+    expect([...objetos.keys()]).toEqual([]);
+  }
+});
+
+// Câmeras e editores gravam JPEG com avisos leves (bytes sobrando antes de um marcador):
+// a imagem decodifica e precisa virar miniatura, não "indisponível" para sempre.
+it("RF27 gera a miniatura de JPEG com aviso leve de corrupção que ainda decodifica", async () => {
+  const inteiro = await sharp({
+    create: { width: 800, height: 600, channels: 3, background: "#d35400" },
+  })
+    .jpeg()
+    .toBuffer();
+  const sos = inteiro.indexOf(Buffer.from([0xff, 0xda]));
+  const comSobra = Buffer.concat([
+    inteiro.subarray(0, sos),
+    Buffer.from([1, 2, 3, 4]),
+    inteiro.subarray(sos),
+  ]);
+  const { armazenamento, objetos } = armazenamentoEmMemoria({ [chave]: comSobra });
+
+  expect(await gerarMiniatura(chave, armazenamento)).toEqual({
+    ok: true,
+    chaveMiniatura: "obras/3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b/abc_thumb.webp",
+  });
+  expect(objetos.has(chave)).toBe(true);
+});

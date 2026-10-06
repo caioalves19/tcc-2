@@ -44,7 +44,7 @@ Os 4 blocos são obrigatórios **antes de codar**. Quem digita pode ser o humano
 
 - Regras (RN) e invariantes: código testável ou constraint no banco. Postgres **real** na escrita transacional (reserva, agenda, webhook) — não mockar.
 - Esperado do teste vem do ESCOPO/RN (literal / exemplo), não da implementação.
-- Módulos só pela API pública (`src/modules/*/index.ts`) quando a árvore existir.
+- Módulos só pela API pública (`src/modules/*/index.ts`) quando a árvore existir. Exceção: um módulo cujo `index.ts` traz dependência de servidor (SDK, `sharp`, banco) pode expor `cliente.ts` só com código puro para componentes de navegador (ex.: `media/cliente.ts`).
 - **Proibido:** dado de saúde / `health_form`; split de pagamento; API oficial WhatsApp; inventar RF fora do ESCOPO.
 
 ## Estilo

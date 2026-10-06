@@ -318,6 +318,7 @@ src/
       cron/                 # gatilhos protegidos de tarefas
   modules/
     catalog/                # obras, imagens, ordenação
+    media/                  # upload ao R2, validação, miniatura (index: servidor; cliente.ts: navegador)
     orders/                 # carrinho, pedido, frete
     payments/               # Mercado Pago, webhook, idempotência
     scheduling/             # wizard → wa.me; cadastro manual de horário
@@ -327,7 +328,7 @@ src/
     notifications/          # recuperação de senha, links wa.me
     admin/                  # configurações
   components/ui/            # design system (shadcn/ui)
-  lib/                      # db, auth, storage, env, logger, utilitários de data
+  lib/                      # db, auth, env, logger, utilitários de data
 prisma/schema.prisma        # contrato do modelo de dados
 tests/e2e/                  # Playwright
 ```
@@ -379,6 +380,10 @@ Sem API oficial. O wizard gera `https://wa.me/<numero>?text=<mensagem>` com nome
 ### Armazenamento de imagens
 
 Upload direto do navegador para o R2 com URL assinada de curta duração, validando tipo e tamanho antes de emitir a assinatura. O servidor guarda apenas a chave do objeto. Entrega otimizada e responsiva pelo componente de imagem do Next.js (RNF14). Cobre obras e portfólio, não referências de agendamento.
+
+Formatos aceitos: JPEG, PNG e WebP, até 5 MB. SVG não é aceito no upload (risco de script e sem otimização); os SVG de marca ficam como arquivos estáticos em `public/marca/`. A miniatura fixa (WebP, ~400 px) é gerada no servidor com `sharp` depois do envio e gravada ao lado do original; as demais variantes responsivas ficam com o `next/image`. ADMIN envia para qualquer artista e destino; ARTISTA envia apenas para o próprio portfólio (obras são geridas só pelo ADMIN, §7 e RN10).
+
+A URL assinada só autoriza o envio; quem confirma que o objeto é uma imagem de verdade é o processamento pós-envio (`processarImagem`), que também aplica um teto de 40 milhões de pixels na decodificação e respeita a orientação EXIF. Por isso o CRUD de obras e o portfólio só podem gravar uma chave que o processamento devolveu com sucesso. Originais enviados e nunca processados ficam no bucket sob uma chave com UUID e não são servidos por nenhuma página; uma rotina de limpeza desses órfãos é trabalho futuro, fora do PBI-17.
 
 ---
 

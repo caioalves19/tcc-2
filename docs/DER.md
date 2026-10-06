@@ -338,6 +338,7 @@ O wizard (RF20, RF21, RF23–RF25) **não** gera linha em `appointment`.
 | `order.endereco_copia` | Endereço congelado no pedido; não é FK viva para `address` |
 | `order_item` | Cópia de título, preço e quantidade no momento da compra |
 | `user.excluido_em` | Exclusão LGPD anonimiza o cliente e preserva pedidos pagos (RN12) |
+| `artwork_image.url` / `portfolio_item.imagem_url` | Guardam a **chave do objeto** no R2 (`<obras\|portfolio>/<artistId>/<uuid>.<ext>`), não a URL pública; a URL e a chave da miniatura são derivadas pelo módulo `media` (`urlPublica`, `chaveMiniatura`). Só se grava uma chave que `processarImagem` devolveu com sucesso (RF27) |
 | `user.email_verificado` | Coluna do Better Auth. O fluxo de verificação de e-mail no cadastro está fora de escopo (seção 14). |
 | valores monetários | Inteiros em centavos (`int`), nunca ponto flutuante (RN07) |
 | datas (`timestamptz`) | Armazenadas em UTC; apresentação em `America/Sao_Paulo` (RN09) |

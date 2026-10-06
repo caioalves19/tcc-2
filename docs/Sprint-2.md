@@ -108,19 +108,33 @@ Construir as telas e operações administrativas sobre o modelo existente, reuti
 
 Integrar o armazenamento Cloudflare R2 ao fluxo de imagens do acervo, conforme a arquitetura prevista no escopo.
 
-- [ ] Disponibilizar upload com URL assinada de curta duração para operação autorizada
-- [ ] Validar tipo e tamanho antes de emitir a assinatura e rejeitar arquivos inválidos
+- [x] Disponibilizar upload com URL assinada de curta duração para operação autorizada
+- [x] Validar tipo e tamanho antes de emitir a assinatura e rejeitar arquivos inválidos
 - [ ] Persistir a referência do objeto conforme o contrato do modelo, sem armazenar o arquivo no banco
 - [ ] Gerar miniaturas e entregar imagens otimizadas e responsivas
-- [ ] Exibir feedback de envio, sucesso e falha, permitindo nova tentativa
-- [ ] Documentar configuração e variáveis de ambiente sem versionar credenciais
-- [ ] Testar rejeição de arquivos e falhas de upload; registrar evidência de envio real ao R2
+- [x] Exibir feedback de envio, sucesso e falha, permitindo nova tentativa
+- [x] Documentar configuração e variáveis de ambiente sem versionar credenciais
+- [x] Testar rejeição de arquivos e falhas de upload; registrar evidência de envio real ao R2
+
+**Decisões (registradas em 05/10/2026):** formatos JPEG, PNG e WebP, até 5 MB, sem SVG no upload. Miniatura fixa gerada com `sharp` (WebP, ~400 px), demais variantes pelo `next/image`; o `sharp` é uma dependência nova em relação à stack original do escopo. ADMIN envia para qualquer artista e destino; ARTISTA só para o próprio portfólio (obras são geridas só pelo ADMIN, ESCOPO §7 e RN10).
+
+**Situação:** implementação no PR #33, aguardando a revisão de outro integrante. A miniatura (WebP, até 400 px) já é gerada no pós-envio; o item "Gerar miniaturas e entregar imagens otimizadas e responsivas" segue desmarcado só pela parte da entrega responsiva.
+
+**Entregas:** módulo `src/modules/media` (validação, chave do objeto gerada no servidor, autorização relida no banco, assinatura no R2, miniatura e URL pública), Server Actions em `src/app/imagens/actions.ts` e componente `UploadImagem` com envio, sucesso, falha e nova tentativa. A API pública expõe `chaveMiniatura` para o PBI-18 e o PBI-35 derivarem a miniatura a partir da chave gravada.
+
+**Pendências (fora do PBI-17):** (a) gravar a chave em `artwork_image.url` e `portfolio_item.imagem_url` fica com o PBI-18 e o PBI-35, por isso o item de persistência segue desmarcado; (b) a entrega otimizada e responsiva só se confirma quando uma página renderizar a imagem com `next/image` (o host do R2 já está liberado); (c) o envio pela tela será exercitado de ponta a ponta quando o PBI-18/35 usar o `UploadImagem`.
+
+**Evidências:** `npm run lint` e `npm run typecheck` sem erros; `npm run test:unit` com 141 testes e `npm run test:integration` com 56 testes passando (PostgreSQL real, R2 simulado); `npm run build` compilando. Revisão de código com os achados corrigidos em TDD (ARTISTA só no próprio portfólio, esquema Zod na entrada, objeto inexistente, original apagado só quando o arquivo não decodifica, preservado em outras falhas, campo com id próprio).
+
+**Evidência de envio real ao R2 (05/10/2026, bucket `kolo-imagens`, artista fictício `00000000-0000-4000-8000-000000000017`):** com o código do módulo e sem simulação, uma URL assinada recusou com 403 um corpo de tamanho diferente e um `Content-Type` diferente do assinado e aceitou o correto com 200; o `armazenamentoR2()` leu o original e gravou a miniatura `image/webp` de 400×267; os dois objetos responderam 200 pela URL pública. No navegador, um `PUT` assinado feito a partir de `http://localhost:3000` retornou 200 (CORS), e o mesmo `PUT` a partir de `https://example.com` foi bloqueado. O painel do Cloudflare listou o PNG original, a miniatura e o PNG enviado pelo navegador. O teste revelou que o SDK embutia na URL assinada o checksum de um corpo vazio; corrigido com `requestChecksumCalculation: "WHEN_REQUIRED"` e coberto por teste. Os objetos de teste foram removidos do bucket ao final.
 
 ### PBI-18 — CRUD administrativo de obras
 
 **Requisito:** RF26 · **Regras:** RN02, RN07, RN11 · **Deps:** PBI-16, PBI-17.
 
 Permitir a gestão completa da obra, conectando os cadastros auxiliares e o upload de imagens.
+
+**Contrato do upload (PBI-17):** só gravar em `artwork_image.url` uma chave que `processarImagem` devolveu com sucesso, e nunca uma chave recebida direto do navegador: é o `processarImagem` que confirma que o objeto é uma imagem JPEG, PNG ou WebP de verdade. Ao remover uma imagem da obra, remover também o original e a miniatura do bucket (a chave da miniatura sai de `chaveMiniatura`, na API pública do módulo `media`).
 
 - [ ] Cadastrar, listar, editar e excluir obras respeitando vínculos existentes
 - [ ] Gerenciar título, slug, descrição, artista, técnica, dimensões, ano e tags
@@ -344,6 +358,8 @@ Consome artistas e estilos do PBI-16 e a constraint de agenda da Sprint 1. O hor
 **Referências:** RF19; RN10 · **Prioridade:** P0 · **Deps:** PBI-16, PBI-17.
 
 Consome artistas/estilos (16) e upload (17). Pode avançar em paralelo ao CRUD de obras (18), à loja e à agenda. O upload precisa autorizar também o papel ARTISTA, respeitando a propriedade dos trabalhos.
+
+**Contrato do upload (PBI-17):** só gravar em `portfolio_item.imagem_url` uma chave que `processarImagem` devolveu com sucesso, e nunca uma chave recebida direto do navegador: é o `processarImagem` que confirma que o objeto é uma imagem JPEG, PNG ou WebP de verdade.
 
 - [ ] Reutilizar upload para incluir, editar, ordenar, destacar e remover trabalhos
 - [ ] Associar artista, estilos e região do corpo aos trabalhos
