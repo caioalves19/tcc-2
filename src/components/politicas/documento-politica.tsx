@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { cn } from "cn";
 
 import { buttonVariants } from "@/components/ui/button";
@@ -34,12 +36,45 @@ function dataBrasileira(iso: string): string {
   return `${dia}/${mes}/${ano}`;
 }
 
+// Links no texto seguem a sintaxe do Markdown, [rótulo](endereço), para o conteúdo
+// continuar sendo string pura. Colchetes sem endereço ficam como texto.
+const LINK_NO_TEXTO = /\[([^\]]+)\]\(([^)\s]+)\)/g;
+
+function TextoComLinks({ texto }: { readonly texto: string }) {
+  const partes: ReactNode[] = [];
+  let inicio = 0;
+  for (const encontro of texto.matchAll(LINK_NO_TEXTO)) {
+    const [inteiro, rotulo, href] = encontro;
+    if (rotulo === undefined || href === undefined) continue;
+    partes.push(texto.slice(inicio, encontro.index));
+    partes.push(
+      <a
+        key={encontro.index}
+        href={href}
+        className="text-[var(--kolo-link)] underline underline-offset-4"
+      >
+        {rotulo}
+      </a>,
+    );
+    inicio = encontro.index + inteiro.length;
+  }
+  partes.push(texto.slice(inicio));
+  return partes;
+}
+
 function Bloco({ bloco }: { readonly bloco: BlocoPolitica }) {
-  if (typeof bloco === "string") return <p>{bloco}</p>;
+  if (typeof bloco === "string")
+    return (
+      <p>
+        <TextoComLinks texto={bloco} />
+      </p>
+    );
   return (
     <ul className="list-disc space-y-2 pl-6">
       {bloco.itens.map((item) => (
-        <li key={item}>{item}</li>
+        <li key={item}>
+          <TextoComLinks texto={item} />
+        </li>
       ))}
     </ul>
   );

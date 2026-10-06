@@ -59,6 +59,36 @@ it("oferece WhatsApp e e-mail do Kolô para quem ficou com dúvida", () => {
   );
 });
 
+it("transforma [rótulo](endereço) do texto em link, em parágrafos e listas", () => {
+  const politica: Politica = {
+    ...TERMOS,
+    secoes: [
+      {
+        id: "contato",
+        titulo: "Contato",
+        blocos: [
+          "Altere seus dados em [Minha conta](/conta) ou escreva para [o Kolô](mailto:ateliekolo@gmail.com).",
+          { itens: ["Leia também a [Política de privacidade](/politicas/privacidade)."] },
+          "Colchetes sem endereço [ficam como texto].",
+        ],
+      },
+    ],
+  };
+  render(<DocumentoPolitica politica={politica} />);
+  const contato = secao("Contato");
+  expect(contato.getByRole("link", { name: "Minha conta" }).getAttribute("href")).toBe("/conta");
+  expect(contato.getByRole("link", { name: "o Kolô" }).getAttribute("href")).toBe(
+    "mailto:ateliekolo@gmail.com",
+  );
+  expect(contato.getByRole("link", { name: "Política de privacidade" }).getAttribute("href")).toBe(
+    "/politicas/privacidade",
+  );
+  expect(contato.getByText(/Altere seus dados em/).textContent).toBe(
+    "Altere seus dados em Minha conta ou escreva para o Kolô.",
+  );
+  expect(contato.getByText("Colchetes sem endereço [ficam como texto].")).toBeDefined();
+});
+
 it("RF08 divide o texto em seções com índice de âncoras", () => {
   render(<DocumentoPolitica politica={TERMOS} />);
   const indice = within(screen.getByRole("navigation", { name: "Nesta página" }));
