@@ -1,8 +1,7 @@
 import type { Client } from "pg";
 import { afterAll, beforeAll, expect, it } from "vitest";
-import { prepararBancoDeTeste } from "./banco-de-teste";
+import { comCookie, prepararContas, SENHA } from "./contas-pbi17";
 
-const SENHA = "senha-inicial-123";
 let db: Client;
 let admin: Headers;
 let cliente: Headers;
@@ -11,56 +10,8 @@ let bia: Headers;
 let idAna: string;
 let idBia: string;
 
-async function comCookie(token: string) {
-  const { makeSignature } = await import("better-auth/crypto");
-  const assinatura = await makeSignature(token, process.env.BETTER_AUTH_SECRET ?? "");
-  return new Headers({
-    cookie: `better-auth.session_token=${encodeURIComponent(`${token}.${assinatura}`)}`,
-  });
-}
-
 beforeAll(async () => {
-  db = await prepararBancoDeTeste("kolo_pbi17_test");
-  const { cadastrarCliente, abrirSessao } = await import("../../src/lib/auth");
-  const { criarArtista } = await import("../../src/modules/artists");
-
-  async function cadastrar(email: string) {
-    const resultado = await cadastrarCliente({
-      nome: "Pessoa",
-      email,
-      telefone: "11987654321",
-      senha: SENHA,
-    });
-    if (!resultado.ok) throw new Error("Falha ao preparar usuário");
-    return comCookie(resultado.token);
-  }
-  admin = await cadastrar("admin@pbi17.test");
-  cliente = await cadastrar("cliente@pbi17.test");
-  await db.query("UPDATE \"user\" SET papel = 'ADMIN' WHERE email = $1", ["admin@pbi17.test"]);
-
-  for (const [slug, nome] of [
-    ["ana", "Ana"],
-    ["bia", "Bia"],
-  ]) {
-    const criado = await criarArtista(
-      {
-        modo: "novo",
-        nome,
-        email: `${slug}@pbi17.test`,
-        telefone: "11987654321",
-        senha: SENHA,
-        slug,
-        estilos: [],
-      },
-      admin,
-    );
-    if (!criado.ok) throw new Error(criado.mensagem);
-  }
-  const ids = await db.query("SELECT id, slug FROM artist");
-  idAna = ids.rows.find((r) => r.slug === "ana").id;
-  idBia = ids.rows.find((r) => r.slug === "bia").id;
-  ana = await comCookie((await abrirSessao({ email: "ana@pbi17.test", senha: SENHA })).token);
-  bia = await comCookie((await abrirSessao({ email: "bia@pbi17.test", senha: SENHA })).token);
+  ({ db, admin, cliente, ana, bia, idAna, idBia } = await prepararContas("kolo_pbi17_test"));
 }, 120_000);
 
 afterAll(async () => {
