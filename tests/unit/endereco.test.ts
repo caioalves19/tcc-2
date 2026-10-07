@@ -40,7 +40,8 @@ describe("validarEndereco", () => {
   });
 
   it("aceita complemento ausente", () => {
-    const { complemento: _ignorado, ...semComplemento } = valido;
+    const semComplemento: Partial<EntradaEndereco> = { ...valido };
+    delete semComplemento.complemento;
     const resultado = validarEndereco(semComplemento as EntradaEndereco);
     expect(resultado.ok).toBe(true);
   });

@@ -32,10 +32,7 @@ export async function obterEnderecoDoUsuario(userId: string): Promise<EntradaEnd
 
 // Um endereço por usuário: o UNIQUE de user_id faz o segundo envio atualizar o mesmo registro.
 // O id é gerado aqui porque o Prisma gera o uuid no cliente, não há DEFAULT no banco.
-export async function salvarEnderecoDoUsuario(
-  userId: string,
-  dados: DadosEndereco,
-): Promise<void> {
+export async function salvarEnderecoDoUsuario(userId: string, dados: DadosEndereco): Promise<void> {
   await obterPool().query(
     `INSERT INTO address
        (id, user_id, destinatario, logradouro, numero, complemento, bairro, cidade, uf, cep)
