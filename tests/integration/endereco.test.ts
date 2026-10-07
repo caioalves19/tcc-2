@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Client } from "pg";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { prepararBancoDeTeste } from "./banco-de-teste";
 
 import { obterPool } from "../../src/lib/db";
 import { usuarioIdDaRequisicao } from "../../src/lib/auth";
@@ -37,6 +40,17 @@ const enderecoB: EntradaEndereco = {
 };
 
 const criados: string[] = [];
+
+let db: Client;
+beforeAll(async () => {
+  db = await prepararBancoDeTeste("kolo_pbi23_test");
+}, 120_000);
+afterAll(async () => {
+  if (db) {
+    await obterPool().end();
+    await db.end();
+  }
+});
 
 async function criarUsuario(nome: string): Promise<string> {
   const id = randomUUID();
