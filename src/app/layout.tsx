@@ -9,7 +9,9 @@ import "./globals.css";
 import { Cabecalho } from "@/components/layout/cabecalho";
 import { Rodape } from "@/components/layout/rodape";
 import { sessaoDaRequisicao } from "@/lib/auth";
+import { lerCarrinho } from "@/modules/orders";
 
+import { lerTokenDoCarrinho } from "./carrinho/cookie";
 import { sairAcao } from "./login/actions";
 
 const fonteCorpo = Plus_Jakarta_Sans({
@@ -42,8 +44,26 @@ async function sessaoDoLayout() {
   }
 }
 
+// RF11: unidades no carrinho para o cabeçalho; falha no banco vira 0, sem derrubar a página.
+async function itensNoCarrinhoDoLayout() {
+  try {
+    const carrinho = await lerCarrinho({
+      cabecalhos: await headers(),
+      tokenVisitante: await lerTokenDoCarrinho(),
+    });
+    return carrinho.ok ? carrinho.dados.unidades : 0;
+  } catch (erro) {
+    unstable_rethrow(erro);
+    console.error("Falha ao ler o carrinho no layout", erro);
+    return 0;
+  }
+}
+
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const sessao = await sessaoDoLayout();
+  const [sessao, itensNoCarrinho] = await Promise.all([
+    sessaoDoLayout(),
+    itensNoCarrinhoDoLayout(),
+  ]);
 
   return (
     <html lang="pt-BR" className={`${fonteCorpo.variable} ${fonteTitulo.variable}`}>
@@ -52,6 +72,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           logado={sessao !== null}
           administrador={sessao?.papel === "ADMIN"}
           acaoSair={sairAcao}
+          itensNoCarrinho={itensNoCarrinho}
         />
         <main className="flex-1">{children}</main>
         <Rodape />

@@ -136,14 +136,51 @@ Permitir a gestão completa da obra, conectando os cadastros auxiliares e o uplo
 
 **Contrato do upload (PBI-17):** só gravar em `artwork_image.url` uma chave que `processarImagem` devolveu com sucesso, e nunca uma chave recebida direto do navegador: é o `processarImagem` que confirma que o objeto é uma imagem JPEG, PNG ou WebP de verdade. Ao remover uma imagem da obra, remover também o original e a miniatura do bucket (a chave da miniatura sai de `chaveMiniatura`, na API pública do módulo `media`).
 
-- [ ] Cadastrar, listar, editar e excluir obras respeitando vínculos existentes
-- [ ] Gerenciar título, slug, descrição, artista, técnica, dimensões, ano e tags
-- [ ] Gerenciar múltiplas imagens, imagem principal, ordem e texto alternativo
-- [ ] Armazenar preço em centavos inteiros e validar valores e quantidade de estoque
-- [ ] Usar estoque padrão 1, editável pelo administrador
-- [ ] Gerenciar destaque e situações rascunho, disponível e esgotada, mantendo coerência com o estoque
-- [ ] Restringir todas as operações administrativas no servidor e preservar integridade dos vínculos
-- [ ] Cobrir criação, edição, exclusão e entradas inválidas com testes de integração no PostgreSQL real
+- [x] Cadastrar, listar, editar e excluir obras respeitando vínculos existentes
+- [x] Gerenciar título, slug, descrição, artista, técnica, dimensões, ano e tags
+- [x] Gerenciar múltiplas imagens, imagem principal, ordem e texto alternativo
+- [x] Armazenar preço em centavos inteiros e validar valores e quantidade de estoque
+- [x] Usar estoque padrão 1, editável pelo administrador
+- [x] Gerenciar destaque e situações rascunho, disponível e esgotada, mantendo coerência com o estoque
+- [x] Restringir todas as operações administrativas no servidor e preservar integridade dos vínculos
+- [x] Cobrir criação, edição, exclusão e entradas inválidas com testes de integração no PostgreSQL real
+
+**Decisões (registradas em 05/10/2026):**
+
+- O admin escolhe só entre rascunho e publicada. Publicada fica disponível com estoque > 0 e esgotada com 0, pela função `situacaoPorEstoque`, que os PBIs 25 e 28 devem reutilizar.
+- Obra em carrinho ou pedido recebe exclusão lógica (`excluido_em`); sem vínculo, é apagada de vez, com as imagens no R2.
+- Publicar exige pelo menos uma imagem, e o texto alternativo é obrigatório.
+- A obra nasce como rascunho, e as imagens entram na edição.
+- Contrato completo em [PBI-18](features/PBI-18.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-18-crud-obras`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+
+**Entregas:**
+
+- Módulo `src/modules/catalog`: regras, validação, obras e imagens, com API pública em `index.ts` e funções puras para o navegador em `cliente.ts`.
+- Tela `/admin/obras`, com link no menu do admin, e Server Actions em `src/app/admin/obras/actions.ts`.
+- Componentes `GestaoObras` e `GestaoImagensObra`; este usa o `UploadImagem` do PBI-17.
+- `comoAdmin`, `validar` e `ErroGestao` agora saem pela API pública de `artists`.
+- Correção no teste do seed do wizard, que falhava no Windows (`execFileSync("npx")`).
+
+**Evidências:**
+
+- `npm run lint` e `npm run typecheck` sem erros.
+- `npm test` com 197 testes, e a integração com 71 testes no PostgreSQL real (11 novos do catálogo, R2 simulado).
+- `npm run build` compilando.
+- No navegador, com o Postgres local:
+  - cadastro como rascunho;
+  - publicação recusada sem imagem;
+  - disponível e esgotada pelo estoque;
+  - última imagem protegida;
+  - exclusão;
+  - sem rolagem horizontal em 320 e 1440 px;
+  - axe-core 4.10.2 sem violações.
+
+**Pendências:**
+
+- O envio real de imagem pela tela depende das chaves do R2 no `.env`. O fluxo está testado com o R2 simulado, e o envio real ao bucket já foi comprovado no PBI-17.
+- Os PBIs 19, 20 e 21 precisam filtrar `excluido_em IS NULL` e a situação.
 
 ---
 
@@ -244,9 +281,42 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 Consome as obras, preços e disponibilidade do PBI-18. Não precisa esperar o endereço (23), o catálogo (19) ou a ficha (20) para implementar a persistência e as operações do carrinho; os pontos de entrada nas telas públicas serão integrados conforme elas estiverem prontas.
 
-- [ ] Adicionar, remover e alterar quantidades de obras disponíveis; recalcular valores no servidor
-- [ ] Persistir o carrinho do visitante por cookie e o do usuário no banco entre sessões; tratar a entrada na conta sem perder itens
-- [ ] Testar quantidades inválidas, indisponibilidade e persistência; carrinho não reserva estoque
+- [x] Adicionar, remover e alterar quantidades de obras disponíveis; recalcular valores no servidor
+- [x] Persistir o carrinho do visitante por cookie e o do usuário no banco entre sessões; tratar a entrada na conta sem perder itens
+- [x] Testar quantidades inválidas, indisponibilidade e persistência; carrinho não reserva estoque
+
+**Decisões (registradas em 06/10/2026):**
+
+- Entram a página `/carrinho` e a contagem no cabeçalho; o botão "Adicionar ao carrinho" fica pronto para o PBI-20.
+- Obra que fica indisponível continua no carrinho, marcada e fora do total.
+- Ao entrar na conta, os carrinhos se juntam, com a maior quantidade limitada ao estoque.
+- Contrato completo em [PBI-24](features/PBI-24.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-24-carrinho`, criada em cima do PBI-18 (PR #35). Para encerrar o DoD, falta integrar depois do #35, com revisão de outro integrante e aprovação do PR.
+
+**Entregas:**
+
+- Módulo `src/modules/orders`: regras, carrinho e junção.
+- Página `/carrinho` e Server Actions em `src/app/carrinho`, com o cookie em `cookie.ts`.
+- Componentes `CarrinhoCompras` e `BotaoAdicionarAoCarrinho`.
+- Cabeçalho com link e contagem.
+- Junção dos carrinhos nas actions de login e de cadastro.
+
+**Evidências:**
+
+- `npm run lint` e `npm run typecheck` sem erros.
+- `npm test` com 212 testes, e a integração com 76 testes no PostgreSQL real (5 novos do carrinho).
+- `npm run build` compilando.
+- No navegador, com o Postgres local:
+  - como visitante, ver, alterar e remover, com o cabeçalho acompanhando;
+  - ao entrar na conta, o carrinho passou para a conta e o cookie foi apagado;
+  - sem rolagem horizontal em 320 e 1440 px;
+  - axe-core 4.10.2 sem violações.
+
+**Pendências:**
+
+- O PBI-20 precisa ligar o botão de adicionar na página da obra.
+- O PBI-26 precisa habilitar "Finalizar compra", recusar itens indisponíveis e chamar a reserva do PBI-25.
 
 ### PBI-25 — Reserva temporária e concorrência de estoque
 
@@ -448,9 +518,11 @@ Consome reservas (25), confirmação/reconciliação de pagamento (28) e operaç
 
 Usa autenticação/validação, banco e rate limit da base existente, além de credenciais Turnstile. Não depende de loja, agenda, portfólio ou estorno.
 
-- [ ] Disponibilizar formulário de contato com validação no servidor e persistência em contact_message
-- [ ] Validar Cloudflare Turnstile e limitar taxa de envio
-- [ ] Testar rejeição de token inválido e entradas inválidas; sem novos e-mails transacionais
+- [x] Disponibilizar formulário de contato com validação no servidor e persistência em contact_message
+- [x] Validar Cloudflare Turnstile e limitar taxa de envio
+- [x] Testar rejeição de token inválido e entradas inválidas; sem novos e-mails transacionais
+
+**Situação:** implementação concluída e testes unitários/integração finalizados na branch `feat/pbi-44-contato-antibot`. Aguardando revisão de código/PR.
 
 ## Etapa 6 — Qualidade, operação e entrega
 
