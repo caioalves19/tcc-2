@@ -14,4 +14,6 @@ export {
   excluirArtista,
 } from "./artistas";
 export { verificarAcessoAdmin } from "./acesso";
+// Usados também pelo catálogo (PBI-18): mesma checagem de ADMIN dentro da transação.
+export { comoAdmin, validar, ErroGestao } from "./acesso";
 export { listarArtistasParaWizard } from "./publico";

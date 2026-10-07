@@ -114,11 +114,13 @@ it("RNF08 compartilha o limite entre consulta de opções e revisão da preferê
 });
 
 it("o seed disponibiliza tamanhos iniciais sem duplicar ao repetir", async () => {
-  const { execFileSync } = await import("node:child_process");
+  // execSync passa pelo shell, como nos outros testes: no Windows o npx é npx.cmd e o
+  // execFileSync("npx") falha com ENOENT.
+  const { execSync } = await import("node:child_process");
   await db.query("DELETE FROM size_tier");
   const env = { ...process.env, SEED_ADMIN_PASSWORD: "" };
-  execFileSync("npx", ["tsx", "prisma/seed.ts"], { env, stdio: "pipe" });
-  execFileSync("npx", ["tsx", "prisma/seed.ts"], { env, stdio: "pipe" });
+  execSync("npx tsx prisma/seed.ts", { env, stdio: "pipe" });
+  execSync("npx tsx prisma/seed.ts", { env, stdio: "pipe" });
   const tamanhos = await db.query("SELECT nome FROM size_tier ORDER BY ordem");
   expect(tamanhos.rows).toEqual([{ nome: "Pequena" }, { nome: "Média" }, { nome: "Grande" }]);
 }, 30_000);

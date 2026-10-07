@@ -136,14 +136,51 @@ Permitir a gestão completa da obra, conectando os cadastros auxiliares e o uplo
 
 **Contrato do upload (PBI-17):** só gravar em `artwork_image.url` uma chave que `processarImagem` devolveu com sucesso, e nunca uma chave recebida direto do navegador: é o `processarImagem` que confirma que o objeto é uma imagem JPEG, PNG ou WebP de verdade. Ao remover uma imagem da obra, remover também o original e a miniatura do bucket (a chave da miniatura sai de `chaveMiniatura`, na API pública do módulo `media`).
 
-- [ ] Cadastrar, listar, editar e excluir obras respeitando vínculos existentes
-- [ ] Gerenciar título, slug, descrição, artista, técnica, dimensões, ano e tags
-- [ ] Gerenciar múltiplas imagens, imagem principal, ordem e texto alternativo
-- [ ] Armazenar preço em centavos inteiros e validar valores e quantidade de estoque
-- [ ] Usar estoque padrão 1, editável pelo administrador
-- [ ] Gerenciar destaque e situações rascunho, disponível e esgotada, mantendo coerência com o estoque
-- [ ] Restringir todas as operações administrativas no servidor e preservar integridade dos vínculos
-- [ ] Cobrir criação, edição, exclusão e entradas inválidas com testes de integração no PostgreSQL real
+- [x] Cadastrar, listar, editar e excluir obras respeitando vínculos existentes
+- [x] Gerenciar título, slug, descrição, artista, técnica, dimensões, ano e tags
+- [x] Gerenciar múltiplas imagens, imagem principal, ordem e texto alternativo
+- [x] Armazenar preço em centavos inteiros e validar valores e quantidade de estoque
+- [x] Usar estoque padrão 1, editável pelo administrador
+- [x] Gerenciar destaque e situações rascunho, disponível e esgotada, mantendo coerência com o estoque
+- [x] Restringir todas as operações administrativas no servidor e preservar integridade dos vínculos
+- [x] Cobrir criação, edição, exclusão e entradas inválidas com testes de integração no PostgreSQL real
+
+**Decisões (registradas em 05/10/2026):**
+
+- O admin escolhe só entre rascunho e publicada. Publicada fica disponível com estoque > 0 e esgotada com 0, pela função `situacaoPorEstoque`, que os PBIs 25 e 28 devem reutilizar.
+- Obra em carrinho ou pedido recebe exclusão lógica (`excluido_em`); sem vínculo, é apagada de vez, com as imagens no R2.
+- Publicar exige pelo menos uma imagem, e o texto alternativo é obrigatório.
+- A obra nasce como rascunho, e as imagens entram na edição.
+- Contrato completo em [PBI-18](features/PBI-18.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-18-crud-obras`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+
+**Entregas:**
+
+- Módulo `src/modules/catalog`: regras, validação, obras e imagens, com API pública em `index.ts` e funções puras para o navegador em `cliente.ts`.
+- Tela `/admin/obras`, com link no menu do admin, e Server Actions em `src/app/admin/obras/actions.ts`.
+- Componentes `GestaoObras` e `GestaoImagensObra`; este usa o `UploadImagem` do PBI-17.
+- `comoAdmin`, `validar` e `ErroGestao` agora saem pela API pública de `artists`.
+- Correção no teste do seed do wizard, que falhava no Windows (`execFileSync("npx")`).
+
+**Evidências:**
+
+- `npm run lint` e `npm run typecheck` sem erros.
+- `npm test` com 197 testes, e a integração com 71 testes no PostgreSQL real (11 novos do catálogo, R2 simulado).
+- `npm run build` compilando.
+- No navegador, com o Postgres local:
+  - cadastro como rascunho;
+  - publicação recusada sem imagem;
+  - disponível e esgotada pelo estoque;
+  - última imagem protegida;
+  - exclusão;
+  - sem rolagem horizontal em 320 e 1440 px;
+  - axe-core 4.10.2 sem violações.
+
+**Pendências:**
+
+- O envio real de imagem pela tela depende das chaves do R2 no `.env`. O fluxo está testado com o R2 simulado, e o envio real ao bucket já foi comprovado no PBI-17.
+- Os PBIs 19, 20 e 21 precisam filtrar `excluido_em IS NULL` e a situação.
 
 ---
 
