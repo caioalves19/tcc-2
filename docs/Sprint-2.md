@@ -518,9 +518,11 @@ Consome reservas (25), confirmação/reconciliação de pagamento (28) e operaç
 
 Usa autenticação/validação, banco e rate limit da base existente, além de credenciais Turnstile. Não depende de loja, agenda, portfólio ou estorno.
 
-- [ ] Disponibilizar formulário de contato com validação no servidor e persistência em contact_message
-- [ ] Validar Cloudflare Turnstile e limitar taxa de envio
-- [ ] Testar rejeição de token inválido e entradas inválidas; sem novos e-mails transacionais
+- [x] Disponibilizar formulário de contato com validação no servidor e persistência em contact_message
+- [x] Validar Cloudflare Turnstile e limitar taxa de envio
+- [x] Testar rejeição de token inválido e entradas inválidas; sem novos e-mails transacionais
+
+**Situação:** implementação concluída e testes unitários/integração finalizados na branch `feat/pbi-44-contato-antibot`. Aguardando revisão de código/PR.
 
 ## Etapa 6 — Qualidade, operação e entrega
 
