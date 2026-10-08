@@ -542,3 +542,45 @@ it("RF12 recusa dentro da transação desfaz tudo: o pedido anterior continua pe
   );
   expect(reservaTela.rows).toEqual([{ session_id: sessaoJade }]);
 });
+
+it("RF12/RN01 só o dono lê o pedido criado no checkout", async () => {
+  const { finalizarCompra, lerPedido } = await import("../../src/modules/orders");
+  const xilo = await obraPublicada("ler-xilo", "220,00", 2);
+  const dono = await novoCliente("kaio@pbi26.test");
+  const outro = await novoCliente("lia@pbi26.test");
+  await noCarrinho(dono, [[xilo, 2]]);
+  const agora = new Date();
+  const criado = await finalizarCompra({ modalidade: "RETIRADA" }, dono, { agora });
+  if (!criado.ok) throw new Error(criado.mensagem);
+  const { numero } = criado.dados;
+
+  expect(await lerPedido(numero, dono)).toEqual({
+    numero,
+    situacao: "PENDENTE",
+    modalidade: "RETIRADA",
+    criadoEm: agora,
+    reservaExpiraEm: new Date(agora.getTime() + 10 * 60 * 1000),
+    itens: [{ obraId: xilo, titulo: "Obra ler-xilo", precoCentavos: 22000, quantidade: 2 }],
+    endereco: {
+      destinatario: "Lucas Silveira",
+      cep: "01327-000",
+      logradouro: "Rua Treze de Maio",
+      numero: "450",
+      complemento: "Apto 82",
+      bairro: "Bela Vista",
+      cidade: "São Paulo",
+      uf: "SP",
+    },
+    subtotalCentavos: 44000,
+    freteCentavos: 0,
+    totalCentavos: 44000,
+  });
+  const visitante = { cabecalhos: new Headers(), tokenVisitante: null };
+  for (const [quem, contexto] of [
+    ["outro cliente", outro],
+    ["visitante", visitante],
+  ] as const)
+    expect(await lerPedido(numero, contexto), quem).toBeNull();
+  for (const inexistente of ["20991231-ZZZZZZ", "", "x".repeat(500)])
+    expect(await lerPedido(inexistente, dono), inexistente).toBeNull();
+});

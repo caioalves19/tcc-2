@@ -21,3 +21,5 @@ export type {
   ResultadoFinalizar,
   ResumoCheckout,
 } from "./checkout";
+export { lerPedido } from "./pedido";
+export type { PedidoResumo, SituacaoPedido } from "./pedido";
