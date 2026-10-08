@@ -88,7 +88,9 @@ it("RF11 lista as obras com preço e total do servidor, quantidade só para tira
     within(unica).getByRole("button", { name: "Remover Metrópole em chamas do carrinho" }),
   );
   await waitFor(() => expect(acoes.remover).toHaveBeenCalledWith("obra-1"));
-  expect(screen.getByRole("button", { name: "Finalizar compra" })).toHaveProperty("disabled", true);
+  expect(screen.getByRole("link", { name: "Finalizar compra" }).getAttribute("href")).toBe(
+    "/checkout",
+  );
 });
 
 it("RN11 marca a obra indisponível e não oferece quantidade", () => {
@@ -105,4 +107,8 @@ it("RN11 marca a obra indisponível e não oferece quantidade", () => {
   expect(
     within(unica).getByRole("button", { name: "Remover Metrópole em chamas do carrinho" }),
   ).toBeDefined();
+  // PBI-26: o checkout recusaria; o caminho fica fechado até remover a obra.
+  expect(screen.queryByRole("link", { name: "Finalizar compra" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Finalizar compra" })).toHaveProperty("disabled", true);
+  expect(screen.getByText("Remova as obras indisponíveis para finalizar.")).toBeDefined();
 });
