@@ -125,3 +125,31 @@ it("RF09 pagina de 12 em 12 sem repetir nem pular obra, mesmo com datas iguais",
     expect((await listarCatalogo({ pagina, ordem: "qualquer" })).pagina, String(pagina)).toBe(1);
   expect((await listarCatalogo({ ordem: "qualquer" })).ordem).toBe("recentes");
 });
+
+it("RF09/RN11 ordena por recentes, menor e maior preço e destaque, sempre com as esgotadas no fim", async () => {
+  const { listarCatalogo } = await import("../../src/modules/catalog");
+  await cadastrar({ titulo: "Obra A", slug: "obra-a", preco: "300,00" }, "2026-01-01T12:00:00Z");
+  await cadastrar(
+    { titulo: "Obra B", slug: "obra-b", preco: "100,00", destaque: true },
+    "2026-02-01T12:00:00Z",
+  );
+  await cadastrar({ titulo: "Obra C", slug: "obra-c", preco: "200,00" }, "2026-03-01T12:00:00Z");
+  await cadastrar(
+    { titulo: "Obra D", slug: "obra-d", preco: "50,00", estoque: "0" },
+    "2026-04-01T12:00:00Z",
+  );
+  await cadastrar(
+    { titulo: "Obra E", slug: "obra-e", preco: "500,00", estoque: "0", destaque: true },
+    "2026-05-01T12:00:00Z",
+  );
+
+  const ordem = async (criterio: string) => {
+    const pagina = await listarCatalogo({ ordem: criterio });
+    expect(pagina.ordem).toBe(criterio);
+    return pagina.obras.map((o) => o.slug);
+  };
+  expect(await ordem("recentes")).toEqual(["obra-c", "obra-b", "obra-a", "obra-e", "obra-d"]);
+  expect(await ordem("menor-preco")).toEqual(["obra-b", "obra-c", "obra-a", "obra-d", "obra-e"]);
+  expect(await ordem("maior-preco")).toEqual(["obra-a", "obra-c", "obra-b", "obra-e", "obra-d"]);
+  expect(await ordem("destaque")).toEqual(["obra-b", "obra-c", "obra-a", "obra-e", "obra-d"]);
+});

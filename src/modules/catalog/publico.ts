@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Prisma } from "../../../generated/prisma/client";
 import { obterPrisma } from "../../lib/prisma";
 
 // Vitrine pública (PBI-20): o que qualquer visitante pode ver de uma obra, sem login (RN01).
@@ -94,7 +95,16 @@ export async function outrasObrasDoArtista(
   });
 }
 
-export type OrdemCatalogo = "recentes";
+export const ORDENS_CATALOGO = ["recentes", "menor-preco", "maior-preco", "destaque"] as const;
+export type OrdemCatalogo = (typeof ORDENS_CATALOGO)[number];
+
+// Critério escolhido, aplicado depois de "disponíveis antes das esgotadas" e antes do id.
+const CRITERIO: Record<OrdemCatalogo, Prisma.ArtworkOrderByWithRelationInput[]> = {
+  recentes: [{ createdAt: "desc" }],
+  "menor-preco": [{ priceCents: "asc" }],
+  "maior-preco": [{ priceCents: "desc" }],
+  destaque: [{ featured: "desc" }, { createdAt: "desc" }],
+};
 
 export type PaginaCatalogo = {
   obras: CardObra[];
@@ -109,12 +119,12 @@ export const OBRAS_POR_PAGINA = 12;
 // Vem da URL (?pagina=2&ordem=...): qualquer valor fora do esperado volta ao padrão.
 const schemaCatalogo = z.object({
   pagina: z.coerce.number().int().min(1).max(1_000_000).catch(1),
-  ordem: z.enum(["recentes"]).catch("recentes"),
+  ordem: z.enum(ORDENS_CATALOGO).catch("recentes"),
 });
 
-// RF09/RN11: só obras publicadas e não arquivadas. As disponíveis vêm antes das esgotadas (o enum
-// no Postgres segue RASCUNHO, DISPONIVEL, ESGOTADA); depois, as mais recentes. O id desempata
-// datas iguais, para uma obra não repetir nem sumir entre as páginas.
+// RF09/RN11: só obras publicadas e não arquivadas. Em qualquer ordenação, as disponíveis vêm
+// antes das esgotadas (o enum no Postgres segue RASCUNHO, DISPONIVEL, ESGOTADA); depois, o
+// critério escolhido. O id desempata, para uma obra não repetir nem sumir entre as páginas.
 export async function listarCatalogo(entrada: unknown): Promise<PaginaCatalogo> {
   const { pagina, ordem } = schemaCatalogo.parse(
     typeof entrada === "object" && entrada !== null ? entrada : {},
@@ -126,7 +136,7 @@ export async function listarCatalogo(entrada: unknown): Promise<PaginaCatalogo> 
     prisma.artwork.findMany({
       where: onde,
       include: { images: { orderBy: [{ primary: "desc" }, { order: "asc" }], take: 1 } },
-      orderBy: [{ status: "asc" }, { createdAt: "desc" }, { id: "asc" }],
+      orderBy: [{ status: "asc" }, ...CRITERIO[ordem], { id: "asc" }],
       skip: (pagina - 1) * OBRAS_POR_PAGINA,
       take: OBRAS_POR_PAGINA,
     }),
