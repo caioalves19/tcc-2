@@ -384,3 +384,11 @@ export async function trocarSenha(
     throw erro;
   }
 }
+
+export async function usuarioIdDaRequisicao(cabecalhos: Headers): Promise<string | null> {
+  const sessao = await obterAuth().api.getSession({
+    headers: cabecalhos,
+    query: { disableCookieCache: true, disableRefresh: true },
+  });
+  return sessao === null ? null : sessao.user.id;
+}

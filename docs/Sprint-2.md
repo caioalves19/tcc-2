@@ -271,9 +271,9 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 **Referências:** RF05 · **Prioridade:** P0 · **Deps:** Sprint 1 (concluída).
 
-- [ ] Permitir cadastrar e editar um único endereço por usuário autenticado
-- [ ] Validar campos no servidor e impedir leitura ou alteração do endereço de outro usuário
-- [ ] Testar persistência, atualização e isolamento entre usuários
+- [X] Permitir cadastrar e editar um único endereço por usuário autenticado
+- [X] Validar campos no servidor e impedir leitura ou alteração do endereço de outro usuário
+- [X] Testar persistência, atualização e isolamento entre usuários
 
 ### PBI-24 — Carrinho persistente
 
