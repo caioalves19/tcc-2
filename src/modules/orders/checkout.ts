@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
+import { Prisma } from "../../../generated/prisma/client";
 import { obterPrisma } from "../../lib/prisma";
 import { validarEndereco, type DadosEndereco } from "../endereco/index";
 import { lerCarrinho, sessaoAtiva, type ContextoCarrinho } from "./carrinho";
@@ -143,6 +144,19 @@ const schemaFinalizar = z.object({
   modalidade: z.literal("RETIRADA", { error: "Escolha uma forma de entrega válida." }),
 });
 
+// O número é sorteado; se repetir um existente, a transação inteira cai e roda de novo.
+const TENTATIVAS_NUMERO = 5;
+const FALHA_FINALIZAR = {
+  ok: false,
+  erro: "falha",
+  mensagem: "Não foi possível finalizar a compra agora. Tente novamente.",
+} as const;
+
+// Nesta transação o único UNIQUE que pode falhar é o número do pedido.
+function numeroRepetido(erro: unknown): boolean {
+  return erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === "P2002";
+}
+
 // RF12/RF15: o pedido PENDENTE e a reserva de 10 minutos nascem na mesma transação; se um
 // falha, o outro não fica. O pedido guarda cópias de endereço, títulos e preços.
 export async function finalizarCompra(
@@ -163,7 +177,7 @@ export async function finalizarCompra(
   if (!montado.ok) return montado;
   const { resumo, comprador } = montado.dados;
 
-  return obterPrisma().$transaction(async (tx): Promise<ResultadoFinalizar> => {
+  const criar = async (tx: Prisma.TransactionClient): Promise<ResultadoFinalizar> => {
     // Cliques simultâneos da mesma conta se enfileiram aqui: cada um vê o pedido que o anterior
     // criou e o cancela, e sobra um PENDENTE só. Ordem das travas: usuário → sessão → obras.
     await tx.$queryRaw`SELECT id FROM "user" WHERE id = ${comprador.userId}::uuid FOR UPDATE`;
@@ -243,5 +257,19 @@ export async function finalizarCompra(
       },
     });
     return { ok: true, dados: { numero, expiraEm: reserva.dados.expiraEm } };
-  });
+  };
+
+  for (let tentativa = 1; tentativa <= TENTATIVAS_NUMERO; tentativa++) {
+    try {
+      return await obterPrisma().$transaction(criar);
+    } catch (erro) {
+      if (numeroRepetido(erro) && tentativa < TENTATIVAS_NUMERO) continue;
+      console.error(
+        "Falha ao finalizar a compra",
+        erro instanceof Error ? erro.name : "erro desconhecido",
+      );
+      return FALHA_FINALIZAR;
+    }
+  }
+  return FALHA_FINALIZAR;
 }

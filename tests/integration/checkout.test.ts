@@ -478,3 +478,30 @@ it("RN04 cliques simultâneos deixam um só pedido pendente, e dois clientes nã
   );
   expect(vendidos.rows).toEqual([{ pedidos: 1 }]);
 });
+
+it("RF12 número repetido tenta de novo; se não sair, nada fica gravado (nem pedido nem reserva)", async () => {
+  const { finalizarCompra } = await import("../../src/modules/orders");
+  const RETIRADA = { modalidade: "RETIRADA" };
+  const lambe = await obraPublicada("colisao-lambe", "45,00", 2);
+  const ivo = await novoCliente("ivo@pbi26.test");
+  await noCarrinho(ivo, [[lambe, 1]]);
+  const existente = await finalizarCompra(RETIRADA, ivo);
+  if (!existente.ok) throw new Error(existente.mensagem);
+  const repetido = existente.dados.numero;
+
+  const email = "heitor@pbi26.test";
+  const heitor = await novoCliente(email);
+  await noCarrinho(heitor, [[lambe, 1]]);
+  expect(await finalizarCompra(RETIRADA, heitor, { gerarNumero: () => repetido })).toMatchObject({
+    ok: false,
+    erro: "falha",
+  });
+  expect(await rastrosDe(email)).toEqual({ pedidos: 0, reservas: 0 });
+
+  const numeros = [repetido, repetido, "20991231-ZZZZZZ"];
+  const sorteio = await finalizarCompra(RETIRADA, heitor, {
+    gerarNumero: () => numeros.shift() ?? "nunca",
+  });
+  expect(sorteio).toMatchObject({ ok: true, dados: { numero: "20991231-ZZZZZZ" } });
+  expect(await rastrosDe(email)).toEqual({ pedidos: 1, reservas: 1 });
+});
