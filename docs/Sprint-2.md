@@ -206,12 +206,26 @@ Construir a grade pública de obras integrada ao acervo persistido.
 
 Apresentar a obra em uma página pública com galeria e ficha técnica.
 
-- [ ] Renderizar a galeria respeitando imagem principal e ordenação cadastradas
-- [ ] Exibir ficha técnica, artista, descrição, preço e disponibilidade
-- [ ] Identificar claramente obras esgotadas
-- [ ] Tratar obra inexistente e impedir acesso público a rascunhos, inclusive por URL direta
-- [ ] Usar imagens responsivas e textos alternativos
-- [ ] Testar acesso público, galeria e estados de obra disponível, esgotada, inexistente e rascunho
+- [x] Renderizar a galeria respeitando imagem principal e ordenação cadastradas
+- [x] Exibir ficha técnica, artista, descrição, preço e disponibilidade
+- [x] Identificar claramente obras esgotadas
+- [x] Tratar obra inexistente e impedir acesso público a rascunhos, inclusive por URL direta
+- [x] Usar imagens responsivas e textos alternativos
+- [x] Testar acesso público, galeria e estados de obra disponível, esgotada, inexistente e rascunho
+
+**Decisões:**
+
+- Rota `/obras/[slug]`; rascunho, arquivada e inexistente respondem 404 com "Obra não encontrada".
+- Entram também o botão de WhatsApp com a obra na mensagem, "Outras obras do artista" (até 4) e a trilha de navegação. Sem seletor de quantidade: o botão adiciona 1.
+- `CardObra` (dados e componente) fica pronto para o catálogo (PBI-19) e a home (PBI-21).
+- Contrato completo em [PBI-20](features/PBI-20.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-20-pagina-obra`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR. A conferência com as fotos reais do R2 ficou pendente (sem `R2_PUBLIC_URL` no ambiente da validação).
+
+**Pendências:**
+
+- Os links para `/obras` (trilha e "Voltar ao catálogo") dependem do PBI-19.
+- `artwork` não tem data de cadastro: o PBI-19 precisa definir a ordenação por "recentes".
 
 ### PBI-21 — Home com destaques
 
