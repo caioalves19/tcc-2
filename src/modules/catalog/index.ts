@@ -9,3 +9,5 @@ export {
 export { centavosParaTexto, precoEmCentavos, situacaoPorEstoque } from "./regras";
 export type { SituacaoObra } from "./regras";
 export type { EntradaEditarObra, EntradaObra } from "./validacao";
+export { lerObraPublica } from "./publico";
+export type { ImagemPublica, ObraPublica } from "./publico";
