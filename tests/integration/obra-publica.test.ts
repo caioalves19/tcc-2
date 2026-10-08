@@ -5,9 +5,10 @@ import { prepararContas } from "./contas-pbi17";
 let db: Client;
 let admin: Headers;
 let idAna: string;
+let idBia: string;
 
 beforeAll(async () => {
-  ({ db, admin, idAna } = await prepararContas("kolo_pbi20_obra_publica_test"));
+  ({ db, admin, idAna, idBia } = await prepararContas("kolo_pbi20_obra_publica_test"));
 }, 120_000);
 afterAll(async () => {
   await db?.end();
@@ -122,4 +123,49 @@ it("RN11/RN01 esgotada continua visível como indisponível; rascunho, arquivada
     "x".repeat(500),
   ])
     expect(await lerObraPublica(slug), slug).toBeNull();
+});
+
+it("RF10 outras obras: até 4 do mesmo artista, sem a atual, rascunho ou arquivada; destaque e disponíveis primeiro", async () => {
+  const { lerObraPublica, outrasObrasDoArtista } = await import("../../src/modules/catalog");
+  const daBia = (titulo: string, slug: string, extra: Partial<Ficha> = {}) =>
+    cadastrar({ titulo, slug, preco: "500,00", artistaId: idBia, ...extra }, [
+      { chave: `obras/bia/${slug}.png`, alt: `Foto de ${titulo}`, principal: true },
+    ]);
+  await daBia("Atual", "bia-atual");
+  await daBia("Zeta", "bia-zeta", { destaque: true, tecnica: "Spray", dimensoes: "65 × 65 cm" });
+  await daBia("Ômega", "bia-omega", { destaque: true, estoque: "0" });
+  await daBia("Alfa", "bia-alfa");
+  await daBia("Beta", "bia-beta");
+  await daBia("Gama", "bia-gama", { estoque: "0" });
+  await daBia("Delta", "bia-delta");
+  await cadastrar(
+    { titulo: "Rascunho da Bia", slug: "bia-rascunho", preco: "500,00", artistaId: idBia },
+    [{ chave: "obras/bia/r.png", alt: "Foto", principal: true }],
+    false,
+  );
+  const arquivada = await daBia("Arquivada da Bia", "bia-arquivada");
+  await db.query("UPDATE artwork SET excluido_em = now() WHERE id = $1", [arquivada]);
+
+  const atual = await lerObraPublica("bia-atual");
+  if (!atual) throw new Error("Obra atual não encontrada");
+  const outras = await outrasObrasDoArtista(atual);
+  expect(outras.map((o) => o.slug)).toEqual(["bia-zeta", "bia-omega", "bia-alfa", "bia-beta"]);
+  expect(outras[0]).toEqual({
+    slug: "bia-zeta",
+    titulo: "Zeta",
+    tecnica: "Spray",
+    dimensoes: "65 × 65 cm",
+    precoCentavos: 50000,
+    disponivel: true,
+    imagem: { chave: "obras/bia/bia-zeta.png", textoAlternativo: "Foto de Zeta" },
+  });
+  expect(outras[1]).toMatchObject({ slug: "bia-omega", disponivel: false });
+  expect((await outrasObrasDoArtista(atual, 10)).map((o) => o.slug)).toEqual([
+    "bia-zeta",
+    "bia-omega",
+    "bia-alfa",
+    "bia-beta",
+    "bia-delta",
+    "bia-gama",
+  ]);
 });

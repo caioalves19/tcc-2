@@ -49,3 +49,46 @@ export async function lerObraPublica(slug: string): Promise<ObraPublica | null> 
     })),
   };
 }
+
+// Card de obra da vitrine: o PBI-20 usa em "Outras obras do artista", e o catálogo (PBI-19)
+// pode reaproveitar. A imagem é a principal (ou a primeira, se nenhuma estiver marcada).
+export type CardObra = {
+  slug: string;
+  titulo: string;
+  tecnica: string | null;
+  dimensoes: string | null;
+  precoCentavos: number;
+  disponivel: boolean;
+  imagem: { chave: string; textoAlternativo: string } | null;
+};
+
+// Destaques primeiro; depois as disponíveis antes das esgotadas (o enum no Postgres segue a
+// ordem RASCUNHO, DISPONIVEL, ESGOTADA) e, por fim, o título.
+export async function outrasObrasDoArtista(
+  obra: Pick<ObraPublica, "id" | "artista">,
+  limite = 4,
+): Promise<CardObra[]> {
+  const obras = await obterPrisma().artwork.findMany({
+    where: {
+      artistId: obra.artista.id,
+      id: { not: obra.id },
+      deletedAt: null,
+      status: { not: "RASCUNHO" },
+    },
+    include: { images: { orderBy: [{ primary: "desc" }, { order: "asc" }], take: 1 } },
+    orderBy: [{ featured: "desc" }, { status: "asc" }, { title: "asc" }],
+    take: limite,
+  });
+  return obras.map((o) => {
+    const imagem = o.images[0];
+    return {
+      slug: o.slug,
+      titulo: o.title,
+      tecnica: o.technique,
+      dimensoes: o.dimensions,
+      precoCentavos: o.priceCents,
+      disponivel: o.status === "DISPONIVEL" && o.stockQuantity > 0,
+      imagem: imagem ? { chave: imagem.url, textoAlternativo: imagem.altText ?? o.title } : null,
+    };
+  });
+}
