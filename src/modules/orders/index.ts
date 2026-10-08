@@ -10,4 +10,4 @@ export {
   prorrogarReserva,
   reservarItens,
 } from "./reserva";
-export type { ItemReserva, ResultadoReserva } from "./reserva";
+export type { ItemReserva, ResultadoBaixa, ResultadoReserva } from "./reserva";

@@ -127,7 +127,7 @@ it("RN03 a reserva vence em 10 minutos e uma nova da mesma sessão substitui a a
   const { reservarItens } = await import("../../src/modules/orders");
   const unica = await obraPublicada("t3-unica", 1);
   const outra = await obraPublicada("t3-outra", 1);
-  const [primeira, segunda] = await novasSessoes(2);
+  const [primeira, segunda] = (await novasSessoes(2)) as [string, string];
   const depois = (ms: number) => new Date(T0.getTime() + ms);
 
   expect(await reservarItens(primeira, [{ obraId: unica, quantidade: 1 }], T0)).toMatchObject({
@@ -155,7 +155,7 @@ it("RN06 com Pix/boleto pendente a reserva ativa é prorrogada; a vencida não v
   const { prorrogarReserva, reservarItens } = await import("../../src/modules/orders");
   const unica = await obraPublicada("t4-unica", 1);
   const tardia = await obraPublicada("t4-tardia", 1);
-  const [pix, concorrente, atrasada] = await novasSessoes(3);
+  const [pix, concorrente, atrasada] = (await novasSessoes(3)) as [string, string, string];
   const depois = (min: number) => new Date(T0.getTime() + min * 60_000);
   const vencimentoPix = depois(30);
 
@@ -179,7 +179,7 @@ it("RN03 a limpeza apaga só reservas vencidas e pode rodar de novo sem efeito",
   const { liberarReservasExpiradas, reservarItens } = await import("../../src/modules/orders");
   const vencida = await obraPublicada("t5-vencida", 1);
   const ativa = await obraPublicada("t5-ativa", 1);
-  const [antiga, recente] = await novasSessoes(2);
+  const [antiga, recente] = (await novasSessoes(2)) as [string, string];
   const limpeza = new Date("2026-10-08T13:00:00.000Z");
 
   await reservarItens(antiga, [{ obraId: vencida, quantidade: 1 }], T0);
@@ -204,7 +204,7 @@ it("RF15 o estoque livre desconta reservas ativas e volta quando a sessão desis
   const tiragem = await obraPublicada("t5-tiragem", 3);
   const rascunho = await obraPublicada("t5-rascunho", 2);
   await db.query("UPDATE artwork SET situacao = 'RASCUNHO' WHERE id = $1", [rascunho]);
-  const [sessao] = await novasSessoes(1);
+  const [sessao] = (await novasSessoes(1)) as [string];
 
   expect(await estoqueDisponivel(tiragem, T0)).toBe(3);
   await reservarItens(sessao, [{ obraId: tiragem, quantidade: 2 }], T0);
@@ -219,7 +219,7 @@ it("RF15 o estoque livre desconta reservas ativas e volta quando a sessão desis
 it("RN05/RN11 pagamento aprovado com reserva ativa baixa o estoque e esgota a peça", async () => {
   const { baixarEstoque, reservarItens } = await import("../../src/modules/orders");
   const unica = await obraPublicada("t6-unica", 1);
-  const [sessao] = await novasSessoes(1);
+  const [sessao] = (await novasSessoes(1)) as [string];
   await reservarItens(sessao, [{ obraId: unica, quantidade: 1 }], T0);
 
   expect(
@@ -237,4 +237,36 @@ it("RN05/RN11 pagamento aprovado com reserva ativa baixa o estoque e esgota a pe
     unica,
   ]);
   expect(reservas.rowCount).toBe(0);
+});
+
+it("RN06 aprovação depois da reserva vencida: baixa se sobrou unidade, senão sem_estoque", async () => {
+  const { baixarEstoque, reservarItens } = await import("../../src/modules/orders");
+  const sobrou = await obraPublicada("t6-sobrou", 1);
+  const tomada = await obraPublicada("t6-tomada", 1);
+  const [atrasada, outra] = (await novasSessoes(2)) as [string, string];
+  const depois = (min: number) => new Date(T0.getTime() + min * 60_000);
+
+  await reservarItens(atrasada, [{ obraId: sobrou, quantidade: 1 }], T0);
+  expect(await baixarEstoque(atrasada, [{ obraId: sobrou, quantidade: 1 }], depois(15))).toEqual({
+    ok: true,
+  });
+
+  await reservarItens(atrasada, [{ obraId: tomada, quantidade: 1 }], T0);
+  await reservarItens(outra, [{ obraId: tomada, quantidade: 1 }], depois(12));
+  // Sessão apagada (logout) cai no mesmo caminho: sessaoId null.
+  for (const sessao of [atrasada, null]) {
+    expect(await baixarEstoque(sessao, [{ obraId: tomada, quantidade: 1 }], depois(15))).toEqual({
+      ok: false,
+      erro: "sem_estoque",
+      obras: [tomada],
+    });
+  }
+  const { rows } = await db.query(
+    "SELECT id, quantidade_estoque FROM artwork WHERE id = ANY($1::uuid[]) ORDER BY titulo",
+    [[sobrou, tomada]],
+  );
+  expect(rows).toEqual([
+    { id: sobrou, quantidade_estoque: 0 },
+    { id: tomada, quantidade_estoque: 1 },
+  ]);
 });
