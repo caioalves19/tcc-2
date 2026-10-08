@@ -19,9 +19,12 @@ export type ObraPublica = {
   imagens: ImagemPublica[];
 };
 
+// RN01/RN11: rascunho e obra arquivada não existem para o público, nem pela URL direta; a
+// esgotada continua visível, identificada como indisponível. Slug fora do formato nem consulta.
 export async function lerObraPublica(slug: string): Promise<ObraPublica | null> {
-  const obra = await obterPrisma().artwork.findUnique({
-    where: { slug },
+  if (!/^[a-z0-9-]{1,160}$/.test(slug)) return null;
+  const obra = await obterPrisma().artwork.findFirst({
+    where: { slug, deletedAt: null, status: { not: "RASCUNHO" } },
     include: {
       artist: { include: { user: true } },
       images: { orderBy: { order: "asc" } },

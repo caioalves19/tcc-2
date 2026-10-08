@@ -93,3 +93,33 @@ it("RF10 a obra publicada aparece com ficha, artista e galeria na ordem cadastra
     ],
   });
 });
+
+it("RN11/RN01 esgotada continua visível como indisponível; rascunho, arquivada e inexistente não existem para o público", async () => {
+  const { lerObraPublica } = await import("../../src/modules/catalog");
+  const imagem = [{ chave: "obras/ana/x.png", alt: "Foto", principal: true }];
+  await cadastrar(
+    { titulo: "Muralha líquida", slug: "muralha-liquida", preco: "3.500,00", estoque: "0" },
+    imagem,
+  );
+  await cadastrar({ titulo: "Esboço", slug: "esboco-rascunho", preco: "100,00" }, imagem, false);
+  const arquivada = await cadastrar(
+    { titulo: "Arquivada", slug: "obra-arquivada", preco: "100,00" },
+    imagem,
+  );
+  await db.query("UPDATE artwork SET excluido_em = now() WHERE id = $1", [arquivada]);
+
+  expect(await lerObraPublica("muralha-liquida")).toMatchObject({
+    titulo: "Muralha líquida",
+    precoCentavos: 350000,
+    disponivel: false,
+  });
+  for (const slug of [
+    "esboco-rascunho",
+    "obra-arquivada",
+    "nao-existe",
+    "",
+    "../admin",
+    "x".repeat(500),
+  ])
+    expect(await lerObraPublica(slug), slug).toBeNull();
+});
