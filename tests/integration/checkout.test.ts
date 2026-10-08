@@ -333,3 +333,55 @@ it("RF12/RN07 finalizar recusado não deixa pedido nem reserva, e valores enviad
     },
   ]);
 });
+
+async function pedidosDe(email: string) {
+  const { rows } = await db.query(
+    `SELECT o.numero, o.situacao, o.session_id FROM "order" o JOIN "user" u ON u.id = o.user_id
+      WHERE u.email = $1 ORDER BY o.criado_em`,
+    [email],
+  );
+  return rows;
+}
+
+it("RF12 novo finalizar cancela o pedido pendente abandonado, inclusive de outra sessão, e libera a reserva dele", async () => {
+  const { finalizarCompra } = await import("../../src/modules/orders");
+  const { abrirSessao } = await import("../../src/lib/auth");
+  const RETIRADA = { modalidade: "RETIRADA" };
+  const gravura = await obraPublicada("troca-gravura", "500,00", 1);
+  const adesivo = await obraPublicada("troca-adesivo", "12,00", 10);
+  const email = "eva@pbi26.test";
+  const notebook = await novoCliente(email);
+  const sessaoNotebook = await sessaoDe(email);
+
+  await noCarrinho(notebook, [[gravura, 1]]);
+  const primeiro = await finalizarCompra(RETIRADA, notebook);
+  if (!primeiro.ok) throw new Error(primeiro.mensagem);
+  await noCarrinho(notebook, [[adesivo, 2]]);
+  const segundo = await finalizarCompra(RETIRADA, notebook);
+  if (!segundo.ok) throw new Error(segundo.mensagem);
+  expect(await pedidosDe(email)).toEqual([
+    { numero: primeiro.dados.numero, situacao: "CANCELADO", session_id: sessaoNotebook },
+    { numero: segundo.dados.numero, situacao: "PENDENTE", session_id: sessaoNotebook },
+  ]);
+
+  // A mesma conta entra no celular e finaliza de lá: o pedido do notebook é cancelado e a
+  // reserva que ele segurava sai, para a peça não ficar presa duas vezes.
+  const celular = {
+    cabecalhos: await comCookie((await abrirSessao({ email, senha: SENHA })).token),
+    tokenVisitante: null,
+  };
+  const terceiro = await finalizarCompra(RETIRADA, celular);
+  if (!terceiro.ok) throw new Error(terceiro.mensagem);
+  const pedidos = await pedidosDe(email);
+  expect(pedidos.map((p) => p.situacao)).toEqual(["CANCELADO", "CANCELADO", "PENDENTE"]);
+  const sessaoCelular = pedidos[2].session_id;
+  expect(sessaoCelular).not.toBe(sessaoNotebook);
+  const reservas = await db.query(
+    "SELECT session_id, artwork_id, quantidade FROM artwork_reservation WHERE artwork_id = ANY($1::uuid[]) ORDER BY quantidade",
+    [[gravura, adesivo]],
+  );
+  expect(reservas.rows).toEqual([
+    { session_id: sessaoCelular, artwork_id: gravura, quantidade: 1 },
+    { session_id: sessaoCelular, artwork_id: adesivo, quantidade: 2 },
+  ]);
+});

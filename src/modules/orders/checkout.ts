@@ -4,7 +4,7 @@ import { obterPrisma } from "../../lib/prisma";
 import { validarEndereco, type DadosEndereco } from "../endereco/index";
 import { lerCarrinho, sessaoAtiva, type ContextoCarrinho } from "./carrinho";
 import { numeroDoPedido } from "./regras";
-import { estoqueDisponivel, reservarItens } from "./reserva";
+import { reservarItens } from "./reserva";
 
 // PBI-26: retirada no ateliê é a modalidade mínima, sem custo. As outras entram no PBI-42.
 export type Modalidade = "RETIRADA";
@@ -66,14 +66,23 @@ async function montarResumo(
   if (carrinho.dados.itens.length === 0)
     return { ok: false, erro: "carrinho_vazio", mensagem: "Seu carrinho está vazio." };
 
-  // RN02/RN11: a obra precisa seguir à venda, e as unidades presas por outra sessão não contam.
-  const indisponiveis: string[] = [];
-  for (const item of carrinho.dados.itens)
-    if (
-      !item.disponivel ||
-      (await estoqueDisponivel(item.obraId, agora, sessaoId)) < item.quantidade
-    )
-      indisponiveis.push(item.obraId);
+  // RN02/RN11: a obra precisa seguir à venda, e as unidades presas por outros clientes não
+  // contam. As reservas do próprio cliente, em qualquer sessão, são de um pedido dele: o
+  // abandonado o finalizar cancela, e o com pagamento em aberto o leva de volta ao pedido.
+  // A conferência com trava fica com reservarItens, dentro da transação.
+  const presas = await obterPrisma().artworkReservation.groupBy({
+    by: ["artworkId"],
+    where: {
+      artworkId: { in: carrinho.dados.itens.map((i) => i.obraId) },
+      expiresAt: { gt: agora },
+      session: { userId: { not: userId } },
+    },
+    _sum: { quantity: true },
+  });
+  const presasDe = (id: string) => presas.find((r) => r.artworkId === id)?._sum.quantity ?? 0;
+  const indisponiveis = carrinho.dados.itens
+    .filter((i) => !i.disponivel || i.estoque - presasDe(i.obraId) < i.quantidade)
+    .map((i) => i.obraId);
   if (indisponiveis.length > 0)
     return {
       ok: false,
@@ -154,6 +163,20 @@ export async function finalizarCompra(
   const { resumo, comprador } = montado.dados;
 
   return obterPrisma().$transaction(async (tx): Promise<ResultadoFinalizar> => {
+    // Pedido PENDENTE sem pagamento emitido foi abandonado: o novo checkout o cancela e solta as
+    // unidades que ele segurava, mesmo que tenham sido reservadas em outra sessão da conta.
+    const abandonados = await tx.order.findMany({
+      where: { userId: comprador.userId, status: "PENDENTE", payments: { none: {} } },
+    });
+    if (abandonados.length > 0) {
+      await tx.order.updateMany({
+        where: { id: { in: abandonados.map((p) => p.id) } },
+        data: { status: "CANCELADO" },
+      });
+      const sessoes = abandonados.flatMap((p) => (p.sessionId ? [p.sessionId] : []));
+      await tx.artworkReservation.deleteMany({ where: { sessionId: { in: sessoes } } });
+    }
+
     const reserva = await reservarItens(
       comprador.sessaoId,
       resumo.itens.map((i) => ({ obraId: i.obraId, quantidade: i.quantidade })),
