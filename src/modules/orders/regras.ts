@@ -51,3 +51,32 @@ export function numeroDoPedido(agora: Date, aleatorio: Uint8Array): string {
   ).join("");
   return `${data.replaceAll("-", "")}-${sufixo}`;
 }
+
+type SituacaoNoBanco = "PENDENTE" | "PAGO" | "PROCESSANDO" | "ENVIADO" | "ENTREGUE" | "CANCELADO";
+type SituacaoPagamento = "PENDENTE" | "APROVADO" | "RECUSADO" | "ESTORNADO";
+
+export type SituacaoCliente =
+  "AGUARDANDO_PAGAMENTO" | "PAGO" | "EM_PREPARACAO" | "ENVIADO" | "ENTREGUE" | "CANCELADO";
+
+const DEPOIS_DO_PAGAMENTO = {
+  PAGO: "PAGO",
+  PROCESSANDO: "EM_PREPARACAO",
+  ENVIADO: "ENVIADO",
+  ENTREGUE: "ENTREGUE",
+} as const satisfies Partial<Record<SituacaoNoBanco, SituacaoCliente>>;
+
+// RF16 (PBI-29): o que o cliente vê do pedido. Tentativa de compra que nunca teve pagamento fica
+// oculta (null): o checkout abandonado e o cancelado por um novo "Finalizar" (PBI-26). O PBI-30
+// pode reaproveitar a mesma leitura.
+export function situacaoParaCliente(pedido: {
+  situacao: SituacaoNoBanco;
+  pagamentos: readonly SituacaoPagamento[];
+  reservaAtiva: boolean;
+}): SituacaoCliente | null {
+  if (pedido.situacao === "PENDENTE")
+    return pedido.reservaAtiva || pedido.pagamentos.includes("PENDENTE")
+      ? "AGUARDANDO_PAGAMENTO"
+      : null;
+  if (pedido.situacao === "CANCELADO") return pedido.pagamentos.length > 0 ? "CANCELADO" : null;
+  return DEPOIS_DO_PAGAMENTO[pedido.situacao];
+}
