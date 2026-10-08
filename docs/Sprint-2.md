@@ -326,10 +326,32 @@ Consome as obras, preços e disponibilidade do PBI-18. Não precisa esperar o en
 
 Consome estoque e obras do PBI-18 e a sessão existente. A API de reserva pode ser construída em paralelo ao carrinho (24), recebendo obra e quantidade; a ligação entre ambos será feita no checkout (26).
 
-- [ ] Reservar unidades no checkout por transação no PostgreSQL, sem ultrapassar estoque em acessos concorrentes
-- [ ] Implementar expiração de 10 minutos e liberação por tarefa pg-boss, com reexecução segura
-- [ ] Documentar e testar o ciclo entre reserva inicial e pagamento pendente de Pix/boleto conforme RN06; reconciliar aprovação após expiração sem vender além do estoque
-- [ ] Testar concorrência, expiração e liberação usando PostgreSQL real
+- [x] Reservar unidades no checkout por transação no PostgreSQL, sem ultrapassar estoque em acessos concorrentes
+- [x] Implementar expiração de 10 minutos e liberação por tarefa pg-boss, com reexecução segura
+- [x] Documentar e testar o ciclo entre reserva inicial e pagamento pendente de Pix/boleto conforme RN06; reconciliar aprovação após expiração sem vender além do estoque
+- [x] Testar concorrência, expiração e liberação usando PostgreSQL real
+
+**Decisões (registradas em 07/10/2026):**
+
+- A reserva fica ligada à sessão, sem migração. Para Pix e boleto, o checkout prorroga a reserva até o vencimento do meio de pagamento (`prorrogarReserva`). Enquanto houver reserva prorrogada, um novo checkout da mesma sessão recebe `pendente` e não a substitui.
+- Pagamento aprovado depois que a obra saiu de venda é honrado se ainda houver unidade.
+- O worker do pg-boss sobe no `instrumentation.ts`, sem script nem serviço novo. O `pg-boss` entra como dependência, já prevista no ESCOPO.
+- A baixa do estoque (`baixarEstoque`) fica neste PBI; o PBI-28 a chama dentro da transação do webhook (`tx`), que também garante a idempotência pelo evento único. Reserva vencida baixa só se nenhuma outra sessão segura a unidade; senão volta `sem_estoque` para o estorno (PBI-43).
+- Carrinho e vitrine não mudam: as reservas só pesam no checkout.
+- Contrato completo e ciclo do RN06 em [PBI-25](features/PBI-25.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-25-reserva-estoque`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+
+**Entregas:**
+
+- `src/modules/orders/reserva.ts`: reservar, prorrogar, liberar, estoque livre e baixa, com API pública em `index.ts`.
+- `src/modules/orders/tarefas.ts` e `src/lib/tarefas.ts`: fila `liberar-reservas-expiradas` a cada minuto, iniciada no `src/instrumentation.ts`.
+
+**Pendências:**
+
+- O PBI-26 precisa chamar `reservarItens` ao finalizar a compra e guardar no pedido a sessão que reservou.
+- O PBI-27 precisa prorrogar a reserva com o vencimento do Pix/boleto.
+- O PBI-28 precisa chamar `baixarEstoque` com o pagamento aprovado, na mesma transação do evento e do pedido, e tratar `sem_estoque`.
 
 ### PBI-26 — Checkout e criação do pedido
 
