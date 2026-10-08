@@ -270,3 +270,21 @@ it("RN06 aprovação depois da reserva vencida: baixa se sobrou unidade, senão 
     { id: tomada, quantidade_estoque: 1 },
   ]);
 });
+
+it("RN06 a prorrogação não encurta nem libera a reserva por engano", async () => {
+  const { prorrogarReserva, reservarItens } = await import("../../src/modules/orders");
+  const unica = await obraPublicada("t4-validacao", 1);
+  const [pix, concorrente] = (await novasSessoes(2)) as [string, string];
+  const depois = (min: number) => new Date(T0.getTime() + min * 60_000);
+
+  await reservarItens(pix, [{ obraId: unica, quantidade: 1 }], T0);
+  for (const ate of [depois(-1), depois(2), depois(5), new Date(Number.NaN)]) {
+    expect(await prorrogarReserva(pix, ate, depois(5))).toMatchObject({
+      ok: false,
+      erro: "invalido",
+    });
+  }
+  expect(
+    await reservarItens(concorrente, [{ obraId: unica, quantidade: 1 }], depois(9)),
+  ).toMatchObject({ ok: false, erro: "indisponivel" });
+});

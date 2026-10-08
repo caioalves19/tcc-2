@@ -97,18 +97,38 @@ export async function reservarItens(
 }
 
 // RN06: Pix e boleto deixam o pedido pendente; a reserva ainda ativa passa a vencer
-// junto com o meio de pagamento. Reserva já vencida não é ressuscitada.
+// junto com o meio de pagamento. Reserva já vencida não é ressuscitada, e a prorrogação
+// nunca encurta a reserva. Trava as obras como a reserva, para não disputar a virada do prazo.
 export async function prorrogarReserva(
   sessaoId: string,
   ate: Date,
   agora: Date = new Date(),
-): Promise<{ ok: true; dados: { expiraEm: Date } } | { ok: false; erro: "sem_reserva" }> {
-  const { count } = await obterPrisma().artworkReservation.updateMany({
-    where: { sessionId: sessaoId, expiresAt: { gt: agora } },
-    data: { expiresAt: ate },
+): Promise<
+  | { ok: true; dados: { expiraEm: Date } }
+  | { ok: false; erro: "sem_reserva" }
+  | { ok: false; erro: "invalido"; mensagem: string }
+> {
+  if (Number.isNaN(ate.getTime()) || ate <= agora)
+    return { ok: false, erro: "invalido", mensagem: "Prazo da prorrogação inválido." };
+  return obterPrisma().$transaction(async (tx) => {
+    const ativas = await tx.artworkReservation.findMany({
+      where: { sessionId: sessaoId, expiresAt: { gt: agora } },
+    });
+    if (ativas.length === 0) return { ok: false, erro: "sem_reserva" };
+    await travarObras(tx, [...new Set(ativas.map((r) => r.artworkId))].sort(), sessaoId, agora);
+    if (ativas.some((r) => r.expiresAt > ate))
+      return {
+        ok: false,
+        erro: "invalido",
+        mensagem: "A prorrogação não pode encurtar a reserva.",
+      };
+    const { count } = await tx.artworkReservation.updateMany({
+      where: { sessionId: sessaoId, expiresAt: { gt: agora } },
+      data: { expiresAt: ate },
+    });
+    if (count === 0) return { ok: false, erro: "sem_reserva" };
+    return { ok: true, dados: { expiraEm: ate } };
   });
-  if (count === 0) return { ok: false, erro: "sem_reserva" };
-  return { ok: true, dados: { expiraEm: ate } };
 }
 
 // Tarefa do pg-boss: apaga as reservas vencidas. A disponibilidade já ignora as vencidas,
