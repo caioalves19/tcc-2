@@ -8,7 +8,7 @@ export function CardObra({ obra, baseImagens }: { obra: DadosCard; baseImagens: 
   const base = baseImagens?.replace(/\/+$/, "") ?? null;
   const ficha = [obra.dimensoes, obra.tecnica].filter(Boolean).join(" · ");
   return (
-    <article className="relative grid overflow-hidden rounded-card border-2 border-neutro-grafite bg-[var(--kolo-superficie)] text-[var(--kolo-superficie-texto)] shadow-adesivo-sm focus-within:ring-3 focus-within:ring-ring/50">
+    <article className="relative grid grid-rows-[auto_1fr] overflow-hidden rounded-card border-2 border-neutro-grafite bg-[var(--kolo-superficie)] text-[var(--kolo-superficie-texto)] shadow-adesivo-sm focus-within:ring-3 focus-within:ring-ring/50">
       <div className="relative aspect-[4/3] border-b-2 border-neutro-grafite">
         {base && obra.imagem ? (
           <Image
@@ -27,7 +27,7 @@ export function CardObra({ obra, baseImagens }: { obra: DadosCard; baseImagens: 
           </span>
         )}
       </div>
-      <div className="grid gap-1 p-4">
+      <div className="grid content-start gap-1 p-4">
         <p className="font-display text-etiqueta uppercase text-[var(--kolo-link)]">
           {obra.artistaNome}
         </p>
