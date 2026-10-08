@@ -86,6 +86,8 @@ os testes, como o relógio do PBI-25.
   antes. O estoque, esse sim, é conferido sob trava.
 - **Carrinho vazio com Pix em aberto:** o finalizar responde `carrinho_vazio` antes de levar ao
   pedido pendente. Hoje não acontece, porque o carrinho só é limpo na aprovação.
+- **Erro de banco no resumo:** a leitura do resumo roda antes da transação e, se o banco falhar ali,
+  `finalizarCompra` lança em vez de devolver `falha`. A tela mostra a mensagem genérica.
 - **Logout no meio do pagamento:** herda o limite do PBI-25. A reserva cai com a sessão, e
   `order.session_id` vira `NULL` (`ON DELETE SET NULL`); a baixa do PBI-28 segue pelo caminho
   `sessaoId` `null`.
@@ -124,6 +126,9 @@ páginas `/checkout` e `/checkout/[numero]`.
   pedido e o vencimento. Gravar o `payment` `PENDENTE`, que é o que faz o checkout tratar o pedido como
   "em aberto".
 - **PBI-28:** chamar `baixarEstoque(order.session_id, itens, agora, tx)` com o pagamento aprovado e
-  limpar o carrinho do cliente na mesma transação.
+  limpar o carrinho do cliente na mesma transação. Travar a linha do pedido (`FOR UPDATE`) e conferir
+  a situação depois da trava: um novo checkout pode ter cancelado o pedido sem `payment` `PENDENTE`
+  (cartão aprovado direto) no mesmo instante. Pedido `CANCELADO` com pagamento aprovado segue para
+  estorno (PBI-43), como o `sem_estoque`.
 - **PBI-29/30:** listar os pedidos e tratar o `PENDENTE` abandonado (veja "Limites conhecidos").
 - **PBI-42:** novas modalidades no enum `DeliveryMethod`, com o frete calculado no servidor.
