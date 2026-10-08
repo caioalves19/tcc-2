@@ -78,3 +78,18 @@ export async function reservarItens(
     return { ok: true, dados: { expiraEm } };
   });
 }
+
+// RN06: Pix e boleto deixam o pedido pendente; a reserva ainda ativa passa a vencer
+// junto com o meio de pagamento. Reserva já vencida não é ressuscitada.
+export async function prorrogarReserva(
+  sessaoId: string,
+  ate: Date,
+  agora: Date = new Date(),
+): Promise<{ ok: true; dados: { expiraEm: Date } } | { ok: false; erro: "sem_reserva" }> {
+  const { count } = await obterPrisma().artworkReservation.updateMany({
+    where: { sessionId: sessaoId, expiresAt: { gt: agora } },
+    data: { expiresAt: ate },
+  });
+  if (count === 0) return { ok: false, erro: "sem_reserva" };
+  return { ok: true, dados: { expiraEm: ate } };
+}

@@ -150,3 +150,27 @@ it("RN03 a reserva vence em 10 minutos e uma nova da mesma sessão substitui a a
   );
   expect(rows).toEqual([{ artwork_id: outra }]);
 });
+
+it("RN06 com Pix/boleto pendente a reserva ativa é prorrogada; a vencida não volta", async () => {
+  const { prorrogarReserva, reservarItens } = await import("../../src/modules/orders");
+  const unica = await obraPublicada("t4-unica", 1);
+  const tardia = await obraPublicada("t4-tardia", 1);
+  const [pix, concorrente, atrasada] = await novasSessoes(3);
+  const depois = (min: number) => new Date(T0.getTime() + min * 60_000);
+  const vencimentoPix = depois(30);
+
+  await reservarItens(pix, [{ obraId: unica, quantidade: 1 }], T0);
+  expect(await prorrogarReserva(pix, vencimentoPix, depois(5))).toEqual({
+    ok: true,
+    dados: { expiraEm: vencimentoPix },
+  });
+  expect(
+    await reservarItens(concorrente, [{ obraId: unica, quantidade: 1 }], depois(20)),
+  ).toMatchObject({ ok: false, erro: "indisponivel" });
+
+  await reservarItens(atrasada, [{ obraId: tardia, quantidade: 1 }], T0);
+  expect(await prorrogarReserva(atrasada, vencimentoPix, depois(11))).toEqual({
+    ok: false,
+    erro: "sem_reserva",
+  });
+});

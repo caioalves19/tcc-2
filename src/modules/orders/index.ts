@@ -2,5 +2,5 @@ export { adicionarAoCarrinho, alterarQuantidade, lerCarrinho, removerDoCarrinho 
 export type { ContextoCarrinho, ResultadoCarrinho } from "./carrinho";
 export { juntarCarrinhos } from "./juntar";
 export { quantidadeValida, resumirCarrinho } from "./regras";
-export { reservarItens } from "./reserva";
+export { prorrogarReserva, reservarItens } from "./reserva";
 export type { ItemReserva, ResultadoReserva } from "./reserva";
