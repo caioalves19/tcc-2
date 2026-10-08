@@ -1,5 +1,6 @@
 import { ClipboardCheck, Handshake, MessageCircle } from "lucide-react";
 import { cn } from "cn";
+import { unstable_rethrow } from "next/navigation";
 
 import { Marca } from "@/components/layout/marca";
 import { Mascote } from "@/components/layout/mascote";
@@ -33,10 +34,21 @@ const PASSOS_TATUAGEM = [
   },
 ] as const;
 
+// Se o banco falhar, a home segue no ar sem a seção de destaques, como o layout faz com a sessão.
+async function destaquesDaHome() {
+  try {
+    return await listarDestaques();
+  } catch (erro) {
+    unstable_rethrow(erro);
+    console.error("Falha ao ler os destaques da home", erro);
+    return [];
+  }
+}
+
 // RF07: vitrine institucional do Kolô. Os destaques vêm do banco a cada visita (o layout já
 // lê a sessão, então a página não é gerada no build).
 export default async function Home() {
-  const destaques = await listarDestaques();
+  const destaques = await destaquesDaHome();
   return (
     <>
       <section className="mx-auto grid max-w-pagina items-center gap-10 px-margem py-16 md:grid-cols-[1fr_auto] md:px-margem-desktop md:py-24">

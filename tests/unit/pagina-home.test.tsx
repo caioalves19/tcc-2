@@ -73,3 +73,14 @@ it("RF07 sem destaques, a home segue inteira e sem seção vazia", async () => {
   expect(screen.getByRole("region", { name: /tatuagem/i })).toBeDefined();
   expect(screen.getByRole("region", { name: /parede branca/i })).toBeDefined();
 });
+
+it("RF07 se o banco falhar nos destaques, a home segue no ar sem a seção (como o layout)", async () => {
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  destaques.mockRejectedValue(new Error("banco fora"));
+  render(await Home());
+  expect(screen.queryByRole("region", { name: "Obras em destaque" })).toBeNull();
+  expect(screen.getByRole("link", { name: "Ver obras" }).getAttribute("href")).toBe("/obras");
+  expect(screen.queryByText(/banco fora/)).toBeNull();
+  expect(log).toHaveBeenCalledOnce();
+  log.mockRestore();
+});
