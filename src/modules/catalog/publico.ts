@@ -92,3 +92,46 @@ export async function outrasObrasDoArtista(
     };
   });
 }
+
+export type OrdemCatalogo = "recentes";
+
+export type PaginaCatalogo = {
+  obras: CardObra[];
+  total: number;
+  pagina: number;
+  totalPaginas: number;
+  ordem: OrdemCatalogo;
+};
+
+// RF09/RN11: só obras publicadas e não arquivadas. As disponíveis vêm antes das esgotadas (o enum
+// no Postgres segue RASCUNHO, DISPONIVEL, ESGOTADA); depois, as mais recentes.
+export async function listarCatalogo(): Promise<PaginaCatalogo> {
+  const onde = { deletedAt: null, status: { not: "RASCUNHO" as const } };
+  const prisma = obterPrisma();
+  const [total, obras] = await Promise.all([
+    prisma.artwork.count({ where: onde }),
+    prisma.artwork.findMany({
+      where: onde,
+      include: { images: { orderBy: [{ primary: "desc" }, { order: "asc" }], take: 1 } },
+      orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+    }),
+  ]);
+  return {
+    obras: obras.map((o) => {
+      const imagem = o.images[0];
+      return {
+        slug: o.slug,
+        titulo: o.title,
+        tecnica: o.technique,
+        dimensoes: o.dimensions,
+        precoCentavos: o.priceCents,
+        disponivel: o.status === "DISPONIVEL" && o.stockQuantity > 0,
+        imagem: imagem ? { chave: imagem.url, textoAlternativo: imagem.altText ?? o.title } : null,
+      };
+    }),
+    total,
+    pagina: 1,
+    totalPaginas: 1,
+    ordem: "recentes",
+  };
+}

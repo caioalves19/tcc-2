@@ -9,5 +9,11 @@ export {
 export { centavosParaTexto, precoEmCentavos, situacaoPorEstoque } from "./regras";
 export type { SituacaoObra } from "./regras";
 export type { EntradaEditarObra, EntradaObra } from "./validacao";
-export { lerObraPublica, outrasObrasDoArtista } from "./publico";
-export type { CardObra, ImagemPublica, ObraPublica } from "./publico";
+export { lerObraPublica, listarCatalogo, outrasObrasDoArtista } from "./publico";
+export type {
+  CardObra,
+  ImagemPublica,
+  ObraPublica,
+  OrdemCatalogo,
+  PaginaCatalogo,
+} from "./publico";
