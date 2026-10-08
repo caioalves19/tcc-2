@@ -89,6 +89,11 @@ O estoque nunca fica negativo, porque a baixa confere as unidades livres dentro 
   pendente da sessão antes de chamar `reservarItens`, e não depender só do `pendente`.
 - **Prorrogação na virada do prazo:** se outra sessão levou a peça logo depois do vencimento, a
   prorrogação volta `sem_reserva`. O PBI-27 não deve emitir o Pix/boleto com essas unidades.
+- **Limpeza e prorrogação na mesma virada:** o job do pg-boss apaga reservas sem travar as obras.
+  Bem no vencimento, com duas ou mais reservas da mesma sessão, a limpeza e uma prorrogação podem
+  travar as mesmas linhas em ordem cruzada. O Postgres detecta (`40P01`) e aborta uma das duas: a
+  limpeza roda de novo no minuto seguinte, sem efeito colateral; a prorrogação lança erro, e o
+  PBI-27 deve tratá-lo como falha (não emitir o Pix/boleto com as unidades garantidas).
 - **Baixa de obra que saiu de venda:** se o pagamento é aprovado depois que o admin despublicou ou
   arquivou a obra, a baixa acontece mesmo assim (o cliente pagou), e a obra em rascunho continua
   em rascunho.
