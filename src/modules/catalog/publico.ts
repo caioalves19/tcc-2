@@ -57,12 +57,33 @@ export async function lerObraPublica(slug: string): Promise<ObraPublica | null> 
 export type CardObra = {
   slug: string;
   titulo: string;
+  artistaNome: string;
   tecnica: string | null;
   dimensoes: string | null;
   precoCentavos: number;
   disponivel: boolean;
   imagem: { chave: string; textoAlternativo: string } | null;
 };
+
+// O que o card precisa: o artista e só a imagem principal (ou a primeira).
+const INCLUI_CARD = {
+  artist: { include: { user: true } },
+  images: { orderBy: [{ primary: "desc" }, { order: "asc" }], take: 1 },
+} satisfies Prisma.ArtworkInclude;
+
+function paraCard(o: Prisma.ArtworkGetPayload<{ include: typeof INCLUI_CARD }>): CardObra {
+  const imagem = o.images[0];
+  return {
+    slug: o.slug,
+    titulo: o.title,
+    artistaNome: o.artist.user.name,
+    tecnica: o.technique,
+    dimensoes: o.dimensions,
+    precoCentavos: o.priceCents,
+    disponivel: o.status === "DISPONIVEL" && o.stockQuantity > 0,
+    imagem: imagem ? { chave: imagem.url, textoAlternativo: imagem.altText ?? o.title } : null,
+  };
+}
 
 // Destaques primeiro; depois as disponíveis antes das esgotadas (o enum no Postgres segue a
 // ordem RASCUNHO, DISPONIVEL, ESGOTADA) e, por fim, o título.
@@ -77,22 +98,11 @@ export async function outrasObrasDoArtista(
       deletedAt: null,
       status: { not: "RASCUNHO" },
     },
-    include: { images: { orderBy: [{ primary: "desc" }, { order: "asc" }], take: 1 } },
+    include: INCLUI_CARD,
     orderBy: [{ featured: "desc" }, { status: "asc" }, { title: "asc" }],
     take: limite,
   });
-  return obras.map((o) => {
-    const imagem = o.images[0];
-    return {
-      slug: o.slug,
-      titulo: o.title,
-      tecnica: o.technique,
-      dimensoes: o.dimensions,
-      precoCentavos: o.priceCents,
-      disponivel: o.status === "DISPONIVEL" && o.stockQuantity > 0,
-      imagem: imagem ? { chave: imagem.url, textoAlternativo: imagem.altText ?? o.title } : null,
-    };
-  });
+  return obras.map(paraCard);
 }
 
 export const ORDENS_CATALOGO = ["recentes", "menor-preco", "maior-preco", "destaque"] as const;
@@ -135,25 +145,14 @@ export async function listarCatalogo(entrada: unknown): Promise<PaginaCatalogo> 
     prisma.artwork.count({ where: onde }),
     prisma.artwork.findMany({
       where: onde,
-      include: { images: { orderBy: [{ primary: "desc" }, { order: "asc" }], take: 1 } },
+      include: INCLUI_CARD,
       orderBy: [{ status: "asc" }, ...CRITERIO[ordem], { id: "asc" }],
       skip: (pagina - 1) * OBRAS_POR_PAGINA,
       take: OBRAS_POR_PAGINA,
     }),
   ]);
   return {
-    obras: obras.map((o) => {
-      const imagem = o.images[0];
-      return {
-        slug: o.slug,
-        titulo: o.title,
-        tecnica: o.technique,
-        dimensoes: o.dimensions,
-        precoCentavos: o.priceCents,
-        disponivel: o.status === "DISPONIVEL" && o.stockQuantity > 0,
-        imagem: imagem ? { chave: imagem.url, textoAlternativo: imagem.altText ?? o.title } : null,
-      };
-    }),
+    obras: obras.map(paraCard),
     total,
     pagina,
     totalPaginas: Math.ceil(total / OBRAS_POR_PAGINA),

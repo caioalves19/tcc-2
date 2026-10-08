@@ -157,6 +157,7 @@ it("RF10 outras obras: até 4 do mesmo artista, sem a atual, rascunho ou arquiva
     dimensoes: "65 × 65 cm",
     precoCentavos: 50000,
     disponivel: true,
+    artistaNome: "Bia",
     imagem: { chave: "obras/bia/bia-zeta.png", textoAlternativo: "Foto de Zeta" },
   });
   expect(outras[1]).toMatchObject({ slug: "bia-omega", disponivel: false });

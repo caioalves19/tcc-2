@@ -153,3 +153,37 @@ it("RF09/RN11 ordena por recentes, menor e maior preço e destaque, sempre com a
   expect(await ordem("maior-preco")).toEqual(["obra-a", "obra-c", "obra-b", "obra-e", "obra-d"]);
   expect(await ordem("destaque")).toEqual(["obra-b", "obra-c", "obra-a", "obra-e", "obra-d"]);
 });
+
+it("RF09 o card do catálogo traz foto, título, artista, ficha resumida, preço e disponibilidade", async () => {
+  const { listarCatalogo } = await import("../../src/modules/catalog");
+  const { editarObra } = await import("../../src/modules/catalog");
+  const id = await cadastrar(
+    { titulo: "Tinta fresca", slug: "tinta-fresca", preco: "1.650,00" },
+    "2026-02-01T12:00:00Z",
+  );
+  const ficha = {
+    id,
+    titulo: "Tinta fresca",
+    slug: "tinta-fresca",
+    artistaId: idAna,
+    preco: "1.650,00",
+    tecnica: "Spray e pigmento",
+    dimensoes: "65 × 65 cm",
+    publicada: true,
+  };
+  const editada = await editarObra(ficha, admin);
+  if (!editada.ok) throw new Error(editada.mensagem);
+
+  expect((await listarCatalogo({})).obras).toEqual([
+    {
+      slug: "tinta-fresca",
+      titulo: "Tinta fresca",
+      artistaNome: "Ana",
+      tecnica: "Spray e pigmento",
+      dimensoes: "65 × 65 cm",
+      precoCentavos: 165000,
+      disponivel: true,
+      imagem: { chave: "obras/x/tinta-fresca.png", textoAlternativo: "Foto de Tinta fresca" },
+    },
+  ]);
+});

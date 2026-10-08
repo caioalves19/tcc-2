@@ -28,6 +28,9 @@ export function CardObra({ obra, baseImagens }: { obra: DadosCard; baseImagens: 
         )}
       </div>
       <div className="grid gap-1 p-4">
+        <p className="font-display text-etiqueta uppercase text-[var(--kolo-link)]">
+          {obra.artistaNome}
+        </p>
         <h3 className="break-words font-display text-titulo-lg uppercase">
           <a
             href={`/obras/${obra.slug}`}
