@@ -196,6 +196,8 @@ model Artwork {
   stockQuantity      Int                   @default(1) @map("quantidade_estoque")
   status             ArtworkStatus         @default(RASCUNHO) @map("situacao")
   featured           Boolean               @default(false) @map("destaque")
+  // PBI-19: ordena o catálogo por "mais recentes"; o banco preenche no cadastro.
+  createdAt          DateTime              @default(now()) @map("criado_em") @db.Timestamptz(3)
   deletedAt          DateTime?             @map("excluido_em") @db.Timestamptz(3)
   artist             Artist                @relation(fields: [artistId], references: [id], onDelete: Restrict)
   images             ArtworkImage[]

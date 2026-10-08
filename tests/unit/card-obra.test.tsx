@@ -13,6 +13,7 @@ const card = (extra: Record<string, unknown> = {}) => ({
   dimensoes: "65 × 65 cm",
   precoCentavos: 165000,
   disponivel: true,
+  artistaNome: "Caio Alves",
   imagem: { chave: "obras/ana/tinta.png", textoAlternativo: "Letras em verde-limão" },
   ...extra,
 });
@@ -26,6 +27,7 @@ it("RF10 o card leva à página da obra com foto, ficha resumida e preço", () =
     `${BASE}/obras/ana/tinta.png`,
   );
   const artigo = screen.getByRole("article");
+  expect(artigo.textContent).toContain("Caio Alves");
   expect(artigo.textContent).toContain("65 × 65 cm · Spray e pigmento");
   expect(artigo.textContent).toContain("R$ 1.650,00");
   expect(artigo.textContent).not.toContain("Esgotada");

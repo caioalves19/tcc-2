@@ -55,7 +55,8 @@ componente `CardObra`.
 
 ## Limites conhecidos
 
-- **Links para `/obras`** (trilha e "Voltar ao catálogo") só funcionam quando o PBI-19 existir.
+- **Links para `/obras`** (trilha e "Voltar ao catálogo") só funcionam quando o PBI-19 existir
+  (resolvido pelo PBI-19).
 - **O artista aparece sem link:** não há página pública de artista no escopo.
 - **Sem data de cadastro em `artwork`:** a ordem de "Outras obras" não usa "mais recentes". O
   catálogo (PBI-19) vai precisar resolver o mesmo para a ordenação por recentes.

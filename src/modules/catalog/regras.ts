@@ -42,3 +42,26 @@ export function slugDoTitulo(titulo: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
+
+// RF09: obras por página do catálogo público.
+export const OBRAS_POR_PAGINA = 12;
+
+// RF09: ordenações do catálogo público, na ordem em que aparecem no seletor.
+export const ORDENS_CATALOGO = ["recentes", "menor-preco", "maior-preco", "destaque"] as const;
+export type OrdemCatalogo = (typeof ORDENS_CATALOGO)[number];
+
+export const ROTULOS_ORDEM: Record<OrdemCatalogo, string> = {
+  recentes: "Mais recentes",
+  "menor-preco": "Menor preço",
+  "maior-preco": "Maior preço",
+  destaque: "Destaque",
+};
+
+// Link de uma página do catálogo. Os padrões (recentes, página 1) ficam fora da URL.
+export function hrefCatalogo(ordem: OrdemCatalogo, pagina = 1): string {
+  const busca = new URLSearchParams();
+  if (ordem !== "recentes") busca.set("ordem", ordem);
+  if (pagina > 1) busca.set("pagina", String(pagina));
+  const texto = busca.toString();
+  return texto ? `/obras?${texto}` : "/obras";
+}

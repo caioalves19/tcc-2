@@ -1,4 +1,7 @@
+import { z } from "zod";
+import type { Prisma } from "../../../generated/prisma/client";
 import { obterPrisma } from "../../lib/prisma";
+import { OBRAS_POR_PAGINA, ORDENS_CATALOGO, type OrdemCatalogo } from "./regras";
 
 // Vitrine pública (PBI-20): o que qualquer visitante pode ver de uma obra, sem login (RN01).
 
@@ -55,12 +58,33 @@ export async function lerObraPublica(slug: string): Promise<ObraPublica | null> 
 export type CardObra = {
   slug: string;
   titulo: string;
+  artistaNome: string;
   tecnica: string | null;
   dimensoes: string | null;
   precoCentavos: number;
   disponivel: boolean;
   imagem: { chave: string; textoAlternativo: string } | null;
 };
+
+// O que o card precisa: o artista e só a imagem principal (ou a primeira).
+const INCLUI_CARD = {
+  artist: { include: { user: true } },
+  images: { orderBy: [{ primary: "desc" }, { order: "asc" }], take: 1 },
+} satisfies Prisma.ArtworkInclude;
+
+function paraCard(o: Prisma.ArtworkGetPayload<{ include: typeof INCLUI_CARD }>): CardObra {
+  const imagem = o.images[0];
+  return {
+    slug: o.slug,
+    titulo: o.title,
+    artistaNome: o.artist.user.name,
+    tecnica: o.technique,
+    dimensoes: o.dimensions,
+    precoCentavos: o.priceCents,
+    disponivel: o.status === "DISPONIVEL" && o.stockQuantity > 0,
+    imagem: imagem ? { chave: imagem.url, textoAlternativo: imagem.altText ?? o.title } : null,
+  };
+}
 
 // Destaques primeiro; depois as disponíveis antes das esgotadas (o enum no Postgres segue a
 // ordem RASCUNHO, DISPONIVEL, ESGOTADA) e, por fim, o título.
@@ -75,20 +99,59 @@ export async function outrasObrasDoArtista(
       deletedAt: null,
       status: { not: "RASCUNHO" },
     },
-    include: { images: { orderBy: [{ primary: "desc" }, { order: "asc" }], take: 1 } },
+    include: INCLUI_CARD,
     orderBy: [{ featured: "desc" }, { status: "asc" }, { title: "asc" }],
     take: limite,
   });
-  return obras.map((o) => {
-    const imagem = o.images[0];
-    return {
-      slug: o.slug,
-      titulo: o.title,
-      tecnica: o.technique,
-      dimensoes: o.dimensions,
-      precoCentavos: o.priceCents,
-      disponivel: o.status === "DISPONIVEL" && o.stockQuantity > 0,
-      imagem: imagem ? { chave: imagem.url, textoAlternativo: imagem.altText ?? o.title } : null,
-    };
-  });
+  return obras.map(paraCard);
+}
+
+// Critério escolhido, aplicado depois de "disponíveis antes das esgotadas" e antes do id.
+const CRITERIO: Record<OrdemCatalogo, Prisma.ArtworkOrderByWithRelationInput[]> = {
+  recentes: [{ createdAt: "desc" }],
+  "menor-preco": [{ priceCents: "asc" }],
+  "maior-preco": [{ priceCents: "desc" }],
+  destaque: [{ featured: "desc" }, { createdAt: "desc" }],
+};
+
+export type PaginaCatalogo = {
+  obras: CardObra[];
+  total: number;
+  pagina: number;
+  totalPaginas: number;
+  ordem: OrdemCatalogo;
+};
+
+// Vem da URL (?pagina=2&ordem=...): qualquer valor fora do esperado volta ao padrão.
+const schemaCatalogo = z.object({
+  pagina: z.coerce.number().int().min(1).max(1_000_000).catch(1),
+  ordem: z.enum(ORDENS_CATALOGO).catch("recentes"),
+});
+
+// RF09/RN11: só obras publicadas e não arquivadas. Em qualquer ordenação, as disponíveis vêm
+// antes das esgotadas (o enum no Postgres segue RASCUNHO, DISPONIVEL, ESGOTADA); depois, o
+// critério escolhido. O id desempata, para uma obra não repetir nem sumir entre as páginas.
+export async function listarCatalogo(entrada: unknown): Promise<PaginaCatalogo> {
+  const { pagina, ordem } = schemaCatalogo.parse(
+    typeof entrada === "object" && entrada !== null ? entrada : {},
+  );
+  const onde = { deletedAt: null, status: { not: "RASCUNHO" as const } };
+  const prisma = obterPrisma();
+  const [total, obras] = await Promise.all([
+    prisma.artwork.count({ where: onde }),
+    prisma.artwork.findMany({
+      where: onde,
+      include: INCLUI_CARD,
+      orderBy: [{ status: "asc" }, ...CRITERIO[ordem], { id: "asc" }],
+      skip: (pagina - 1) * OBRAS_POR_PAGINA,
+      take: OBRAS_POR_PAGINA,
+    }),
+  ]);
+  return {
+    obras: obras.map(paraCard),
+    total,
+    pagina,
+    totalPaginas: Math.ceil(total / OBRAS_POR_PAGINA),
+    ordem,
+  };
 }

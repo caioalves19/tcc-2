@@ -28,6 +28,7 @@ const obra = (extra: Record<string, unknown> = {}) => ({
 const card = (slug: string, titulo: string) => ({
   slug,
   titulo,
+  artistaNome: "Ana",
   tecnica: null,
   dimensoes: null,
   precoCentavos: 100000,
