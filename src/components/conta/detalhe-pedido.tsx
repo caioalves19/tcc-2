@@ -97,8 +97,8 @@ export function DetalhePedido({ pedido }: { pedido: PedidoDetalhado }) {
                             : "border-dashed border-[var(--kolo-borda-campo)] text-[var(--kolo-texto-suave)]"
                       }`}
                     >
-                      <span className="flex items-center gap-1 font-display">
-                        {feito && <Check aria-hidden className="size-4" />}
+                      <span className="flex items-start gap-1 font-display">
+                        {feito && <Check aria-hidden className="mt-1 size-4 shrink-0" />}
                         {passo.rotulo}
                       </span>
                       {passo.data && feito && (
@@ -140,7 +140,7 @@ export function DetalhePedido({ pedido }: { pedido: PedidoDetalhado }) {
 
         <section
           aria-labelledby="pedido-resumo"
-          className="grid content-start gap-4 rounded-card border-2 border-neutro-grafite p-5"
+          className="grid content-start gap-4 self-start rounded-card border-2 border-neutro-grafite p-5"
         >
           <h2 id="pedido-resumo" className={TITULO_SECAO}>
             Resumo do pedido
