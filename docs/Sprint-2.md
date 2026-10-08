@@ -192,13 +192,22 @@ Permitir a gestão completa da obra, conectando os cadastros auxiliares e o uplo
 
 Construir a grade pública de obras integrada ao acervo persistido.
 
-- [ ] Permitir consulta sem autenticação
-- [ ] Exibir imagem, título, preço e disponibilidade das obras
-- [ ] Implementar paginação e ordenação por recentes, preço e destaque
-- [ ] Ocultar rascunhos e manter obras esgotadas identificadas no acervo, sem apresentá-las como disponíveis para compra
-- [ ] Tratar catálogo vazio, páginas sem resultados e falhas de carregamento
-- [ ] Conectar os itens à página da obra
-- [ ] Testar paginação, ordenação e visibilidade conforme situação e estoque
+- [x] Permitir consulta sem autenticação
+- [x] Exibir imagem, título, preço e disponibilidade das obras
+- [x] Implementar paginação e ordenação por recentes, preço e destaque
+- [x] Ocultar rascunhos e manter obras esgotadas identificadas no acervo, sem apresentá-las como disponíveis para compra
+- [x] Tratar catálogo vazio, páginas sem resultados e falhas de carregamento
+- [x] Conectar os itens à página da obra
+- [x] Testar paginação, ordenação e visibilidade conforme situação e estoque
+
+**Decisões:**
+
+- Migração `0005`: `artwork.criado_em`, preenchida pelo banco, para a ordenação por "mais recentes".
+- Em qualquer ordenação, as disponíveis vêm antes das esgotadas; 12 obras por página; página e ordenação ficam na URL.
+- O card só leva à página da obra, sem botão de compra. Sem busca (PBI-41) nem filtros.
+- Contrato completo em [PBI-19](features/PBI-19.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-19-catalogo`, feita sobre a do PBI-20 (PR #41): integrar depois dele. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR. A conferência com as fotos reais do R2 ficou pendente.
 
 ### PBI-20 — Página da obra
 
@@ -224,8 +233,8 @@ Apresentar a obra em uma página pública com galeria e ficha técnica.
 
 **Pendências:**
 
-- Os links para `/obras` (trilha e "Voltar ao catálogo") dependem do PBI-19.
-- `artwork` não tem data de cadastro: o PBI-19 precisa definir a ordenação por "recentes".
+- Os links para `/obras` (trilha e "Voltar ao catálogo") dependem do PBI-19. Resolvido pelo PBI-19.
+- `artwork` não tem data de cadastro: o PBI-19 precisa definir a ordenação por "recentes". Resolvido pelo PBI-19 (migração `0005`).
 
 ### PBI-21 — Home com destaques
 
