@@ -32,3 +32,11 @@ it("preenche nome e telefone da sessão e oferece troca de senha", async () => {
   expect(screen.getByLabelText<HTMLInputElement>("CEP").value).toBe("");
   expect(mocks.endereco).toHaveBeenCalledWith(mocks.headers);
 });
+it("RF16 leva aos pedidos do cliente", async () => {
+  mocks.perfil.mockResolvedValueOnce({ nome: "Maria", telefone: "11987654321" });
+  mocks.endereco.mockResolvedValueOnce(null);
+  render(await PaginaConta());
+  expect(screen.getByRole("link", { name: "Meus pedidos" }).getAttribute("href")).toBe(
+    "/conta/pedidos",
+  );
+});
