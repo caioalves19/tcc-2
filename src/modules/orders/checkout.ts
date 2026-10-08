@@ -164,6 +164,10 @@ export async function finalizarCompra(
   const { resumo, comprador } = montado.dados;
 
   return obterPrisma().$transaction(async (tx): Promise<ResultadoFinalizar> => {
+    // Cliques simultâneos da mesma conta se enfileiram aqui: cada um vê o pedido que o anterior
+    // criou e o cancela, e sobra um PENDENTE só. Ordem das travas: usuário → sessão → obras.
+    await tx.$queryRaw`SELECT id FROM "user" WHERE id = ${comprador.userId}::uuid FOR UPDATE`;
+
     // RN06: com Pix ou boleto em aberto, o cliente volta ao pedido (pagar ou cancelar); um novo
     // checkout não o substitui nem mexe na reserva prorrogada.
     const emAberto = await tx.order.findFirst({

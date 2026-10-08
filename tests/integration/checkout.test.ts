@@ -433,3 +433,48 @@ it("RN06 com Pix ou boleto em aberto, finalizar leva ao pedido existente sem cri
   if (!novo.ok) throw new Error(novo.mensagem);
   expect((await pedidosDe(email)).map((p) => p.situacao)).toEqual(["CANCELADO", "PENDENTE"]);
 });
+
+it("RN04 cliques simultâneos deixam um só pedido pendente, e dois clientes não compram a mesma peça única", async () => {
+  const { finalizarCompra } = await import("../../src/modules/orders");
+  const RETIRADA = { modalidade: "RETIRADA" };
+  const serigrafia = await obraPublicada("corrida-serigrafia", "640,00", 3);
+  const email = "gabi@pbi26.test";
+  const gabi = await novoCliente(email);
+  await noCarrinho(gabi, [[serigrafia, 2]]);
+
+  for (let rodada = 0; rodada < 5; rodada++) {
+    const resultados = await Promise.all(
+      Array.from({ length: 4 }, () => finalizarCompra(RETIRADA, gabi)),
+    );
+    expect(
+      resultados.every((r) => r.ok),
+      `rodada ${rodada}`,
+    ).toBe(true);
+    const pendentes = (await pedidosDe(email)).filter((p) => p.situacao === "PENDENTE");
+    expect(pendentes, `rodada ${rodada}`).toHaveLength(1);
+    const reservas = await db.query(
+      "SELECT quantidade FROM artwork_reservation WHERE artwork_id = $1",
+      [serigrafia],
+    );
+    expect(reservas.rows, `rodada ${rodada}`).toEqual([{ quantidade: 2 }]);
+  }
+
+  const unica = await obraPublicada("corrida-unica", "9.900,00", 1);
+  const rivais = await Promise.all(
+    ["rival-1", "rival-2"].map(async (nome) => {
+      const contexto = await novoCliente(`${nome}@pbi26.test`);
+      await noCarrinho(contexto, [[unica, 1]]);
+      return contexto;
+    }),
+  );
+  const disputa = await Promise.all(rivais.map((c) => finalizarCompra(RETIRADA, c)));
+  expect(disputa.filter((r) => r.ok)).toHaveLength(1);
+  expect(disputa.filter((r) => !r.ok)).toMatchObject([
+    { ok: false, erro: "indisponivel", obras: [unica] },
+  ]);
+  const vendidos = await db.query(
+    "SELECT count(*)::int AS pedidos FROM order_item WHERE artwork_id = $1",
+    [unica],
+  );
+  expect(vendidos.rows).toEqual([{ pedidos: 1 }]);
+});
