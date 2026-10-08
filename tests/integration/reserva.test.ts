@@ -388,3 +388,17 @@ it("RN04 carrinhos com as mesmas obras em ordem invertida não travam um ao outr
     expect(resultados.filter((r) => r.ok)).toHaveLength(1);
   }
 });
+
+it("RF15 o dono da reserva vê as próprias unidades como livres; id em maiúsculas vale igual", async () => {
+  const { baixarEstoque, estoqueDisponivel, reservarItens } =
+    await import("../../src/modules/orders");
+  const tiragem = await obraPublicada("t9-tiragem", 3);
+  const [dono] = (await novasSessoes(1)) as [string];
+  await reservarItens(dono, [{ obraId: tiragem.toUpperCase(), quantidade: 2 }], T0);
+
+  expect(await estoqueDisponivel(tiragem, T0)).toBe(1);
+  expect(await estoqueDisponivel(tiragem, T0, dono)).toBe(3);
+  expect(await baixarEstoque(dono, [{ obraId: tiragem.toUpperCase(), quantidade: 2 }], T0)).toEqual(
+    { ok: true },
+  );
+});

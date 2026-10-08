@@ -20,7 +20,8 @@ export type ResultadoBaixa =
 const schemaItens = z
   .array(
     z.object({
-      obraId: z.uuid("Obra inválida."),
+      // O banco compara UUID sem caixa; o código compara texto, então normaliza aqui.
+      obraId: z.uuid("Obra inválida.").transform((id) => id.toLowerCase()),
       quantidade: z.number().int().min(1).max(999),
     }),
   )
@@ -147,7 +148,12 @@ export async function liberarReservas(sessaoId: string): Promise<void> {
 }
 
 // Unidades que o checkout ainda pode reservar agora: 0 se a obra não está à venda.
-export async function estoqueDisponivel(obraId: string, agora: Date = new Date()): Promise<number> {
+// Com `sessaoId`, as reservas dessa sessão contam como livres para ela (é ela quem as segura).
+export async function estoqueDisponivel(
+  obraId: string,
+  agora: Date = new Date(),
+  sessaoId?: string,
+): Promise<number> {
   const prisma = obterPrisma();
   const obra = await prisma.artwork.findUnique({ where: { id: obraId } });
   if (
@@ -160,7 +166,11 @@ export async function estoqueDisponivel(obraId: string, agora: Date = new Date()
   )
     return 0;
   const { _sum } = await prisma.artworkReservation.aggregate({
-    where: { artworkId: obraId, expiresAt: { gt: agora } },
+    where: {
+      artworkId: obraId,
+      expiresAt: { gt: agora },
+      ...(sessaoId ? { sessionId: { not: sessaoId } } : {}),
+    },
     _sum: { quantity: true },
   });
   return Math.max(0, obra.stockQuantity - (_sum.quantity ?? 0));
