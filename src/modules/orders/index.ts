@@ -12,5 +12,12 @@ export {
 } from "./reserva";
 export type { ItemReserva, ResultadoBaixa, ResultadoReserva } from "./reserva";
 export { FILA_LIBERAR_RESERVAS, registrarTarefasDeReserva } from "./tarefas";
-export { resumoCheckout } from "./checkout";
-export type { ItemCheckout, Modalidade, ResultadoCheckout, ResumoCheckout } from "./checkout";
+export { finalizarCompra, resumoCheckout } from "./checkout";
+export type {
+  ItemCheckout,
+  Modalidade,
+  OpcoesFinalizar,
+  ResultadoCheckout,
+  ResultadoFinalizar,
+  ResumoCheckout,
+} from "./checkout";

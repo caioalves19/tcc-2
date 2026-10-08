@@ -240,8 +240,8 @@ it("RF26 com carrinho ou pedido, faz exclusão lógica e preserva o histórico",
     [noCarrinho, clienteId],
   );
   await db.query(
-    `INSERT INTO "order" (id, numero, user_id, subtotal_centavos, total_centavos, endereco_copia)
-     VALUES (gen_random_uuid(), 'KOLO-0001', $1, 480000, 480000, '{}')`,
+    `INSERT INTO "order" (id, numero, user_id, modalidade_entrega, subtotal_centavos, total_centavos, endereco_copia)
+     VALUES (gen_random_uuid(), 'KOLO-0001', $1, 'RETIRADA', 480000, 480000, '{}')`,
     [clienteId],
   );
   await db.query(

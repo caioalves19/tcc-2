@@ -156,3 +156,95 @@ it("RF12/RN01/RN02 recusa visitante, carrinho vazio, obra indisponível ou presa
   );
   expect(await resumoCheckout(enderecoRuim)).toMatchObject({ ok: false, erro: "sem_endereco" });
 });
+
+it("RF12/RN07 finalizar cria o pedido pendente com cópias imutáveis, ligado à sessão e à reserva de 10 minutos", async () => {
+  const { finalizarCompra } = await import("../../src/modules/orders");
+  const { salvarEndereco } = await import("../../src/lib/endereco");
+  const quadro = await obraPublicada("pedido-quadro", "1.250,00", 1);
+  const zine = await obraPublicada("pedido-zine", "35,50", 5);
+  const dani = await novoCliente("dani@pbi26.test");
+  await noCarrinho(dani, [
+    [quadro, 1],
+    [zine, 3],
+  ]);
+  const agora = new Date();
+
+  const resultado = await finalizarCompra({ modalidade: "RETIRADA" }, dani, { agora });
+  expect(resultado).toMatchObject({
+    ok: true,
+    dados: { expiraEm: new Date(agora.getTime() + 10 * 60 * 1000) },
+  });
+  if (!resultado.ok) throw new Error(resultado.mensagem);
+  const { numero } = resultado.dados;
+  expect(numero).toMatch(/^\d{8}-[2-9A-HJKMNP-Z]{6}$/);
+
+  const sessao = await sessaoDe("dani@pbi26.test");
+  const pedido = async () => {
+    const { rows } = await db.query(
+      `SELECT o.situacao, o.session_id, o.modalidade_entrega, o.subtotal_centavos, o.desconto_centavos,
+              o.frete_centavos, o.total_centavos, o.endereco_copia, u.email
+         FROM "order" o JOIN "user" u ON u.id = o.user_id WHERE o.numero = $1`,
+      [numero],
+    );
+    const itens = await db.query(
+      `SELECT i.artwork_id, i.titulo_copia, i.preco_centavos_copia, i.quantidade
+         FROM order_item i JOIN "order" o ON o.id = i.order_id
+        WHERE o.numero = $1 ORDER BY i.preco_centavos_copia DESC`,
+      [numero],
+    );
+    return { ...rows[0], itens: itens.rows };
+  };
+  const esperado = {
+    situacao: "PENDENTE",
+    session_id: sessao,
+    modalidade_entrega: "RETIRADA",
+    subtotal_centavos: 135650,
+    desconto_centavos: 0,
+    frete_centavos: 0,
+    total_centavos: 135650,
+    endereco_copia: {
+      destinatario: "Lucas Silveira",
+      cep: "01327-000",
+      logradouro: "Rua Treze de Maio",
+      numero: "450",
+      complemento: "Apto 82",
+      bairro: "Bela Vista",
+      cidade: "São Paulo",
+      uf: "SP",
+    },
+    email: "dani@pbi26.test",
+    itens: [
+      {
+        artwork_id: quadro,
+        titulo_copia: "Obra pedido-quadro",
+        preco_centavos_copia: 125000,
+        quantidade: 1,
+      },
+      {
+        artwork_id: zine,
+        titulo_copia: "Obra pedido-zine",
+        preco_centavos_copia: 3550,
+        quantidade: 3,
+      },
+    ],
+  };
+  expect(await pedido()).toEqual(esperado);
+
+  const reservas = await db.query(
+    "SELECT artwork_id, quantidade, expira_em FROM artwork_reservation WHERE session_id = $1 ORDER BY quantidade",
+    [sessao],
+  );
+  expect(reservas.rows).toEqual([
+    { artwork_id: quadro, quantidade: 1, expira_em: new Date(agora.getTime() + 10 * 60 * 1000) },
+    { artwork_id: zine, quantidade: 3, expira_em: new Date(agora.getTime() + 10 * 60 * 1000) },
+  ]);
+
+  // Mudanças depois da compra não reescrevem o pedido.
+  await db.query("UPDATE artwork SET titulo = 'Outro título', preco_centavos = 1 WHERE id = $1", [
+    quadro,
+  ]);
+  expect(await salvarEndereco({ ...ENDERECO, logradouro: "Rua Nova" }, dani.cabecalhos)).toEqual({
+    ok: true,
+  });
+  expect(await pedido()).toEqual(esperado);
+});
