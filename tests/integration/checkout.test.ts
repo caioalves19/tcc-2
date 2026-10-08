@@ -103,3 +103,56 @@ it("RF12 o resumo traz itens, endereço, retirada sem custo e total calculados n
     },
   });
 });
+
+async function sessaoDe(email: string): Promise<string> {
+  const { rows } = await db.query(
+    'SELECT s.id FROM session s JOIN "user" u ON u.id = s.user_id WHERE u.email = $1',
+    [email],
+  );
+  return rows[0].id;
+}
+
+it("RF12/RN01/RN02 recusa visitante, carrinho vazio, obra indisponível ou presa e endereço ausente ou inválido", async () => {
+  const { resumoCheckout, reservarItens } = await import("../../src/modules/orders");
+  const visitante = { cabecalhos: new Headers(), tokenVisitante: null };
+  expect(await resumoCheckout(visitante)).toMatchObject({ ok: false, erro: "nao_autenticado" });
+
+  const vazio = await novoCliente("vazio@pbi26.test");
+  expect(await resumoCheckout(vazio)).toMatchObject({ ok: false, erro: "carrinho_vazio" });
+
+  // Obras que estavam à venda quando entraram no carrinho e deixaram de estar.
+  const despublicada = await obraPublicada("bloqueio-rascunho", "100,00", 1);
+  const arquivada = await obraPublicada("bloqueio-arquivada", "100,00", 1);
+  const disputada = await obraPublicada("bloqueio-disputada", "100,00", 1);
+  const livre = await obraPublicada("bloqueio-livre", "100,00", 2);
+  const bruno = await novoCliente("bruno@pbi26.test");
+  await noCarrinho(bruno, [
+    [despublicada, 1],
+    [arquivada, 1],
+    [disputada, 1],
+    [livre, 2],
+  ]);
+  await db.query("UPDATE artwork SET situacao = 'RASCUNHO' WHERE id = $1", [despublicada]);
+  await db.query("UPDATE artwork SET excluido_em = now() WHERE id = $1", [arquivada]);
+  await novoCliente("carla@pbi26.test");
+  expect(
+    await reservarItens(await sessaoDe("carla@pbi26.test"), [{ obraId: disputada, quantidade: 1 }]),
+  ).toMatchObject({ ok: true });
+
+  const resumo = await resumoCheckout(bruno);
+  expect(resumo).toMatchObject({ ok: false, erro: "indisponivel" });
+  if (resumo.ok || resumo.erro !== "indisponivel") throw new Error("esperado indisponivel");
+  expect([...resumo.obras].sort()).toEqual([despublicada, arquivada, disputada].sort());
+
+  const semEndereco = await novoCliente("sem-endereco@pbi26.test", false);
+  await noCarrinho(semEndereco, [[livre, 1]]);
+  expect(await resumoCheckout(semEndereco)).toMatchObject({ ok: false, erro: "sem_endereco" });
+
+  const enderecoRuim = await novoCliente("endereco-ruim@pbi26.test");
+  await noCarrinho(enderecoRuim, [[livre, 1]]);
+  await db.query(
+    "UPDATE address SET cep = '123' WHERE user_id = (SELECT id FROM \"user\" WHERE email = $1)",
+    ["endereco-ruim@pbi26.test"],
+  );
+  expect(await resumoCheckout(enderecoRuim)).toMatchObject({ ok: false, erro: "sem_endereco" });
+});
