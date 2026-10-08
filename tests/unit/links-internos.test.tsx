@@ -55,14 +55,17 @@ it("o verificador de rotas reconhece página fixa, dinâmica e inexistente", () 
 });
 
 it("RF07 todo link interno da home e do cabeçalho leva a uma página que existe", async () => {
+  // Cabeçalho nas duas situações: deslogado (Entrar) e ADMIN logado (Minha conta, Admin).
   render(
     <>
+      <Cabecalho />
       <Cabecalho logado administrador acaoSair={async () => {}} />
       {await Home()}
     </>,
   );
   const links = linksInternos();
-  expect(links).toContain("/obras/tinta-fresca");
+  for (const esperado of ["/obras/tinta-fresca", "/login", "/conta", "/admin"])
+    expect(links).toContain(esperado);
   for (const href of links) {
     const caminho = href.split(/[?#]/)[0] ?? "";
     expect(temPagina(caminho), href).toBe(true);
