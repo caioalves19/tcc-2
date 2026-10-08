@@ -11,3 +11,4 @@ export {
   reservarItens,
 } from "./reserva";
 export type { ItemReserva, ResultadoBaixa, ResultadoReserva } from "./reserva";
+export { FILA_LIBERAR_RESERVAS, registrarTarefasDeReserva } from "./tarefas";

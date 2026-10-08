@@ -5,4 +5,7 @@ export async function register() {
   }
   const { verificarAmbienteDeProducao } = await import("./lib/ambiente");
   verificarAmbienteDeProducao(process.env);
+  // RN03: worker do pg-boss que libera as reservas vencidas (PBI-25).
+  const { iniciarTarefas } = await import("./lib/tarefas");
+  await iniciarTarefas();
 }
