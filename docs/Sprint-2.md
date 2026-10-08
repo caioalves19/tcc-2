@@ -118,7 +118,7 @@ Integrar o armazenamento Cloudflare R2 ao fluxo de imagens do acervo, conforme a
 
 **Decisões (registradas em 05/10/2026):** formatos JPEG, PNG e WebP, até 5 MB, sem SVG no upload. Miniatura fixa gerada com `sharp` (WebP, ~400 px), demais variantes pelo `next/image`; o `sharp` é uma dependência nova em relação à stack original do escopo. ADMIN envia para qualquer artista e destino; ARTISTA só para o próprio portfólio (obras são geridas só pelo ADMIN, ESCOPO §7 e RN10).
 
-**Situação:** implementação no PR #33, aguardando a revisão de outro integrante. A miniatura (WebP, até 400 px) já é gerada no pós-envio; o item "Gerar miniaturas e entregar imagens otimizadas e responsivas" segue desmarcado só pela parte da entrega responsiva.
+**Situação:** integrado à `main` pelo PR #33 em 06/10/2026, aprovado por outro integrante. A miniatura (WebP, até 400 px) já é gerada no pós-envio; o item "Gerar miniaturas e entregar imagens otimizadas e responsivas" segue desmarcado só pela parte da entrega responsiva.
 
 **Entregas:** módulo `src/modules/media` (validação, chave do objeto gerada no servidor, autorização relida no banco, assinatura no R2, miniatura e URL pública), Server Actions em `src/app/imagens/actions.ts` e componente `UploadImagem` com envio, sucesso, falha e nova tentativa. A API pública expõe `chaveMiniatura` para o PBI-18 e o PBI-35 derivarem a miniatura a partir da chave gravada.
 
@@ -153,7 +153,7 @@ Permitir a gestão completa da obra, conectando os cadastros auxiliares e o uplo
 - A obra nasce como rascunho, e as imagens entram na edição.
 - Contrato completo em [PBI-18](features/PBI-18.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-18-crud-obras`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+**Situação:** integrado à `main` pelo PR #35 em 07/10/2026, aprovado por outro integrante. A entrega está disponível para os PBIs 19, 20, 24 e 25.
 
 **Entregas:**
 
@@ -246,7 +246,7 @@ Disponibilizar as páginas de privacidade, termos de uso e política de cancelam
 
 Os textos serão mantidos no projeto nesta sprint; a edição administrativa de políticas será implementada no PBI-39 (RF31).
 
-**Situação:** implementação local validada na branch `feat/pbi-22-paginas-institucionais`. Para encerrar o DoD, faltam a revisão dos textos pela equipe, feita no próprio PR, e a aprovação do PR.
+**Situação:** integrado à `main` pelo PR #31 em 06/10/2026, aprovado por outro integrante. O item de revisão dos textos com a equipe segue desmarcado até a equipe confirmar essa revisão.
 
 **Entregas:** páginas `/politicas/privacidade`, `/politicas/termos` e `/politicas/cancelamento`, todas montadas pelo componente `DocumentoPolitica`, com índice das três políticas (a atual marcada), índice "Nesta página" com âncoras e cartão "Dúvidas?". Os textos ficam em `src/app/politicas/*/conteudo.ts` como dados puros, prontos para o `site_setting` do PBI-39, e cobrem o escopo P0 da v2.2. O inventário da privacidade vem do schema (RNF17). E-mail e WhatsApp vêm de `src/lib/contato.ts`, também usado pelo rodapé. Links dentro do texto só aceitam endereços seguros.
 
@@ -275,6 +275,8 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 - [X] Validar campos no servidor e impedir leitura ou alteração do endereço de outro usuário
 - [X] Testar persistência, atualização e isolamento entre usuários
 
+**Situação:** integrado à `main` pelo PR #37 em 08/10/2026, aprovado por dois integrantes. A entrega está disponível para o checkout (26).
+
 ### PBI-24 — Carrinho persistente
 
 **Referências:** RF11 · **Prioridade:** P0 · **Deps:** PBI-18.
@@ -292,7 +294,7 @@ Consome as obras, preços e disponibilidade do PBI-18. Não precisa esperar o en
 - Ao entrar na conta, os carrinhos se juntam, com a maior quantidade limitada ao estoque.
 - Contrato completo em [PBI-24](features/PBI-24.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-24-carrinho`, criada em cima do PBI-18 (PR #35). Para encerrar o DoD, falta integrar depois do #35, com revisão de outro integrante e aprovação do PR.
+**Situação:** integrado à `main` pelo PR #36 em 07/10/2026, depois do PR #35, aprovado por outro integrante.
 
 **Entregas:**
 
@@ -411,7 +413,7 @@ Consome artistas e estilos do PBI-16. Não depende da loja, da agenda manual (34
 - [x] Não persistir solicitação, reservar horário ou coletar imagens e dados clínicos
 - [x] Testar navegação e validações; manter a conclusão indisponível até os PBIs 32 e 33
 
-Implementação em `/agendamento`, com tamanhos de `SizeTier`. Contrato, testes e limites registrados em [PBI-31](features/PBI-31.md). Revisão independente de código: PASS. Conferência visual nas larguras previstas, aceite humano e aprovação do PR continuam pendentes para encerramento.
+Implementação em `/agendamento`, com tamanhos de `SizeTier`. Contrato, testes e limites registrados em [PBI-31](features/PBI-31.md). Revisão independente de código: PASS. Integrado à `main` pelo PR #30 em 06/10/2026, aprovado por dois integrantes. Conferência visual nas larguras previstas e aceite humano continuam pendentes para encerramento.
 
 ### PBI-32 — Checks obrigatórios de conformidade
 
@@ -544,7 +546,7 @@ Usa autenticação/validação, banco e rate limit da base existente, além de c
 - [x] Validar Cloudflare Turnstile e limitar taxa de envio
 - [x] Testar rejeição de token inválido e entradas inválidas; sem novos e-mails transacionais
 
-**Situação:** implementação concluída e testes unitários/integração finalizados na branch `feat/pbi-44-contato-antibot`. Aguardando revisão de código/PR.
+**Situação:** integrado à `main` pelo PR #34 em 07/10/2026, aprovado por outro integrante.
 
 ## Etapa 6 — Qualidade, operação e entrega
 
