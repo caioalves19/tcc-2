@@ -58,6 +58,13 @@ export function hashDoToken(token: string): string {
 
 // A sessão diz quem pede; a situação da conta é relida no banco.
 export async function usuarioDaSessao(cabecalhos: Headers): Promise<string | null> {
+  return (await sessaoAtiva(cabecalhos))?.userId ?? null;
+}
+
+// O checkout precisa também do id da sessão, a quem a reserva pertence (PBI-25).
+export async function sessaoAtiva(
+  cabecalhos: Headers,
+): Promise<{ userId: string; sessaoId: string } | null> {
   const sessao = await sessaoDaRequisicao(cabecalhos);
   if (!sessao) return null;
   const atual = await obterPrisma().session.findUnique({
@@ -71,7 +78,7 @@ export async function usuarioDaSessao(cabecalhos: Headers): Promise<string | nul
     atual.user.deletedAt !== null
   )
     return null;
-  return atual.userId;
+  return { userId: atual.userId, sessaoId: atual.id };
 }
 
 type Dono = { userId: string } | { cookieToken: string };
