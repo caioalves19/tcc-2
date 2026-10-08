@@ -93,3 +93,12 @@ export async function prorrogarReserva(
   if (count === 0) return { ok: false, erro: "sem_reserva" };
   return { ok: true, dados: { expiraEm: ate } };
 }
+
+// Tarefa do pg-boss: apaga as reservas vencidas. A disponibilidade já ignora as vencidas,
+// então rodar duas vezes (ou atrasar) não muda o estoque livre.
+export async function liberarReservasExpiradas(agora: Date = new Date()): Promise<number> {
+  const { count } = await obterPrisma().artworkReservation.deleteMany({
+    where: { expiresAt: { lte: agora } },
+  });
+  return count;
+}

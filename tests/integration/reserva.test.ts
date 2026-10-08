@@ -174,3 +174,26 @@ it("RN06 com Pix/boleto pendente a reserva ativa é prorrogada; a vencida não v
     erro: "sem_reserva",
   });
 });
+
+it("RN03 a limpeza apaga só reservas vencidas e pode rodar de novo sem efeito", async () => {
+  const { liberarReservasExpiradas, reservarItens } = await import("../../src/modules/orders");
+  const vencida = await obraPublicada("t5-vencida", 1);
+  const ativa = await obraPublicada("t5-ativa", 1);
+  const [antiga, recente] = await novasSessoes(2);
+  const limpeza = new Date("2026-10-08T13:00:00.000Z");
+
+  await reservarItens(antiga, [{ obraId: vencida, quantidade: 1 }], T0);
+  await reservarItens(
+    recente,
+    [{ obraId: ativa, quantidade: 1 }],
+    new Date("2026-10-08T12:55:00.000Z"),
+  );
+
+  expect(await liberarReservasExpiradas(limpeza)).toBeGreaterThanOrEqual(1);
+  expect(await liberarReservasExpiradas(limpeza)).toBe(0);
+  const { rows } = await db.query(
+    "SELECT artwork_id FROM artwork_reservation WHERE artwork_id = ANY($1::uuid[])",
+    [[vencida, ativa]],
+  );
+  expect(rows).toEqual([{ artwork_id: ativa }]);
+});
