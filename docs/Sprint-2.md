@@ -363,7 +363,7 @@ Consome estoque e obras do PBI-18 e a sessão existente. A API de reserva pode s
 - Carrinho e vitrine não mudam: as reservas só pesam no checkout.
 - Contrato completo e ciclo do RN06 em [PBI-25](features/PBI-25.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-25-reserva-estoque`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+**Situação:** integrado à `main` pelo PR #39 em 08/10/2026. A entrega está disponível para os PBIs 26, 27 e 28.
 
 **Entregas:**
 
@@ -380,10 +380,26 @@ Consome estoque e obras do PBI-18 e a sessão existente. A API de reserva pode s
 
 **Referências:** RF12; RN01, RN07 · **Prioridade:** P0 · **Deps:** PBI-23, PBI-24, PBI-25.
 
-- [ ] Exigir autenticação e apresentar resumo, endereço, quantidades, frete e total calculados no servidor
-- [ ] Usar retirada sem custo como modalidade mínima; opções adicionais entram no PBI-42
-- [ ] Criar pedido pendente com cópias imutáveis de endereço, títulos e preços, integrado à reserva
-- [ ] Testar carrinho vazio, estoque insuficiente, endereço inválido e tentativa de manipular valores
+- [x] Exigir autenticação e apresentar resumo, endereço, quantidades, frete e total calculados no servidor
+- [x] Usar retirada sem custo como modalidade mínima; opções adicionais entram no PBI-42
+- [x] Criar pedido pendente com cópias imutáveis de endereço, títulos e preços, integrado à reserva
+- [x] Testar carrinho vazio, estoque insuficiente, endereço inválido e tentativa de manipular valores
+
+**Decisões:**
+
+- O pedido `PENDENTE` e a reserva de 10 minutos nascem juntos no clique em "Finalizar compra"; abrir o `/checkout` não reserva.
+- Migração `0004`: `order.session_id` (sessão que reservou, para a baixa no PBI-28) e `order.modalidade_entrega` (enum só com `RETIRADA`).
+- O endereço do RF05 é exigido também na retirada e copiado no pedido.
+- Um novo "Finalizar" cancela o `PENDENTE` sem pagamento em aberto; com Pix/boleto em aberto, o cliente volta ao pedido existente.
+- Contrato completo em [PBI-26](features/PBI-26.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-26-checkout`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+
+**Pendências:**
+
+- O PBI-27 precisa habilitar "Pagar com Mercado Pago", gravar o `payment` e prorrogar a reserva do Pix/boleto.
+- O PBI-28 precisa baixar o estoque com `order.session_id` e limpar o carrinho na aprovação.
+- O login não volta ao checkout depois de entrar (TODO já existente na action de login).
 
 ### PBI-27 — Pagamento Mercado Pago em sandbox
 

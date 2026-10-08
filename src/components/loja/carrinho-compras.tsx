@@ -176,11 +176,19 @@ export function CarrinhoCompras({
             {indisponiveis > 0 && (
               <p className="text-nota">Obras indisponíveis não entram no total.</p>
             )}
-            {/* O checkout é o PBI-26: até lá, sem link para rota que não existe. */}
-            <Button type="button" disabled>
-              Finalizar compra
-            </Button>
-            <p className="text-nota">Em breve você poderá finalizar a compra por aqui.</p>
+            {/* PBI-26: o checkout recusa obra indisponível; o caminho só abre sem elas. */}
+            {indisponiveis > 0 ? (
+              <>
+                <Button type="button" disabled>
+                  Finalizar compra
+                </Button>
+                <p className="text-nota">Remova as obras indisponíveis para finalizar.</p>
+              </>
+            ) : (
+              <a href="/checkout" className={buttonVariants()}>
+                Finalizar compra
+              </a>
+            )}
           </aside>
         </div>
       )}

@@ -65,10 +65,12 @@ function mensagemDe(erro: z.ZodError): string {
 // RF15/RN02/RN03: reserva tudo ou nada; disponível = estoque − reservas ativas das outras sessões.
 // Uma nova reserva da mesma sessão substitui a anterior (o cliente voltou ao checkout),
 // salvo se a anterior foi prorrogada para um Pix/boleto pendente (`pendente`).
+// O checkout (PBI-26) passa a própria transação (`tx`): o pedido e a reserva nascem juntos.
 export async function reservarItens(
   sessaoId: string,
   entrada: unknown,
   agora: Date = new Date(),
+  tx?: Tx,
 ): Promise<ResultadoReserva<{ expiraEm: Date }>> {
   const validado = schemaItens.safeParse(entrada);
   if (!validado.success)
@@ -77,7 +79,7 @@ export async function reservarItens(
   const ids = itens.map((i) => i.obraId).sort();
   const expiraEm = new Date(agora.getTime() + PRAZO_RESERVA_MS);
 
-  return obterPrisma().$transaction(async (tx) => {
+  const reservar = async (tx: Tx): Promise<ResultadoReserva<{ expiraEm: Date }>> => {
     // RN06: reserva prorrogada (Pix/boleto pendente) só sai com o pagamento, o vencimento ou
     // o cancelamento do pedido (liberarReservas); um novo checkout não a substitui.
     await travarSessao(tx, sessaoId);
@@ -110,7 +112,8 @@ export async function reservarItens(
       })),
     });
     return { ok: true, dados: { expiraEm } };
-  });
+  };
+  return tx ? reservar(tx) : obterPrisma().$transaction(reservar);
 }
 
 // RN06: Pix e boleto deixam o pedido pendente; a reserva ainda ativa passa a vencer
