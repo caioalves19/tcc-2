@@ -1,4 +1,5 @@
 import { ClipboardCheck, Handshake, MessageCircle } from "lucide-react";
+import { cn } from "cn";
 
 import { Marca } from "@/components/layout/marca";
 import { Mascote } from "@/components/layout/mascote";
@@ -139,7 +140,8 @@ export default async function Home() {
             href={linkWhatsApp(MENSAGEM_MURAL)}
             target="_blank"
             rel="noopener noreferrer"
-            className={buttonVariants()}
+            // O rótulo é longo: no celular quebra a linha em vez de passar da borda do cartão.
+            className={cn(buttonVariants(), "h-auto min-h-12 whitespace-normal py-3 text-center")}
           >
             Pedir orçamento pelo WhatsApp
           </a>
