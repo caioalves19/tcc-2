@@ -269,7 +269,7 @@ O contato WhatsApp é uma solução provisória para a chamada da home. O wizard
 **Evidências:**
 
 - `npm run lint`, `npm run typecheck` e `npm run build` sem erros; a home é renderizada a cada requisição (`ƒ /`).
-- `npm run test:unit` com 296 testes (9 novos) e a integração com 125 testes no PostgreSQL real (1 novo, dos destaques), em execução sequencial.
+- `npm run test:unit` com 297 testes (10 novos) e a integração com 125 testes no PostgreSQL real (1 novo, dos destaques), em execução sequencial.
 - No navegador, com o Postgres local, em 1280, 768, 375 e 320 px: com e sem obras marcadas, sem rolagem horizontal, axe-core sem violações e console sem erros. A conferência achou o botão de orçamento de mural passando da borda no celular, corrigido.
 
 **Pendências:**

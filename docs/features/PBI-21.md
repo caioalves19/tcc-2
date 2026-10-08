@@ -46,7 +46,8 @@ configurações do site.
 
 Os links do WhatsApp abrem em nova aba (`noopener noreferrer`), como na página da obra. A home é
 renderizada a cada requisição (o layout lê a sessão), então os destaques nunca ficam congelados no
-build.
+build. Se o banco falhar ao ler os destaques, a home segue no ar sem a seção e o erro vai para o log,
+o mesmo padrão do layout com a sessão e o carrinho.
 
 ## Validação
 
@@ -56,9 +57,10 @@ build.
 - `npm run test:unit -- link-whatsapp vitrine-destaques pagina-home links-internos`:
   - link do WhatsApp com número e mensagem codificada;
   - vitrine com os links das obras, o selo da esgotada e o catálogo; vazia não renderiza nada;
-  - home com destaques do banco; sem destaques, inteira e sem a seção; chamada de tatuagem
-    provisória com a mensagem, sem link para o wizard; orçamento de mural;
-  - **todo link interno da home e do cabeçalho (logado como ADMIN) tem página em `src/app`**,
+  - home com destaques do banco; sem destaques, inteira e sem a seção; falha do banco nos
+    destaques, no ar sem a seção e sem mostrar o erro; chamada de tatuagem provisória com a
+    mensagem, sem link para o wizard; orçamento de mural;
+  - **todo link interno da home e do cabeçalho (deslogado e ADMIN logado) tem página em `src/app`**,
     inclusive as dinâmicas; o menu "Tatuagem" leva a `/#tatuagem` e o bloco existe.
 - **No navegador** (08/10/2026, Postgres local, Chrome headless em 1280, 768, 375 e 320 px):
   - sem obra marcada: home sem a seção de destaques; com as duas obras locais marcadas: a seção
@@ -67,6 +69,9 @@ build.
     situações;
   - a conferência achou o botão "Pedir orçamento pelo WhatsApp" passando da borda do cartão em 375 e
     320 px; corrigido (o rótulo quebra a linha no celular, mantendo a altura mínima de 48 px).
+- **Revisão de código:** achou que uma falha do banco nos destaques derrubava a home inteira (não há
+  `error.tsx` na raiz); corrigido em TDD com o padrão do layout. O teste de rotas passou a cobrir
+  também o cabeçalho deslogado.
   - **Pendente:** ver os destaques com as fotos reais do R2 (as obras locais não têm imagem).
 
 ## Pendências para os próximos PBIs
