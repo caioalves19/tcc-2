@@ -278,7 +278,8 @@ it("RN06 a prorrogação não encurta nem libera a reserva por engano", async ()
   const depois = (min: number) => new Date(T0.getTime() + min * 60_000);
 
   await reservarItens(pix, [{ obraId: unica, quantidade: 1 }], T0);
-  for (const ate of [depois(-1), depois(2), depois(5), new Date(Number.NaN)]) {
+  // depois(8) está no futuro, mas antes do vencimento atual (depois(10)): encurtaria a reserva.
+  for (const ate of [depois(-1), depois(2), depois(5), depois(8), new Date(Number.NaN)]) {
     expect(await prorrogarReserva(pix, ate, depois(5))).toMatchObject({
       ok: false,
       erro: "invalido",
