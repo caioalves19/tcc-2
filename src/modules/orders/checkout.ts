@@ -152,6 +152,14 @@ const FALHA_FINALIZAR = {
   mensagem: "Não foi possível finalizar a compra agora. Tente novamente.",
 } as const;
 
+// Recusa no meio da transação: lançada para o Prisma desfazer o que já foi feito (o cancelamento
+// do pedido abandonado, por exemplo) e devolvida como resultado fora dela.
+class Recusa extends Error {
+  constructor(public resultado: ResultadoFinalizar) {
+    super("recusa no checkout");
+  }
+}
+
 // Nesta transação o único UNIQUE que pode falhar é o número do pedido.
 function numeroRepetido(erro: unknown): boolean {
   return erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === "P2002";
@@ -192,12 +200,12 @@ export async function finalizarCompra(
       },
     });
     if (emAberto)
-      return {
+      throw new Recusa({
         ok: false,
         erro: "pendente",
         numero: emAberto.number,
         mensagem: "Você já tem um pedido aguardando pagamento.",
-      };
+      });
 
     // Pedido PENDENTE sem pagamento em aberto foi abandonado (ou o pagamento foi recusado): o
     // novo checkout o cancela e solta as unidades que ele segurava, mesmo que tenham sido
@@ -225,14 +233,16 @@ export async function finalizarCompra(
       tx,
     );
     if (!reserva.ok)
-      return reserva.erro === "indisponivel"
-        ? {
-            ok: false,
-            erro: "indisponivel",
-            obras: reserva.obras,
-            mensagem: "Algumas obras do carrinho não estão mais disponíveis nessa quantidade.",
-          }
-        : { ok: false, erro: "falha", mensagem: "Não foi possível reservar as obras agora." };
+      throw new Recusa(
+        reserva.erro === "indisponivel"
+          ? {
+              ok: false,
+              erro: "indisponivel",
+              obras: reserva.obras,
+              mensagem: "Algumas obras do carrinho não estão mais disponíveis nessa quantidade.",
+            }
+          : { ok: false, erro: "falha", mensagem: "Não foi possível reservar as obras agora." },
+      );
 
     const numero = gerarNumero(agora);
     await tx.order.create({
@@ -263,6 +273,7 @@ export async function finalizarCompra(
     try {
       return await obterPrisma().$transaction(criar);
     } catch (erro) {
+      if (erro instanceof Recusa) return erro.resultado;
       if (numeroRepetido(erro) && tentativa < TENTATIVAS_NUMERO) continue;
       console.error(
         "Falha ao finalizar a compra",

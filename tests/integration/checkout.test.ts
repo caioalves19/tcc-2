@@ -505,3 +505,40 @@ it("RF12 número repetido tenta de novo; se não sair, nada fica gravado (nem pe
   expect(sorteio).toMatchObject({ ok: true, dados: { numero: "20991231-ZZZZZZ" } });
   expect(await rastrosDe(email)).toEqual({ pedidos: 1, reservas: 1 });
 });
+
+it("RF12 recusa dentro da transação desfaz tudo: o pedido anterior continua pendente e com a reserva", async () => {
+  const { finalizarCompra, reservarItens } = await import("../../src/modules/orders");
+  const { abrirSessao } = await import("../../src/lib/auth");
+  const RETIRADA = { modalidade: "RETIRADA" };
+  const tela = await obraPublicada("desfaz-tela", "700,00", 1);
+  const poster = await obraPublicada("desfaz-poster", "60,00", 1);
+  const email = "jade@pbi26.test";
+  const jade = await novoCliente(email);
+  await noCarrinho(jade, [[tela, 1]]);
+  const anterior = await finalizarCompra(RETIRADA, jade);
+  if (!anterior.ok) throw new Error(anterior.mensagem);
+  const sessaoJade = await sessaoDe(email);
+
+  // Outra sessão da conta segura o pôster sem pedido: o resumo deixa passar (é do próprio
+  // cliente), mas a reserva, conferida sob trava, recusa dentro da transação.
+  const { token } = await abrirSessao({ email, senha: SENHA });
+  const { rows } = await db.query("SELECT id FROM session WHERE token = $1", [token]);
+  expect(await reservarItens(rows[0].id, [{ obraId: poster, quantidade: 1 }])).toMatchObject({
+    ok: true,
+  });
+  await noCarrinho(jade, [[poster, 1]]);
+
+  expect(await finalizarCompra(RETIRADA, jade)).toMatchObject({
+    ok: false,
+    erro: "indisponivel",
+    obras: [poster],
+  });
+  expect(await pedidosDe(email)).toEqual([
+    { numero: anterior.dados.numero, situacao: "PENDENTE", session_id: sessaoJade },
+  ]);
+  const reservaTela = await db.query(
+    "SELECT session_id FROM artwork_reservation WHERE artwork_id = $1",
+    [tela],
+  );
+  expect(reservaTela.rows).toEqual([{ session_id: sessaoJade }]);
+});
