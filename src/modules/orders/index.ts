@@ -3,6 +3,7 @@ export type { ContextoCarrinho, ResultadoCarrinho } from "./carrinho";
 export { juntarCarrinhos } from "./juntar";
 export { quantidadeValida, resumirCarrinho } from "./regras";
 export {
+  baixarEstoque,
   estoqueDisponivel,
   liberarReservas,
   liberarReservasExpiradas,

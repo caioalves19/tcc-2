@@ -215,3 +215,26 @@ it("RF15 o estoque livre desconta reservas ativas e volta quando a sessão desis
   expect(await estoqueDisponivel(tiragem, T0)).toBe(3);
   expect(await estoqueDisponivel(rascunho, T0)).toBe(0);
 });
+
+it("RN05/RN11 pagamento aprovado com reserva ativa baixa o estoque e esgota a peça", async () => {
+  const { baixarEstoque, reservarItens } = await import("../../src/modules/orders");
+  const unica = await obraPublicada("t6-unica", 1);
+  const [sessao] = await novasSessoes(1);
+  await reservarItens(sessao, [{ obraId: unica, quantidade: 1 }], T0);
+
+  expect(
+    await baixarEstoque(
+      sessao,
+      [{ obraId: unica, quantidade: 1 }],
+      new Date(T0.getTime() + 60_000),
+    ),
+  ).toEqual({ ok: true });
+  const obra = await db.query("SELECT quantidade_estoque, situacao FROM artwork WHERE id = $1", [
+    unica,
+  ]);
+  expect(obra.rows).toEqual([{ quantidade_estoque: 0, situacao: "ESGOTADA" }]);
+  const reservas = await db.query("SELECT 1 FROM artwork_reservation WHERE artwork_id = $1", [
+    unica,
+  ]);
+  expect(reservas.rowCount).toBe(0);
+});

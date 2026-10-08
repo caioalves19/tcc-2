@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { obterPrisma } from "../../lib/prisma";
+import { situacaoPorEstoque } from "../catalog/index";
 import { obraDisponivel } from "./regras";
 
 // RN03: as unidades ficam presas ao checkout por 10 minutos.
@@ -126,4 +127,44 @@ export async function estoqueDisponivel(obraId: string, agora: Date = new Date()
     _sum: { quantity: true },
   });
   return Math.max(0, obra.stockQuantity - (_sum.quantity ?? 0));
+}
+
+// RN05: chamada só com o pagamento aprovado (PBI-28). Consome a reserva da sessão e baixa
+// o estoque; a situação acompanha o estoque (RN11), salvo rascunho.
+export async function baixarEstoque(
+  sessaoId: string | null,
+  entrada: unknown,
+  agora: Date = new Date(),
+): Promise<{ ok: true } | ResultadoReserva<never>> {
+  const validado = schemaItens.safeParse(entrada);
+  if (!validado.success)
+    return {
+      ok: false,
+      erro: "invalido",
+      mensagem: validado.error.issues.map((i) => i.message).join(" "),
+    };
+  const itens = validado.data;
+  const ids = itens.map((i) => i.obraId).sort();
+
+  return obterPrisma().$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM artwork WHERE id = ANY(${ids}::uuid[]) ORDER BY id FOR UPDATE`;
+    const obras = await tx.artwork.findMany({ where: { id: { in: ids } } });
+    for (const item of itens) {
+      const obra = obras.find((o) => o.id === item.obraId);
+      if (!obra) continue;
+      const estoque = obra.stockQuantity - item.quantidade;
+      await tx.artwork.update({
+        where: { id: obra.id },
+        data: {
+          stockQuantity: estoque,
+          status: obra.status === "RASCUNHO" ? "RASCUNHO" : situacaoPorEstoque(true, estoque),
+        },
+      });
+    }
+    if (sessaoId)
+      await tx.artworkReservation.deleteMany({
+        where: { sessionId: sessaoId, artworkId: { in: ids } },
+      });
+    return { ok: true };
+  });
 }
