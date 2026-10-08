@@ -122,3 +122,31 @@ it("RN04 reservas concorrentes de uma peça única: só uma leva", async () => {
     expect(rows[0].total).toBe(1);
   }
 });
+
+it("RN03 a reserva vence em 10 minutos e uma nova da mesma sessão substitui a anterior", async () => {
+  const { reservarItens } = await import("../../src/modules/orders");
+  const unica = await obraPublicada("t3-unica", 1);
+  const outra = await obraPublicada("t3-outra", 1);
+  const [primeira, segunda] = await novasSessoes(2);
+  const depois = (ms: number) => new Date(T0.getTime() + ms);
+
+  expect(await reservarItens(primeira, [{ obraId: unica, quantidade: 1 }], T0)).toMatchObject({
+    ok: true,
+  });
+  expect(
+    await reservarItens(segunda, [{ obraId: unica, quantidade: 1 }], depois(10 * 60_000 - 1)),
+  ).toMatchObject({ ok: false, erro: "indisponivel" });
+  expect(
+    await reservarItens(segunda, [{ obraId: unica, quantidade: 1 }], depois(10 * 60_000 + 1)),
+  ).toMatchObject({ ok: true });
+
+  // A primeira sessão volta ao checkout com outro carrinho: a reserva antiga sai.
+  expect(
+    await reservarItens(primeira, [{ obraId: outra, quantidade: 1 }], depois(11 * 60_000)),
+  ).toMatchObject({ ok: true });
+  const { rows } = await db.query(
+    "SELECT artwork_id FROM artwork_reservation WHERE session_id = $1",
+    [primeira],
+  );
+  expect(rows).toEqual([{ artwork_id: outra }]);
+});
