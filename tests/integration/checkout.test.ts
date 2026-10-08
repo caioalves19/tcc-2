@@ -248,3 +248,88 @@ it("RF12/RN07 finalizar cria o pedido pendente com cópias imutáveis, ligado à
   });
   expect(await pedido()).toEqual(esperado);
 });
+
+async function rastrosDe(email: string) {
+  const pedidos = await db.query(
+    'SELECT o.id FROM "order" o JOIN "user" u ON u.id = o.user_id WHERE u.email = $1',
+    [email],
+  );
+  const reservas = await db.query(
+    `SELECT r.id FROM artwork_reservation r JOIN session s ON s.id = r.session_id
+       JOIN "user" u ON u.id = s.user_id WHERE u.email = $1`,
+    [email],
+  );
+  return { pedidos: pedidos.rowCount, reservas: reservas.rowCount };
+}
+
+it("RF12/RN07 finalizar recusado não deixa pedido nem reserva, e valores enviados pelo navegador são ignorados", async () => {
+  const { finalizarCompra, reservarItens } = await import("../../src/modules/orders");
+  const RETIRADA = { modalidade: "RETIRADA" };
+  expect(
+    await finalizarCompra(RETIRADA, { cabecalhos: new Headers(), tokenVisitante: null }),
+  ).toMatchObject({ ok: false, erro: "nao_autenticado" });
+
+  const presa = await obraPublicada("recusa-presa", "300,00", 1);
+  const tiragem = await obraPublicada("recusa-tiragem", "80,00", 4);
+  const vazio = await novoCliente("recusa-vazio@pbi26.test");
+  const disputa = await novoCliente("recusa-disputa@pbi26.test");
+  const semEndereco = await novoCliente("recusa-sem-endereco@pbi26.test", false);
+  await noCarrinho(disputa, [[presa, 1]]);
+  await noCarrinho(semEndereco, [[tiragem, 1]]);
+  await novoCliente("recusa-dona@pbi26.test");
+  await reservarItens(await sessaoDe("recusa-dona@pbi26.test"), [{ obraId: presa, quantidade: 1 }]);
+
+  expect(await finalizarCompra(RETIRADA, vazio)).toMatchObject({
+    ok: false,
+    erro: "carrinho_vazio",
+  });
+  expect(await finalizarCompra(RETIRADA, disputa)).toMatchObject({
+    ok: false,
+    erro: "indisponivel",
+    obras: [presa],
+  });
+  expect(await finalizarCompra(RETIRADA, semEndereco)).toMatchObject({
+    ok: false,
+    erro: "sem_endereco",
+  });
+  for (const email of ["recusa-vazio", "recusa-disputa", "recusa-sem-endereco"])
+    expect(await rastrosDe(`${email}@pbi26.test`), email).toEqual({ pedidos: 0, reservas: 0 });
+
+  const esperta = await novoCliente("recusa-esperta@pbi26.test");
+  await noCarrinho(esperta, [[tiragem, 2]]);
+  for (const entrada of [{ modalidade: "ENTREGA" }, {}, null, "RETIRADA"])
+    expect(await finalizarCompra(entrada, esperta), JSON.stringify(entrada)).toMatchObject({
+      ok: false,
+      erro: "invalido",
+    });
+  expect(await rastrosDe("recusa-esperta@pbi26.test")).toEqual({ pedidos: 0, reservas: 0 });
+
+  const adulterada = await finalizarCompra(
+    {
+      modalidade: "RETIRADA",
+      totalCentavos: 1,
+      subtotalCentavos: 1,
+      freteCentavos: -500,
+      itens: [{ obraId: tiragem, quantidade: 4, precoCentavos: 1 }],
+      endereco: { logradouro: "Rua Falsa" },
+    },
+    esperta,
+  );
+  if (!adulterada.ok) throw new Error(adulterada.mensagem);
+  const { rows } = await db.query(
+    `SELECT o.subtotal_centavos, o.frete_centavos, o.total_centavos, o.endereco_copia->>'logradouro' AS rua,
+            i.quantidade, i.preco_centavos_copia
+       FROM "order" o JOIN order_item i ON i.order_id = o.id WHERE o.numero = $1`,
+    [adulterada.dados.numero],
+  );
+  expect(rows).toEqual([
+    {
+      subtotal_centavos: 16000,
+      frete_centavos: 0,
+      total_centavos: 16000,
+      rua: "Rua Treze de Maio",
+      quantidade: 2,
+      preco_centavos_copia: 8000,
+    },
+  ]);
+});
