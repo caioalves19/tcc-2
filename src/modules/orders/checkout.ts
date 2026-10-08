@@ -38,7 +38,8 @@ export type ResultadoCheckout<T> =
 
 export type ResultadoFinalizar =
   | ResultadoCheckout<{ numero: string; expiraEm: Date }>
-  | { ok: false; erro: "invalido"; mensagem: string };
+  | { ok: false; erro: "invalido"; mensagem: string }
+  | { ok: false; erro: "pendente"; numero: string; mensagem: string };
 
 export type OpcoesFinalizar = { agora?: Date; gerarNumero?: (agora: Date) => string };
 
@@ -163,10 +164,32 @@ export async function finalizarCompra(
   const { resumo, comprador } = montado.dados;
 
   return obterPrisma().$transaction(async (tx): Promise<ResultadoFinalizar> => {
-    // Pedido PENDENTE sem pagamento emitido foi abandonado: o novo checkout o cancela e solta as
-    // unidades que ele segurava, mesmo que tenham sido reservadas em outra sessão da conta.
+    // RN06: com Pix ou boleto em aberto, o cliente volta ao pedido (pagar ou cancelar); um novo
+    // checkout não o substitui nem mexe na reserva prorrogada.
+    const emAberto = await tx.order.findFirst({
+      where: {
+        userId: comprador.userId,
+        status: "PENDENTE",
+        payments: { some: { status: "PENDENTE" } },
+      },
+    });
+    if (emAberto)
+      return {
+        ok: false,
+        erro: "pendente",
+        numero: emAberto.number,
+        mensagem: "Você já tem um pedido aguardando pagamento.",
+      };
+
+    // Pedido PENDENTE sem pagamento em aberto foi abandonado (ou o pagamento foi recusado): o
+    // novo checkout o cancela e solta as unidades que ele segurava, mesmo que tenham sido
+    // reservadas em outra sessão da conta.
     const abandonados = await tx.order.findMany({
-      where: { userId: comprador.userId, status: "PENDENTE", payments: { none: {} } },
+      where: {
+        userId: comprador.userId,
+        status: "PENDENTE",
+        payments: { none: { status: "PENDENTE" } },
+      },
     });
     if (abandonados.length > 0) {
       await tx.order.updateMany({

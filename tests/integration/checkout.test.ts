@@ -385,3 +385,51 @@ it("RF12 novo finalizar cancela o pedido pendente abandonado, inclusive de outra
     { session_id: sessaoCelular, artwork_id: adesivo, quantidade: 2 },
   ]);
 });
+
+it("RN06 com Pix ou boleto em aberto, finalizar leva ao pedido existente sem criar outro nem mexer na reserva", async () => {
+  const { finalizarCompra, prorrogarReserva } = await import("../../src/modules/orders");
+  const { abrirSessao } = await import("../../src/lib/auth");
+  const RETIRADA = { modalidade: "RETIRADA" };
+  const mural = await obraPublicada("pix-mural", "2.000,00", 1);
+  const email = "fabi@pbi26.test";
+  const notebook = await novoCliente(email);
+  await noCarrinho(notebook, [[mural, 1]]);
+  const pedido = await finalizarCompra(RETIRADA, notebook);
+  if (!pedido.ok) throw new Error(pedido.mensagem);
+  const { numero } = pedido.dados;
+
+  // O que o PBI-27/28 vai gravar: Pix emitido e reserva prorrogada até o vencimento.
+  await db.query(
+    `INSERT INTO payment (id, order_id, provedor, metodo, situacao, valor_centavos)
+     SELECT gen_random_uuid(), id, 'mercadopago', 'PIX', 'PENDENTE', total_centavos FROM "order" WHERE numero = $1`,
+    [numero],
+  );
+  const vencimento = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const sessao = await sessaoDe(email);
+  expect(
+    await prorrogarReserva(sessao, [{ obraId: mural, quantidade: 1 }], vencimento),
+  ).toMatchObject({ ok: true });
+
+  const celular = {
+    cabecalhos: await comCookie((await abrirSessao({ email, senha: SENHA })).token),
+    tokenVisitante: null,
+  };
+  for (const contexto of [notebook, celular])
+    expect(await finalizarCompra(RETIRADA, contexto)).toMatchObject({
+      ok: false,
+      erro: "pendente",
+      numero,
+    });
+  expect(await pedidosDe(email)).toEqual([{ numero, situacao: "PENDENTE", session_id: sessao }]);
+  const reservas = await db.query(
+    "SELECT session_id, expira_em FROM artwork_reservation WHERE artwork_id = $1",
+    [mural],
+  );
+  expect(reservas.rows).toEqual([{ session_id: sessao, expira_em: vencimento }]);
+
+  // Pagamento recusado não segura o pedido: o próximo finalizar o trata como abandonado.
+  await db.query("UPDATE payment SET situacao = 'RECUSADO'");
+  const novo = await finalizarCompra(RETIRADA, notebook);
+  if (!novo.ok) throw new Error(novo.mensagem);
+  expect((await pedidosDe(email)).map((p) => p.situacao)).toEqual(["CANCELADO", "PENDENTE"]);
+});
