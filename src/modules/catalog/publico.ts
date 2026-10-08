@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { obterPrisma } from "../../lib/prisma";
 
 // Vitrine pública (PBI-20): o que qualquer visitante pode ver de uma obra, sem login (RN01).
@@ -103,9 +104,21 @@ export type PaginaCatalogo = {
   ordem: OrdemCatalogo;
 };
 
+export const OBRAS_POR_PAGINA = 12;
+
+// Vem da URL (?pagina=2&ordem=...): qualquer valor fora do esperado volta ao padrão.
+const schemaCatalogo = z.object({
+  pagina: z.coerce.number().int().min(1).max(1_000_000).catch(1),
+  ordem: z.enum(["recentes"]).catch("recentes"),
+});
+
 // RF09/RN11: só obras publicadas e não arquivadas. As disponíveis vêm antes das esgotadas (o enum
-// no Postgres segue RASCUNHO, DISPONIVEL, ESGOTADA); depois, as mais recentes.
-export async function listarCatalogo(): Promise<PaginaCatalogo> {
+// no Postgres segue RASCUNHO, DISPONIVEL, ESGOTADA); depois, as mais recentes. O id desempata
+// datas iguais, para uma obra não repetir nem sumir entre as páginas.
+export async function listarCatalogo(entrada: unknown): Promise<PaginaCatalogo> {
+  const { pagina, ordem } = schemaCatalogo.parse(
+    typeof entrada === "object" && entrada !== null ? entrada : {},
+  );
   const onde = { deletedAt: null, status: { not: "RASCUNHO" as const } };
   const prisma = obterPrisma();
   const [total, obras] = await Promise.all([
@@ -113,7 +126,9 @@ export async function listarCatalogo(): Promise<PaginaCatalogo> {
     prisma.artwork.findMany({
       where: onde,
       include: { images: { orderBy: [{ primary: "desc" }, { order: "asc" }], take: 1 } },
-      orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+      orderBy: [{ status: "asc" }, { createdAt: "desc" }, { id: "asc" }],
+      skip: (pagina - 1) * OBRAS_POR_PAGINA,
+      take: OBRAS_POR_PAGINA,
     }),
   ]);
   return {
@@ -130,8 +145,8 @@ export async function listarCatalogo(): Promise<PaginaCatalogo> {
       };
     }),
     total,
-    pagina: 1,
-    totalPaginas: 1,
-    ordem: "recentes",
+    pagina,
+    totalPaginas: Math.ceil(total / OBRAS_POR_PAGINA),
+    ordem,
   };
 }

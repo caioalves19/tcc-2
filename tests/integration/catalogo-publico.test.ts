@@ -1,5 +1,5 @@
 import type { Client } from "pg";
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, expect, it } from "vitest";
 import { prepararContas } from "./contas-pbi17";
 
 let db: Client;
@@ -11,6 +11,10 @@ beforeAll(async () => {
 }, 120_000);
 afterAll(async () => {
   await db?.end();
+});
+// Cada teste monta o próprio acervo no banco descartável.
+beforeEach(async () => {
+  await db.query("TRUNCATE artwork CASCADE");
 });
 
 type Ficha = {
@@ -75,11 +79,49 @@ it("RF09/RN11 lista só as obras publicadas, mais recentes primeiro e esgotadas 
   );
   await db.query("UPDATE artwork SET excluido_em = now() WHERE id = $1", [arquivada]);
 
-  const catalogo = await listarCatalogo();
+  const catalogo = await listarCatalogo({});
   expect(catalogo).toMatchObject({ total: 3, pagina: 1, totalPaginas: 1, ordem: "recentes" });
   expect(catalogo.obras.map((o) => [o.slug, o.disponivel])).toEqual([
     ["nova", true],
     ["antiga", true],
     ["esgotada-nova", false],
   ]);
+});
+
+it("RF09 pagina de 12 em 12 sem repetir nem pular obra, mesmo com datas iguais", async () => {
+  const { listarCatalogo } = await import("../../src/modules/catalog");
+  const mesmaData = "2025-06-01T12:00:00Z";
+  for (let i = 1; i <= 14; i++) {
+    const n = String(i).padStart(2, "0");
+    await cadastrar({ titulo: `Obra ${n}`, slug: `obra-${n}`, preco: "100,00" }, mesmaData);
+  }
+  await cadastrar(
+    { titulo: "Esgotada", slug: "esgotada", preco: "100,00", estoque: "0" },
+    "2026-09-01T12:00:00Z",
+  );
+
+  const primeira = await listarCatalogo({ pagina: 1 });
+  const segunda = await listarCatalogo({ pagina: "2" });
+  expect(primeira).toMatchObject({ total: 15, pagina: 1, totalPaginas: 2, ordem: "recentes" });
+  expect(segunda).toMatchObject({ total: 15, pagina: 2, totalPaginas: 2 });
+  expect(primeira.obras).toHaveLength(12);
+  expect(segunda.obras).toHaveLength(3);
+  const slugs = [...primeira.obras, ...segunda.obras].map((o) => o.slug);
+  expect(new Set(slugs).size).toBe(15);
+  expect(slugs.at(-1)).toBe("esgotada");
+  // A mesma consulta devolve a mesma ordem (o id desempata as datas iguais).
+  expect((await listarCatalogo({ pagina: 1 })).obras.map((o) => o.slug)).toEqual(
+    primeira.obras.map((o) => o.slug),
+  );
+
+  expect(await listarCatalogo({ pagina: 3 })).toEqual({
+    obras: [],
+    total: 15,
+    pagina: 3,
+    totalPaginas: 2,
+    ordem: "recentes",
+  });
+  for (const pagina of ["abc", 0, -1, 1.5, "", undefined, null, "1e999"])
+    expect((await listarCatalogo({ pagina, ordem: "qualquer" })).pagina, String(pagina)).toBe(1);
+  expect((await listarCatalogo({ ordem: "qualquer" })).ordem).toBe("recentes");
 });
