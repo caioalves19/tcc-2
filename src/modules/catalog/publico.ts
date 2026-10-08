@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Prisma } from "../../../generated/prisma/client";
 import { obterPrisma } from "../../lib/prisma";
+import { OBRAS_POR_PAGINA, ORDENS_CATALOGO, type OrdemCatalogo } from "./regras";
 
 // Vitrine pública (PBI-20): o que qualquer visitante pode ver de uma obra, sem login (RN01).
 
@@ -105,9 +106,6 @@ export async function outrasObrasDoArtista(
   return obras.map(paraCard);
 }
 
-export const ORDENS_CATALOGO = ["recentes", "menor-preco", "maior-preco", "destaque"] as const;
-export type OrdemCatalogo = (typeof ORDENS_CATALOGO)[number];
-
 // Critério escolhido, aplicado depois de "disponíveis antes das esgotadas" e antes do id.
 const CRITERIO: Record<OrdemCatalogo, Prisma.ArtworkOrderByWithRelationInput[]> = {
   recentes: [{ createdAt: "desc" }],
@@ -123,8 +121,6 @@ export type PaginaCatalogo = {
   totalPaginas: number;
   ordem: OrdemCatalogo;
 };
-
-export const OBRAS_POR_PAGINA = 12;
 
 // Vem da URL (?pagina=2&ordem=...): qualquer valor fora do esperado volta ao padrão.
 const schemaCatalogo = z.object({

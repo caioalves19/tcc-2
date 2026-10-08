@@ -6,20 +6,16 @@ export {
   moverImagem,
   removerImagem,
 } from "./imagens";
-export { centavosParaTexto, precoEmCentavos, situacaoPorEstoque } from "./regras";
-export type { SituacaoObra } from "./regras";
-export type { EntradaEditarObra, EntradaObra } from "./validacao";
 export {
-  lerObraPublica,
-  listarCatalogo,
-  ORDENS_CATALOGO,
+  centavosParaTexto,
+  hrefCatalogo,
   OBRAS_POR_PAGINA,
-  outrasObrasDoArtista,
-} from "./publico";
-export type {
-  CardObra,
-  ImagemPublica,
-  ObraPublica,
-  OrdemCatalogo,
-  PaginaCatalogo,
-} from "./publico";
+  ORDENS_CATALOGO,
+  precoEmCentavos,
+  ROTULOS_ORDEM,
+  situacaoPorEstoque,
+} from "./regras";
+export type { OrdemCatalogo, SituacaoObra } from "./regras";
+export type { EntradaEditarObra, EntradaObra } from "./validacao";
+export { lerObraPublica, listarCatalogo, outrasObrasDoArtista } from "./publico";
+export type { CardObra, ImagemPublica, ObraPublica, PaginaCatalogo } from "./publico";
