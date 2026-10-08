@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Prisma } from "../../../generated/prisma/client";
 import { obterPrisma } from "../../lib/prisma";
 import { situacaoPorEstoque } from "../catalog/index";
 import { obraDisponivel } from "./regras";
@@ -29,7 +30,7 @@ const schemaItens = z
     "Obra repetida na reserva.",
   );
 
-type Tx = Parameters<Parameters<ReturnType<typeof obterPrisma>["$transaction"]>[0]>[0];
+type Tx = Prisma.TransactionClient;
 
 // RN04: trava as linhas das obras, sempre na mesma ordem (id), para não haver deadlock, e conta
 // as unidades presas em reservas ativas de outras sessões (todas, se a sessão não existe mais).
@@ -169,10 +170,13 @@ export async function estoqueDisponivel(obraId: string, agora: Date = new Date()
 // o estoque; a situação acompanha o estoque (RN11), salvo rascunho.
 // RN06: se a reserva venceu (ou a sessão sumiu), só baixa o que nenhuma outra sessão segura;
 // o resto volta como sem_estoque para o estorno (PBI-43). Tudo ou nada.
+// RNF11: o webhook passa a própria transação (`tx`) para gravar o evento, pagar o pedido e
+// baixar o estoque juntos; a idempotência (evento único) fica com quem chama.
 export async function baixarEstoque(
   sessaoId: string | null,
   entrada: unknown,
   agora: Date = new Date(),
+  tx?: Tx,
 ): Promise<ResultadoBaixa> {
   const validado = schemaItens.safeParse(entrada);
   if (!validado.success)
@@ -180,7 +184,7 @@ export async function baixarEstoque(
   const itens = validado.data;
   const ids = itens.map((i) => i.obraId).sort();
 
-  return obterPrisma().$transaction(async (tx) => {
+  const baixar = async (tx: Tx): Promise<ResultadoBaixa> => {
     const { obras, ocupadas } = await travarObras(tx, ids, sessaoId, agora);
     const semEstoque = ids.filter((id) => {
       const obra = obras.find((o) => o.id === id);
@@ -205,5 +209,6 @@ export async function baixarEstoque(
         where: { sessionId: sessaoId, artworkId: { in: ids } },
       });
     return { ok: true };
-  });
+  };
+  return tx ? baixar(tx) : obterPrisma().$transaction(baixar);
 }

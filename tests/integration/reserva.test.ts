@@ -288,3 +288,26 @@ it("RN06 a prorrogação não encurta nem libera a reserva por engano", async ()
     await reservarItens(concorrente, [{ obraId: unica, quantidade: 1 }], depois(9)),
   ).toMatchObject({ ok: false, erro: "indisponivel" });
 });
+
+it("RNF11 a baixa entra na transação do webhook e é desfeita junto com ela", async () => {
+  const { baixarEstoque, reservarItens } = await import("../../src/modules/orders");
+  const { obterPrisma } = await import("../../src/lib/prisma");
+  const tiragem = await obraPublicada("t6-transacao", 2);
+  const [sessao] = (await novasSessoes(1)) as [string];
+  await reservarItens(sessao, [{ obraId: tiragem, quantidade: 1 }], T0);
+
+  await expect(
+    obterPrisma().$transaction(async (tx) => {
+      const baixa = await baixarEstoque(sessao, [{ obraId: tiragem, quantidade: 1 }], T0, tx);
+      expect(baixa).toEqual({ ok: true });
+      throw new Error("falha depois da baixa, antes de gravar o evento");
+    }),
+  ).rejects.toThrow("falha depois da baixa");
+
+  const obra = await db.query("SELECT quantidade_estoque FROM artwork WHERE id = $1", [tiragem]);
+  expect(obra.rows).toEqual([{ quantidade_estoque: 2 }]);
+  const reservas = await db.query("SELECT 1 FROM artwork_reservation WHERE session_id = $1", [
+    sessao,
+  ]);
+  expect(reservas.rowCount).toBe(1);
+});
