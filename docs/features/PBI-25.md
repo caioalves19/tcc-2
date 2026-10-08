@@ -24,7 +24,7 @@ Implementação no módulo `src/modules/orders`, com API pública em `index.ts`.
 | Função | Uso | Resultado |
 |--------|-----|-----------|
 | `reservarItens(sessaoId, itens, agora?)` | PBI-26, ao ir para o pagamento | `{ ok, dados: { expiraEm } }`, `indisponivel` com as obras ou `pendente` |
-| `prorrogarReserva(sessaoId, ate, agora?)` | PBI-26/27, Pix ou boleto pendente | `{ ok, dados: { expiraEm } }`, `sem_reserva` ou `invalido` |
+| `prorrogarReserva(sessaoId, itens, ate, agora?)` | PBI-26/27, Pix ou boleto pendente | `{ ok, dados: { expiraEm } }`, `sem_reserva` ou `invalido` |
 | `liberarReservas(sessaoId)` | Cliente desiste ou pedido cancelado antes de pagar | — |
 | `estoqueDisponivel(obraId, agora?, sessaoId?)` | Checkout, para avisar antes de reservar | unidades livres (0 se a obra não está à venda); com `sessaoId`, as reservas dela contam como livres |
 | `baixarEstoque(sessaoId \| null, itens, agora?, tx?)` | PBI-28, pagamento aprovado | `{ ok }` ou `sem_estoque` com as obras |
@@ -41,7 +41,8 @@ Entrada inválida volta como `invalido`. O relógio (`agora`) pode ser injetado 
 - **Tudo ou nada:** se uma obra não cabe, nada é reservado, e a resposta lista as obras que faltam.
 - **Concorrência (RN04):** a reserva, a prorrogação e a baixa rodam numa transação que trava as
   linhas de `artwork` com `SELECT … FOR UPDATE`, sempre na ordem do id (sem deadlock entre
-  carrinhos com as mesmas obras).
+  carrinhos com as mesmas obras). A reserva e a prorrogação travam antes a linha da `session`:
+  um checkout e uma prorrogação da mesma sessão se enfileiram, e um não apaga o que o outro garante.
 - **10 minutos (RN03):** a reserva vale até `agora + 10 min`. Uma nova reserva da mesma sessão
   substitui a anterior (o cliente voltou ao checkout com outro carrinho).
 - **Pix/boleto pendente (RN06):** se a sessão tem reserva prorrogada (vence depois de
@@ -60,10 +61,13 @@ Entrada inválida volta como `invalido`. O relógio (`agora`) pode ser injetado 
 2. **Pagamento criado (PBI-27):**
    - cartão: a aprovação costuma chegar dentro dos 10 minutos;
    - Pix ou boleto: o pedido fica pendente, e o checkout chama `prorrogarReserva(sessaoId,
-     vencimento)` com o vencimento do meio de pagamento. Reserva já vencida não é ressuscitada
-     (`sem_reserva`): nesse caso o pagamento não deve ser emitido com essas unidades garantidas.
-     A prorrogação recusa (`invalido`) prazo no passado, data inválida ou prazo menor que o atual:
-     ela nunca encurta a reserva.
+     itens, vencimento)` com os itens do pedido e o vencimento do meio de pagamento. Só prorroga
+     se as reservas ativas da sessão forem exatamente esses itens; reserva já vencida não é
+     ressuscitada, e um carrinho trocado por um novo checkout não é prorrogado no lugar do pedido.
+     Nos dois casos volta `sem_reserva`, e o pagamento não deve ser emitido com essas unidades
+     garantidas.
+     A prorrogação recusa (`invalido`) itens inválidos, prazo no passado, data inválida ou prazo
+     menor que o atual: ela nunca encurta a reserva.
 3. **Aprovação (PBI-28):** `baixarEstoque(sessaoId, itens, agora, tx)`, dentro da transação do
    webhook. O PBI-28 grava o `webhook_event` (id único), paga o pedido e baixa o estoque na mesma
    `tx`: se algo falha, tudo é desfeito. A idempotência (RNF11) fica com o evento único, porque uma
@@ -108,8 +112,8 @@ Seams: funções públicas de `src/modules/orders` e `iniciarTarefas` (`src/lib/
   - 8 sessões disputando uma peça única, em 10 rodadas: só uma reserva por rodada;
   - expira em 10 min (vale em 9:59.999, livre em 10:00.001) e a nova reserva da sessão substitui a
     anterior;
-  - prorrogação da reserva ativa e recusa da vencida; prazo no passado, menor que o atual ou
-    inválido volta `invalido` e não encurta a reserva;
+  - prorrogação da reserva ativa e recusa da vencida; itens inválidos e prazo no passado, menor
+    que o atual (entre agora e o vencimento) ou inválido voltam `invalido` e não encurtam a reserva;
   - prorrogação que chega depois de outra sessão levar a peça na virada do prazo volta
     `sem_reserva`, e a peça segue com uma reserva só;
   - limpeza idempotente, que mantém as ativas;
@@ -124,7 +128,10 @@ Seams: funções públicas de `src/modules/orders` e `iniciarTarefas` (`src/lib/
     mutação: travando na ordem do pedido, o Postgres acusa `deadlock detected`);
   - o dono da reserva vê as próprias unidades como livres, e id em maiúsculas vale igual;
   - com Pix pendente, um novo checkout da mesma sessão volta `pendente`, a peça continua presa, e
-    depois de cancelar (`liberarReservas`) a sessão reserva de novo.
+    depois de cancelar (`liberarReservas`) a sessão reserva de novo;
+  - checkout e prorrogação simultâneos na mesma sessão (ordem fixada por uma trava externa): o
+    checkout troca o carrinho e a prorrogação volta `sem_reserva`, sem prorrogar o carrinho novo
+    (conferido por mutação: sem a trava da sessão ou sem conferir os itens, o teste falha).
 - `npm run test:integration -- tests/integration/tarefas`: o pg-boss real agenda `* * * * *` e o
   worker apaga só a reserva vencida.
 - `npm run test:unit -- instrumentation`: o servidor sobe mesmo se a fila falhar.

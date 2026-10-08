@@ -160,7 +160,9 @@ it("RN06 com Pix/boleto pendente a reserva ativa é prorrogada; a vencida não v
   const vencimentoPix = depois(30);
 
   await reservarItens(pix, [{ obraId: unica, quantidade: 1 }], T0);
-  expect(await prorrogarReserva(pix, vencimentoPix, depois(5))).toEqual({
+  expect(
+    await prorrogarReserva(pix, [{ obraId: unica, quantidade: 1 }], vencimentoPix, depois(5)),
+  ).toEqual({
     ok: true,
     dados: { expiraEm: vencimentoPix },
   });
@@ -169,7 +171,14 @@ it("RN06 com Pix/boleto pendente a reserva ativa é prorrogada; a vencida não v
   ).toMatchObject({ ok: false, erro: "indisponivel" });
 
   await reservarItens(atrasada, [{ obraId: tardia, quantidade: 1 }], T0);
-  expect(await prorrogarReserva(atrasada, vencimentoPix, depois(11))).toEqual({
+  expect(
+    await prorrogarReserva(
+      atrasada,
+      [{ obraId: tardia, quantidade: 1 }],
+      vencimentoPix,
+      depois(11),
+    ),
+  ).toEqual({
     ok: false,
     erro: "sem_reserva",
   });
@@ -280,11 +289,18 @@ it("RN06 a prorrogação não encurta nem libera a reserva por engano", async ()
   await reservarItens(pix, [{ obraId: unica, quantidade: 1 }], T0);
   // depois(8) está no futuro, mas antes do vencimento atual (depois(10)): encurtaria a reserva.
   for (const ate of [depois(-1), depois(2), depois(5), depois(8), new Date(Number.NaN)]) {
-    expect(await prorrogarReserva(pix, ate, depois(5))).toMatchObject({
+    expect(
+      await prorrogarReserva(pix, [{ obraId: unica, quantidade: 1 }], ate, depois(5)),
+    ).toMatchObject({
       ok: false,
       erro: "invalido",
     });
   }
+  // Itens do pedido inválidos também não mexem na reserva.
+  expect(await prorrogarReserva(pix, [], depois(30), depois(5))).toMatchObject({
+    ok: false,
+    erro: "invalido",
+  });
   expect(
     await reservarItens(concorrente, [{ obraId: unica, quantidade: 1 }], depois(9)),
   ).toMatchObject({ ok: false, erro: "indisponivel" });
@@ -413,7 +429,7 @@ it("RN06 com Pix/boleto pendente, um novo checkout da mesma sessão não derruba
   const depois = (min: number) => new Date(T0.getTime() + min * 60_000);
 
   await reservarItens(cliente, [{ obraId: doPix, quantidade: 1 }], T0);
-  await prorrogarReserva(cliente, depois(30), depois(1));
+  await prorrogarReserva(cliente, [{ obraId: doPix, quantidade: 1 }], depois(30), depois(1));
 
   expect(await reservarItens(cliente, [{ obraId: outra, quantidade: 1 }], depois(5))).toEqual({
     ok: false,
@@ -442,7 +458,14 @@ it("RN04/RN06 prorrogação que chega depois de outra sessão tomar a peça não
     await reservarItens(concorrente, [{ obraId: unica, quantidade: 1 }], depois(10 * 60_000 + 1)),
   ).toMatchObject({ ok: true });
   // A prorrogação chega depois, com um relógio de antes da virada.
-  expect(await prorrogarReserva(pix, depois(30 * 60_000), depois(9 * 60_000))).toEqual({
+  expect(
+    await prorrogarReserva(
+      pix,
+      [{ obraId: unica, quantidade: 1 }],
+      depois(30 * 60_000),
+      depois(9 * 60_000),
+    ),
+  ).toEqual({
     ok: false,
     erro: "sem_reserva",
   });
@@ -451,4 +474,58 @@ it("RN04/RN06 prorrogação que chega depois de outra sessão tomar a peça não
     [unica, depois(15 * 60_000)],
   );
   expect(rows[0].total).toBe(1);
+});
+
+// Quantas transações deste banco estão paradas esperando uma trava.
+async function esperandoTrava(quantas: number, limiteMs = 5_000): Promise<boolean> {
+  const fim = Date.now() + limiteMs;
+  while (Date.now() < fim) {
+    const { rows } = await db.query(
+      "SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'",
+    );
+    if (rows[0].n >= quantas) return true;
+    await new Promise((r) => setTimeout(r, 25));
+  }
+  return false;
+}
+
+it("RN06 checkout e prorrogação simultâneos na mesma sessão: a prorrogação não garante reserva apagada", async () => {
+  const { Client } = await import("pg");
+  const { prorrogarReserva, reservarItens } = await import("../../src/modules/orders");
+  const doPix = await obraPublicada("t12-pix", 1);
+  const outra = await obraPublicada("t12-outra", 1);
+  const [cliente] = (await novasSessoes(1)) as [string];
+  const depois = (min: number) => new Date(T0.getTime() + min * 60_000);
+  await reservarItens(cliente, [{ obraId: doPix, quantidade: 1 }], T0);
+
+  // Outra conexão segura a obra do carrinho novo: o checkout passa da checagem de pendente
+  // e espera; a prorrogação do Pix chega nesse meio-tempo.
+  const trava = new Client({ connectionString: process.env.DATABASE_URL });
+  await trava.connect();
+  try {
+    await trava.query("BEGIN");
+    await trava.query("SELECT id FROM artwork WHERE id = $1 FOR UPDATE", [outra]);
+    const checkout = reservarItens(cliente, [{ obraId: outra, quantidade: 1 }], depois(2));
+    expect(await esperandoTrava(1)).toBe(true);
+    const prorrogacao = prorrogarReserva(
+      cliente,
+      [{ obraId: doPix, quantidade: 1 }],
+      depois(30),
+      depois(2),
+    );
+    await Promise.race([prorrogacao, esperandoTrava(2)]);
+    await trava.query("COMMIT");
+
+    // O checkout começou antes e trocou o carrinho; a prorrogação chega sem reserva para
+    // garantir, e o PBI-27 não emite o Pix.
+    expect(await checkout).toMatchObject({ ok: true });
+    expect(await prorrogacao).toEqual({ ok: false, erro: "sem_reserva" });
+  } finally {
+    await trava.end();
+  }
+  const { rows } = await db.query(
+    "SELECT artwork_id FROM artwork_reservation WHERE session_id = $1",
+    [cliente],
+  );
+  expect(rows).toEqual([{ artwork_id: outra }]);
 });

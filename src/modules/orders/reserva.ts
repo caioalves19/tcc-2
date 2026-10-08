@@ -52,6 +52,12 @@ async function travarObras(tx: Tx, ids: string[], sessaoId: string | null, agora
   return { obras, ocupadas };
 }
 
+// RN06: checkout e prorrogação da mesma sessão se enfileiram, para um novo checkout não apagar
+// a reserva que a prorrogação está garantindo para o Pix/boleto. Vem antes das obras (ordem fixa).
+async function travarSessao(tx: Tx, sessaoId: string) {
+  await tx.$queryRaw`SELECT id FROM session WHERE id = ${sessaoId}::uuid FOR UPDATE`;
+}
+
 function mensagemDe(erro: z.ZodError): string {
   return erro.issues.map((i) => i.message).join(" ");
 }
@@ -74,6 +80,7 @@ export async function reservarItens(
   return obterPrisma().$transaction(async (tx) => {
     // RN06: reserva prorrogada (Pix/boleto pendente) só sai com o pagamento, o vencimento ou
     // o cancelamento do pedido (liberarReservas); um novo checkout não a substitui.
+    await travarSessao(tx, sessaoId);
     const pendente = await tx.artworkReservation.findFirst({
       where: { sessionId: sessaoId, expiresAt: { gt: expiraEm } },
     });
@@ -108,10 +115,13 @@ export async function reservarItens(
 
 // RN06: Pix e boleto deixam o pedido pendente; a reserva ainda ativa passa a vencer
 // junto com o meio de pagamento. Reserva já vencida não é ressuscitada, e a prorrogação
-// nunca encurta a reserva. Trava as obras e confere, dentro da trava, que nenhuma outra
-// sessão levou a peça na virada do prazo; se levou, volta sem_reserva.
+// nunca encurta a reserva. Só prorroga se as reservas ativas da sessão forem exatamente os
+// itens do pedido (um novo checkout pode ter trocado o carrinho). Trava a sessão e as obras e
+// confere, dentro da trava, que nenhuma outra sessão levou a peça na virada do prazo; se
+// levou, volta sem_reserva.
 export async function prorrogarReserva(
   sessaoId: string,
+  entrada: unknown,
   ate: Date,
   agora: Date = new Date(),
 ): Promise<
@@ -119,23 +129,29 @@ export async function prorrogarReserva(
   | { ok: false; erro: "sem_reserva" }
   | { ok: false; erro: "invalido"; mensagem: string }
 > {
+  const validado = schemaItens.safeParse(entrada);
+  if (!validado.success)
+    return { ok: false, erro: "invalido", mensagem: mensagemDe(validado.error) };
   if (Number.isNaN(ate.getTime()) || ate <= agora)
     return { ok: false, erro: "invalido", mensagem: "Prazo da prorrogação inválido." };
+  const itens = validado.data;
+  const ids = itens.map((i) => i.obraId).sort();
   return obterPrisma().$transaction(async (tx) => {
-    const onde = { sessionId: sessaoId, expiresAt: { gt: agora } };
-    const antes = await tx.artworkReservation.findMany({ where: onde });
-    if (antes.length === 0) return { ok: false, erro: "sem_reserva" };
-    const ids = [...new Set(antes.map((r) => r.artworkId))].sort();
+    await travarSessao(tx, sessaoId);
     const { obras, ocupadas } = await travarObras(tx, ids, sessaoId, agora);
-    // Relê depois da trava: outra sessão pode ter levado a peça na virada do prazo.
     const ativas = await tx.artworkReservation.findMany({
-      where: { ...onde, artworkId: { in: ids } },
+      where: { sessionId: sessaoId, expiresAt: { gt: agora } },
     });
-    const garantidas = ativas.every((r) => {
-      const obra = obras.find((o) => o.id === r.artworkId);
-      return obra !== undefined && obra.stockQuantity - ocupadas(r.artworkId) >= r.quantity;
+    const mesmoPedido =
+      ativas.length === itens.length &&
+      itens.every((i) =>
+        ativas.some((r) => r.artworkId === i.obraId && r.quantity === i.quantidade),
+      );
+    const garantidas = itens.every((i) => {
+      const obra = obras.find((o) => o.id === i.obraId);
+      return obra !== undefined && obra.stockQuantity - ocupadas(i.obraId) >= i.quantidade;
     });
-    if (ativas.length === 0 || !garantidas) return { ok: false, erro: "sem_reserva" };
+    if (!mesmoPedido || !garantidas) return { ok: false, erro: "sem_reserva" };
     if (ativas.some((r) => r.expiresAt > ate))
       return {
         ok: false,
