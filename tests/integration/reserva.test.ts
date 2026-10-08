@@ -311,3 +311,80 @@ it("RNF11 a baixa entra na transação do webhook e é desfeita junto com ela", 
   ]);
   expect(reservas.rowCount).toBe(1);
 });
+
+it("RN04 tudo ou nada: uma obra que não cabe derruba a reserva e a baixa inteiras", async () => {
+  const { baixarEstoque, reservarItens } = await import("../../src/modules/orders");
+  const cabe = await obraPublicada("t8-cabe", 2);
+  const naoCabe = await obraPublicada("t8-nao-cabe", 1);
+  const [sessao] = (await novasSessoes(1)) as [string];
+  const itens = [
+    { obraId: cabe, quantidade: 1 },
+    { obraId: naoCabe, quantidade: 2 },
+  ];
+
+  expect(await reservarItens(sessao, itens, T0)).toEqual({
+    ok: false,
+    erro: "indisponivel",
+    obras: [naoCabe],
+  });
+  expect(await baixarEstoque(sessao, itens, T0)).toEqual({
+    ok: false,
+    erro: "sem_estoque",
+    obras: [naoCabe],
+  });
+  const reservas = await db.query("SELECT 1 FROM artwork_reservation WHERE session_id = $1", [
+    sessao,
+  ]);
+  expect(reservas.rowCount).toBe(0);
+  const { rows } = await db.query(
+    "SELECT slug, quantidade_estoque FROM artwork WHERE id = ANY($1::uuid[]) ORDER BY slug",
+    [[cabe, naoCabe]],
+  );
+  expect(rows).toEqual([
+    { slug: "t8-cabe", quantidade_estoque: 2 },
+    { slug: "t8-nao-cabe", quantidade_estoque: 1 },
+  ]);
+});
+
+it("RN11 a baixa de uma obra que voltou a rascunho não a publica de novo", async () => {
+  const { baixarEstoque, reservarItens } = await import("../../src/modules/orders");
+  const obra = await obraPublicada("t8-rascunho", 2);
+  const [sessao] = (await novasSessoes(1)) as [string];
+  await reservarItens(sessao, [{ obraId: obra, quantidade: 1 }], T0);
+  await db.query("UPDATE artwork SET situacao = 'RASCUNHO' WHERE id = $1", [obra]);
+
+  expect(await baixarEstoque(sessao, [{ obraId: obra, quantidade: 1 }], T0)).toEqual({ ok: true });
+  const { rows } = await db.query(
+    "SELECT quantidade_estoque, situacao FROM artwork WHERE id = $1",
+    [obra],
+  );
+  expect(rows).toEqual([{ quantidade_estoque: 1, situacao: "RASCUNHO" }]);
+});
+
+it("RN04 carrinhos com as mesmas obras em ordem invertida não travam um ao outro", async () => {
+  const { reservarItens } = await import("../../src/modules/orders");
+  const sessoes = await novasSessoes(8);
+
+  for (let rodada = 0; rodada < 5; rodada++) {
+    const a = await obraPublicada(`t8-a-${rodada}`, 1);
+    const b = await obraPublicada(`t8-b-${rodada}`, 1);
+    const resultados = await Promise.all(
+      sessoes.map((s, i) =>
+        reservarItens(
+          s,
+          i % 2 === 0
+            ? [
+                { obraId: a, quantidade: 1 },
+                { obraId: b, quantidade: 1 },
+              ]
+            : [
+                { obraId: b, quantidade: 1 },
+                { obraId: a, quantidade: 1 },
+              ],
+          T0,
+        ),
+      ),
+    );
+    expect(resultados.filter((r) => r.ok)).toHaveLength(1);
+  }
+});
