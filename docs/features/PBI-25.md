@@ -23,7 +23,7 @@ Implementação no módulo `src/modules/orders`, com API pública em `index.ts`.
 
 | Função | Uso | Resultado |
 |--------|-----|-----------|
-| `reservarItens(sessaoId, itens, agora?)` | PBI-26, ao ir para o pagamento | `{ ok, dados: { expiraEm } }` ou `indisponivel` com as obras |
+| `reservarItens(sessaoId, itens, agora?)` | PBI-26, ao ir para o pagamento | `{ ok, dados: { expiraEm } }`, `indisponivel` com as obras ou `pendente` |
 | `prorrogarReserva(sessaoId, ate, agora?)` | PBI-26/27, Pix ou boleto pendente | `{ ok, dados: { expiraEm } }`, `sem_reserva` ou `invalido` |
 | `liberarReservas(sessaoId)` | Cliente desiste ou pedido cancelado antes de pagar | — |
 | `estoqueDisponivel(obraId, agora?, sessaoId?)` | Checkout, para avisar antes de reservar | unidades livres (0 se a obra não está à venda); com `sessaoId`, as reservas dela contam como livres |
@@ -44,6 +44,9 @@ Entrada inválida volta como `invalido`. O relógio (`agora`) pode ser injetado 
   carrinhos com as mesmas obras).
 - **10 minutos (RN03):** a reserva vale até `agora + 10 min`. Uma nova reserva da mesma sessão
   substitui a anterior (o cliente voltou ao checkout com outro carrinho).
+- **Pix/boleto pendente (RN06):** se a sessão tem reserva prorrogada (vence depois de
+  `agora + 10 min`), `reservarItens` devolve `pendente` e não mexe nela. A reserva só sai com a
+  aprovação (baixa), o vencimento ou o cancelamento do pedido (`liberarReservas`).
 - **Reservar não baixa estoque.** O estoque só cai em `baixarEstoque`.
 - **Limpeza:** o pg-boss agenda a fila `liberar-reservas-expiradas` com `* * * * *`. A disponibilidade
   já ignora reservas vencidas, então a limpeza é só higiene: atrasar ou rodar duas vezes não muda o
@@ -105,14 +108,17 @@ Seams: funções públicas de `src/modules/orders` e `iniciarTarefas` (`src/lib/
   - baixa de obra que voltou a rascunho continua rascunho;
   - carrinhos com as mesmas obras em ordem invertida, em paralelo, sem deadlock (conferido por
     mutação: travando na ordem do pedido, o Postgres acusa `deadlock detected`);
-  - o dono da reserva vê as próprias unidades como livres, e id em maiúsculas vale igual.
+  - o dono da reserva vê as próprias unidades como livres, e id em maiúsculas vale igual;
+  - com Pix pendente, um novo checkout da mesma sessão volta `pendente`, a peça continua presa, e
+    depois de cancelar (`liberarReservas`) a sessão reserva de novo.
 - `npm run test:integration -- tests/integration/tarefas`: o pg-boss real agenda `* * * * *` e o
   worker apaga só a reserva vencida.
 - `npm run test:unit -- instrumentation`: o servidor sobe mesmo se a fila falhar.
 
 ## Pendências para os próximos PBIs
 
-- **PBI-26:** chamar `reservarItens` ao finalizar a compra e recusar os itens `indisponivel`.
+- **PBI-26:** chamar `reservarItens` ao finalizar a compra, recusar os itens `indisponivel` e, em
+  `pendente`, levar o cliente ao pedido pendente (pagar ou cancelar).
   Guardar no pedido a sessão que reservou, para o PBI-28 passar à `baixarEstoque`.
 - **PBI-27:** prorrogar a reserva com o vencimento do Pix/boleto.
 - **PBI-28:** chamar `baixarEstoque` só com pagamento aprovado, passando a `tx` do webhook

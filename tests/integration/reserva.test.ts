@@ -402,3 +402,29 @@ it("RF15 o dono da reserva vê as próprias unidades como livres; id em maiúscu
     { ok: true },
   );
 });
+
+it("RN06 com Pix/boleto pendente, um novo checkout da mesma sessão não derruba a reserva", async () => {
+  const { liberarReservas, prorrogarReserva, reservarItens } =
+    await import("../../src/modules/orders");
+  const doPix = await obraPublicada("t10-pix", 1);
+  const outra = await obraPublicada("t10-outra", 1);
+  const [cliente, concorrente] = (await novasSessoes(2)) as [string, string];
+  const depois = (min: number) => new Date(T0.getTime() + min * 60_000);
+
+  await reservarItens(cliente, [{ obraId: doPix, quantidade: 1 }], T0);
+  await prorrogarReserva(cliente, depois(30), depois(1));
+
+  expect(await reservarItens(cliente, [{ obraId: outra, quantidade: 1 }], depois(5))).toEqual({
+    ok: false,
+    erro: "pendente",
+  });
+  expect(
+    await reservarItens(concorrente, [{ obraId: doPix, quantidade: 1 }], depois(15)),
+  ).toMatchObject({ ok: false, erro: "indisponivel" });
+
+  // Pedido cancelado antes de pagar: as unidades voltam e a sessão pode reservar de novo.
+  await liberarReservas(cliente);
+  expect(
+    await reservarItens(cliente, [{ obraId: outra, quantidade: 1 }], depois(16)),
+  ).toMatchObject({ ok: true });
+});

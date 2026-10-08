@@ -331,9 +331,10 @@ Consome estoque e obras do PBI-18 e a sessão existente. A API de reserva pode s
 
 **Decisões (registradas em 07/10/2026):**
 
-- A reserva fica ligada à sessão, sem migração. Para Pix e boleto, o checkout prorroga a reserva até o vencimento do meio de pagamento (`prorrogarReserva`).
+- A reserva fica ligada à sessão, sem migração. Para Pix e boleto, o checkout prorroga a reserva até o vencimento do meio de pagamento (`prorrogarReserva`). Enquanto houver reserva prorrogada, um novo checkout da mesma sessão recebe `pendente` e não a substitui.
+- Pagamento aprovado depois que a obra saiu de venda é honrado se ainda houver unidade.
 - O worker do pg-boss sobe no `instrumentation.ts`, sem script nem serviço novo. O `pg-boss` entra como dependência, já prevista no ESCOPO.
-- A baixa do estoque (`baixarEstoque`) fica neste PBI; o PBI-28 só chama. Reserva vencida baixa só se nenhuma outra sessão segura a unidade; senão volta `sem_estoque` para o estorno (PBI-43).
+- A baixa do estoque (`baixarEstoque`) fica neste PBI; o PBI-28 a chama dentro da transação do webhook (`tx`), que também garante a idempotência pelo evento único. Reserva vencida baixa só se nenhuma outra sessão segura a unidade; senão volta `sem_estoque` para o estorno (PBI-43).
 - Carrinho e vitrine não mudam: as reservas só pesam no checkout.
 - Contrato completo e ciclo do RN06 em [PBI-25](features/PBI-25.md).
 
@@ -348,7 +349,7 @@ Consome estoque e obras do PBI-18 e a sessão existente. A API de reserva pode s
 
 - O PBI-26 precisa chamar `reservarItens` ao finalizar a compra e guardar no pedido a sessão que reservou.
 - O PBI-27 precisa prorrogar a reserva com o vencimento do Pix/boleto.
-- O PBI-28 precisa chamar `baixarEstoque` com o pagamento aprovado e tratar `sem_estoque`.
+- O PBI-28 precisa chamar `baixarEstoque` com o pagamento aprovado, na mesma transação do evento e do pedido, e tratar `sem_estoque`.
 
 ### PBI-26 — Checkout e criação do pedido
 

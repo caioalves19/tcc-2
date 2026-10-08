@@ -11,7 +11,8 @@ export type ItemReserva = { obraId: string; quantidade: number };
 export type ResultadoReserva<T> =
   | { ok: true; dados: T }
   | { ok: false; erro: "invalido"; mensagem: string }
-  | { ok: false; erro: "indisponivel"; obras: string[] };
+  | { ok: false; erro: "indisponivel"; obras: string[] }
+  | { ok: false; erro: "pendente" };
 export type ResultadoBaixa =
   | { ok: true }
   | { ok: false; erro: "invalido"; mensagem: string }
@@ -56,7 +57,8 @@ function mensagemDe(erro: z.ZodError): string {
 }
 
 // RF15/RN02/RN03: reserva tudo ou nada; disponível = estoque − reservas ativas das outras sessões.
-// Uma nova reserva da mesma sessão substitui a anterior (o cliente voltou ao checkout).
+// Uma nova reserva da mesma sessão substitui a anterior (o cliente voltou ao checkout),
+// salvo se a anterior foi prorrogada para um Pix/boleto pendente (`pendente`).
 export async function reservarItens(
   sessaoId: string,
   entrada: unknown,
@@ -70,6 +72,12 @@ export async function reservarItens(
   const expiraEm = new Date(agora.getTime() + PRAZO_RESERVA_MS);
 
   return obterPrisma().$transaction(async (tx) => {
+    // RN06: reserva prorrogada (Pix/boleto pendente) só sai com o pagamento, o vencimento ou
+    // o cancelamento do pedido (liberarReservas); um novo checkout não a substitui.
+    const pendente = await tx.artworkReservation.findFirst({
+      where: { sessionId: sessaoId, expiresAt: { gt: expiraEm } },
+    });
+    if (pendente) return { ok: false, erro: "pendente" };
     const { obras, ocupadas } = await travarObras(tx, ids, sessaoId, agora);
     const indisponiveis = ids.filter((id) => {
       const obra = obras.find((o) => o.id === id);
