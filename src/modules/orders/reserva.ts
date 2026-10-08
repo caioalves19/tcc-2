@@ -102,3 +102,28 @@ export async function liberarReservasExpiradas(agora: Date = new Date()): Promis
   });
   return count;
 }
+
+// O cliente saiu do checkout (ou o pedido foi cancelado antes de pagar): as unidades voltam.
+export async function liberarReservas(sessaoId: string): Promise<void> {
+  await obterPrisma().artworkReservation.deleteMany({ where: { sessionId: sessaoId } });
+}
+
+// Unidades que o checkout ainda pode reservar agora: 0 se a obra não está à venda.
+export async function estoqueDisponivel(obraId: string, agora: Date = new Date()): Promise<number> {
+  const prisma = obterPrisma();
+  const obra = await prisma.artwork.findUnique({ where: { id: obraId } });
+  if (
+    !obra ||
+    !obraDisponivel({
+      situacao: obra.status,
+      arquivada: obra.deletedAt !== null,
+      estoque: obra.stockQuantity,
+    })
+  )
+    return 0;
+  const { _sum } = await prisma.artworkReservation.aggregate({
+    where: { artworkId: obraId, expiresAt: { gt: agora } },
+    _sum: { quantity: true },
+  });
+  return Math.max(0, obra.stockQuantity - (_sum.quantity ?? 0));
+}

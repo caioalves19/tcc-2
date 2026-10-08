@@ -197,3 +197,21 @@ it("RN03 a limpeza apaga só reservas vencidas e pode rodar de novo sem efeito",
   );
   expect(rows).toEqual([{ artwork_id: ativa }]);
 });
+
+it("RF15 o estoque livre desconta reservas ativas e volta quando a sessão desiste", async () => {
+  const { estoqueDisponivel, liberarReservas, reservarItens } =
+    await import("../../src/modules/orders");
+  const tiragem = await obraPublicada("t5-tiragem", 3);
+  const rascunho = await obraPublicada("t5-rascunho", 2);
+  await db.query("UPDATE artwork SET situacao = 'RASCUNHO' WHERE id = $1", [rascunho]);
+  const [sessao] = await novasSessoes(1);
+
+  expect(await estoqueDisponivel(tiragem, T0)).toBe(3);
+  await reservarItens(sessao, [{ obraId: tiragem, quantidade: 2 }], T0);
+  expect(await estoqueDisponivel(tiragem, T0)).toBe(1);
+  expect(await estoqueDisponivel(tiragem, new Date(T0.getTime() + 10 * 60_000))).toBe(3);
+
+  await liberarReservas(sessao);
+  expect(await estoqueDisponivel(tiragem, T0)).toBe(3);
+  expect(await estoqueDisponivel(rascunho, T0)).toBe(0);
+});
