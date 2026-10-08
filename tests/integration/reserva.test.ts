@@ -91,3 +91,34 @@ it("RN11 obra em rascunho ou arquivada não é reservada", async () => {
     ),
   ).toMatchObject({ ok: false, erro: "indisponivel", obras: [rascunho, arquivada].sort() });
 });
+
+// Sessões extras do cliente, como abas/aparelhos diferentes disputando a mesma peça.
+async function novasSessoes(quantas: number): Promise<string[]> {
+  const { rows } = await db.query(
+    `INSERT INTO session (id, user_id, token, expira_em, atualizado_em)
+     SELECT gen_random_uuid(), u.id, gen_random_uuid()::text, now() + interval '1 day', now()
+     FROM "user" u, generate_series(1, $1) WHERE u.email = 'cliente@pbi17.test'
+     RETURNING id`,
+    [quantas],
+  );
+  return rows.map((r) => r.id);
+}
+
+it("RN04 reservas concorrentes de uma peça única: só uma leva", async () => {
+  const { reservarItens } = await import("../../src/modules/orders");
+  const sessoes = await novasSessoes(8);
+
+  // Várias rodadas para a disputa não depender da sorte de uma só.
+  for (let rodada = 0; rodada < 10; rodada++) {
+    const unica = await obraPublicada(`t2-unica-${rodada}`, 1);
+    const resultados = await Promise.all(
+      sessoes.map((s) => reservarItens(s, [{ obraId: unica, quantidade: 1 }], T0)),
+    );
+    expect(resultados.filter((r) => r.ok)).toHaveLength(1);
+    const { rows } = await db.query(
+      "SELECT COALESCE(SUM(quantidade), 0)::int AS total FROM artwork_reservation WHERE artwork_id = $1",
+      [unica],
+    );
+    expect(rows[0].total).toBe(1);
+  }
+});

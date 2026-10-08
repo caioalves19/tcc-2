@@ -43,6 +43,8 @@ export async function reservarItens(
   const expiraEm = new Date(agora.getTime() + PRAZO_RESERVA_MS);
 
   return obterPrisma().$transaction(async (tx) => {
+    // RN04: trava as linhas das obras, sempre na mesma ordem (id), para não haver deadlock.
+    await tx.$queryRaw`SELECT id FROM artwork WHERE id = ANY(${ids}::uuid[]) ORDER BY id FOR UPDATE`;
     const obras = await tx.artwork.findMany({ where: { id: { in: ids } } });
     const reservadas = await tx.artworkReservation.groupBy({
       by: ["artworkId"],
