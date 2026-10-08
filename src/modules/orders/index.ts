@@ -24,5 +24,5 @@ export type {
 } from "./checkout";
 export { lerPedido } from "./pedido";
 export type { PedidoResumo, SituacaoPedido } from "./pedido";
-export { listarMeusPedidos } from "./acompanhamento";
-export type { PedidoDaLista } from "./acompanhamento";
+export { lerMeuPedido, listarMeusPedidos } from "./acompanhamento";
+export type { PedidoDaLista, PedidoDetalhado } from "./acompanhamento";

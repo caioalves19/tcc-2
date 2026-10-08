@@ -259,3 +259,67 @@ it("RF16/RN03 o pedido recém-finalizado aguarda pagamento e some quando a reser
   const onzeMinutosDepois = new Date(AGORA.getTime() + 11 * 60_000);
   expect(await listarMeusPedidos(bia, onzeMinutosDepois)).toEqual([]);
 });
+
+it("RF16 o detalhe traz itens, valores, situação, datas e rastreio, e só para o dono", async () => {
+  const { lerMeuPedido } = await import("../../src/modules/orders");
+  const carla = await novoCliente("carla@pbi29.test");
+  const davi = await novoCliente("davi@pbi29.test");
+  await pedidoDeTeste(carla, {
+    numero: "20260902-CARLA2",
+    situacao: "ENVIADO",
+    criadoEm: "2026-09-02T15:00:00Z",
+    pagamentos: ["APROVADO"],
+    rastreio: "BR987654321SP",
+    pagoEm: "2026-09-02T15:05:00Z",
+    enviadoEm: "2026-09-04T10:00:00Z",
+  });
+  await pedidoDeTeste(carla, {
+    numero: "20260929-RESERV",
+    situacao: "PENDENTE",
+    criadoEm: "2026-09-29T15:00:00Z",
+    reservaAte: "2026-09-30T12:05:00Z",
+  });
+  await pedidoDeTeste(carla, {
+    numero: "20260926-CABAND",
+    situacao: "PENDENTE",
+    criadoEm: "2026-09-26T15:00:00Z",
+    obra: outraObra,
+  });
+  await pedidoDeTeste(davi, {
+    numero: "20260903-DAVI22",
+    situacao: "PAGO",
+    criadoEm: "2026-09-03T15:00:00Z",
+    pagamentos: ["APROVADO"],
+  });
+
+  expect(await lerMeuPedido("20260902-CARLA2", carla, AGORA)).toEqual({
+    numero: "20260902-CARLA2",
+    criadoEm: new Date("2026-09-02T15:00:00Z"),
+    situacao: "ENVIADO",
+    modalidade: "RETIRADA",
+    itens: [{ titulo: "Metrópole em chamas", precoCentavos: 480000, quantidade: 2 }],
+    subtotalCentavos: 960000,
+    freteCentavos: 0,
+    totalCentavos: 960000,
+    endereco: ENDERECO,
+    rastreio: "BR987654321SP",
+    pagoEm: new Date("2026-09-02T15:05:00Z"),
+    enviadoEm: new Date("2026-09-04T10:00:00Z"),
+  });
+  expect(await lerMeuPedido("20260929-RESERV", carla, AGORA)).toMatchObject({
+    situacao: "AGUARDANDO_PAGAMENTO",
+    rastreio: null,
+    pagoEm: null,
+    enviadoEm: null,
+  });
+
+  // RN01: pedido alheio, oculto, inexistente, visitante e número fora do formato dão a mesma
+  // resposta, sem revelar que o pedido existe.
+  expect(await lerMeuPedido("20260903-DAVI22", carla, AGORA)).toBeNull();
+  expect(await lerMeuPedido("20260902-CARLA2", davi, AGORA)).toBeNull();
+  expect(await lerMeuPedido("20260926-CABAND", carla, AGORA)).toBeNull();
+  expect(await lerMeuPedido("20260101-NADA22", carla, AGORA)).toBeNull();
+  expect(await lerMeuPedido("20260902-CARLA2", { cabecalhos: new Headers() }, AGORA)).toBeNull();
+  for (const numero of [undefined, 42, "", "x".repeat(33)])
+    expect(await lerMeuPedido(numero, carla, AGORA), String(numero)).toBeNull();
+});

@@ -1,6 +1,8 @@
 import type { Prisma } from "../../../generated/prisma/client";
 import { obterPrisma } from "../../lib/prisma";
+import type { DadosEndereco } from "../endereco/index";
 import { sessaoAtiva, type ContextoCarrinho } from "./carrinho";
+import type { Modalidade } from "./checkout";
 import { situacaoParaCliente, type SituacaoCliente } from "./regras";
 
 // RF16 (PBI-29): o cliente acompanha os próprios pedidos. Só lê; quem muda a situação são o
@@ -17,9 +19,25 @@ export type PedidoDaLista = {
 };
 
 const INCLUI = {
-  items: true,
+  items: { orderBy: { titleSnapshot: "asc" } },
   payments: { select: { status: true } },
 } satisfies Prisma.OrderInclude;
+
+export type PedidoDetalhado = {
+  numero: string;
+  criadoEm: Date;
+  situacao: SituacaoCliente;
+  modalidade: Modalidade;
+  // Cópias gravadas no checkout (PBI-26): editar ou arquivar a obra depois não muda o pedido.
+  itens: { titulo: string; precoCentavos: number; quantidade: number }[];
+  subtotalCentavos: number;
+  freteCentavos: number;
+  totalCentavos: number;
+  endereco: DadosEndereco;
+  rastreio: string | null;
+  pagoEm: Date | null;
+  enviadoEm: Date | null;
+};
 
 type PedidoLido = Prisma.OrderGetPayload<{ include: typeof INCLUI }>;
 
@@ -80,4 +98,42 @@ export async function listarMeusPedidos(
       },
     ];
   });
+}
+
+// RN01: pedido de outro cliente, oculto (tentativa sem pagamento) ou inexistente, visitante e
+// número fora do formato dão a mesma resposta (null), sem revelar que o pedido existe.
+export async function lerMeuPedido(
+  numero: unknown,
+  contexto: Contexto,
+  agora: Date = new Date(),
+): Promise<PedidoDetalhado | null> {
+  if (typeof numero !== "string" || numero.length === 0 || numero.length > 32) return null;
+  const sessao = await sessaoAtiva(contexto.cabecalhos);
+  if (!sessao) return null;
+  const pedido = await obterPrisma().order.findFirst({
+    where: { number: numero, userId: sessao.userId, deletedAt: null },
+    include: INCLUI,
+  });
+  if (!pedido) return null;
+  const situacao = situacaoDe(pedido, await comReservaAtiva([pedido], agora));
+  if (!situacao) return null;
+  return {
+    numero: pedido.number,
+    criadoEm: pedido.createdAt,
+    situacao,
+    modalidade: pedido.deliveryMethod,
+    itens: pedido.items.map((item) => ({
+      titulo: item.titleSnapshot,
+      precoCentavos: item.priceCents,
+      quantidade: item.quantity,
+    })),
+    subtotalCentavos: pedido.subtotalCents,
+    freteCentavos: pedido.shippingCents,
+    totalCentavos: pedido.totalCents,
+    // Cópia gravada pelo próprio checkout, já validada por validarEndereco.
+    endereco: pedido.addressSnapshot as DadosEndereco,
+    rastreio: pedido.trackingCode,
+    pagoEm: pedido.paidAt,
+    enviadoEm: pedido.shippedAt,
+  };
 }
