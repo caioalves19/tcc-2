@@ -428,3 +428,26 @@ it("RN06 com Pix/boleto pendente, um novo checkout da mesma sessão não derruba
     await reservarItens(cliente, [{ obraId: outra, quantidade: 1 }], depois(16)),
   ).toMatchObject({ ok: true });
 });
+
+it("RN04/RN06 prorrogação que chega depois de outra sessão tomar a peça não a duplica", async () => {
+  const { prorrogarReserva, reservarItens } = await import("../../src/modules/orders");
+  const unica = await obraPublicada("t11-virada", 1);
+  const [pix, concorrente] = (await novasSessoes(2)) as [string, string];
+  const depois = (ms: number) => new Date(T0.getTime() + ms);
+
+  await reservarItens(pix, [{ obraId: unica, quantidade: 1 }], T0);
+  // Pelo relógio da concorrente, a reserva do Pix já venceu; ela trava e leva a peça primeiro.
+  expect(
+    await reservarItens(concorrente, [{ obraId: unica, quantidade: 1 }], depois(10 * 60_000 + 1)),
+  ).toMatchObject({ ok: true });
+  // A prorrogação chega depois, com um relógio de antes da virada.
+  expect(await prorrogarReserva(pix, depois(30 * 60_000), depois(9 * 60_000))).toEqual({
+    ok: false,
+    erro: "sem_reserva",
+  });
+  const { rows } = await db.query(
+    "SELECT COALESCE(SUM(quantidade), 0)::int AS total FROM artwork_reservation WHERE artwork_id = $1 AND expira_em > $2",
+    [unica, depois(15 * 60_000)],
+  );
+  expect(rows[0].total).toBe(1);
+});

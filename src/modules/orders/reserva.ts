@@ -108,7 +108,8 @@ export async function reservarItens(
 
 // RN06: Pix e boleto deixam o pedido pendente; a reserva ainda ativa passa a vencer
 // junto com o meio de pagamento. Reserva já vencida não é ressuscitada, e a prorrogação
-// nunca encurta a reserva. Trava as obras como a reserva, para não disputar a virada do prazo.
+// nunca encurta a reserva. Trava as obras e confere, dentro da trava, que nenhuma outra
+// sessão levou a peça na virada do prazo; se levou, volta sem_reserva.
 export async function prorrogarReserva(
   sessaoId: string,
   ate: Date,
@@ -121,22 +122,30 @@ export async function prorrogarReserva(
   if (Number.isNaN(ate.getTime()) || ate <= agora)
     return { ok: false, erro: "invalido", mensagem: "Prazo da prorrogação inválido." };
   return obterPrisma().$transaction(async (tx) => {
+    const onde = { sessionId: sessaoId, expiresAt: { gt: agora } };
+    const antes = await tx.artworkReservation.findMany({ where: onde });
+    if (antes.length === 0) return { ok: false, erro: "sem_reserva" };
+    const ids = [...new Set(antes.map((r) => r.artworkId))].sort();
+    const { obras, ocupadas } = await travarObras(tx, ids, sessaoId, agora);
+    // Relê depois da trava: outra sessão pode ter levado a peça na virada do prazo.
     const ativas = await tx.artworkReservation.findMany({
-      where: { sessionId: sessaoId, expiresAt: { gt: agora } },
+      where: { ...onde, artworkId: { in: ids } },
     });
-    if (ativas.length === 0) return { ok: false, erro: "sem_reserva" };
-    await travarObras(tx, [...new Set(ativas.map((r) => r.artworkId))].sort(), sessaoId, agora);
+    const garantidas = ativas.every((r) => {
+      const obra = obras.find((o) => o.id === r.artworkId);
+      return obra !== undefined && obra.stockQuantity - ocupadas(r.artworkId) >= r.quantity;
+    });
+    if (ativas.length === 0 || !garantidas) return { ok: false, erro: "sem_reserva" };
     if (ativas.some((r) => r.expiresAt > ate))
       return {
         ok: false,
         erro: "invalido",
         mensagem: "A prorrogação não pode encurtar a reserva.",
       };
-    const { count } = await tx.artworkReservation.updateMany({
-      where: { sessionId: sessaoId, expiresAt: { gt: agora } },
+    await tx.artworkReservation.updateMany({
+      where: { id: { in: ativas.map((r) => r.id) } },
       data: { expiresAt: ate },
     });
-    if (count === 0) return { ok: false, erro: "sem_reserva" };
     return { ok: true, dados: { expiraEm: ate } };
   });
 }

@@ -45,8 +45,9 @@ Entrada inválida volta como `invalido`. O relógio (`agora`) pode ser injetado 
 - **10 minutos (RN03):** a reserva vale até `agora + 10 min`. Uma nova reserva da mesma sessão
   substitui a anterior (o cliente voltou ao checkout com outro carrinho).
 - **Pix/boleto pendente (RN06):** se a sessão tem reserva prorrogada (vence depois de
-  `agora + 10 min`), `reservarItens` devolve `pendente` e não mexe nela. A reserva só sai com a
-  aprovação (baixa), o vencimento ou o cancelamento do pedido (`liberarReservas`).
+  `agora + 10 min`), `reservarItens` devolve `pendente` e não mexe nela. A reserva sai com a
+  aprovação (baixa), o vencimento ou o cancelamento do pedido (`liberarReservas`); veja o limite
+  dos 10 minutos finais em "Limites conhecidos".
 - **Reservar não baixa estoque.** O estoque só cai em `baixarEstoque`.
 - **Limpeza:** o pg-boss agenda a fila `liberar-reservas-expiradas` com `* * * * *`. A disponibilidade
   já ignora reservas vencidas, então a limpeza é só higiene: atrasar ou rodar duas vezes não muda o
@@ -82,6 +83,12 @@ O estoque nunca fica negativo, porque a baixa confere as unidades livres dentro 
   Logout, troca de senha ou remoção da conta apagam a reserva; a aprovação cai no caminho
   `sessaoId` `null` (baixa se a unidade ainda estiver livre, senão `sem_estoque`). É o custo da
   decisão "reserva ligada à sessão", sem migração.
+- **Últimos 10 minutos de uma reserva prorrogada:** sem coluna nova, `pendente` reconhece a
+  prorrogação só enquanto ela vence depois de `agora + 10 min`. Nos 10 minutos finais do Pix/boleto,
+  um novo checkout da mesma sessão substitui a reserva. Por isso o PBI-26 deve consultar o pedido
+  pendente da sessão antes de chamar `reservarItens`, e não depender só do `pendente`.
+- **Prorrogação na virada do prazo:** se outra sessão levou a peça logo depois do vencimento, a
+  prorrogação volta `sem_reserva`. O PBI-27 não deve emitir o Pix/boleto com essas unidades.
 - **Baixa de obra que saiu de venda:** se o pagamento é aprovado depois que o admin despublicou ou
   arquivou a obra, a baixa acontece mesmo assim (o cliente pagou), e a obra em rascunho continua
   em rascunho.
@@ -98,6 +105,8 @@ Seams: funções públicas de `src/modules/orders` e `iniciarTarefas` (`src/lib/
     anterior;
   - prorrogação da reserva ativa e recusa da vencida; prazo no passado, menor que o atual ou
     inválido volta `invalido` e não encurta a reserva;
+  - prorrogação que chega depois de outra sessão levar a peça na virada do prazo volta
+    `sem_reserva`, e a peça segue com uma reserva só;
   - limpeza idempotente, que mantém as ativas;
   - estoque livre com e sem reserva, e depois de liberar;
   - baixa com reserva ativa (estoque 0 e ESGOTADA);
