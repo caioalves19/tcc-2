@@ -71,6 +71,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <Cabecalho
           logado={sessao !== null}
           administrador={sessao?.papel === "ADMIN"}
+          equipe={sessao?.papel === "ADMIN" || sessao?.papel === "ARTISTA"}
           acaoSair={sairAcao}
           itensNoCarrinho={itensNoCarrinho}
         />
