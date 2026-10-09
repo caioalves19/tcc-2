@@ -207,7 +207,7 @@ Construir a grade pública de obras integrada ao acervo persistido.
 - O card só leva à página da obra, sem botão de compra. Sem busca (PBI-41) nem filtros.
 - Contrato completo em [PBI-19](features/PBI-19.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-19-catalogo`, feita sobre a do PBI-20 (PR #41): integrar depois dele. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR. A conferência com as fotos reais do R2 ficou pendente.
+**Situação:** integrado à `main` pelo PR #42 em 08/10/2026, depois do PR #41, aprovado por outro integrante. A conferência com as fotos reais do R2 ficou pendente.
 
 ### PBI-20 — Página da obra
 
@@ -229,7 +229,7 @@ Apresentar a obra em uma página pública com galeria e ficha técnica.
 - `CardObra` (dados e componente) fica pronto para o catálogo (PBI-19) e a home (PBI-21).
 - Contrato completo em [PBI-20](features/PBI-20.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-20-pagina-obra`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR. A conferência com as fotos reais do R2 ficou pendente (sem `R2_PUBLIC_URL` no ambiente da validação).
+**Situação:** integrado à `main` pelo PR #41 em 08/10/2026, aprovado por outro integrante. A conferência com as fotos reais do R2 ficou pendente (sem `R2_PUBLIC_URL` no ambiente da validação).
 
 **Pendências:**
 
@@ -258,7 +258,7 @@ O contato WhatsApp é uma solução provisória para a chamada da home. O wizard
 - O menu "Tatuagem" do cabeçalho passa a levar a `/#tatuagem` (a rota `/tatuagem` não existe). Um teste confere que todo link interno da home e do cabeçalho tem página.
 - Contrato completo em [PBI-21](features/PBI-21.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-21-home`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR. A conferência com as fotos reais do R2 ficou pendente.
+**Situação:** integrado à `main` pelo PR #44 em 09/10/2026, aprovado por outro integrante. A conferência com as fotos reais do R2 ficou pendente.
 
 **Entregas:**
 
@@ -419,7 +419,7 @@ Consome estoque e obras do PBI-18 e a sessão existente. A API de reserva pode s
 - Um novo "Finalizar" cancela o `PENDENTE` sem pagamento em aberto; com Pix/boleto em aberto, o cliente volta ao pedido existente.
 - Contrato completo em [PBI-26](features/PBI-26.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-26-checkout`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+**Situação:** integrado à `main` pelo PR #40 em 08/10/2026, aprovado por outro integrante. A entrega está disponível para o pagamento (27) e para os pedidos (29 e 30).
 
 **Pendências:**
 
@@ -462,7 +462,7 @@ Consome o contrato de pedido e suas cópias de dados do PBI-26. Pode avançar ju
 - Na lista, a etiqueta da situação; no detalhe, o andamento com as datas que o banco guarda e o rastreio com "Copiar", sem link para transportadora.
 - Contrato completo em [PBI-29](features/PBI-29.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-29-pedidos`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR. A situação real dos pedidos depende do pagamento (27/28) e da gestão do admin (30); até lá, os testes usam pedidos de teste.
+**Situação:** integrado à `main` pelo PR #45 em 09/10/2026, aprovado por outro integrante. A passagem real a Pago depende do pagamento (27/28); até lá, os testes usam pedidos de teste.
 
 **Entregas:**
 
@@ -479,7 +479,7 @@ Consome o contrato de pedido e suas cópias de dados do PBI-26. Pode avançar ju
 **Pendências:**
 
 - PBI-27: prorrogar a reserva do Pix/boleto, para o "Ir para o pagamento" não cair em "reserva expirada".
-- PBI-28 e PBI-30: gravar `pago_em`, `enviado_em` e `codigo_rastreio`, que o andamento e o rastreio já leem.
+- PBI-28: gravar `pago_em` na aprovação, que o andamento já lê. `enviado_em` e `codigo_rastreio` foram resolvidos pelo PBI-30.
 
 ### PBI-30 — Gestão administrativa de pedidos
 
@@ -498,7 +498,7 @@ Consome pedidos do PBI-26. Pode avançar junto com a área do cliente (29) e o g
 - Lista em "A fazer" por padrão, com filtros, "Todos" (inclui as tentativas sem pagamento, marcadas), busca por número ou e-mail e 20 por página. Rastreio opcional a partir de Pago.
 - Feito sobre a branch do PBI-29, porque o contrato de situação é compartilhado. Contrato completo em [PBI-30](features/PBI-30.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-30-admin-pedidos`, que sai da `feat/pbi-29-pedidos` (PR #45): integrar depois dele. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR. A aprovação real do pagamento depende do PBI-28; até lá, os testes usam pedidos de teste.
+**Situação:** integrado à `main` pelo PR #46 em 09/10/2026, depois do PR #45, aprovado por outro integrante. A aprovação real do pagamento depende do PBI-28; até lá, os testes usam pedidos de teste.
 
 **Entregas:**
 
@@ -571,7 +571,7 @@ Consome artistas e estilos do PBI-16 e a constraint de agenda da Sprint 1. O hor
 - A sobreposição é a constraint `appointment_no_overlap` que já existia; sem migração.
 - Contrato completo em [PBI-34](features/PBI-34.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-34-agenda-manual`, com conferência no navegador como ADMIN. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+**Situação:** integrado à `main` pelo PR #48 em 09/10/2026, aprovado por outro integrante, com conferência no navegador como ADMIN.
 
 ## Etapa 4 — Portfólio
 
@@ -651,7 +651,7 @@ Consome o formato real do pedido e das cópias de dados pessoais definido no PBI
 - A busca fica na URL (`?busca=`) e convive com a paginação e as ordenações do PBI-19.
 - Contrato completo em [PBI-41](features/PBI-41.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-41-busca-catalogo`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+**Situação:** integrado à `main` pelo PR #47 em 09/10/2026, aprovado por outro integrante.
 
 ### PBI-42 — Modalidades adicionais de frete
 
