@@ -69,3 +69,30 @@ it("Fase 1/13 a busca ignora acentos e maiúsculas, nos dois sentidos", async ()
   expect((await buscar("São")).obras.map((o) => o.slug)).toEqual(["sao-paulo-cinza"]);
   expect((await buscar("metropole")).busca).toBe("metropole");
 });
+
+it("Fase 1/13 acha por começo de palavra em título, descrição e técnica; várias palavras exigem todas", async () => {
+  await cadastrar({
+    titulo: "Metrópole em chamas",
+    slug: "metropole-em-chamas",
+    tecnica: "Acrílica e spray sobre tela",
+  });
+  await cadastrar({
+    titulo: "Retalho paulistano",
+    slug: "retalho-paulistano",
+    descricao: "Colagem de jornais e lambe-lambe da Avenida Paulista.",
+    tecnica: "Colagem",
+  });
+  await cadastrar({ titulo: "Grafite noturno", slug: "grafite-noturno", tecnica: "Spray" });
+
+  const slugs = async (termo: string) => (await buscar(termo)).obras.map((o) => o.slug).sort();
+  expect(await slugs("metro")).toEqual(["metropole-em-chamas"]);
+  expect(await slugs("acrilica")).toEqual(["metropole-em-chamas"]);
+  expect(await slugs("jornais")).toEqual(["retalho-paulistano"]);
+  expect(await slugs("grafit")).toEqual(["grafite-noturno"]);
+  expect(await slugs("spray")).toEqual(["grafite-noturno", "metropole-em-chamas"]);
+  expect(await slugs("spray noturno")).toEqual(["grafite-noturno"]);
+  expect(await slugs("Paulista colagem")).toEqual(["retalho-paulistano"]);
+
+  const nada = await buscar("aquarela");
+  expect(nada).toMatchObject({ obras: [], total: 0, totalPaginas: 0, busca: "aquarela" });
+});

@@ -131,11 +131,12 @@ const schemaCatalogo = z.object({
   busca: z.string().catch(""),
 });
 
-// PBI-41: ids das obras cujo título, descrição ou técnica têm todas as palavras, sem acento. A
+// PBI-41: ids das obras cujo título, descrição ou técnica têm todas as palavras, sem acento e
+// por começo de palavra ("metro" acha "Metrópole"). A
 // expressão é a mesma do índice artwork_busca_idx (migração 0006), para o Postgres usá-lo; as
 // palavras chegam limpas e vão como parâmetro.
 async function idsDaBusca(palavras: string[]): Promise<string[]> {
-  const consulta = palavras.join(" & ");
+  const consulta = palavras.map((palavra) => `${palavra}:*`).join(" & ");
   const linhas = await obterPrisma().$queryRaw<{ id: string }[]>`
     SELECT id FROM artwork
      WHERE to_tsvector('kolo_busca', coalesce(titulo, '') || ' ' || coalesce(descricao, '') || ' ' || coalesce(tecnica, ''))
