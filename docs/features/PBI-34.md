@@ -104,9 +104,18 @@ cabeçalho.
 - `npm run test:unit -- agenda-regras formulario-horario agenda-semana pagina-agenda agenda-acoes
   cabecalho checkout-regras`: fuso, semana e código; formulário; lista da semana; página; actions;
   link no cabeçalho; e o número do pedido segue igual depois de ir para `src/lib/codigo.ts`.
-- **No navegador:** ver a situação abaixo.
+- **No navegador** (09/10/2026, Postgres local, sessão de ADMIN, acompanhado pelo Robert):
+  - sem sessão, `/agenda` leva ao `/login`; logado, o cabeçalho mostra "Agenda";
+  - cadastro de quarta 14:00–17:00 aparece no dia certo e fica gravado como 17:00–20:00 UTC;
+  - 16:00–18:00 no mesmo dia é recusado com "Este artista já tem um horário nesse intervalo.", e o
+    formulário continua aberto com os dados;
+  - 17:00–18:00 (encostado) é aceito; a edição para 17:00–19:00 mantém o código;
+  - concluir e cancelar mudam a situação e tiram os botões;
+  - o filtro de artista vai para a URL e segue em "Semana anterior/Esta semana/Próxima semana";
+  - sem rolagem horizontal em 375 e 320 px, também com o formulário aberto.
 
 ## Pendências
 
-- **Conferência no navegador** com sessão de ARTISTA ou ADMIN (precisa de login).
 - **Página do artista:** não existe área pública do artista; a agenda é só interna.
+- **Conferência com sessão de ARTISTA:** a do navegador foi feita como ADMIN; a restrição do
+  artista à própria agenda está coberta pelos testes de integração (RN10).

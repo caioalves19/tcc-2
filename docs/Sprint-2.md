@@ -492,7 +492,7 @@ Consome artistas e estilos do PBI-16 e a constraint de agenda da Sprint 1. O hor
 - A sobreposição é a constraint `appointment_no_overlap` que já existia; sem migração.
 - Contrato completo em [PBI-34](features/PBI-34.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-34-agenda-manual`. Para encerrar o DoD, faltam a conferência no navegador com sessão da equipe, a revisão de outro integrante e a aprovação do PR.
+**Situação:** implementação local validada na branch `feat/pbi-34-agenda-manual`, com conferência no navegador como ADMIN. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
 
 ## Etapa 4 — Portfólio
 
