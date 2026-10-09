@@ -4,7 +4,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { CopiarCodigo } from "@/components/conta/copiar-codigo";
 import { dataDoPedido, EtiquetaSituacao } from "@/components/conta/situacao-pedido";
 import { formatarPreco } from "@/modules/catalog/cliente";
-import type { PedidoDetalhado, SituacaoCliente } from "@/modules/orders";
+import type { PedidoDetalhado } from "@/modules/orders";
+import { rotuloSituacao, type SituacaoCliente } from "@/modules/orders/cliente";
 
 const MODALIDADE: Record<PedidoDetalhado["modalidade"], string> = {
   RETIRADA: "Retirada no ateliê",
@@ -25,8 +26,8 @@ function passosDo(pedido: PedidoDetalhado) {
     { rotulo: "Pedido feito", data: pedido.criadoEm },
     { rotulo: "Pago", data: pedido.pagoEm },
     { rotulo: "Em preparação", data: null },
-    { rotulo: "Enviado", data: pedido.enviadoEm },
-    { rotulo: "Entregue", data: null },
+    { rotulo: rotuloSituacao("ENVIADO", pedido.modalidade), data: pedido.enviadoEm },
+    { rotulo: rotuloSituacao("ENTREGUE", pedido.modalidade), data: null },
   ];
 }
 
@@ -47,7 +48,7 @@ export function DetalhePedido({ pedido }: { pedido: PedidoDetalhado }) {
         Meus pedidos
       </a>
       <div className="mt-6">
-        <EtiquetaSituacao situacao={pedido.situacao} />
+        <EtiquetaSituacao situacao={pedido.situacao} modalidade={pedido.modalidade} />
       </div>
       <h1 className="mt-3 break-words font-display text-titulo-xl-mobile uppercase md:text-titulo-xl">
         Pedido {pedido.numero}

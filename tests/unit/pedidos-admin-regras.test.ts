@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { proximasSituacoes, transicaoPermitida } from "../../src/modules/orders/regras";
+import {
+  proximasSituacoes,
+  rotuloSituacao,
+  transicaoPermitida,
+} from "../../src/modules/orders/regras";
 
 const SITUACOES = ["PENDENTE", "PAGO", "PROCESSANDO", "ENVIADO", "ENTREGUE", "CANCELADO"] as const;
 
@@ -32,5 +36,17 @@ describe("RF29: o admin muda só a situação operacional, para frente", () => {
     expect(proximasSituacoes("ENTREGUE")).toEqual([]);
     expect(proximasSituacoes("PENDENTE")).toEqual([]);
     expect(proximasSituacoes("CANCELADO")).toEqual([]);
+  });
+});
+
+describe("RF16/RF29: rótulo da situação, o mesmo para cliente e admin", () => {
+  it("na retirada no ateliê não há envio: fica pronto e o cliente retira", () => {
+    expect(rotuloSituacao("ENVIADO", "RETIRADA")).toBe("Pronto para retirada");
+    expect(rotuloSituacao("ENTREGUE", "RETIRADA")).toBe("Retirado");
+    expect(rotuloSituacao("AGUARDANDO_PAGAMENTO", "RETIRADA")).toBe("Aguardando pagamento");
+    expect(rotuloSituacao("PAGO", "RETIRADA")).toBe("Pago");
+    expect(rotuloSituacao("EM_PREPARACAO", "RETIRADA")).toBe("Em preparação");
+    expect(rotuloSituacao("CANCELADO", "RETIRADA")).toBe("Cancelado");
+    expect(rotuloSituacao("NAO_CONCLUIDO", "RETIRADA")).toBe("Não concluído");
   });
 });

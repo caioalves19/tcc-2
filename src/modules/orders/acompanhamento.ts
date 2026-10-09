@@ -14,6 +14,7 @@ export type PedidoDaLista = {
   numero: string;
   criadoEm: Date;
   situacao: SituacaoCliente;
+  modalidade: Modalidade;
   totalCentavos: number;
   unidades: number;
 };
@@ -93,6 +94,7 @@ export async function listarMeusPedidos(
         numero: pedido.number,
         criadoEm: pedido.createdAt,
         situacao,
+        modalidade: pedido.deliveryMethod,
         totalCentavos: pedido.totalCents,
         unidades: pedido.items.reduce((soma, item) => soma + item.quantity, 0),
       },

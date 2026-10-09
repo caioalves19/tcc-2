@@ -1,3 +1,5 @@
+import type { Modalidade } from "./checkout";
+
 // Regras puras do carrinho (PBI-24), sem banco: quantidade, disponibilidade e totais.
 
 type Situacao = "RASCUNHO" | "DISPONIVEL" | "ESGOTADA";
@@ -95,4 +97,30 @@ export function transicaoPermitida(de: SituacaoNoBanco, para: SituacaoNoBanco): 
 
 export function proximasSituacoes(de: SituacaoNoBanco): SituacaoNoBanco[] {
   return ANDAMENTO.filter((para) => transicaoPermitida(de, para));
+}
+
+// Rótulo da situação, o mesmo na conta do cliente (PBI-29) e no admin (PBI-30). "Não concluído"
+// só aparece para o admin: é a tentativa sem pagamento, oculta para o cliente.
+const ROTULOS: Record<SituacaoCliente | "NAO_CONCLUIDO", string> = {
+  AGUARDANDO_PAGAMENTO: "Aguardando pagamento",
+  PAGO: "Pago",
+  EM_PREPARACAO: "Em preparação",
+  ENVIADO: "Enviado",
+  ENTREGUE: "Entregue",
+  CANCELADO: "Cancelado",
+  NAO_CONCLUIDO: "Não concluído",
+};
+
+// Na retirada no ateliê não há envio: o pedido fica pronto e o cliente retira. No banco continua
+// ENVIADO e ENTREGUE. Cada modalidade nova do PBI-42 entra aqui com os rótulos dela.
+const ROTULOS_POR_MODALIDADE: Record<Modalidade, Partial<Record<SituacaoCliente, string>>> = {
+  RETIRADA: { ENVIADO: "Pronto para retirada", ENTREGUE: "Retirado" },
+};
+
+export function rotuloSituacao(
+  situacao: SituacaoCliente | "NAO_CONCLUIDO",
+  modalidade: Modalidade,
+): string {
+  if (situacao === "NAO_CONCLUIDO") return ROTULOS.NAO_CONCLUIDO;
+  return ROTULOS_POR_MODALIDADE[modalidade][situacao] ?? ROTULOS[situacao];
 }

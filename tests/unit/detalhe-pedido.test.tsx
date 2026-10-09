@@ -47,8 +47,8 @@ it("RF16 o pedido enviado mostra itens, valores, andamento com datas, rastreio e
     "Pedido feito02/09/2026",
     "Pago02/09/2026",
     "Em preparação",
-    "Enviado04/09/2026",
-    "Entregue",
+    "Pronto para retirada04/09/2026",
+    "Retirado",
   ]);
   expect(passos.map((p) => p.getAttribute("aria-current"))).toEqual([
     null,

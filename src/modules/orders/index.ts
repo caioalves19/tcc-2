@@ -1,7 +1,15 @@
 export { adicionarAoCarrinho, alterarQuantidade, lerCarrinho, removerDoCarrinho } from "./carrinho";
 export type { ContextoCarrinho, ResultadoCarrinho } from "./carrinho";
 export { juntarCarrinhos } from "./juntar";
-export { numeroDoPedido, quantidadeValida, resumirCarrinho, situacaoParaCliente } from "./regras";
+export {
+  numeroDoPedido,
+  proximasSituacoes,
+  quantidadeValida,
+  resumirCarrinho,
+  rotuloSituacao,
+  situacaoParaCliente,
+  transicaoPermitida,
+} from "./regras";
 export type { SituacaoCliente } from "./regras";
 export {
   baixarEstoque,

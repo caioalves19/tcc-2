@@ -13,6 +13,7 @@ it("RF16 lista cada pedido com data, situação, total e itens, levando ao detal
           numero: "20260920-PIXABE",
           criadoEm: new Date("2026-09-20T15:00:00Z"),
           situacao: "AGUARDANDO_PAGAMENTO",
+          modalidade: "RETIRADA",
           totalCentavos: 960000,
           unidades: 2,
         },
@@ -20,6 +21,7 @@ it("RF16 lista cada pedido com data, situação, total e itens, levando ao detal
           numero: "20260901-ENVIAD",
           criadoEm: new Date("2026-09-01T02:00:00Z"),
           situacao: "ENVIADO",
+          modalidade: "RETIRADA",
           totalCentavos: 9990,
           unidades: 1,
         },
@@ -40,7 +42,8 @@ it("RF16 lista cada pedido com data, situação, total e itens, levando ao detal
 
   // Data de São Paulo (RN09): 01/09 às 2h UTC ainda é 31/08 aqui.
   expect(enviado.textContent).toContain("31/08/2026");
-  expect(enviado.textContent).toContain("Enviado");
+  // Na retirada no ateliê, ENVIADO é "pronto para retirada" (PBI-30).
+  expect(enviado.textContent).toContain("Pronto para retirada");
   expect(enviado.textContent).toContain("R$ 99,90");
   expect(enviado.textContent).toContain("1 item");
 });
