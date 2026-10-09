@@ -19,8 +19,8 @@ Robert antes de codar (09/10/2026):
   prévia no código. Não houve migração.
 
 Implementação no módulo `src/modules/scheduling` (`agenda.ts`, `agenda-leitura.ts` e
-`agenda-regras.ts`), com API pública em `index.ts`. O gerador de código legível foi para
-`src/lib/codigo.ts` e serve ao número do pedido (PBI-26) e ao código do horário.
+`agenda-regras.ts`), com API pública em `index.ts`. O código do horário usa o gerador legível de
+`src/lib/codigo.ts`, no mesmo formato do número do pedido (PBI-26).
 
 ## API pública (`src/modules/scheduling`)
 
@@ -102,8 +102,8 @@ cabeçalho.
   - semana por dia de São Paulo (bordas de domingo e da virada UTC), artista só com os dele, admin
     com todos e filtro, cliente e visitante recusados.
 - `npm run test:unit -- agenda-regras formulario-horario agenda-semana pagina-agenda agenda-acoes
-  cabecalho checkout-regras`: fuso, semana e código; formulário; lista da semana; página; actions;
-  link no cabeçalho; e o número do pedido segue igual depois de ir para `src/lib/codigo.ts`.
+  cabecalho`: fuso, semana e código; formulário; lista da semana; página; actions; link no
+  cabeçalho.
 - **No navegador** (09/10/2026, Postgres local, sessão de ADMIN, acompanhado pelo Robert):
   - sem sessão, `/agenda` leva ao `/login`; logado, o cabeçalho mostra "Agenda";
   - cadastro de quarta 14:00–17:00 aparece no dia certo e fica gravado como 17:00–20:00 UTC;
@@ -117,5 +117,8 @@ cabeçalho.
 ## Pendências
 
 - **Página do artista:** não existe área pública do artista; a agenda é só interna.
+- **Gerador de código duplicado:** `numeroDoPedido` (`src/modules/orders/regras.ts`) e
+  `src/lib/codigo.ts` têm a mesma lógica. A unificação ficou fora deste PR para não conflitar com
+  os PRs #45 e #46, que mexem no mesmo trecho do `orders`; vale fazer depois que eles entrarem.
 - **Conferência com sessão de ARTISTA:** a do navegador foi feita como ADMIN; a restrição do
   artista à própria agenda está coberta pelos testes de integração (RN10).
