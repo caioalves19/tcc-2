@@ -95,7 +95,9 @@ export function transicaoPermitida(de: SituacaoNoBanco, para: SituacaoNoBanco): 
   return origem >= 0 && destino > origem;
 }
 
-export function proximasSituacoes(de: SituacaoNoBanco): SituacaoNoBanco[] {
+export type SituacaoDoAndamento = (typeof ANDAMENTO)[number];
+
+export function proximasSituacoes(de: SituacaoNoBanco): SituacaoDoAndamento[] {
   return ANDAMENTO.filter((para) => transicaoPermitida(de, para));
 }
 
@@ -123,4 +125,15 @@ export function rotuloSituacao(
 ): string {
   if (situacao === "NAO_CONCLUIDO") return ROTULOS.NAO_CONCLUIDO;
   return ROTULOS_POR_MODALIDADE[modalidade][situacao] ?? ROTULOS[situacao];
+}
+
+// Rótulo de uma situação do andamento gravada no banco (o admin escolhe por elas).
+export function rotuloDoAndamento(situacao: SituacaoDoAndamento, modalidade: Modalidade): string {
+  return rotuloSituacao(DEPOIS_DO_PAGAMENTO[situacao], modalidade);
+}
+
+// O rastreio só faz sentido depois do pagamento aprovado (PBI-28) e fora de pedido cancelado.
+export function aceitaRastreio(situacao: SituacaoNoBanco): boolean {
+  const ordem: readonly SituacaoNoBanco[] = ANDAMENTO;
+  return ordem.includes(situacao);
 }

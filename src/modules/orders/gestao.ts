@@ -3,7 +3,7 @@ import { comoAdmin, ErroGestao, validar } from "../artists/index";
 import type { DadosEndereco } from "../endereco/index";
 import { comReservaAtiva, situacaoDe } from "./acompanhamento";
 import type { Modalidade } from "./checkout";
-import { transicaoPermitida, type SituacaoCliente } from "./regras";
+import { aceitaRastreio, transicaoPermitida, type SituacaoCliente } from "./regras";
 import {
   PEDIDOS_POR_PAGINA,
   schemaListaAdmin,
@@ -201,10 +201,6 @@ export function mudarSituacaoPedido(entrada: unknown, cabecalhos: Headers, agora
   });
 }
 
-// O rastreio só faz sentido depois do pagamento aprovado (PBI-28) e enquanto o pedido não foi
-// cancelado.
-const COM_RASTREIO: SituacaoNoBanco[] = ["PAGO", "PROCESSANDO", "ENVIADO", "ENTREGUE"];
-
 // RF29: registra, corrige ou limpa (código vazio) o rastreio. O cliente vê na conta (PBI-29).
 export function registrarRastreio(entrada: unknown, cabecalhos: Headers) {
   return comoAdmin(cabecalhos, async (tx) => {
@@ -214,7 +210,7 @@ export function registrarRastreio(entrada: unknown, cabecalhos: Headers) {
       select: { id: true, status: true },
     });
     if (!pedido) throw new ErroGestao("nao_encontrado", "Pedido não encontrado.");
-    if (!COM_RASTREIO.includes(pedido.status))
+    if (!aceitaRastreio(pedido.status))
       throw new ErroGestao(
         "invalido",
         "O rastreio só pode ser registrado depois do pagamento aprovado e fora de pedido cancelado.",

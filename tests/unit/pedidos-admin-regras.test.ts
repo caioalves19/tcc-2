@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  aceitaRastreio,
   proximasSituacoes,
   rotuloSituacao,
   transicaoPermitida,
@@ -71,4 +72,8 @@ describe("RF29: código de rastreio", () => {
       );
     expect(schemaRastreio.safeParse({ numero: "", codigo: "BR123456789SP" }).success).toBe(false);
   });
+});
+
+it("RF29 o rastreio cabe de pago em diante, fora de pendente e cancelado", () => {
+  expect(SITUACOES.filter(aceitaRastreio)).toEqual(["PAGO", "PROCESSANDO", "ENVIADO", "ENTREGUE"]);
 });
