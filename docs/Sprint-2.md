@@ -242,14 +242,40 @@ Apresentar a obra em uma página pública com galeria e ficha técnica.
 
 Substituir a home provisória pela vitrine institucional, reutilizando a identidade visual e os componentes existentes.
 
-- [ ] Apresentar conteúdo institucional do Kolô e obras em destaque vindas do banco
-- [ ] Conectar navegação ao catálogo e às páginas das obras
-- [ ] Tratar ausência de destaques sem quebrar o layout
-- [ ] Oferecer chamada provisória para agendamento por contato WhatsApp com número configurado
-- [ ] Não direcionar visitantes para rotas ainda inexistentes
-- [ ] Testar destaques, links e estados vazios
+- [x] Apresentar conteúdo institucional do Kolô e obras em destaque vindas do banco
+- [x] Conectar navegação ao catálogo e às páginas das obras
+- [x] Tratar ausência de destaques sem quebrar o layout
+- [x] Oferecer chamada provisória para agendamento por contato WhatsApp com número configurado
+- [x] Não direcionar visitantes para rotas ainda inexistentes
+- [x] Testar destaques, links e estados vazios
 
 O contato WhatsApp é uma solução provisória para a chamada da home. O wizard será implementado nos PBIs 31–33; o PBI-33 substituirá este contato provisório pelo acesso ao wizard.
+
+**Decisões (registradas em 08/10/2026):**
+
+- Destaques: até 4 obras marcadas no admin, publicadas e não arquivadas; disponíveis antes das esgotadas e, entre elas, as mais recentes. Sem obra marcada, a seção some.
+- A chamada de tatuagem abre o WhatsApp do ateliê com mensagem pronta; o bloco de tatuagem descreve o fluxo de hoje (conversa, anamnese e termo no estúdio). Mesmo formato para o orçamento de mural.
+- O menu "Tatuagem" do cabeçalho passa a levar a `/#tatuagem` (a rota `/tatuagem` não existe). Um teste confere que todo link interno da home e do cabeçalho tem página.
+- Contrato completo em [PBI-21](features/PBI-21.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-21-home`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR. A conferência com as fotos reais do R2 ficou pendente.
+
+**Entregas:**
+
+- `listarDestaques` em `src/modules/catalog` e `linkWhatsApp` em `src/lib/contato.ts`.
+- Componente `VitrineDestaques` e a nova `src/app/page.tsx`: topo, destaques, bloco de tatuagem e faixa de murais.
+- Menu "Tatuagem" do cabeçalho apontando para `/#tatuagem`.
+
+**Evidências:**
+
+- `npm run lint`, `npm run typecheck` e `npm run build` sem erros; a home é renderizada a cada requisição (`ƒ /`).
+- `npm run test:unit` com 297 testes (10 novos) e a integração com 125 testes no PostgreSQL real (1 novo, dos destaques), em execução sequencial.
+- No navegador, com o Postgres local, em 1280, 768, 375 e 320 px: com e sem obras marcadas, sem rolagem horizontal, axe-core sem violações e console sem erros. A conferência achou o botão de orçamento de mural passando da borda no celular, corrigido.
+
+**Pendências:**
+
+- PBI-33: trocar o WhatsApp do bloco de tatuagem pelo wizard e reescrever os três passos.
+- Portfólio público: trocar o menu "Tatuagem" de `/#tatuagem` para a rota própria.
 
 ---
 
