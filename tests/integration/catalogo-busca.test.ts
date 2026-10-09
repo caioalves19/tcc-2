@@ -128,3 +128,39 @@ it("Fase 1/13 com busca, rascunho e arquivada seguem fora, esgotada no fim, e pa
   expect(segunda.obras.map((o) => o.slug)).toEqual(["spray-13", "spray-esgotada"]);
   expect((await buscar("spray", { ordem: "recentes" })).obras[0]?.slug).toBe("spray-13");
 });
+
+it("Fase 1/13 consulta inválida não quebra: sem palavra vira catálogo inteiro, e operadores e SQL viram texto", async () => {
+  await cadastrar({ titulo: "Metrópole em chamas", slug: "metropole-em-chamas" });
+  await cadastrar({ titulo: "Retalho paulistano", slug: "retalho-paulistano" });
+
+  for (const vazia of ["", "   ", "!!!", ":*", "&|!()", "🎨", null, 123, ["metro"], { a: 1 }])
+    expect(await buscar(vazia), JSON.stringify(vazia)).toMatchObject({ total: 2, busca: "" });
+
+  expect(await buscar("a & b | !c")).toMatchObject({ total: 0, busca: "a b c" });
+  expect(await buscar("metro:* | retalho")).toMatchObject({ total: 0, busca: "metro retalho" });
+  expect(await buscar("'; DROP TABLE artwork; --")).toMatchObject({
+    total: 0,
+    busca: "DROP TABLE artwork",
+  });
+  const { rows } = await db.query("SELECT count(*)::int AS obras FROM artwork");
+  expect(rows).toEqual([{ obras: 2 }]);
+
+  expect((await buscar("x".repeat(500))).busca).toHaveLength(100);
+  expect((await buscar("um dois tres quatro cinco seis sete oito nove dez")).busca).toBe(
+    "um dois tres quatro cinco seis sete oito",
+  );
+});
+
+it("Fase 1/13 a consulta da busca usa o índice artwork_busca_idx", async () => {
+  // Com poucas linhas o Postgres prefere ler a tabela inteira; desligar a varredura sequencial
+  // mostra se a expressão da consulta bate com a do índice (src/modules/catalog/publico.ts).
+  await db.query("SET enable_seqscan = off");
+  const { rows } = await db.query(
+    `EXPLAIN SELECT id FROM artwork
+      WHERE to_tsvector('kolo_busca', coalesce(titulo, '') || ' ' || coalesce(descricao, '') || ' ' || coalesce(tecnica, ''))
+            @@ to_tsquery('kolo_busca', $1)`,
+    ["metro:*"],
+  );
+  await db.query("RESET enable_seqscan");
+  expect(rows.map((r) => r["QUERY PLAN"]).join("\n")).toContain("artwork_busca_idx");
+});
