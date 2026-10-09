@@ -42,14 +42,23 @@ export type PedidoDetalhado = {
 
 type PedidoLido = Prisma.OrderGetPayload<{ include: typeof INCLUI }>;
 
+type PedidoComReserva = Pick<PedidoLido, "id" | "status" | "sessionId"> & {
+  items: Pick<PedidoLido["items"][number], "artworkId">[];
+};
+
 // Pedidos pendentes que ainda prendem unidades: há reserva da sessão que fez o checkout, numa obra
 // do pedido, que não venceu. É a mesma leitura do lerPedido (PBI-26), feita de uma vez para a lista.
-async function comReservaAtiva(pedidos: PedidoLido[], agora: Date): Promise<Set<string>> {
+// O admin (PBI-30) passa a transação dele em `banco`.
+export async function comReservaAtiva(
+  pedidos: PedidoComReserva[],
+  agora: Date,
+  banco: Pick<Prisma.TransactionClient, "artworkReservation"> = obterPrisma(),
+): Promise<Set<string>> {
   const pendentes = pedidos.flatMap((p) =>
     p.status === "PENDENTE" && p.sessionId ? [{ ...p, sessionId: p.sessionId }] : [],
   );
   if (pendentes.length === 0) return new Set();
-  const reservas = await obterPrisma().artworkReservation.findMany({
+  const reservas = await banco.artworkReservation.findMany({
     where: {
       sessionId: { in: [...new Set(pendentes.map((p) => p.sessionId))] },
       expiresAt: { gt: agora },
@@ -64,7 +73,10 @@ async function comReservaAtiva(pedidos: PedidoLido[], agora: Date): Promise<Set<
   );
 }
 
-function situacaoDe(pedido: PedidoLido, reservados: Set<string>): SituacaoCliente | null {
+export function situacaoDe(
+  pedido: Pick<PedidoLido, "id" | "status" | "payments">,
+  reservados: Set<string>,
+): SituacaoCliente | null {
   return situacaoParaCliente({
     situacao: pedido.status,
     pagamentos: pedido.payments.map((p) => p.status),

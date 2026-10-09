@@ -22,3 +22,22 @@ export const schemaRastreio = z.object({
     )
     .transform((codigo) => (codigo === "" ? null : codigo)),
 });
+
+// RF29: filtros da lista do admin. "A fazer" (pagos e em preparação) é o padrão.
+export const FILTROS_PEDIDOS = [
+  "a-fazer",
+  "pendentes",
+  "enviados",
+  "entregues",
+  "cancelados",
+  "todos",
+] as const;
+export type FiltroPedidos = (typeof FILTROS_PEDIDOS)[number];
+export const PEDIDOS_POR_PAGINA = 20;
+
+// Vem da URL (?filtro=...&busca=...&pagina=...): qualquer valor fora do esperado volta ao padrão.
+export const schemaListaAdmin = z.object({
+  filtro: z.enum(FILTROS_PEDIDOS).catch("a-fazer"),
+  busca: z.string().trim().max(100).catch(""),
+  pagina: z.coerce.number().int().min(1).max(1_000_000).catch(1),
+});
