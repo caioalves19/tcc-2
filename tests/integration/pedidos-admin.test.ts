@@ -159,3 +159,63 @@ it("RF29 pagina de 20 em 20", async () => {
     expect(invalida.ok && invalida.dados.pagina, String(pagina)).toBe(1);
   }
 });
+
+it("RF29 o detalhe traz cliente, itens, valores, entrega e pagamentos, sem o payload do gateway", async () => {
+  const { lerPedidoAdmin } = await import("../../src/modules/orders");
+  await pedido(maria, {
+    numero: "20261002-DETAL1",
+    situacao: "ENVIADO",
+    criadoEm: dia(2),
+    pagamentos: ["RECUSADO", "APROVADO"],
+    rastreio: "BR123456789SP",
+    pagoEm: "2026-10-02T15:05:00Z",
+    enviadoEm: "2026-10-03T10:00:00Z",
+  });
+  await pedido(lucas, { numero: "20261006-ABAND1", situacao: "PENDENTE", criadoEm: dia(6) });
+
+  for (const quem of [new Headers(), cliente, artista])
+    expect((await lerPedidoAdmin("20261002-DETAL1", quem)).ok).toBe(false);
+
+  const lido = await lerPedidoAdmin("20261002-DETAL1", admin);
+  if (!lido.ok) throw new Error(lido.mensagem);
+  const { pagamentos, ...resto } = lido.dados;
+  expect(resto).toEqual({
+    numero: "20261002-DETAL1",
+    criadoEm: new Date(dia(2)),
+    situacao: "ENVIADO",
+    situacaoBanco: "ENVIADO",
+    modalidade: "RETIRADA",
+    cliente: { nome: "Maria Prado", email: "maria@pbi30.test", telefone: "11987654321" },
+    itens: [{ titulo: "Metrópole em chamas", precoCentavos: 480000, quantidade: 2 }],
+    subtotalCentavos: 960000,
+    freteCentavos: 0,
+    totalCentavos: 960000,
+    endereco: expect.objectContaining({ destinatario: "Lucas Silveira", cep: "01327000" }),
+    rastreio: "BR123456789SP",
+    pagoEm: new Date("2026-10-02T15:05:00Z"),
+    enviadoEm: new Date("2026-10-03T10:00:00Z"),
+  });
+  expect(pagamentos).toHaveLength(2);
+  expect(pagamentos).toEqual(
+    expect.arrayContaining([
+      {
+        provedor: "mercado_pago",
+        idExterno: "mp-20261002-DETAL1-1",
+        metodo: "PIX",
+        situacao: "RECUSADO",
+        valorCentavos: 960000,
+      },
+      expect.objectContaining({ idExterno: "mp-20261002-DETAL1-2", situacao: "APROVADO" }),
+    ]),
+  );
+  expect(JSON.stringify(lido.dados)).not.toContain("nao-mostrar");
+
+  // O admin vê também a tentativa sem pagamento, marcada.
+  const abandonado = await lerPedidoAdmin("20261006-ABAND1", admin);
+  expect(abandonado.ok && abandonado.dados.situacao).toBe("NAO_CONCLUIDO");
+  for (const numero of ["20261001-NADA00", "", 42, "x".repeat(33)])
+    expect(await lerPedidoAdmin(numero, admin)).toMatchObject({
+      ok: false,
+      erro: "nao_encontrado",
+    });
+});
