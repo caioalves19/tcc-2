@@ -19,6 +19,8 @@ const LINKS = [
 type PropsConta = {
   logado?: boolean;
   administrador?: boolean;
+  // ARTISTA ou ADMIN: mostra a agenda (PBI-34). O acesso de verdade é conferido no servidor.
+  equipe?: boolean;
   acaoSair?: () => Promise<void>;
 };
 
@@ -26,12 +28,21 @@ type PropsConta = {
 function AcaoConta({
   logado = false,
   administrador = false,
+  equipe = false,
   acaoSair,
   className,
 }: PropsConta & { className?: string }) {
   if (logado) {
     return (
       <div className={className}>
+        {equipe && (
+          <a
+            href="/agenda"
+            className={buttonVariants({ size: "sm", variant: "contorno", className: "mr-2" })}
+          >
+            Agenda
+          </a>
+        )}
         {administrador && (
           <a
             href="/admin"
@@ -64,6 +75,7 @@ function AcaoConta({
 export function Cabecalho({
   logado = false,
   administrador = false,
+  equipe = false,
   acaoSair,
   itensNoCarrinho = 0,
 }: PropsConta & { itensNoCarrinho?: number }) {
@@ -116,6 +128,7 @@ export function Cabecalho({
           <AcaoConta
             logado={logado}
             administrador={administrador}
+            equipe={equipe}
             acaoSair={acaoSair}
             className="hidden sm:inline-flex"
           />
@@ -155,6 +168,7 @@ export function Cabecalho({
               <AcaoConta
                 logado={logado}
                 administrador={administrador}
+                equipe={equipe}
                 acaoSair={acaoSair}
                 className="w-full"
               />

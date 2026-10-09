@@ -74,6 +74,20 @@ it("RF28 mostra acesso à administração para ADMIN também no menu mobile", as
   ).toBe("/admin");
 });
 
+it("RF22 mostra a agenda para a equipe (artista ou admin), também no menu mobile", async () => {
+  const usuario = userEvent.setup();
+  const { rerender } = render(<Cabecalho logado />);
+  expect(screen.queryByRole("link", { name: "Agenda" })).toBeNull();
+  rerender(<Cabecalho logado equipe />);
+  expect(screen.getByRole("link", { name: "Agenda" }).getAttribute("href")).toBe("/agenda");
+  await usuario.click(screen.getByRole("button", { name: /abrir menu/i }));
+  expect(
+    within(screen.getByRole("navigation", { name: /menu mobile/i }))
+      .getByRole("link", { name: "Agenda" })
+      .getAttribute("href"),
+  ).toBe("/agenda");
+});
+
 it("RF11 o carrinho do cabeçalho leva a /carrinho e diz quantos itens tem", () => {
   render(<Cabecalho itensNoCarrinho={2} />);
   const carrinho = screen.getByRole("link", { name: "Carrinho, 2 itens" });
