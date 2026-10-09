@@ -211,3 +211,102 @@ it("RF22 o e-mail opcional liga o horário à conta ativa; e-mail sem conta é r
   );
   expect(rows).toEqual([{ email: "cliente@pbi17.test" }]);
 });
+
+it("RF22/RN08 editar respeita a sobreposição, cancelar libera o intervalo e horário finalizado não muda", async () => {
+  const { cadastrarHorario, editarHorario, mudarSituacaoHorario } =
+    await import("../../src/modules/scheduling");
+  const a = await cadastrarHorario(horario(), ana);
+  const b = await cadastrarHorario(
+    horario({ nomeContato: "Bruna", inicio: "2026-10-15T18:00", fim: "2026-10-15T19:00" }),
+    ana,
+  );
+  if (!a.ok || !b.ok) throw new Error("Falha ao preparar a agenda");
+  const idA = a.dados.id;
+  const idB = b.dados.id;
+  const editarB = (extra: Record<string, unknown>) =>
+    editarHorario({ id: idB, ...horario({ nomeContato: "Bruna", ...extra }) }, ana);
+
+  expect(await editarB({ inicio: "2026-10-15T16:00", fim: "2026-10-15T18:00" })).toMatchObject({
+    ok: false,
+    erro: "sobreposto",
+  });
+  expect(
+    await editarB({ inicio: "2026-10-15T17:00", fim: "2026-10-15T19:00", observacoes: "Retoque" }),
+  ).toEqual({ ok: true, dados: undefined });
+  const editado = await db.query(
+    "SELECT inicia_em, termina_em, descricao, codigo FROM appointment WHERE id = $1",
+    [idB],
+  );
+  expect(editado.rows[0]).toMatchObject({
+    inicia_em: new Date("2026-10-15T20:00:00Z"),
+    termina_em: new Date("2026-10-15T22:00:00Z"),
+    descricao: "Retoque",
+    codigo: b.dados.codigo,
+  });
+
+  expect(await mudarSituacaoHorario({ id: idA, situacao: "CANCELADO" }, ana)).toEqual({
+    ok: true,
+    dados: undefined,
+  });
+  // O intervalo de A ficou livre.
+  expect(await editarB({ inicio: "2026-10-15T14:00", fim: "2026-10-15T16:00" })).toMatchObject({
+    ok: true,
+  });
+
+  const finalizado = {
+    ok: false,
+    erro: "finalizado",
+    mensagem: "Este horário já foi cancelado ou concluído.",
+  };
+  expect(await editarHorario({ id: idA, ...horario() }, ana)).toEqual(finalizado);
+  expect(await mudarSituacaoHorario({ id: idA, situacao: "CONCLUIDO" }, ana)).toEqual(finalizado);
+  expect(await mudarSituacaoHorario({ id: idB, situacao: "CONCLUIDO" }, ana)).toMatchObject({
+    ok: true,
+  });
+  expect(await editarB({})).toEqual(finalizado);
+  expect(await mudarSituacaoHorario({ id: idB, situacao: "AGENDADO" }, ana)).toMatchObject({
+    ok: false,
+    erro: "invalido",
+  });
+  const { rows } = await db.query("SELECT situacao FROM appointment ORDER BY nome_contato");
+  expect(rows.map((r) => r.situacao)).toEqual(["CONCLUIDO", "CANCELADO"]);
+});
+
+it("RN10 outro artista não altera nem descobre o horário; o admin altera qualquer um", async () => {
+  const { cadastrarHorario, editarHorario, mudarSituacaoHorario } =
+    await import("../../src/modules/scheduling");
+  const criado = await cadastrarHorario(horario(), ana);
+  if (!criado.ok) throw new Error(criado.mensagem);
+  const { id } = criado.dados;
+  const naoEncontrado = { ok: false, erro: "nao_encontrado" };
+
+  expect(await editarHorario({ id, ...horario() }, bia)).toMatchObject(naoEncontrado);
+  expect(await mudarSituacaoHorario({ id, situacao: "CANCELADO" }, bia)).toMatchObject(
+    naoEncontrado,
+  );
+  for (const inexistente of ["9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d", "x", ""])
+    expect(
+      await mudarSituacaoHorario({ id: inexistente, situacao: "CANCELADO" }, ana),
+      inexistente,
+    ).toMatchObject(naoEncontrado);
+  expect(await editarHorario({ id, ...horario({ artistaId: idBia }) }, ana)).toMatchObject({
+    ok: false,
+    erro: "proibido",
+  });
+  expect(await mudarSituacaoHorario({ id, situacao: "CANCELADO" }, new Headers())).toMatchObject({
+    ok: false,
+    erro: "nao_autenticado",
+  });
+
+  // O admin pode passar o horário para outra artista e cancelar.
+  expect(await editarHorario({ id, ...horario({ artistaId: idBia }) }, admin)).toMatchObject({
+    ok: true,
+  });
+  expect(await mudarSituacaoHorario({ id, situacao: "CANCELADO" }, admin)).toMatchObject({
+    ok: true,
+  });
+  const { rows } = await db.query("SELECT artist_id, situacao FROM appointment WHERE id = $1", [
+    id,
+  ]);
+  expect(rows).toEqual([{ artist_id: idBia, situacao: "CANCELADO" }]);
+});

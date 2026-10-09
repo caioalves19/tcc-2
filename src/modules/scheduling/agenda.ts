@@ -8,7 +8,14 @@ import { codigoDoHorario, deSaoPauloParaUtc } from "./agenda-regras";
 // Agenda manual (PBI-34, RF22): o artista ou o admin cadastra o horário combinado no WhatsApp.
 // Sem fila de pendentes e sem motor de horários livres.
 
-type ErroSimples = "nao_autenticado" | "proibido" | "sobreposto" | "cliente_inexistente" | "falha";
+type ErroSimples =
+  | "nao_autenticado"
+  | "proibido"
+  | "sobreposto"
+  | "cliente_inexistente"
+  | "nao_encontrado"
+  | "finalizado"
+  | "falha";
 export type ResultadoAgenda<T> =
   | { ok: true; dados: T }
   | { ok: false; erro: ErroSimples; mensagem: string }
@@ -216,5 +223,91 @@ export function cadastrarHorario(entrada: unknown, cabecalhos: Headers) {
       },
     });
     return { id: criado.id, codigo };
+  });
+}
+
+// RN10: o artista só enxerga os próprios horários; o de outro responde como inexistente, sem
+// revelar que existe. Só AGENDADO muda: CANCELADO e CONCLUIDO são finais.
+async function horarioDaEquipe(equipe: Equipe, id: unknown) {
+  const valido = z.uuid().safeParse(id);
+  const horario = valido.success
+    ? await obterPrisma().appointment.findFirst({
+        where: {
+          id: valido.data,
+          deletedAt: null,
+          ...(equipe.papel === "ARTISTA" ? { artistId: equipe.artistaId } : {}),
+        },
+      })
+    : null;
+  if (!horario) throw new ErroAgenda("nao_encontrado", "Horário não encontrado.");
+  if (horario.status !== "AGENDADO") throw finalizado();
+  return horario;
+}
+
+function finalizado() {
+  return new ErroAgenda("finalizado", "Este horário já foi cancelado ou concluído.");
+}
+
+// Atualiza só se o horário ainda está AGENDADO (e, para o artista, ainda é dele): uma edição e um
+// cancelamento simultâneos não passam os dois.
+async function atualizarSeAgendado(
+  equipe: Equipe,
+  id: string,
+  dados: Prisma.AppointmentUncheckedUpdateManyInput,
+) {
+  const { count } = await obterPrisma().appointment.updateMany({
+    where: {
+      id,
+      status: "AGENDADO",
+      deletedAt: null,
+      ...(equipe.papel === "ARTISTA" ? { artistId: equipe.artistaId } : {}),
+    },
+    data: dados,
+  });
+  if (count === 0) throw finalizado();
+}
+
+function campoDe(entrada: unknown, campo: string): unknown {
+  return typeof entrada === "object" && entrada !== null
+    ? (entrada as Record<string, unknown>)[campo]
+    : undefined;
+}
+
+// RF22/RN08: editar passa pela mesma constraint de sobreposição; o código não muda.
+export function editarHorario(entrada: unknown, cabecalhos: Headers) {
+  return executar(async () => {
+    const equipe = await equipeDaRequisicao(cabecalhos);
+    const atual = await horarioDaEquipe(equipe, campoDe(entrada, "id"));
+    const dados = validar(entrada);
+    const artistaId =
+      equipe.papel === "ADMIN" && !dados.artistaId
+        ? atual.artistId
+        : await artistaDoHorario(equipe, dados.artistaId);
+    const { userId } = await vinculos(dados);
+    await atualizarSeAgendado(equipe, atual.id, {
+      artistId: artistaId,
+      userId,
+      contactName: dados.nomeContato,
+      contactPhone: dados.telefoneContato,
+      startsAt: dados.inicio,
+      endsAt: dados.fim,
+      tattooStyleId: dados.estiloId ?? null,
+      sizeTierId: dados.tamanhoId ?? null,
+      bodyRegion: dados.regiaoCorpo,
+      description: dados.observacoes,
+    });
+  });
+}
+
+const schemaSituacao = z.enum(["CANCELADO", "CONCLUIDO"]);
+
+// RF22: cancelar libera o intervalo (a constraint ignora cancelados); concluir registra a sessão.
+export function mudarSituacaoHorario(entrada: unknown, cabecalhos: Headers) {
+  return executar(async () => {
+    const equipe = await equipeDaRequisicao(cabecalhos);
+    const nova = schemaSituacao.safeParse(campoDe(entrada, "situacao"));
+    if (!nova.success) throw new ErroValidacao({ situacao: "Escolha cancelar ou concluir." });
+    const atual = await horarioDaEquipe(equipe, campoDe(entrada, "id"));
+    await atualizarSeAgendado(equipe, atual.id, { status: nova.data });
   });
 }
