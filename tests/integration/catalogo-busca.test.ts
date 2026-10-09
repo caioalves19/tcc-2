@@ -96,3 +96,35 @@ it("Fase 1/13 acha por começo de palavra em título, descrição e técnica; v�
   const nada = await buscar("aquarela");
   expect(nada).toMatchObject({ obras: [], total: 0, totalPaginas: 0, busca: "aquarela" });
 });
+
+it("Fase 1/13 com busca, rascunho e arquivada seguem fora, esgotada no fim, e paginação e ordenação valem", async () => {
+  await cadastrar({ titulo: "Spray rascunho", slug: "spray-rascunho" }, undefined, false);
+  const arquivada = await cadastrar({ titulo: "Spray arquivada", slug: "spray-arquivada" });
+  await db.query("UPDATE artwork SET excluido_em = now() WHERE id = $1", [arquivada]);
+  await cadastrar(
+    { titulo: "Spray esgotada", slug: "spray-esgotada", preco: "10,00", estoque: "0" },
+    "2026-12-01T12:00:00Z",
+  );
+  for (let i = 1; i <= 13; i++) {
+    const n = String(i).padStart(2, "0");
+    await cadastrar(
+      { titulo: `Spray ${n}`, slug: `spray-${n}`, preco: `${100 + i},00` },
+      `2026-01-${n}T12:00:00Z`,
+    );
+  }
+  await cadastrar({ titulo: "Aquarela", slug: "aquarela" });
+
+  const primeira = await buscar("spray", { ordem: "menor-preco" });
+  const segunda = await buscar("spray", { ordem: "menor-preco", pagina: 2 });
+  expect(primeira).toMatchObject({
+    total: 14,
+    totalPaginas: 2,
+    ordem: "menor-preco",
+    busca: "spray",
+  });
+  expect(primeira.obras.map((o) => o.slug)).toEqual(
+    Array.from({ length: 12 }, (_, i) => `spray-${String(i + 1).padStart(2, "0")}`),
+  );
+  expect(segunda.obras.map((o) => o.slug)).toEqual(["spray-13", "spray-esgotada"]);
+  expect((await buscar("spray", { ordem: "recentes" })).obras[0]?.slug).toBe("spray-13");
+});
