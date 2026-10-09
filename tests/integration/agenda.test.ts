@@ -310,3 +310,111 @@ it("RN10 outro artista não altera nem descobre o horário; o admin altera qualq
   ]);
   expect(rows).toEqual([{ artist_id: idBia, situacao: "CANCELADO" }]);
 });
+
+it("RF22/RN09/RN10 a semana traz os horários dela, por dia de São Paulo; o artista vê só os dele", async () => {
+  const { cadastrarHorario, lerAgenda } = await import("../../src/modules/scheduling");
+  const deAna = async (inicio: string, fim: string, extra: Record<string, unknown> = {}) => {
+    const r = await cadastrarHorario(horario({ inicio, fim, ...extra }), ana);
+    if (!r.ok) throw new Error(r.mensagem);
+    return r.dados;
+  };
+  // Domingo anterior, 23:00 em São Paulo: fora da semana (é 02:00 UTC de segunda).
+  await deAna("2026-10-11T23:00", "2026-10-11T23:30");
+  // Segunda 22:00 em São Paulo já é terça em UTC, mas aparece na segunda.
+  const segunda = await deAna("2026-10-12T22:00", "2026-10-12T23:00", {
+    estiloId,
+    tamanhoId,
+    regiaoCorpo: "Nuca",
+    observacoes: "Primeira sessão",
+    emailCliente: "cliente@pbi17.test",
+  });
+  await deAna("2026-10-14T10:00", "2026-10-14T12:00");
+  await deAna("2026-10-18T23:00", "2026-10-18T23:59");
+  await deAna("2026-10-19T09:00", "2026-10-19T10:00");
+  const daBia = await cadastrarHorario(
+    horario({ inicio: "2026-10-13T10:00", fim: "2026-10-13T11:00", artistaId: idBia }),
+    admin,
+  );
+  if (!daBia.ok) throw new Error(daBia.mensagem);
+
+  const semana = await lerAgenda(ana, { semana: "2026-10-15" });
+  if (!semana.ok) throw new Error(semana.mensagem);
+  expect(semana.dados).toMatchObject({
+    papel: "ARTISTA",
+    artistaId: idAna,
+    artistas: [],
+    semana: {
+      inicio: "2026-10-12",
+      fim: "2026-10-18",
+      anterior: "2026-10-05",
+      proxima: "2026-10-19",
+    },
+    opcoes: {
+      estilos: [{ id: estiloId, nome: "Fineline" }],
+      tamanhos: [{ id: tamanhoId, nome: "Médio" }],
+    },
+  });
+  expect(semana.dados.dias.map((d) => [d.data, d.horarios.map((h) => h.inicio)])).toEqual([
+    ["2026-10-12", ["2026-10-12T22:00"]],
+    ["2026-10-13", []],
+    ["2026-10-14", ["2026-10-14T10:00"]],
+    ["2026-10-15", []],
+    ["2026-10-16", []],
+    ["2026-10-17", []],
+    ["2026-10-18", ["2026-10-18T23:00"]],
+  ]);
+  expect(semana.dados.dias[0]?.horarios[0]).toEqual({
+    id: segunda.id,
+    codigo: segunda.codigo,
+    artistaId: idAna,
+    artistaNome: "Ana",
+    nomeContato: "Lucas Silveira",
+    telefoneContato: "11987654321",
+    emailCliente: "cliente@pbi17.test",
+    inicio: "2026-10-12T22:00",
+    fim: "2026-10-12T23:00",
+    situacao: "AGENDADO",
+    estiloId,
+    estiloNome: "Fineline",
+    tamanhoId,
+    tamanhoNome: "Médio",
+    regiaoCorpo: "Nuca",
+    observacoes: "Primeira sessão",
+  });
+
+  // Pedir a agenda de outro artista não muda nada para o artista.
+  const tentativa = await lerAgenda(ana, { semana: "2026-10-15", artista: idBia });
+  expect(tentativa.ok && tentativa.dados.artistaId).toBe(idAna);
+  expect(tentativa.ok && tentativa.dados.dias[1]?.horarios).toEqual([]);
+});
+
+it("RF22/RN10 o admin vê todos os artistas e filtra; cliente e visitante não leem a agenda", async () => {
+  const { cadastrarHorario, lerAgenda } = await import("../../src/modules/scheduling");
+  await cadastrarHorario(horario({ inicio: "2026-10-14T10:00", fim: "2026-10-14T11:00" }), ana);
+  await cadastrarHorario(
+    horario({ inicio: "2026-10-14T09:00", fim: "2026-10-14T10:00", artistaId: idBia }),
+    admin,
+  );
+  const quarta = async (filtro: Record<string, unknown>) => {
+    const r = await lerAgenda(admin, { semana: "2026-10-14", ...filtro });
+    if (!r.ok) throw new Error(r.mensagem);
+    return r.dados;
+  };
+  const todos = await quarta({});
+  expect(todos).toMatchObject({
+    papel: "ADMIN",
+    artistaId: null,
+    artistas: [
+      { id: idAna, nome: "Ana" },
+      { id: idBia, nome: "Bia" },
+    ],
+  });
+  expect(todos.dias[2]?.horarios.map((h) => h.artistaNome)).toEqual(["Bia", "Ana"]);
+  expect((await quarta({ artista: idBia })).dias[2]?.horarios.map((h) => h.artistaNome)).toEqual([
+    "Bia",
+  ]);
+  expect((await quarta({ artista: "x" })).artistaId).toBeNull();
+
+  expect(await lerAgenda(cliente, {})).toMatchObject({ ok: false, erro: "proibido" });
+  expect(await lerAgenda(new Headers(), {})).toMatchObject({ ok: false, erro: "nao_autenticado" });
+});

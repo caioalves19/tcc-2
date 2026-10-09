@@ -36,11 +36,11 @@ class ErroValidacao extends Error {
   }
 }
 
-type Equipe = { papel: "ADMIN" } | { papel: "ARTISTA"; artistaId: string };
+export type Equipe = { papel: "ADMIN" } | { papel: "ARTISTA"; artistaId: string };
 
 // RN10: o papel, a situação da conta e o vínculo com o artista são relidos no banco a cada pedido,
 // como no autorizarUpload (PBI-17); a sessão só diz quem pede.
-async function equipeDaRequisicao(cabecalhos: Headers): Promise<Equipe> {
+export async function equipeDaRequisicao(cabecalhos: Headers): Promise<Equipe> {
   const sessao = await sessaoDaRequisicao(cabecalhos);
   if (!sessao) throw new ErroAgenda("nao_autenticado", "Entre na sua conta para ver a agenda.");
   const atual = await obterPrisma().session.findUnique({
@@ -159,7 +159,7 @@ function violouSobreposicao(erro: unknown): boolean {
   return causa?.code === "23P01" && (causa.message ?? "").includes("appointment_no_overlap");
 }
 
-async function executar<T>(acao: () => Promise<T>): Promise<ResultadoAgenda<T>> {
+export async function executar<T>(acao: () => Promise<T>): Promise<ResultadoAgenda<T>> {
   try {
     return { ok: true, dados: await acao() };
   } catch (erro) {
