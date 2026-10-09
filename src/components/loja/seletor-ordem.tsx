@@ -9,9 +9,9 @@ import {
   type OrdemCatalogo,
 } from "@/modules/catalog/cliente";
 
-// RF09: trocar a ordenação volta para a primeira página. Sem JavaScript, o formulário GET
-// faz o mesmo pelo botão "Ordenar".
-export function SeletorOrdem({ ordem }: { ordem: OrdemCatalogo }) {
+// RF09: trocar a ordenação volta para a primeira página e mantém a busca (PBI-41). Sem
+// JavaScript, o formulário GET faz o mesmo pelo botão "Ordenar".
+export function SeletorOrdem({ ordem, busca }: { ordem: OrdemCatalogo; busca: string }) {
   const router = useRouter();
   return (
     <form method="get" action="/obras" className="flex flex-wrap items-center gap-2">
@@ -22,7 +22,9 @@ export function SeletorOrdem({ ordem }: { ordem: OrdemCatalogo }) {
         id="ordem-catalogo"
         name="ordem"
         defaultValue={ordem}
-        onChange={(evento) => router.push(hrefCatalogo(evento.target.value as OrdemCatalogo))}
+        onChange={(evento) =>
+          router.push(hrefCatalogo(evento.target.value as OrdemCatalogo, 1, busca))
+        }
         className="h-12 rounded-campo border-2 border-[var(--kolo-contorno)] bg-transparent px-3"
       >
         {ORDENS_CATALOGO.map((opcao) => (
@@ -31,6 +33,7 @@ export function SeletorOrdem({ ordem }: { ordem: OrdemCatalogo }) {
           </option>
         ))}
       </select>
+      {busca && <input type="hidden" name="busca" value={busca} />}
       <noscript>
         <button type="submit" className={buttonVariants({ variant: "contorno", size: "sm" })}>
           Ordenar

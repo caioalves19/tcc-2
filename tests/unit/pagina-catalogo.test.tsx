@@ -15,21 +15,25 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-const VAZIO = { obras: [], total: 0, pagina: 1, totalPaginas: 0, ordem: "recentes" };
+const VAZIO = { obras: [], total: 0, pagina: 1, totalPaginas: 0, ordem: "recentes", busca: "" };
 const busca = (valores: Record<string, string | string[]>) => ({
   searchParams: Promise.resolve(valores),
 });
 
 it("RF09/RN01 a página é pública e repassa página e ordenação da URL ao catálogo", async () => {
   listar.mockResolvedValue(VAZIO);
-  render(await PaginaCatalogo(busca({ pagina: "2", ordem: "menor-preco" })));
-  expect(listar).toHaveBeenCalledWith({ pagina: "2", ordem: "menor-preco" });
+  render(await PaginaCatalogo(busca({ pagina: "2", ordem: "menor-preco", busca: "metro" })));
+  expect(listar).toHaveBeenCalledWith({ pagina: "2", ordem: "menor-preco", busca: "metro" });
   expect(screen.getByRole("heading", { level: 1, name: "Catálogo de obras" })).toBeDefined();
   cleanup();
 
   // Parâmetro repetido na URL: vale o primeiro.
-  render(await PaginaCatalogo(busca({ pagina: ["3", "9"], ordem: ["destaque", "x"] })));
-  expect(listar).toHaveBeenLastCalledWith({ pagina: "3", ordem: "destaque" });
+  render(
+    await PaginaCatalogo(
+      busca({ pagina: ["3", "9"], ordem: ["destaque", "x"], busca: ["spray", "x"] }),
+    ),
+  );
+  expect(listar).toHaveBeenLastCalledWith({ pagina: "3", ordem: "destaque", busca: "spray" });
   expect(metadata.title).toBe("Catálogo de obras · Kolô");
 });
 

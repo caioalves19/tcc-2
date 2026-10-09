@@ -57,11 +57,18 @@ export const ROTULOS_ORDEM: Record<OrdemCatalogo, string> = {
   destaque: "Destaque",
 };
 
-// Link de uma página do catálogo. Os padrões (recentes, página 1) ficam fora da URL.
-export function hrefCatalogo(ordem: OrdemCatalogo, pagina = 1): string {
-  const busca = new URLSearchParams();
-  if (ordem !== "recentes") busca.set("ordem", ordem);
-  if (pagina > 1) busca.set("pagina", String(pagina));
-  const texto = busca.toString();
+// Link de uma página do catálogo. Os padrões (recentes, página 1, sem busca) ficam fora da URL.
+export function hrefCatalogo(ordem: OrdemCatalogo, pagina = 1, busca = ""): string {
+  const parametros = new URLSearchParams();
+  if (ordem !== "recentes") parametros.set("ordem", ordem);
+  if (busca) parametros.set("busca", busca);
+  if (pagina > 1) parametros.set("pagina", String(pagina));
+  const texto = parametros.toString();
   return texto ? `/obras?${texto}` : "/obras";
+}
+
+// PBI-41: a busca vem da URL. Fica só com letras e números (sem os operadores do to_tsquery, como
+// & | ! :*), até 100 caracteres e 8 palavras. Sem palavra nenhuma, é como não ter busca.
+export function palavrasDaBusca(texto: string): string[] {
+  return (texto.slice(0, 100).match(/[\p{L}\p{N}]+/gu) ?? []).slice(0, 8);
 }

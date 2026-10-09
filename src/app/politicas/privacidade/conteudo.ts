@@ -4,14 +4,14 @@ import { CONTATO } from "@/lib/contato";
 const EMAIL = `[${CONTATO.email}](mailto:${CONTATO.email})`;
 
 // RNF17: cada item de "Quais dados usamos" vem de uma tabela do prisma/schema.prisma.
-// Escopo P0 da v2.2. O que é P1 (formulário de contato, excluir a conta pelo site) só
-// entra aqui quando o PBI-44 ou o PBI-40 for integrado.
+// Escopo P0 da v2.2 mais o contato (PBI-44, integrado em 07/10). Excluir a conta pelo site
+// (PBI-40) só entra aqui quando for integrado; até lá, a exclusão é pedida por e-mail.
 export const PRIVACIDADE: Politica = {
   slug: "privacidade",
   titulo: "Política de privacidade",
   resumo:
     "Quais dados o site do Kolô usa, para quê e como você controla os seus. A regra é pedir só o necessário.",
-  atualizadaEm: "2026-10-05",
+  atualizadaEm: "2026-10-08",
   secoes: [
     {
       id: "quem-cuida",
@@ -38,6 +38,7 @@ export const PRIVACIDADE: Politica = {
             "Pagamentos: o identificador do pagamento no Mercado Pago, o meio escolhido (Pix, cartão ou boleto), a situação e o valor.",
             "Agenda do estúdio: depois que você combina uma tatuagem pelo WhatsApp, o artista ou a equipe registra nome e telefone de contato, artista, estilo, tamanho, região do corpo, a descrição da ideia e o horário combinado, para organizar a agenda.",
             "Artistas: o nome de cada artista aparece no portfólio e na ficha das obras.",
+            "Formulário de contato: nome, e-mail e a mensagem que você escreve, para responder você. Para barrar spam, contamos os envios por endereço IP (até 3 envios a cada 15 minutos) e usamos a verificação da Cloudflare, que confere se quem envia é uma pessoa.",
           ],
         },
       ],
@@ -64,7 +65,7 @@ export const PRIVACIDADE: Politica = {
           itens: [
             "Execução de contrato (art. 7º, V): conta, carrinho, pedidos, pagamento, entrega e agenda.",
             "Cumprimento de obrigação legal (art. 7º, II): guardar o registro das vendas pelo prazo que a lei exige.",
-            "Legítimo interesse (art. 7º, IX): segurança, como o registro de sessão e o limite de tentativas.",
+            "Legítimo interesse (art. 7º, IX): segurança, como o registro de sessão, o limite de tentativas e o filtro de spam do contato, e responder a quem nos escreve pelo formulário de contato.",
           ],
         },
       ],
@@ -78,6 +79,7 @@ export const PRIVACIDADE: Politica = {
           itens: [
             "Mercado Pago, que processa os pagamentos e tem política de privacidade própria.",
             "Resend, que envia o e-mail de recuperação de senha.",
+            "Cloudflare, que confere no formulário de contato se quem envia é uma pessoa (Turnstile) e recebe o seu endereço IP para isso.",
             "Os provedores que hospedam o site, o banco de dados e as imagens das obras.",
             "WhatsApp, quando você decide abrir uma conversa com o estúdio. O que você envia lá segue as regras do WhatsApp.",
             "Autoridades públicas, quando a lei exigir.",
@@ -103,7 +105,8 @@ export const PRIVACIDADE: Politica = {
             "Conta e endereço: enquanto a conta existir.",
             "Sessões: até você sair ou a sessão expirar.",
             "Código de recuperação de senha: vale por 1 hora e para um único uso.",
-            "Contagem de tentativas: vale só durante a janela de bloqueio, de 15 minutos (login) a 1 hora (recuperação de senha).",
+            "Contagem de tentativas: vale só durante a janela de bloqueio, de 15 minutos (login e contato) a 1 hora (recuperação de senha).",
+            "Mensagens de contato: pelo tempo necessário para responder e acompanhar o atendimento.",
             "Pedidos e pagamentos: pelo prazo exigido pelas leis fiscais e de defesa do consumidor, mesmo depois da exclusão da conta, sem ligação com os seus dados pessoais.",
             "Agenda: enquanto for necessária para organizar o atendimento.",
             "Cópias de segurança: o banco tem cópias diárias, mantidas por tempo limitado, para recuperar o site em caso de falha.",

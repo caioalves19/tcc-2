@@ -242,14 +242,40 @@ Apresentar a obra em uma página pública com galeria e ficha técnica.
 
 Substituir a home provisória pela vitrine institucional, reutilizando a identidade visual e os componentes existentes.
 
-- [ ] Apresentar conteúdo institucional do Kolô e obras em destaque vindas do banco
-- [ ] Conectar navegação ao catálogo e às páginas das obras
-- [ ] Tratar ausência de destaques sem quebrar o layout
-- [ ] Oferecer chamada provisória para agendamento por contato WhatsApp com número configurado
-- [ ] Não direcionar visitantes para rotas ainda inexistentes
-- [ ] Testar destaques, links e estados vazios
+- [x] Apresentar conteúdo institucional do Kolô e obras em destaque vindas do banco
+- [x] Conectar navegação ao catálogo e às páginas das obras
+- [x] Tratar ausência de destaques sem quebrar o layout
+- [x] Oferecer chamada provisória para agendamento por contato WhatsApp com número configurado
+- [x] Não direcionar visitantes para rotas ainda inexistentes
+- [x] Testar destaques, links e estados vazios
 
 O contato WhatsApp é uma solução provisória para a chamada da home. O wizard será implementado nos PBIs 31–33; o PBI-33 substituirá este contato provisório pelo acesso ao wizard.
+
+**Decisões (registradas em 08/10/2026):**
+
+- Destaques: até 4 obras marcadas no admin, publicadas e não arquivadas; disponíveis antes das esgotadas e, entre elas, as mais recentes. Sem obra marcada, a seção some.
+- A chamada de tatuagem abre o WhatsApp do ateliê com mensagem pronta; o bloco de tatuagem descreve o fluxo de hoje (conversa, anamnese e termo no estúdio). Mesmo formato para o orçamento de mural.
+- O menu "Tatuagem" do cabeçalho passa a levar a `/#tatuagem` (a rota `/tatuagem` não existe). Um teste confere que todo link interno da home e do cabeçalho tem página.
+- Contrato completo em [PBI-21](features/PBI-21.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-21-home`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR. A conferência com as fotos reais do R2 ficou pendente.
+
+**Entregas:**
+
+- `listarDestaques` em `src/modules/catalog` e `linkWhatsApp` em `src/lib/contato.ts`.
+- Componente `VitrineDestaques` e a nova `src/app/page.tsx`: topo, destaques, bloco de tatuagem e faixa de murais.
+- Menu "Tatuagem" do cabeçalho apontando para `/#tatuagem`.
+
+**Evidências:**
+
+- `npm run lint`, `npm run typecheck` e `npm run build` sem erros; a home é renderizada a cada requisição (`ƒ /`).
+- `npm run test:unit` com 297 testes (10 novos) e a integração com 125 testes no PostgreSQL real (1 novo, dos destaques), em execução sequencial.
+- No navegador, com o Postgres local, em 1280, 768, 375 e 320 px: com e sem obras marcadas, sem rolagem horizontal, axe-core sem violações e console sem erros. A conferência achou o botão de orçamento de mural passando da borda no celular, corrigido.
+
+**Pendências:**
+
+- PBI-33: trocar o WhatsApp do bloco de tatuagem pelo wizard e reescrever os três passos.
+- Portfólio público: trocar o menu "Tatuagem" de `/#tatuagem` para a rota própria.
 
 ---
 
@@ -425,9 +451,35 @@ Consome estoque e obras do PBI-18 e a sessão existente. A API de reserva pode s
 
 Consome o contrato de pedido e suas cópias de dados do PBI-26. Pode avançar junto com pagamento (27), webhook (28) e gestão administrativa (30), usando pedidos de teste. A confirmação real pelo gateway será verificada na integração global.
 
-- [ ] Listar e detalhar apenas pedidos do usuário autenticado
-- [ ] Exibir itens, valores, situação e rastreio quando disponível
-- [ ] Testar tentativa de acesso a pedido alheio e estados pendente, pago e enviado
+- [x] Listar e detalhar apenas pedidos do usuário autenticado
+- [x] Exibir itens, valores, situação e rastreio quando disponível
+- [x] Testar tentativa de acesso a pedido alheio e estados pendente, pago e enviado
+
+**Decisões (registradas em 08/10/2026):**
+
+- `/conta/pedidos` (lista) e `/conta/pedidos/[numero]` (detalhe), com o link "Meus pedidos" na `/conta`. Pedido aguardando pagamento leva ao `/checkout/[numero]`.
+- Tentativas de compra sem nenhum pagamento (checkout abandonado ou cancelado por um novo "Finalizar") não aparecem para o cliente. A regra fica em `situacaoParaCliente`, para o PBI-30 reaproveitar.
+- Na lista, a etiqueta da situação; no detalhe, o andamento com as datas que o banco guarda e o rastreio com "Copiar", sem link para transportadora.
+- Contrato completo em [PBI-29](features/PBI-29.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-29-pedidos`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR. A situação real dos pedidos depende do pagamento (27/28) e da gestão do admin (30); até lá, os testes usam pedidos de teste.
+
+**Entregas:**
+
+- `situacaoParaCliente`, `listarMeusPedidos` e `lerMeuPedido` em `src/modules/orders`.
+- Componentes `ListaPedidos`, `DetalhePedido`, `CopiarCodigo` e a etiqueta da situação, em `src/components/conta`.
+- Páginas `/conta/pedidos` e `/conta/pedidos/[numero]`; link "Meus pedidos" na `/conta`.
+
+**Evidências:**
+
+- `npm run lint`, `npm run typecheck` e `npm run build` sem erros.
+- `npm run test:unit` com 302 testes (15 novos) e a integração com 127 testes no PostgreSQL real (3 novos), em execução sequencial.
+- No navegador, com o Postgres local e pedidos de teste (apagados depois), em 1280 e 375 px: lista sem o abandonado, 404 no pedido alheio, visitante no login, "Copiar" funcionando, sem rolagem horizontal e axe-core sem violações. A conferência e a revisão acharam três ajustes, corrigidos.
+
+**Pendências:**
+
+- PBI-27: prorrogar a reserva do Pix/boleto, para o "Ir para o pagamento" não cair em "reserva expirada".
+- PBI-28 e PBI-30: gravar `pago_em`, `enviado_em` e `codigo_rastreio`, que o andamento e o rastreio já leem.
 
 ### PBI-30 — Gestão administrativa de pedidos
 
@@ -435,9 +487,36 @@ Consome o contrato de pedido e suas cópias de dados do PBI-26. Pode avançar ju
 
 Consome pedidos do PBI-26. Pode avançar junto com a área do cliente (29) e o gateway (27–28); o contrato de status, pagamento e rastreio deve ser compartilhado. O fluxo completo com aprovação real depende também do PBI-28.
 
-- [ ] Permitir ao ADMIN consultar pedidos e dados de pagamento, registrar rastreio e atualizar situação operacional
-- [ ] Não permitir que alteração manual de status substitua a aprovação de pagamento pelo gateway
-- [ ] Validar transições e testar permissões e reflexo do rastreio na área do cliente
+- [x] Permitir ao ADMIN consultar pedidos e dados de pagamento, registrar rastreio e atualizar situação operacional
+- [x] Não permitir que alteração manual de status substitua a aprovação de pagamento pelo gateway
+- [x] Validar transições e testar permissões e reflexo do rastreio na área do cliente
+
+**Decisões (registradas em 08/10/2026):**
+
+- Transições só para frente a partir de Pago, podendo pular etapas; nunca para Pago nem a partir de Pendente (RN05). Cancelar fica fora (reembolso e estoque dependem do 27/28).
+- Na retirada no ateliê, Enviado aparece como "Pronto para retirada" e Entregue como "Retirado", no admin e na conta do cliente.
+- Lista em "A fazer" por padrão, com filtros, "Todos" (inclui as tentativas sem pagamento, marcadas), busca por número ou e-mail e 20 por página. Rastreio opcional a partir de Pago.
+- Feito sobre a branch do PBI-29, porque o contrato de situação é compartilhado. Contrato completo em [PBI-30](features/PBI-30.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-30-admin-pedidos`, que sai da `feat/pbi-29-pedidos` (PR #45): integrar depois dele. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR. A aprovação real do pagamento depende do PBI-28; até lá, os testes usam pedidos de teste.
+
+**Entregas:**
+
+- Regras `transicaoPermitida`, `proximasSituacoes`, `aceitaRastreio`, `rotuloSituacao` e `rotuloDoAndamento`; validação do rastreio e dos filtros.
+- `listarPedidosAdmin`, `lerPedidoAdmin`, `mudarSituacaoPedido` e `registrarRastreio` em `src/modules/orders/gestao.ts`.
+- Páginas `/admin/pedidos` e `/admin/pedidos/[numero]`, Server Actions, componentes `ListaPedidosAdmin`, `PedidoAdminDetalhe` e `AcoesPedido`, e "Pedidos" no menu do admin.
+- Rótulos da retirada também na conta do cliente (PBI-29) e helper compartilhado de pedidos de teste.
+
+**Evidências:**
+
+- `npm run lint`, `npm run typecheck` e `npm run build` sem erros.
+- `npm run test:unit` com 322 testes e a integração com 135 testes no PostgreSQL real (8 novos), em execução sequencial.
+- No navegador, com pedidos de teste (apagados depois), em 1280 e 375 px: filtros, busca, avanço com confirmação, rastreio refletido na conta do cliente, payload fora do HTML e axe-core sem violações. A conferência achou dois ajustes, corrigidos.
+
+**Pendências:**
+
+- PBI-28: passar o pedido a Pago e gravar `pago_em` na aprovação.
+- PBIs 27/28 e 40: cancelamento com reembolso e devolução ao estoque.
 
 ## Etapa 3 — Agendamento
 
@@ -561,9 +640,18 @@ Consome o formato real do pedido e das cópias de dados pessoais definido no PBI
 
 **Referências:** Fase 1, item 13; modelo de dados · **Prioridade:** P1 · **Deps:** PBI-19.
 
-- [ ] Adicionar busca textual tolerante a acentos, integrada à paginação e ordenação
-- [ ] Preservar regras de visibilidade de rascunhos e esgotadas
-- [ ] Testar acentos, ausência de resultados e consultas inválidas; não adicionar filtros de catálogo adiados
+- [x] Adicionar busca textual tolerante a acentos, integrada à paginação e ordenação
+- [x] Preservar regras de visibilidade de rascunhos e esgotadas
+- [x] Testar acentos, ausência de resultados e consultas inválidas; não adicionar filtros de catálogo adiados
+
+**Decisões:**
+
+- Busca em título, descrição e técnica, por começo de palavra ("metro" acha "Metrópole"), sem acento e sem diferenciar maiúsculas; várias palavras exigem todas. Sem filtros nem busca por artista.
+- Migração `0006`: extensão `unaccent`, configuração `kolo_busca` e índice `artwork_busca_idx` no lugar do `artwork_search_idx`.
+- A busca fica na URL (`?busca=`) e convive com a paginação e as ordenações do PBI-19.
+- Contrato completo em [PBI-41](features/PBI-41.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-41-busca-catalogo`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
 
 ### PBI-42 — Modalidades adicionais de frete
 
