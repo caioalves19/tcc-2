@@ -76,8 +76,8 @@ numa obra do pedido, que ainda não venceu.
 - **"Ir para o pagamento" em Pix/boleto em aberto:** hoje o `/checkout/[numero]` mostra "A reserva
   expirou" quando não há reserva. O PBI-27 prorroga a reserva do Pix/boleto, e aí a página fica
   coerente.
-- **Retirada no ateliê:** o andamento usa as situações do banco (enviado, entregue), pensadas para
-  envio. Quando o PBI-30 definir o fluxo da retirada, os rótulos podem mudar.
+- **Retirada no ateliê:** resolvido pelo PBI-30. Na retirada, ENVIADO aparece como "Pronto para
+  retirada" e ENTREGUE como "Retirado" (`rotuloSituacao`); a lista passou a trazer a modalidade.
 
 ## Validação
 

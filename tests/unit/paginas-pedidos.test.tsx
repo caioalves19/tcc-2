@@ -40,6 +40,7 @@ it("RF16/RN01 a lista exige login e mostra os pedidos da sessão", async () => {
       numero: "20260910-PAGO22",
       criadoEm: new Date("2026-09-10T15:00:00Z"),
       situacao: "PAGO",
+      modalidade: "RETIRADA",
       totalCentavos: 960000,
       unidades: 2,
     },

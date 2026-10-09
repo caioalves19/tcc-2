@@ -40,7 +40,7 @@ export function ListaPedidos({ pedidos }: { pedidos: PedidoDaLista[] }) {
                 </p>
               </div>
               <div className="grid justify-items-start gap-2 sm:justify-items-end">
-                <EtiquetaSituacao situacao={pedido.situacao} />
+                <EtiquetaSituacao situacao={pedido.situacao} modalidade={pedido.modalidade} />
                 <p className="font-display text-preco">{formatarPreco(pedido.totalCentavos)}</p>
               </div>
             </li>
