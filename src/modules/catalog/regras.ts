@@ -65,3 +65,9 @@ export function hrefCatalogo(ordem: OrdemCatalogo, pagina = 1): string {
   const texto = busca.toString();
   return texto ? `/obras?${texto}` : "/obras";
 }
+
+// PBI-41: a busca vem da URL. Fica só com letras e números (sem os operadores do to_tsquery, como
+// & | ! :*), até 100 caracteres e 8 palavras. Sem palavra nenhuma, é como não ter busca.
+export function palavrasDaBusca(texto: string): string[] {
+  return (texto.slice(0, 100).match(/[\p{L}\p{N}]+/gu) ?? []).slice(0, 8);
+}

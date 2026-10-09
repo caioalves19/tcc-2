@@ -22,7 +22,13 @@ const card = (n: number) => ({
   imagem: null,
 });
 type Ordem = "recentes" | "menor-preco" | "maior-preco" | "destaque";
-function montar(pagina: number, total: number, quantidade: number, ordem: Ordem = "recentes") {
+function montar(
+  pagina: number,
+  total: number,
+  quantidade: number,
+  ordem: Ordem = "recentes",
+  busca = "",
+) {
   render(
     <CatalogoObras
       obras={Array.from({ length: quantidade }, (_, i) => card(i))}
@@ -30,6 +36,7 @@ function montar(pagina: number, total: number, quantidade: number, ordem: Ordem 
       pagina={pagina}
       totalPaginas={Math.ceil(total / 12)}
       ordem={ordem}
+      busca={busca}
       baseImagens={null}
     />,
   );

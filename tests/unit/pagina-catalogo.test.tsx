@@ -15,7 +15,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-const VAZIO = { obras: [], total: 0, pagina: 1, totalPaginas: 0, ordem: "recentes" };
+const VAZIO = { obras: [], total: 0, pagina: 1, totalPaginas: 0, ordem: "recentes", busca: "" };
 const busca = (valores: Record<string, string | string[]>) => ({
   searchParams: Promise.resolve(valores),
 });
