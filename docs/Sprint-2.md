@@ -425,9 +425,35 @@ Consome estoque e obras do PBI-18 e a sessão existente. A API de reserva pode s
 
 Consome o contrato de pedido e suas cópias de dados do PBI-26. Pode avançar junto com pagamento (27), webhook (28) e gestão administrativa (30), usando pedidos de teste. A confirmação real pelo gateway será verificada na integração global.
 
-- [ ] Listar e detalhar apenas pedidos do usuário autenticado
-- [ ] Exibir itens, valores, situação e rastreio quando disponível
-- [ ] Testar tentativa de acesso a pedido alheio e estados pendente, pago e enviado
+- [x] Listar e detalhar apenas pedidos do usuário autenticado
+- [x] Exibir itens, valores, situação e rastreio quando disponível
+- [x] Testar tentativa de acesso a pedido alheio e estados pendente, pago e enviado
+
+**Decisões (registradas em 08/10/2026):**
+
+- `/conta/pedidos` (lista) e `/conta/pedidos/[numero]` (detalhe), com o link "Meus pedidos" na `/conta`. Pedido aguardando pagamento leva ao `/checkout/[numero]`.
+- Tentativas de compra sem nenhum pagamento (checkout abandonado ou cancelado por um novo "Finalizar") não aparecem para o cliente. A regra fica em `situacaoParaCliente`, para o PBI-30 reaproveitar.
+- Na lista, a etiqueta da situação; no detalhe, o andamento com as datas que o banco guarda e o rastreio com "Copiar", sem link para transportadora.
+- Contrato completo em [PBI-29](features/PBI-29.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-29-pedidos`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR. A situação real dos pedidos depende do pagamento (27/28) e da gestão do admin (30); até lá, os testes usam pedidos de teste.
+
+**Entregas:**
+
+- `situacaoParaCliente`, `listarMeusPedidos` e `lerMeuPedido` em `src/modules/orders`.
+- Componentes `ListaPedidos`, `DetalhePedido`, `CopiarCodigo` e a etiqueta da situação, em `src/components/conta`.
+- Páginas `/conta/pedidos` e `/conta/pedidos/[numero]`; link "Meus pedidos" na `/conta`.
+
+**Evidências:**
+
+- `npm run lint`, `npm run typecheck` e `npm run build` sem erros.
+- `npm run test:unit` com 302 testes (15 novos) e a integração com 127 testes no PostgreSQL real (3 novos), em execução sequencial.
+- No navegador, com o Postgres local e pedidos de teste (apagados depois), em 1280 e 375 px: lista sem o abandonado, 404 no pedido alheio, visitante no login, "Copiar" funcionando, sem rolagem horizontal e axe-core sem violações. A conferência e a revisão acharam três ajustes, corrigidos.
+
+**Pendências:**
+
+- PBI-27: prorrogar a reserva do Pix/boleto, para o "Ir para o pagamento" não cair em "reserva expirada".
+- PBI-28 e PBI-30: gravar `pago_em`, `enviado_em` e `codigo_rastreio`, que o andamento e o rastreio já leem.
 
 ### PBI-30 — Gestão administrativa de pedidos
 
