@@ -8,7 +8,7 @@ import { codigoDoHorario, deSaoPauloParaUtc } from "./agenda-regras";
 // Agenda manual (PBI-34, RF22): o artista ou o admin cadastra o horário combinado no WhatsApp.
 // Sem fila de pendentes e sem motor de horários livres.
 
-type ErroSimples = "nao_autenticado" | "proibido" | "sobreposto" | "falha";
+type ErroSimples = "nao_autenticado" | "proibido" | "sobreposto" | "cliente_inexistente" | "falha";
 export type ResultadoAgenda<T> =
   | { ok: true; dados: T }
   | { ok: false; erro: ErroSimples; mensagem: string }
@@ -68,20 +68,68 @@ const horarioSaoPaulo = z.string().transform((valor, contexto) => {
   return instante;
 });
 
-const schemaHorario = z.object({
-  artistaId: z.uuid().optional(),
-  nomeContato: z.string().trim().min(1, "Informe o nome do contato.").max(120),
-  telefoneContato: z
-    .string()
-    .transform((valor) => valor.replace(/\D/g, ""))
-    .pipe(z.string().regex(/^\d{10,11}$/, "Informe o telefone com DDD.")),
-  inicio: horarioSaoPaulo,
-  fim: horarioSaoPaulo,
-  estiloId: z.uuid().optional(),
-  tamanhoId: z.uuid().optional(),
-  regiaoCorpo: opcional(80),
-  observacoes: opcional(1000),
-});
+// Do formulário, campo opcional vazio chega como "": é o mesmo que não informar.
+const idOpcional = (mensagem: string) =>
+  z.preprocess((valor) => (valor === "" ? undefined : valor), z.uuid(mensagem).optional());
+
+const DOZE_HORAS_MS = 12 * 60 * 60 * 1000;
+
+const schemaHorario = z
+  .object({
+    artistaId: idOpcional("Escolha um artista cadastrado."),
+    nomeContato: z.string().trim().min(1, "Informe o nome do contato.").max(120),
+    telefoneContato: z
+      .string()
+      .transform((valor) => valor.replace(/\D/g, ""))
+      .pipe(z.string().regex(/^\d{10,11}$/, "Informe o telefone com DDD.")),
+    emailCliente: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .optional()
+      .transform((valor) => valor || null)
+      .pipe(z.email("Informe um e-mail válido.").nullable()),
+    inicio: horarioSaoPaulo,
+    fim: horarioSaoPaulo,
+    estiloId: idOpcional("Escolha um estilo cadastrado."),
+    tamanhoId: idOpcional("Escolha um tamanho cadastrado."),
+    regiaoCorpo: opcional(80),
+    observacoes: opcional(1000),
+  })
+  // RN09/RF22: o intervalo é [início, fim) e uma sessão dura no máximo 12 horas.
+  .superRefine(({ inicio, fim }, contexto) => {
+    if (fim <= inicio)
+      contexto.addIssue({
+        code: "custom",
+        path: ["fim"],
+        message: "O fim precisa ser depois do início.",
+      });
+    else if (fim.getTime() - inicio.getTime() > DOZE_HORAS_MS)
+      contexto.addIssue({
+        code: "custom",
+        path: ["fim"],
+        message: "A sessão pode ter no máximo 12 horas.",
+      });
+  });
+
+type DadosHorario = z.output<typeof schemaHorario>;
+
+// Estilo e tamanho precisam existir; o e-mail, se veio, liga o horário a uma conta ativa.
+async function vinculos(dados: DadosHorario) {
+  const prisma = obterPrisma();
+  const campos: Record<string, string> = {};
+  if (dados.estiloId && !(await prisma.tattooStyle.findUnique({ where: { id: dados.estiloId } })))
+    campos.estiloId = "Escolha um estilo cadastrado.";
+  if (dados.tamanhoId && !(await prisma.sizeTier.findUnique({ where: { id: dados.tamanhoId } })))
+    campos.tamanhoId = "Escolha um tamanho cadastrado.";
+  if (Object.keys(campos).length > 0) throw new ErroValidacao(campos);
+  if (!dados.emailCliente) return { userId: null };
+  const conta = await prisma.user.findFirst({
+    where: { email: dados.emailCliente, status: "ATIVO", deletedAt: null },
+  });
+  if (!conta) throw new ErroAgenda("cliente_inexistente", "Nenhuma conta ativa com esse e-mail.");
+  return { userId: conta.id };
+}
 
 function validar(entrada: unknown) {
   const resultado = schemaHorario.safeParse(entrada);
@@ -150,11 +198,13 @@ export function cadastrarHorario(entrada: unknown, cabecalhos: Headers) {
     const equipe = await equipeDaRequisicao(cabecalhos);
     const dados = validar(entrada);
     const artistaId = await artistaDoHorario(equipe, dados.artistaId);
+    const { userId } = await vinculos(dados);
     const codigo = codigoDoHorario(new Date(), randomBytes(6));
     const criado = await obterPrisma().appointment.create({
       data: {
         code: codigo,
         artistId: artistaId,
+        userId,
         contactName: dados.nomeContato,
         contactPhone: dados.telefoneContato,
         startsAt: dados.inicio,

@@ -166,3 +166,48 @@ it("RN10 o papel é relido no banco: artista rebaixado a cliente perde a agenda 
     await db.query("UPDATE \"user\" SET papel = 'ARTISTA' WHERE email = 'ana@pbi17.test'");
   }
 });
+
+it("RF22/RN09 valida intervalo, contato, estilo e tamanho, com o erro no campo certo", async () => {
+  const { cadastrarHorario } = await import("../../src/modules/scheduling");
+  const AUSENTE = "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d";
+  const casos: [Record<string, unknown>, Record<string, string>][] = [
+    [{ fim: "2026-10-15T14:00" }, { fim: "O fim precisa ser depois do início." }],
+    [{ fim: "2026-10-15T13:00" }, { fim: "O fim precisa ser depois do início." }],
+    [{ fim: "2026-10-16T03:00" }, { fim: "A sessão pode ter no máximo 12 horas." }],
+    [{ inicio: "amanhã" }, { inicio: "Informe data e hora." }],
+    [{ nomeContato: "  " }, { nomeContato: "Informe o nome do contato." }],
+    [{ telefoneContato: "9876-5432" }, { telefoneContato: "Informe o telefone com DDD." }],
+    [{ estiloId: AUSENTE }, { estiloId: "Escolha um estilo cadastrado." }],
+    [{ tamanhoId: AUSENTE }, { tamanhoId: "Escolha um tamanho cadastrado." }],
+    [{ emailCliente: "lucas@" }, { emailCliente: "Informe um e-mail válido." }],
+  ];
+  for (const [extra, campos] of casos)
+    expect(await cadastrarHorario(horario(extra), ana), JSON.stringify(extra)).toMatchObject({
+      ok: false,
+      erro: "invalido",
+      campos,
+    });
+  const { rows } = await db.query("SELECT count(*)::int AS horarios FROM appointment");
+  expect(rows).toEqual([{ horarios: 0 }]);
+
+  // Do formulário, campo opcional vazio chega como "": é o mesmo que não informar.
+  expect(
+    await cadastrarHorario(horario({ estiloId: "", tamanhoId: "", emailCliente: "" }), ana),
+  ).toMatchObject({ ok: true });
+});
+
+it("RF22 o e-mail opcional liga o horário à conta ativa; e-mail sem conta é recusado", async () => {
+  const { cadastrarHorario } = await import("../../src/modules/scheduling");
+  expect(await cadastrarHorario(horario({ emailCliente: "ninguem@pbi34.test" }), ana)).toEqual({
+    ok: false,
+    erro: "cliente_inexistente",
+    mensagem: "Nenhuma conta ativa com esse e-mail.",
+  });
+  const ligado = await cadastrarHorario(horario({ emailCliente: " CLIENTE@pbi17.test " }), ana);
+  if (!ligado.ok) throw new Error(ligado.mensagem);
+  const { rows } = await db.query(
+    'SELECT u.email FROM appointment a JOIN "user" u ON u.id = a.user_id WHERE a.id = $1',
+    [ligado.dados.id],
+  );
+  expect(rows).toEqual([{ email: "cliente@pbi17.test" }]);
+});
