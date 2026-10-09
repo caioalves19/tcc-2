@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
+import { Prisma } from "../../../generated/prisma/client";
 import { sessaoDaRequisicao } from "../../lib/auth";
 import { obterPrisma } from "../../lib/prisma";
 import { codigoDoHorario, deSaoPauloParaUtc } from "./agenda-regras";
@@ -7,7 +8,7 @@ import { codigoDoHorario, deSaoPauloParaUtc } from "./agenda-regras";
 // Agenda manual (PBI-34, RF22): o artista ou o admin cadastra o horário combinado no WhatsApp.
 // Sem fila de pendentes e sem motor de horários livres.
 
-type ErroSimples = "nao_autenticado" | "proibido" | "falha";
+type ErroSimples = "nao_autenticado" | "proibido" | "sobreposto" | "falha";
 export type ResultadoAgenda<T> =
   | { ok: true; dados: T }
   | { ok: false; erro: ErroSimples; mensagem: string }
@@ -93,6 +94,16 @@ function validar(entrada: unknown) {
   throw new ErroValidacao(campos);
 }
 
+// RN08: quem garante que um artista não tem dois horários no mesmo intervalo é o banco
+// (EXCLUDE appointment_no_overlap, que ignora cancelados e excluídos). O adaptador do Prisma
+// entrega o erro original do Postgres (23P01) em meta.driverAdapterError.cause.
+function violouSobreposicao(erro: unknown): boolean {
+  if (!(erro instanceof Prisma.PrismaClientKnownRequestError)) return false;
+  const causa = (erro.meta?.driverAdapterError as { cause?: { code?: string; message?: string } })
+    ?.cause;
+  return causa?.code === "23P01" && (causa.message ?? "").includes("appointment_no_overlap");
+}
+
 async function executar<T>(acao: () => Promise<T>): Promise<ResultadoAgenda<T>> {
   try {
     return { ok: true, dados: await acao() };
@@ -100,6 +111,12 @@ async function executar<T>(acao: () => Promise<T>): Promise<ResultadoAgenda<T>> 
     if (erro instanceof ErroAgenda) return { ok: false, erro: erro.codigo, mensagem: erro.message };
     if (erro instanceof ErroValidacao)
       return { ok: false, erro: "invalido", mensagem: erro.message, campos: erro.campos };
+    if (violouSobreposicao(erro))
+      return {
+        ok: false,
+        erro: "sobreposto",
+        mensagem: "Este artista já tem um horário nesse intervalo.",
+      };
     console.error("Falha na agenda", erro instanceof Error ? erro.name : "erro desconhecido");
     return {
       ok: false,
