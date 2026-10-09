@@ -8,6 +8,7 @@ import {
   PEDIDOS_POR_PAGINA,
   schemaListaAdmin,
   schemaMudarSituacao,
+  schemaRastreio,
   type FiltroPedidos,
 } from "./validacao";
 
@@ -197,5 +198,28 @@ export function mudarSituacaoPedido(entrada: unknown, cabecalhos: Headers, agora
       data: { status: para, ...(para === "ENVIADO" && { shippedAt: agora }) },
     });
     return { situacao: para };
+  });
+}
+
+// O rastreio só faz sentido depois do pagamento aprovado (PBI-28) e enquanto o pedido não foi
+// cancelado.
+const COM_RASTREIO: SituacaoNoBanco[] = ["PAGO", "PROCESSANDO", "ENVIADO", "ENTREGUE"];
+
+// RF29: registra, corrige ou limpa (código vazio) o rastreio. O cliente vê na conta (PBI-29).
+export function registrarRastreio(entrada: unknown, cabecalhos: Headers) {
+  return comoAdmin(cabecalhos, async (tx) => {
+    const { numero, codigo } = validar(schemaRastreio, entrada);
+    const pedido = await tx.order.findFirst({
+      where: { number: numero, deletedAt: null },
+      select: { id: true, status: true },
+    });
+    if (!pedido) throw new ErroGestao("nao_encontrado", "Pedido não encontrado.");
+    if (!COM_RASTREIO.includes(pedido.status))
+      throw new ErroGestao(
+        "invalido",
+        "O rastreio só pode ser registrado depois do pagamento aprovado e fora de pedido cancelado.",
+      );
+    await tx.order.update({ where: { id: pedido.id }, data: { trackingCode: codigo } });
+    return { rastreio: codigo };
   });
 }

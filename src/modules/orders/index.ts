@@ -34,7 +34,12 @@ export { lerPedido } from "./pedido";
 export type { PedidoResumo, SituacaoPedido } from "./pedido";
 export { lerMeuPedido, listarMeusPedidos } from "./acompanhamento";
 export type { PedidoDaLista, PedidoDetalhado } from "./acompanhamento";
-export { lerPedidoAdmin, listarPedidosAdmin, mudarSituacaoPedido } from "./gestao";
+export {
+  lerPedidoAdmin,
+  listarPedidosAdmin,
+  mudarSituacaoPedido,
+  registrarRastreio,
+} from "./gestao";
 export type { PaginaPedidosAdmin, PedidoAdmin, PedidoAdminLista } from "./gestao";
 export { FILTROS_PEDIDOS, PEDIDOS_POR_PAGINA } from "./validacao";
 export type { FiltroPedidos } from "./validacao";

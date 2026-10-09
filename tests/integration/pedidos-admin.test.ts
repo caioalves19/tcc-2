@@ -363,3 +363,65 @@ it("RF29 recusa a mudança feita sobre uma situação desatualizada, também em 
     ).toHaveLength(1);
   }
 });
+
+it("RF29 registra, corrige e limpa o rastreio a partir de pago, e o cliente vê na conta", async () => {
+  const { lerMeuPedido, registrarRastreio } = await import("../../src/modules/orders");
+  await pedido(lucas, {
+    numero: "20261008-RAST01",
+    situacao: "PAGO",
+    criadoEm: dia(8),
+    pagamentos: ["APROVADO"],
+  });
+  await pedido(lucas, {
+    numero: "20261008-PEND01",
+    situacao: "PENDENTE",
+    criadoEm: dia(8),
+    pagamentos: ["PENDENTE"],
+  });
+  await pedido(lucas, {
+    numero: "20261008-CANC01",
+    situacao: "CANCELADO",
+    criadoEm: dia(8),
+    pagamentos: ["RECUSADO"],
+  });
+  const rastreioNoBanco = async (numero: string) =>
+    (await db.query('SELECT codigo_rastreio FROM "order" WHERE numero = $1', [numero])).rows[0]
+      .codigo_rastreio;
+
+  expect(
+    await registrarRastreio({ numero: "20261008-RAST01", codigo: " br123456789sp " }, admin),
+  ).toEqual({ ok: true, dados: { rastreio: "BR123456789SP" } });
+  expect((await lerMeuPedido("20261008-RAST01", lucas))?.rastreio).toBe("BR123456789SP");
+  expect(
+    (await registrarRastreio({ numero: "20261008-RAST01", codigo: "JD-0001-X" }, admin)).ok,
+  ).toBe(true);
+  expect((await lerMeuPedido("20261008-RAST01", lucas))?.rastreio).toBe("JD-0001-X");
+  expect(await registrarRastreio({ numero: "20261008-RAST01", codigo: "" }, admin)).toEqual({
+    ok: true,
+    dados: { rastreio: null },
+  });
+  expect((await lerMeuPedido("20261008-RAST01", lucas))?.rastreio).toBeNull();
+
+  // Antes do pagamento aprovado, ou cancelado, não há o que rastrear.
+  for (const numero of ["20261008-PEND01", "20261008-CANC01"]) {
+    expect(
+      await registrarRastreio({ numero, codigo: "BR123456789SP" }, admin),
+      numero,
+    ).toMatchObject({
+      ok: false,
+      erro: "invalido",
+    });
+    expect(await rastreioNoBanco(numero)).toBeNull();
+  }
+  expect(
+    await registrarRastreio({ numero: "20261008-RAST01", codigo: "BR 123" }, admin),
+  ).toMatchObject({ ok: false, erro: "invalido" });
+  expect(
+    await registrarRastreio({ numero: "20261008-NADA00", codigo: "BR123456789SP" }, admin),
+  ).toMatchObject({ ok: false, erro: "nao_encontrado" });
+  for (const quem of [new Headers(), cliente, artista])
+    expect(
+      (await registrarRastreio({ numero: "20261008-RAST01", codigo: "BR999999999SP" }, quem)).ok,
+    ).toBe(false);
+  expect(await rastreioNoBanco("20261008-RAST01")).toBeNull();
+});
