@@ -7,6 +7,7 @@ import { ENDERECO_VAZIO } from "@/modules/endereco";
 import { FormularioEndereco } from "@/components/auth/formulario-endereco";
 import { FormularioPerfil } from "@/components/auth/formulario-perfil";
 import { FormularioTrocaSenha } from "@/components/auth/formulario-troca-senha";
+import { buttonVariants } from "@/components/ui/button";
 import { atualizarPerfilAcao, salvarEnderecoAcao, trocarSenhaAcao } from "./actions";
 
 export const metadata: Metadata = { title: "Minha conta · Kolô" };
@@ -21,6 +22,12 @@ export default async function PaginaConta() {
       <h1 className="font-display text-titulo-xl-mobile uppercase md:text-titulo-xl">
         Minha conta
       </h1>
+      <a
+        href="/conta/pedidos"
+        className={buttonVariants({ variant: "contorno", className: "mt-6" })}
+      >
+        Meus pedidos
+      </a>
       <section aria-labelledby="dados-pessoais" className="mt-8">
         <h2 id="dados-pessoais" className="mb-5 font-display text-xl">
           Dados pessoais

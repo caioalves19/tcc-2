@@ -1,7 +1,8 @@
 export { adicionarAoCarrinho, alterarQuantidade, lerCarrinho, removerDoCarrinho } from "./carrinho";
 export type { ContextoCarrinho, ResultadoCarrinho } from "./carrinho";
 export { juntarCarrinhos } from "./juntar";
-export { numeroDoPedido, quantidadeValida, resumirCarrinho } from "./regras";
+export { numeroDoPedido, quantidadeValida, resumirCarrinho, situacaoParaCliente } from "./regras";
+export type { SituacaoCliente } from "./regras";
 export {
   baixarEstoque,
   estoqueDisponivel,
@@ -23,3 +24,5 @@ export type {
 } from "./checkout";
 export { lerPedido } from "./pedido";
 export type { PedidoResumo, SituacaoPedido } from "./pedido";
+export { lerMeuPedido, listarMeusPedidos } from "./acompanhamento";
+export type { PedidoDaLista, PedidoDetalhado } from "./acompanhamento";
