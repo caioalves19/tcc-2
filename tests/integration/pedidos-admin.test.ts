@@ -219,3 +219,147 @@ it("RF29 o detalhe traz cliente, itens, valores, entrega e pagamentos, sem o pay
       erro: "nao_encontrado",
     });
 });
+
+const situacaoNoBanco = async (numero: string) =>
+  (await db.query('SELECT situacao, enviado_em FROM "order" WHERE numero = $1', [numero])).rows[0];
+
+it("RF29 avança a situação, inclusive pulando etapas, grava o envio e reflete na conta do cliente", async () => {
+  const { lerMeuPedido, mudarSituacaoPedido } = await import("../../src/modules/orders");
+  const agora = new Date("2026-10-08T18:30:00Z");
+  await pedido(lucas, {
+    numero: "20261008-ANDA01",
+    situacao: "PAGO",
+    criadoEm: dia(8),
+    pagamentos: ["APROVADO"],
+  });
+  await pedido(lucas, {
+    numero: "20261008-PULA01",
+    situacao: "PAGO",
+    criadoEm: dia(8),
+    pagamentos: ["APROVADO"],
+  });
+
+  const mudar = (numero: string, de: string, para: string) =>
+    mudarSituacaoPedido({ numero, de, para }, admin, agora);
+  expect(await mudar("20261008-ANDA01", "PAGO", "PROCESSANDO")).toEqual({
+    ok: true,
+    dados: { situacao: "PROCESSANDO" },
+  });
+  expect((await lerMeuPedido("20261008-ANDA01", lucas))?.situacao).toBe("EM_PREPARACAO");
+  expect((await mudar("20261008-ANDA01", "PROCESSANDO", "ENVIADO")).ok).toBe(true);
+  expect(await situacaoNoBanco("20261008-ANDA01")).toEqual({
+    situacao: "ENVIADO",
+    enviado_em: agora,
+  });
+  expect(await lerMeuPedido("20261008-ANDA01", lucas)).toMatchObject({
+    situacao: "ENVIADO",
+    enviadoEm: agora,
+  });
+  expect((await mudar("20261008-ANDA01", "ENVIADO", "ENTREGUE")).ok).toBe(true);
+  expect(await situacaoNoBanco("20261008-ANDA01")).toEqual({
+    situacao: "ENTREGUE",
+    enviado_em: agora,
+  });
+
+  // Retirada no mesmo dia: de pago direto para entregue, sem data de envio.
+  expect((await mudar("20261008-PULA01", "PAGO", "ENTREGUE")).ok).toBe(true);
+  expect(await situacaoNoBanco("20261008-PULA01")).toEqual({
+    situacao: "ENTREGUE",
+    enviado_em: null,
+  });
+});
+
+it("RF29/RN05 recusa voltar, marcar pago, cancelar e mexer em pendente, sem gravar nada", async () => {
+  const { mudarSituacaoPedido } = await import("../../src/modules/orders");
+  await pedido(lucas, {
+    numero: "20261008-ENVI01",
+    situacao: "ENVIADO",
+    criadoEm: dia(8),
+    pagamentos: ["APROVADO"],
+  });
+  await pedido(lucas, {
+    numero: "20261008-PIX001",
+    situacao: "PENDENTE",
+    criadoEm: dia(8),
+    pagamentos: ["PENDENTE"],
+  });
+  await pedido(lucas, {
+    numero: "20261008-PAGO01",
+    situacao: "PAGO",
+    criadoEm: dia(8),
+    pagamentos: ["APROVADO"],
+  });
+  await pedido(lucas, {
+    numero: "20261008-FIM001",
+    situacao: "ENTREGUE",
+    criadoEm: dia(8),
+    pagamentos: ["APROVADO"],
+  });
+
+  for (const [numero, de, para] of [
+    ["20261008-ENVI01", "ENVIADO", "PROCESSANDO"],
+    ["20261008-ENVI01", "ENVIADO", "PAGO"],
+    ["20261008-PIX001", "PENDENTE", "PAGO"],
+    ["20261008-PIX001", "PENDENTE", "PROCESSANDO"],
+    ["20261008-PAGO01", "PAGO", "CANCELADO"],
+    ["20261008-PAGO01", "PAGO", "PAGO"],
+    ["20261008-FIM001", "ENTREGUE", "ENVIADO"],
+  ] as const)
+    expect(await mudarSituacaoPedido({ numero, de, para }, admin), `${de}→${para}`).toMatchObject({
+      ok: false,
+      erro: "invalido",
+    });
+  expect(
+    await mudarSituacaoPedido({ numero: "20261008-PAGO01", de: "PAGO", para: "QUALQUER" }, admin),
+  ).toMatchObject({ ok: false, erro: "invalido" });
+  expect(
+    await mudarSituacaoPedido({ numero: "20261008-NADA00", de: "PAGO", para: "ENVIADO" }, admin),
+  ).toMatchObject({ ok: false, erro: "nao_encontrado" });
+
+  for (const quem of [new Headers(), cliente, artista])
+    expect(
+      (await mudarSituacaoPedido({ numero: "20261008-PAGO01", de: "PAGO", para: "ENVIADO" }, quem))
+        .ok,
+    ).toBe(false);
+
+  expect((await situacaoNoBanco("20261008-ENVI01")).situacao).toBe("ENVIADO");
+  expect((await situacaoNoBanco("20261008-PIX001")).situacao).toBe("PENDENTE");
+  expect((await situacaoNoBanco("20261008-PAGO01")).situacao).toBe("PAGO");
+  expect((await situacaoNoBanco("20261008-FIM001")).situacao).toBe("ENTREGUE");
+});
+
+it("RF29 recusa a mudança feita sobre uma situação desatualizada, também em cliques simultâneos", async () => {
+  const { mudarSituacaoPedido } = await import("../../src/modules/orders");
+  await pedido(lucas, {
+    numero: "20261008-CONF01",
+    situacao: "PAGO",
+    criadoEm: dia(8),
+    pagamentos: ["APROVADO"],
+  });
+  expect(
+    (
+      await mudarSituacaoPedido(
+        { numero: "20261008-CONF01", de: "PAGO", para: "PROCESSANDO" },
+        admin,
+      )
+    ).ok,
+  ).toBe(true);
+  // Outra aba ainda mostrava "Pago".
+  expect(
+    await mudarSituacaoPedido({ numero: "20261008-CONF01", de: "PAGO", para: "ENVIADO" }, admin),
+  ).toMatchObject({ ok: false, erro: "conflito" });
+  expect((await situacaoNoBanco("20261008-CONF01")).situacao).toBe("PROCESSANDO");
+
+  for (let rodada = 1; rodada <= 3; rodada++) {
+    const numero = `20261008-DUPLA${rodada}`;
+    await pedido(lucas, { numero, situacao: "PAGO", criadoEm: dia(8), pagamentos: ["APROVADO"] });
+    const resultados = await Promise.all([
+      mudarSituacaoPedido({ numero, de: "PAGO", para: "PROCESSANDO" }, admin),
+      mudarSituacaoPedido({ numero, de: "PAGO", para: "ENTREGUE" }, admin),
+    ]);
+    expect(
+      resultados.filter((r) => r.ok),
+      `rodada ${rodada}`,
+    ).toHaveLength(1);
+  }
+});

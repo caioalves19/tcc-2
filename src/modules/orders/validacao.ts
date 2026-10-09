@@ -41,3 +41,20 @@ export const schemaListaAdmin = z.object({
   busca: z.string().trim().max(100).catch(""),
   pagina: z.coerce.number().int().min(1).max(1_000_000).catch(1),
 });
+
+const SITUACOES_PEDIDO = [
+  "PENDENTE",
+  "PAGO",
+  "PROCESSANDO",
+  "ENVIADO",
+  "ENTREGUE",
+  "CANCELADO",
+] as const;
+const schemaSituacao = z.enum(SITUACOES_PEDIDO, { message: "Situação inválida." });
+
+// `de` é a situação que a tela mostrava: conferida na transação contra a do banco.
+export const schemaMudarSituacao = z.object({
+  numero: schemaNumero,
+  de: schemaSituacao,
+  para: schemaSituacao,
+});

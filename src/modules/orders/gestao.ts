@@ -1,10 +1,15 @@
 import type { OrderStatus, Prisma } from "../../../generated/prisma/client";
-import { comoAdmin, ErroGestao } from "../artists/index";
+import { comoAdmin, ErroGestao, validar } from "../artists/index";
 import type { DadosEndereco } from "../endereco/index";
 import { comReservaAtiva, situacaoDe } from "./acompanhamento";
 import type { Modalidade } from "./checkout";
-import type { SituacaoCliente } from "./regras";
-import { PEDIDOS_POR_PAGINA, schemaListaAdmin, type FiltroPedidos } from "./validacao";
+import { transicaoPermitida, type SituacaoCliente } from "./regras";
+import {
+  PEDIDOS_POR_PAGINA,
+  schemaListaAdmin,
+  schemaMudarSituacao,
+  type FiltroPedidos,
+} from "./validacao";
 
 // RF29 (PBI-30): gestão de pedidos pelo ADMIN. Toda leitura e escrita passa pelo comoAdmin
 // (sessão e papel relidos no banco, transação Serializable).
@@ -169,5 +174,28 @@ export function lerPedidoAdmin(numero: unknown, cabecalhos: Headers, agora = new
         valorCentavos: pagamento.amountCents,
       })),
     };
+  });
+}
+
+// RF29/RN05: só para frente a partir de Pago (transicaoPermitida); Pago é só do gateway (PBI-28).
+// A situação que a tela mostrava (`de`) é conferida dentro da transação Serializable: se outro
+// admin mudou antes, nada é gravado. Marcar como enviado grava a data do envio.
+export function mudarSituacaoPedido(entrada: unknown, cabecalhos: Headers, agora = new Date()) {
+  return comoAdmin(cabecalhos, async (tx) => {
+    const { numero, de, para } = validar(schemaMudarSituacao, entrada);
+    const pedido = await tx.order.findFirst({
+      where: { number: numero, deletedAt: null },
+      select: { id: true, status: true },
+    });
+    if (!pedido) throw new ErroGestao("nao_encontrado", "Pedido não encontrado.");
+    if (pedido.status !== de)
+      throw new ErroGestao("conflito", "A situação deste pedido mudou. Atualize a página.");
+    if (!transicaoPermitida(de, para))
+      throw new ErroGestao("invalido", "Esta mudança de situação não é permitida.");
+    await tx.order.update({
+      where: { id: pedido.id },
+      data: { status: para, ...(para === "ENVIADO" && { shippedAt: agora }) },
+    });
+    return { situacao: para };
   });
 }
