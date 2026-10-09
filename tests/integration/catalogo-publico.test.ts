@@ -120,6 +120,7 @@ it("RF09 pagina de 12 em 12 sem repetir nem pular obra, mesmo com datas iguais",
     pagina: 3,
     totalPaginas: 2,
     ordem: "recentes",
+    busca: "",
   });
   for (const pagina of ["abc", 0, -1, 1.5, "", undefined, null, "1e999"])
     expect((await listarCatalogo({ pagina, ordem: "qualquer" })).pagina, String(pagina)).toBe(1);

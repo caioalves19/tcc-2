@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Prisma } from "../../../generated/prisma/client";
 import { obterPrisma } from "../../lib/prisma";
-import { OBRAS_POR_PAGINA, ORDENS_CATALOGO, type OrdemCatalogo } from "./regras";
+import { OBRAS_POR_PAGINA, ORDENS_CATALOGO, palavrasDaBusca, type OrdemCatalogo } from "./regras";
 
 // Vitrine pública (PBI-20): o que qualquer visitante pode ver de uma obra, sem login (RN01).
 
@@ -120,22 +120,43 @@ export type PaginaCatalogo = {
   pagina: number;
   totalPaginas: number;
   ordem: OrdemCatalogo;
+  // Busca já limpa (só as palavras que valem); "" quando não há busca.
+  busca: string;
 };
 
 // Vem da URL (?pagina=2&ordem=...): qualquer valor fora do esperado volta ao padrão.
 const schemaCatalogo = z.object({
   pagina: z.coerce.number().int().min(1).max(1_000_000).catch(1),
   ordem: z.enum(ORDENS_CATALOGO).catch("recentes"),
+  busca: z.string().catch(""),
 });
+
+// PBI-41: ids das obras cujo título, descrição ou técnica têm todas as palavras, sem acento e
+// por começo de palavra ("metro" acha "Metrópole"). A
+// expressão é a mesma do índice artwork_busca_idx (migração 0006), para o Postgres usá-lo; as
+// palavras chegam limpas e vão como parâmetro.
+async function idsDaBusca(palavras: string[]): Promise<string[]> {
+  const consulta = palavras.map((palavra) => `${palavra}:*`).join(" & ");
+  const linhas = await obterPrisma().$queryRaw<{ id: string }[]>`
+    SELECT id FROM artwork
+     WHERE to_tsvector('kolo_busca', coalesce(titulo, '') || ' ' || coalesce(descricao, '') || ' ' || coalesce(tecnica, ''))
+           @@ to_tsquery('kolo_busca', ${consulta})`;
+  return linhas.map((linha) => linha.id);
+}
 
 // RF09/RN11: só obras publicadas e não arquivadas. Em qualquer ordenação, as disponíveis vêm
 // antes das esgotadas (o enum no Postgres segue RASCUNHO, DISPONIVEL, ESGOTADA); depois, o
 // critério escolhido. O id desempata, para uma obra não repetir nem sumir entre as páginas.
 export async function listarCatalogo(entrada: unknown): Promise<PaginaCatalogo> {
-  const { pagina, ordem } = schemaCatalogo.parse(
+  const { pagina, ordem, busca } = schemaCatalogo.parse(
     typeof entrada === "object" && entrada !== null ? entrada : {},
   );
-  const onde = { deletedAt: null, status: { not: "RASCUNHO" as const } };
+  const palavras = palavrasDaBusca(busca);
+  const onde: Prisma.ArtworkWhereInput = {
+    deletedAt: null,
+    status: { not: "RASCUNHO" },
+    ...(palavras.length > 0 ? { id: { in: await idsDaBusca(palavras) } } : {}),
+  };
   const prisma = obterPrisma();
   const [total, obras] = await Promise.all([
     prisma.artwork.count({ where: onde }),
@@ -153,6 +174,7 @@ export async function listarCatalogo(entrada: unknown): Promise<PaginaCatalogo> 
     pagina,
     totalPaginas: Math.ceil(total / OBRAS_POR_PAGINA),
     ordem,
+    busca: palavras.join(" "),
   };
 }
 
