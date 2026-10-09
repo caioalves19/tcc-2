@@ -5,6 +5,7 @@ import { afterEach, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   listar: vi.fn(),
   ler: vi.fn(),
+  sessao: vi.fn(),
   headers: new Headers({ cookie: "sessao=1" }),
 }));
 vi.mock("next/headers", () => ({ headers: async () => mocks.headers }));
@@ -16,6 +17,7 @@ vi.mock("next/navigation", () => ({
     throw new Error("notFound");
   },
 }));
+vi.mock("@/lib/auth", () => ({ sessaoDaRequisicao: mocks.sessao }));
 vi.mock("@/modules/orders", () => ({
   listarMeusPedidos: mocks.listar,
   lerMeuPedido: mocks.ler,
@@ -51,6 +53,7 @@ it("RF16/RN01 a lista exige login e mostra os pedidos da sessão", async () => {
 it("RN01 pedido alheio, oculto ou inexistente dá 404; o do dono mostra o detalhe", async () => {
   const params = Promise.resolve({ numero: "20260902-CARLA2" });
   mocks.ler.mockResolvedValueOnce(null);
+  mocks.sessao.mockResolvedValueOnce({ token: "sessao" });
   await expect(PaginaPedido({ params })).rejects.toThrow("notFound");
   expect(mocks.ler).toHaveBeenCalledWith("20260902-CARLA2", { cabecalhos: mocks.headers });
 
@@ -80,4 +83,13 @@ it("RN01 pedido alheio, oculto ou inexistente dá 404; o do dono mostra o detalh
   render(await PaginaPedido({ params }));
   expect(screen.getByRole("heading", { level: 1, name: "Pedido 20260902-CARLA2" })).toBeDefined();
   expect(metadataPedido.title).toBe("Pedido · Kolô");
+});
+
+it("RF16 visitante que abre um pedido vai para o login, sem saber se o pedido existe", async () => {
+  mocks.ler.mockResolvedValueOnce(null);
+  mocks.sessao.mockResolvedValueOnce(null);
+  await expect(
+    PaginaPedido({ params: Promise.resolve({ numero: "20260902-CARLA2" }) }),
+  ).rejects.toThrow("redirect:/login");
+  expect(mocks.sessao).toHaveBeenCalledWith(mocks.headers);
 });
