@@ -80,3 +80,19 @@ export function situacaoParaCliente(pedido: {
   if (pedido.situacao === "CANCELADO") return pedido.pagamentos.length > 0 ? "CANCELADO" : null;
   return DEPOIS_DO_PAGAMENTO[pedido.situacao];
 }
+
+// RF29 (PBI-30): andamento operacional que o admin controla. Pendente → Pago é só do gateway
+// (RN05, PBI-28), e cancelar fica fora da tela do admin (reembolso e estoque dependem do 27/28).
+const ANDAMENTO = ["PAGO", "PROCESSANDO", "ENVIADO", "ENTREGUE"] as const;
+
+// Só para frente, podendo pular etapas (uma retirada no mesmo dia vai de Pago a Entregue).
+export function transicaoPermitida(de: SituacaoNoBanco, para: SituacaoNoBanco): boolean {
+  const ordem: readonly SituacaoNoBanco[] = ANDAMENTO;
+  const origem = ordem.indexOf(de);
+  const destino = ordem.indexOf(para);
+  return origem >= 0 && destino > origem;
+}
+
+export function proximasSituacoes(de: SituacaoNoBanco): SituacaoNoBanco[] {
+  return ANDAMENTO.filter((para) => transicaoPermitida(de, para));
+}
