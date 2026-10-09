@@ -479,10 +479,20 @@ A geração da mensagem e do link pode ser preparada enquanto a home é constru�
 
 Consome artistas e estilos do PBI-16 e a constraint de agenda da Sprint 1. O horário é cadastrado manualmente; não depende do wizard, do WhatsApp, da loja ou do portfólio.
 
-- [ ] Cadastrar horário combinado com contato, artista, início/fim e observações; usuário cliente é opcional
-- [ ] Permitir ao artista operar somente a própria agenda e ao ADMIN gerenciar as agendas
-- [ ] Armazenar UTC e apresentar America/Sao_Paulo; validar intervalos
-- [ ] Testar sobreposição e concorrência no PostgreSQL real usando a constraint existente
+- [x] Cadastrar horário combinado com contato, artista, início/fim e observações; usuário cliente é opcional
+- [x] Permitir ao artista operar somente a própria agenda e ao ADMIN gerenciar as agendas
+- [x] Armazenar UTC e apresentar America/Sao_Paulo; validar intervalos
+- [x] Testar sobreposição e concorrência no PostgreSQL real usando a constraint existente
+
+**Decisões:**
+
+- Uma tela `/agenda` para a equipe: o artista vê e opera só a própria agenda; o admin vê todas e filtra por artista. Link "Agenda" no cabeçalho para ARTISTA e ADMIN.
+- Lista por semana (segunda a domingo em São Paulo); editar, cancelar e concluir (cancelar libera o intervalo; nada é apagado).
+- Contato obrigatório; e-mail opcional liga o horário a uma conta ativa.
+- A sobreposição é a constraint `appointment_no_overlap` que já existia; sem migração.
+- Contrato completo em [PBI-34](features/PBI-34.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-34-agenda-manual`. Para encerrar o DoD, faltam a conferência no navegador com sessão da equipe, a revisão de outro integrante e a aprovação do PR.
 
 ## Etapa 4 — Portfólio
 
