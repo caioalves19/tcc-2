@@ -106,3 +106,43 @@ it("RF09 catálogo vazio e página sem resultados têm aviso próprio", () => {
     "/obras?ordem=destaque",
   );
 });
+
+it("PBI-41 o campo de busca mostra o termo atual, mantém a ordenação e o resultado diz o que foi buscado", () => {
+  montar(1, 3, 3, "menor-preco", "metro");
+  const campo = screen.getByRole("searchbox", { name: "Buscar obras" }) as HTMLInputElement;
+  expect(campo.value).toBe("metro");
+  const formulario = screen.getByRole("search");
+  expect(formulario.getAttribute("action")).toBe("/obras");
+  expect(formulario.querySelector<HTMLInputElement>('input[name="ordem"]')?.value).toBe(
+    "menor-preco",
+  );
+  expect(screen.getByText("Mostrando 1 a 3 de 3 obras para “metro”")).toBeDefined();
+});
+
+it("PBI-41 a paginação e a ordenação carregam a busca", async () => {
+  const usuario = userEvent.setup();
+  montar(1, 13, 12, "recentes", "spray noturno");
+  const paginacao = screen.getByRole("navigation", { name: "Paginação" });
+  expect(within(paginacao).getByRole("link", { name: "Próxima" }).getAttribute("href")).toBe(
+    "/obras?busca=spray+noturno&pagina=2",
+  );
+  await usuario.selectOptions(screen.getByLabelText("Ordenar por"), "maior-preco");
+  await waitFor(() =>
+    expect(navegar).toHaveBeenCalledWith("/obras?ordem=maior-preco&busca=spray+noturno"),
+  );
+});
+
+it("PBI-41 busca sem resultado avisa e oferece limpar; catálogo vazio não mostra a busca", () => {
+  montar(1, 0, 0, "destaque", "aquarela");
+  expect(screen.getByText("Nenhuma obra encontrada para “aquarela”.")).toBeDefined();
+  expect(screen.getByRole("link", { name: "Limpar busca" }).getAttribute("href")).toBe(
+    "/obras?ordem=destaque",
+  );
+  expect(screen.getByRole("searchbox", { name: "Buscar obras" })).toBeDefined();
+  expect(screen.queryByText("Ainda não há obras publicadas.")).toBeNull();
+  cleanup();
+
+  montar(1, 0, 0);
+  expect(screen.getByText("Ainda não há obras publicadas.")).toBeDefined();
+  expect(screen.queryByRole("searchbox")).toBeNull();
+});

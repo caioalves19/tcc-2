@@ -14,31 +14,76 @@ const LINK_PAGINA =
 
 // RF09: grade pública de obras. Tudo chega pronto do servidor (listarCatalogo); a URL guarda a
 // página e a ordenação, para o link poder ser compartilhado.
-export function CatalogoObras({ obras, total, pagina, totalPaginas, ordem, baseImagens }: Props) {
+export function CatalogoObras({
+  obras,
+  total,
+  pagina,
+  totalPaginas,
+  ordem,
+  busca,
+  baseImagens,
+}: Props) {
   const inicio = (pagina - 1) * OBRAS_POR_PAGINA + 1;
   const fim = inicio + obras.length - 1;
+  const catalogoVazio = total === 0 && !busca;
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <h1 className="font-display text-titulo-xl-mobile uppercase md:text-titulo-xl">
           Catálogo de obras
         </h1>
-        {total > 0 && <SeletorOrdem ordem={ordem} />}
+        {total > 0 && <SeletorOrdem ordem={ordem} busca={busca} />}
       </div>
 
-      {total === 0 ? (
+      {/* PBI-41: busca por título, descrição ou técnica, sem acento; mantém a ordenação. */}
+      {!catalogoVazio && (
+        <form
+          role="search"
+          method="get"
+          action="/obras"
+          className="mt-6 flex max-w-xl flex-wrap items-end gap-2"
+        >
+          <label className="grid flex-1 gap-1">
+            <span className="text-nota">Buscar obras</span>
+            <input
+              type="search"
+              name="busca"
+              defaultValue={busca}
+              maxLength={100}
+              placeholder="Título, técnica ou descrição"
+              className="h-12 rounded-campo border-2 border-[var(--kolo-contorno)] bg-transparent px-3"
+            />
+          </label>
+          {ordem !== "recentes" && <input type="hidden" name="ordem" value={ordem} />}
+          <button type="submit" className={buttonVariants()}>
+            Buscar
+          </button>
+        </form>
+      )}
+
+      {catalogoVazio ? (
         <p className="mt-8">Ainda não há obras publicadas.</p>
+      ) : total === 0 ? (
+        <div className="mt-8 grid max-w-md gap-4">
+          <p>Nenhuma obra encontrada para “{busca}”.</p>
+          <a href={hrefCatalogo(ordem)} className={buttonVariants({ variant: "contorno" })}>
+            Limpar busca
+          </a>
+        </div>
       ) : obras.length === 0 ? (
         <div className="mt-8 grid max-w-md gap-4">
           <p>Esta página não tem obras.</p>
-          <a href={hrefCatalogo(ordem)} className={buttonVariants({ variant: "contorno" })}>
+          <a
+            href={hrefCatalogo(ordem, 1, busca)}
+            className={buttonVariants({ variant: "contorno" })}
+          >
             Ir para a primeira página
           </a>
         </div>
       ) : (
         <>
           <p className="mt-4 text-nota">
-            Mostrando {inicio} a {fim} de {total} obras
+            Mostrando {inicio} a {fim} de {total} obras{busca && ` para “${busca}”`}
           </p>
           <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {obras.map((obra) => (
@@ -50,7 +95,7 @@ export function CatalogoObras({ obras, total, pagina, totalPaginas, ordem, baseI
               <ul className="flex flex-wrap items-center justify-center gap-2">
                 {pagina > 1 && (
                   <li>
-                    <a href={hrefCatalogo(ordem, pagina - 1)} className={LINK_PAGINA}>
+                    <a href={hrefCatalogo(ordem, pagina - 1, busca)} className={LINK_PAGINA}>
                       Anterior
                     </a>
                   </li>
@@ -65,7 +110,7 @@ export function CatalogoObras({ obras, total, pagina, totalPaginas, ordem, baseI
                         {numero}
                       </span>
                     ) : (
-                      <a href={hrefCatalogo(ordem, numero)} className={LINK_PAGINA}>
+                      <a href={hrefCatalogo(ordem, numero, busca)} className={LINK_PAGINA}>
                         {numero}
                       </a>
                     )}
@@ -73,7 +118,7 @@ export function CatalogoObras({ obras, total, pagina, totalPaginas, ordem, baseI
                 ))}
                 {pagina < totalPaginas && (
                   <li>
-                    <a href={hrefCatalogo(ordem, pagina + 1)} className={LINK_PAGINA}>
+                    <a href={hrefCatalogo(ordem, pagina + 1, busca)} className={LINK_PAGINA}>
                       Próxima
                     </a>
                   </li>
