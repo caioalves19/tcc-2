@@ -2,3 +2,5 @@
 // catálogo. Componentes "use client" importam daqui, não do index.
 export { aceitaRastreio, proximasSituacoes, rotuloDoAndamento, rotuloSituacao } from "./regras";
 export type { SituacaoCliente, SituacaoDoAndamento } from "./regras";
+export { FILTROS_PEDIDOS } from "./validacao";
+export type { FiltroPedidos } from "./validacao";
