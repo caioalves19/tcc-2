@@ -5,6 +5,9 @@ import { afterEach, expect, it, vi } from "vitest";
 import { WizardAgendamento } from "../../src/components/scheduling/wizard-agendamento";
 
 afterEach(cleanup);
+// Testes com muitas interações de userEvent: sozinhos levam ~2 s, mas com a suíte inteira em
+// paralelo passam dos 5 s padrão em máquinas mais lentas.
+vi.setConfig({ testTimeout: 15_000 });
 const opcoes = {
   artistas: [
     { id: "ana", nome: "Ana", estilos: [{ id: "aquarela", nome: "Aquarela" }] },

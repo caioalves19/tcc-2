@@ -9,6 +9,9 @@ vi.mock("next/navigation", () => ({
   unstable_rethrow: vi.fn(),
 }));
 afterEach(cleanup);
+// Testes com muitas interações de userEvent: sozinhos levam ~2 s, mas com a suíte inteira em
+// paralelo passam dos 5 s padrão em máquinas mais lentas.
+vi.setConfig({ testTimeout: 15_000 });
 it("RF28 oferece nova conta e conta existente com seleção de estilos e sem transmitir senha ao vincular", async () => {
   const usuario = userEvent.setup();
   const criar = vi.fn().mockResolvedValue({ ok: true, dados: { id: "artista-1" } });
