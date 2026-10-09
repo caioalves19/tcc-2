@@ -146,3 +146,11 @@ it("PBI-41 busca sem resultado avisa e oferece limpar; catálogo vazio não most
   expect(screen.getByText("Ainda não há obras publicadas.")).toBeDefined();
   expect(screen.queryByRole("searchbox")).toBeNull();
 });
+
+it("RF09 com uma obra só, o resumo fica no singular", () => {
+  montar(1, 1, 1, "recentes", "metro");
+  expect(screen.getByText("Mostrando 1 a 1 de 1 obra para “metro”")).toBeDefined();
+  cleanup();
+  montar(1, 1, 1);
+  expect(screen.getByText("Mostrando 1 a 1 de 1 obra")).toBeDefined();
+});

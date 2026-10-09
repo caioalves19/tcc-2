@@ -83,7 +83,8 @@ export function CatalogoObras({
       ) : (
         <>
           <p className="mt-4 text-nota">
-            Mostrando {inicio} a {fim} de {total} obras{busca && ` para “${busca}”`}
+            Mostrando {inicio} a {fim} de {total} {total === 1 ? "obra" : "obras"}
+            {busca && ` para “${busca}”`}
           </p>
           <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {obras.map((obra) => (
