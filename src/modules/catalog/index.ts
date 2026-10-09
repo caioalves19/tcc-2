@@ -17,5 +17,5 @@ export {
 } from "./regras";
 export type { OrdemCatalogo, SituacaoObra } from "./regras";
 export type { EntradaEditarObra, EntradaObra } from "./validacao";
-export { lerObraPublica, listarCatalogo, outrasObrasDoArtista } from "./publico";
+export { lerObraPublica, listarCatalogo, listarDestaques, outrasObrasDoArtista } from "./publico";
 export type { CardObra, ImagemPublica, ObraPublica, PaginaCatalogo } from "./publico";

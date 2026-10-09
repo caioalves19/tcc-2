@@ -188,3 +188,41 @@ it("RF09 o card do catálogo traz foto, título, artista, ficha resumida, preço
     },
   ]);
 });
+
+it("RF07 os destaques da home são só as obras marcadas e publicadas, até 4, com as esgotadas no fim", async () => {
+  const { listarDestaques } = await import("../../src/modules/catalog");
+  await cadastrar({ titulo: "Comum", slug: "comum", preco: "100,00" }, "2026-06-01T12:00:00Z");
+  expect(await listarDestaques()).toEqual([]);
+
+  const marcada = (titulo: string, slug: string, estoque = "1") => ({
+    titulo,
+    slug,
+    preco: "100,00",
+    estoque,
+    destaque: true,
+  });
+  await cadastrar(marcada("Destaque antigo", "d-antigo"), "2026-01-01T12:00:00Z");
+  await cadastrar(marcada("Destaque novo", "d-novo"), "2026-03-01T12:00:00Z");
+  await cadastrar(marcada("Destaque esgotado", "d-esgotado", "0"), "2026-05-01T12:00:00Z");
+  await cadastrar(marcada("Destaque rascunho", "d-rascunho"), "2026-07-01T12:00:00Z", false);
+  const arquivada = await cadastrar(
+    marcada("Destaque arquivado", "d-arquivado"),
+    "2026-08-01T12:00:00Z",
+  );
+  await db.query("UPDATE artwork SET excluido_em = now() WHERE id = $1", [arquivada]);
+
+  expect((await listarDestaques()).map((o) => [o.slug, o.disponivel])).toEqual([
+    ["d-novo", true],
+    ["d-antigo", true],
+    ["d-esgotado", false],
+  ]);
+
+  await cadastrar(marcada("Destaque 2", "d-2"), "2026-02-01T12:00:00Z");
+  await cadastrar(marcada("Destaque 4", "d-4"), "2026-04-01T12:00:00Z");
+  expect((await listarDestaques()).map((o) => o.slug)).toEqual([
+    "d-4",
+    "d-novo",
+    "d-2",
+    "d-antigo",
+  ]);
+});
