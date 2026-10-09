@@ -4,6 +4,7 @@ import {
   rotuloSituacao,
   transicaoPermitida,
 } from "../../src/modules/orders/regras";
+import { schemaRastreio } from "../../src/modules/orders/validacao";
 
 const SITUACOES = ["PENDENTE", "PAGO", "PROCESSANDO", "ENVIADO", "ENTREGUE", "CANCELADO"] as const;
 
@@ -48,5 +49,26 @@ describe("RF16/RF29: rótulo da situação, o mesmo para cliente e admin", () =>
     expect(rotuloSituacao("EM_PREPARACAO", "RETIRADA")).toBe("Em preparação");
     expect(rotuloSituacao("CANCELADO", "RETIRADA")).toBe("Cancelado");
     expect(rotuloSituacao("NAO_CONCLUIDO", "RETIRADA")).toBe("Não concluído");
+  });
+});
+
+describe("RF29: código de rastreio", () => {
+  it("normaliza para maiúsculas, sem espaços nas pontas; vazio limpa o código", () => {
+    expect(schemaRastreio.parse({ numero: "20261008-ABC234", codigo: " br123456789sp " })).toEqual({
+      numero: "20261008-ABC234",
+      codigo: "BR123456789SP",
+    });
+    expect(schemaRastreio.parse({ numero: "20261008-ABC234", codigo: "jd-0001-xyz" }).codigo).toBe(
+      "JD-0001-XYZ",
+    );
+    expect(schemaRastreio.parse({ numero: "20261008-ABC234", codigo: "  " }).codigo).toBeNull();
+  });
+
+  it("recusa código curto, longo ou com caracteres fora de letras, números e hífen", () => {
+    for (const codigo of ["AB1", "BR 123 456", "BR123/456", "A".repeat(41), "ÇÃO12345"])
+      expect(schemaRastreio.safeParse({ numero: "20261008-ABC234", codigo }).success, codigo).toBe(
+        false,
+      );
+    expect(schemaRastreio.safeParse({ numero: "", codigo: "BR123456789SP" }).success).toBe(false);
   });
 });
