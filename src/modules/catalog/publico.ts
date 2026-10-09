@@ -155,3 +155,15 @@ export async function listarCatalogo(entrada: unknown): Promise<PaginaCatalogo> 
     ordem,
   };
 }
+
+// RF07: vitrine da home. Só as obras que o ADMIN marcou como destaque (PBI-18), publicadas e
+// não arquivadas; as disponíveis antes das esgotadas e, entre elas, as mais recentes.
+export async function listarDestaques(limite = 4): Promise<CardObra[]> {
+  const obras = await obterPrisma().artwork.findMany({
+    where: { featured: true, deletedAt: null, status: { not: "RASCUNHO" } },
+    include: INCLUI_CARD,
+    orderBy: [{ status: "asc" }, { createdAt: "desc" }, { id: "asc" }],
+    take: limite,
+  });
+  return obras.map(paraCard);
+}
