@@ -1,3 +1,5 @@
+import { codigoLegivel } from "../../lib/codigo";
+
 // Regras puras do carrinho (PBI-24), sem banco: quantidade, disponibilidade e totais.
 
 type Situacao = "RASCUNHO" | "DISPONIVEL" | "ESGOTADA";
@@ -38,16 +40,7 @@ export function resumirCarrinho(
   return { totalCentavos, unidades, indisponiveis };
 }
 
-// PBI-26: sem 0, O, 1, I e L, que se confundem quando o cliente dita o número.
-const ALFABETO_PEDIDO = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
-
-// Número do pedido: AAAAMMDD (data de São Paulo, RN09) + 6 caracteres sorteados.
-// Não é sequencial, para não expor o volume de vendas; a unicidade fica com o banco.
+// Número do pedido (PBI-26): o código legível compartilhado com a agenda.
 export function numeroDoPedido(agora: Date, aleatorio: Uint8Array): string {
-  const data = agora.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
-  const sufixo = Array.from(
-    aleatorio.slice(0, 6),
-    (byte) => ALFABETO_PEDIDO[byte % ALFABETO_PEDIDO.length],
-  ).join("");
-  return `${data.replaceAll("-", "")}-${sufixo}`;
+  return codigoLegivel(agora, aleatorio);
 }
