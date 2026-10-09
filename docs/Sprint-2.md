@@ -461,9 +461,36 @@ Consome o contrato de pedido e suas cópias de dados do PBI-26. Pode avançar ju
 
 Consome pedidos do PBI-26. Pode avançar junto com a área do cliente (29) e o gateway (27–28); o contrato de status, pagamento e rastreio deve ser compartilhado. O fluxo completo com aprovação real depende também do PBI-28.
 
-- [ ] Permitir ao ADMIN consultar pedidos e dados de pagamento, registrar rastreio e atualizar situação operacional
-- [ ] Não permitir que alteração manual de status substitua a aprovação de pagamento pelo gateway
-- [ ] Validar transições e testar permissões e reflexo do rastreio na área do cliente
+- [x] Permitir ao ADMIN consultar pedidos e dados de pagamento, registrar rastreio e atualizar situação operacional
+- [x] Não permitir que alteração manual de status substitua a aprovação de pagamento pelo gateway
+- [x] Validar transições e testar permissões e reflexo do rastreio na área do cliente
+
+**Decisões (registradas em 08/10/2026):**
+
+- Transições só para frente a partir de Pago, podendo pular etapas; nunca para Pago nem a partir de Pendente (RN05). Cancelar fica fora (reembolso e estoque dependem do 27/28).
+- Na retirada no ateliê, Enviado aparece como "Pronto para retirada" e Entregue como "Retirado", no admin e na conta do cliente.
+- Lista em "A fazer" por padrão, com filtros, "Todos" (inclui as tentativas sem pagamento, marcadas), busca por número ou e-mail e 20 por página. Rastreio opcional a partir de Pago.
+- Feito sobre a branch do PBI-29, porque o contrato de situação é compartilhado. Contrato completo em [PBI-30](features/PBI-30.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-30-admin-pedidos`, que sai da `feat/pbi-29-pedidos` (PR #45): integrar depois dele. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR. A aprovação real do pagamento depende do PBI-28; até lá, os testes usam pedidos de teste.
+
+**Entregas:**
+
+- Regras `transicaoPermitida`, `proximasSituacoes`, `aceitaRastreio`, `rotuloSituacao` e `rotuloDoAndamento`; validação do rastreio e dos filtros.
+- `listarPedidosAdmin`, `lerPedidoAdmin`, `mudarSituacaoPedido` e `registrarRastreio` em `src/modules/orders/gestao.ts`.
+- Páginas `/admin/pedidos` e `/admin/pedidos/[numero]`, Server Actions, componentes `ListaPedidosAdmin`, `PedidoAdminDetalhe` e `AcoesPedido`, e "Pedidos" no menu do admin.
+- Rótulos da retirada também na conta do cliente (PBI-29) e helper compartilhado de pedidos de teste.
+
+**Evidências:**
+
+- `npm run lint`, `npm run typecheck` e `npm run build` sem erros.
+- `npm run test:unit` com 322 testes e a integração com 135 testes no PostgreSQL real (8 novos), em execução sequencial.
+- No navegador, com pedidos de teste (apagados depois), em 1280 e 375 px: filtros, busca, avanço com confirmação, rastreio refletido na conta do cliente, payload fora do HTML e axe-core sem violações. A conferência achou dois ajustes, corrigidos.
+
+**Pendências:**
+
+- PBI-28: passar o pedido a Pago e gravar `pago_em` na aprovação.
+- PBIs 27/28 e 40: cancelamento com reembolso e devolução ao estoque.
 
 ## Etapa 3 — Agendamento
 
