@@ -126,12 +126,30 @@ async function executar<T>(acao: () => Promise<T>): Promise<ResultadoAgenda<T>> 
   }
 }
 
+// RN10: o artista só opera a própria agenda (pedir a de outro é recusado, não redirecionado);
+// o admin escolhe um artista cadastrado.
+async function artistaDoHorario(equipe: Equipe, pedido: string | undefined): Promise<string> {
+  if (equipe.papel === "ARTISTA") {
+    if (pedido && pedido.toLowerCase() !== equipe.artistaId)
+      throw new ErroAgenda("proibido", "Você só pode mexer na sua própria agenda.");
+    return equipe.artistaId;
+  }
+  if (!pedido) throw new ErroValidacao({ artistaId: "Escolha o artista." });
+  const artista = await obterPrisma().artist.findUnique({
+    where: { id: pedido },
+    include: { user: true },
+  });
+  if (!artista || artista.user.deletedAt !== null)
+    throw new ErroValidacao({ artistaId: "Escolha um artista cadastrado." });
+  return artista.id;
+}
+
 // RF22/RN09: grava o horário em UTC, com o código AG- e situação AGENDADO.
 export function cadastrarHorario(entrada: unknown, cabecalhos: Headers) {
   return executar(async () => {
     const equipe = await equipeDaRequisicao(cabecalhos);
     const dados = validar(entrada);
-    const artistaId = equipe.papel === "ARTISTA" ? equipe.artistaId : (dados.artistaId ?? "");
+    const artistaId = await artistaDoHorario(equipe, dados.artistaId);
     const codigo = codigoDoHorario(new Date(), randomBytes(6));
     const criado = await obterPrisma().appointment.create({
       data: {

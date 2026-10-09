@@ -3,14 +3,17 @@ import { afterAll, beforeAll, beforeEach, expect, it } from "vitest";
 import { prepararContas } from "./contas-pbi17";
 
 let db: Client;
+let admin: Headers;
+let cliente: Headers;
 let ana: Headers;
 let bia: Headers;
 let idAna: string;
+let idBia: string;
 let estiloId: string;
 let tamanhoId: string;
 
 beforeAll(async () => {
-  ({ db, ana, bia, idAna } = await prepararContas("kolo_pbi34_agenda_test"));
+  ({ db, admin, cliente, ana, bia, idAna, idBia } = await prepararContas("kolo_pbi34_agenda_test"));
   const estilo = await db.query(
     "INSERT INTO tattoo_style (id, nome, slug) VALUES (gen_random_uuid(), 'Fineline', 'fineline') RETURNING id",
   );
@@ -112,5 +115,54 @@ it("RN08 cadastros simultâneos no mesmo intervalo: só um passa", async () => {
     ).toEqual(["sobreposto", "sobreposto", "sobreposto", "sobreposto"]);
     const { rows } = await db.query("SELECT count(*)::int AS horarios FROM appointment");
     expect(rows).toEqual([{ horarios: 1 }]);
+  }
+});
+
+it("RN10 o artista só cadastra na própria agenda; cliente e visitante não acessam; o admin escolhe o artista", async () => {
+  const { cadastrarHorario } = await import("../../src/modules/scheduling");
+  expect(await cadastrarHorario(horario({ artistaId: idBia }), ana)).toMatchObject({
+    ok: false,
+    erro: "proibido",
+  });
+  expect(await cadastrarHorario(horario({ artistaId: idAna }), ana)).toMatchObject({ ok: true });
+  expect(await cadastrarHorario(horario(), cliente)).toMatchObject({ ok: false, erro: "proibido" });
+  expect(await cadastrarHorario(horario(), new Headers())).toMatchObject({
+    ok: false,
+    erro: "nao_autenticado",
+  });
+
+  expect(await cadastrarHorario(horario({ artistaId: idBia }), admin)).toMatchObject({ ok: true });
+  expect(
+    await cadastrarHorario(horario({ inicio: "2026-10-16T10:00", fim: "2026-10-16T11:00" }), admin),
+  ).toMatchObject({
+    ok: false,
+    erro: "invalido",
+    campos: { artistaId: "Escolha o artista." },
+  });
+  expect(
+    await cadastrarHorario(
+      horario({
+        artistaId: "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+        inicio: "2026-10-16T10:00",
+        fim: "2026-10-16T11:00",
+      }),
+      admin,
+    ),
+  ).toMatchObject({
+    ok: false,
+    erro: "invalido",
+    campos: { artistaId: "Escolha um artista cadastrado." },
+  });
+  const { rows } = await db.query("SELECT artist_id FROM appointment ORDER BY artist_id");
+  expect(rows.map((r) => r.artist_id).sort()).toEqual([idAna, idBia].sort());
+});
+
+it("RN10 o papel é relido no banco: artista rebaixado a cliente perde a agenda na hora", async () => {
+  const { cadastrarHorario } = await import("../../src/modules/scheduling");
+  await db.query("UPDATE \"user\" SET papel = 'CLIENTE' WHERE email = 'ana@pbi17.test'");
+  try {
+    expect(await cadastrarHorario(horario(), ana)).toMatchObject({ ok: false, erro: "proibido" });
+  } finally {
+    await db.query("UPDATE \"user\" SET papel = 'ARTISTA' WHERE email = 'ana@pbi17.test'");
   }
 });
