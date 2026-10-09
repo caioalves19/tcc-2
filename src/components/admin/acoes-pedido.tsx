@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TITULO_SECAO } from "@/components/conta/partes-pedido";
 import { Button } from "@/components/ui/button";
 import type { ResultadoGestao } from "@/modules/artists";
 import type { PedidoAdmin } from "@/modules/orders";
@@ -48,7 +49,7 @@ export function AcoesPedido({ numero, situacao, modalidade, rastreio, acoes }: P
   return (
     <div className="grid gap-6">
       <section aria-labelledby="admin-pedido-situacao" className="grid gap-3">
-        <h2 id="admin-pedido-situacao" className="font-display text-xl">
+        <h2 id="admin-pedido-situacao" className={TITULO_SECAO}>
           Mudar situação
         </h2>
         {proximas.length === 0 ? (
@@ -97,7 +98,7 @@ export function AcoesPedido({ numero, situacao, modalidade, rastreio, acoes }: P
 
       {aceitaRastreio(situacao) && (
         <section aria-labelledby="admin-pedido-rastreio" className="grid gap-3">
-          <h2 id="admin-pedido-rastreio" className="font-display text-xl">
+          <h2 id="admin-pedido-rastreio" className={TITULO_SECAO}>
             Rastreio
           </h2>
           <form
@@ -115,7 +116,9 @@ export function AcoesPedido({ numero, situacao, modalidade, rastreio, acoes }: P
             <label htmlFor="codigo" className="text-nota font-semibold">
               Código de rastreio
             </label>
+            {/* A chave recria o campo quando a página volta com o código gravado (normalizado). */}
             <input
+              key={rastreio ?? ""}
               id="codigo"
               name="codigo"
               defaultValue={rastreio ?? ""}

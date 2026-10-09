@@ -114,3 +114,12 @@ it("RF29 registra o rastreio a partir de pago, e vazio remove", async () => {
   });
   expect(screen.getByRole("status").textContent).toBe("Rastreio salvo.");
 });
+
+it("depois de salvar, o campo mostra o código como ficou gravado", () => {
+  const minhas = acoes();
+  const props = { numero: "20261008-ABC234", situacao: "ENVIADO", modalidade: "RETIRADA" } as const;
+  const { rerender } = render(<AcoesPedido {...props} rastreio="br0001" acoes={minhas} />);
+  // O servidor normaliza para maiúsculas e a página volta com o valor gravado.
+  rerender(<AcoesPedido {...props} rastreio="BR0001" acoes={minhas} />);
+  expect(screen.getByLabelText<HTMLInputElement>("Código de rastreio").value).toBe("BR0001");
+});
