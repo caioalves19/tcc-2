@@ -1,128 +1,37 @@
 import type { Client } from "pg";
 import { afterAll, beforeAll, expect, it } from "vitest";
-import { comCookie, prepararContas, SENHA } from "./contas-pbi17";
+import { prepararContas } from "./contas-pbi17";
+import {
+  ENDERECO_TESTE as ENDERECO,
+  fabricaDePedidos,
+  type ClienteTeste,
+  type PedidoTeste,
+} from "./pedidos-de-teste";
 
 let db: Client;
-let admin: Headers;
-let idAna: string;
+let fabrica: ReturnType<typeof fabricaDePedidos>;
 let obraId: string;
 let outraObra: string;
 let terceiraObra: string;
 
 beforeAll(async () => {
-  ({ db, admin, idAna } = await prepararContas("kolo_pbi29_pedidos_test"));
-  obraId = await obraPublicada("metropole", "4.800,00", 50);
-  outraObra = await obraPublicada("retalho", "4.800,00", 50);
-  terceiraObra = await obraPublicada("muro", "4.800,00", 50);
+  const contas = await prepararContas("kolo_pbi29_pedidos_test");
+  db = contas.db;
+  fabrica = fabricaDePedidos(db, contas.admin, contas.idAna);
+  obraId = await fabrica.obraPublicada("metropole", "4.800,00", 50);
+  outraObra = await fabrica.obraPublicada("retalho", "4.800,00", 50);
+  terceiraObra = await fabrica.obraPublicada("muro", "4.800,00", 50);
 }, 120_000);
 afterAll(async () => {
   await db?.end();
 });
 
 const AGORA = new Date("2026-09-30T12:00:00Z");
-const ENDERECO = {
-  destinatario: "Lucas Silveira",
-  cep: "01327000",
-  logradouro: "Rua Treze de Maio",
-  numero: "450",
-  complemento: "Apto 82",
-  bairro: "Bela Vista",
-  cidade: "São Paulo",
-  uf: "SP",
-};
 
-type Cliente = { cabecalhos: Headers; tokenVisitante: null; userId: string; sessaoId: string };
-
-async function obraPublicada(slug: string, preco: string, estoque: number) {
-  const { criarObra, editarObra } = await import("../../src/modules/catalog");
-  const ficha = { titulo: `Obra ${slug}`, slug, artistaId: idAna, preco, estoque: String(estoque) };
-  const criada = await criarObra(ficha, admin);
-  if (!criada.ok) throw new Error(criada.mensagem);
-  await db.query(
-    "INSERT INTO artwork_image (id, artwork_id, url, ordem, principal, texto_alternativo) VALUES (gen_random_uuid(), $1, $2, 1, true, 'Foto')",
-    [criada.dados.id, `obras/${idAna}/${criada.dados.id}.png`],
-  );
-  const publicada = await editarObra({ ...ficha, id: criada.dados.id, publicada: true }, admin);
-  if (!publicada.ok) throw new Error(publicada.mensagem);
-  return criada.dados.id;
-}
-
-async function novoCliente(email: string): Promise<Cliente> {
-  const { cadastrarCliente } = await import("../../src/lib/auth");
-  const { salvarEndereco } = await import("../../src/lib/endereco");
-  const cadastro = await cadastrarCliente({
-    nome: "Cliente",
-    email,
-    telefone: "11987654321",
-    senha: SENHA,
-  });
-  if (!cadastro.ok) throw new Error("Falha ao cadastrar cliente");
-  const cabecalhos = await comCookie(cadastro.token);
-  const salvo = await salvarEndereco(ENDERECO, cabecalhos);
-  if (!salvo.ok) throw new Error("Falha ao salvar endereço");
-  const { rows } = await db.query(
-    'SELECT s.id, s.user_id FROM session s JOIN "user" u ON u.id = s.user_id WHERE u.email = $1',
-    [email],
-  );
-  return { cabecalhos, tokenVisitante: null, userId: rows[0].user_id, sessaoId: rows[0].id };
-}
-
-type Teste = {
-  numero: string;
-  situacao: "PENDENTE" | "PAGO" | "PROCESSANDO" | "ENVIADO" | "ENTREGUE" | "CANCELADO";
-  criadoEm: string;
-  pagamentos?: ("PENDENTE" | "APROVADO" | "RECUSADO" | "ESTORNADO")[];
-  reservaAte?: string;
-  rastreio?: string;
-  pagoEm?: string;
-  enviadoEm?: string;
-  excluido?: boolean;
-  // A reserva é da sessão na obra; pedidos de compras diferentes usam obras diferentes.
-  obra?: string;
-};
-
-// Pedido de teste gravado direto no banco: pagamento (27/28) e situação operacional (30) ainda
-// não têm fluxo próprio. Dois itens da mesma obra: 2 × R$ 4.800,00.
-async function pedidoDeTeste(cliente: Cliente, p: Teste) {
-  const obra = p.obra ?? obraId;
-  const { rows } = await db.query(
-    `INSERT INTO "order" (id, numero, user_id, session_id, modalidade_entrega, situacao,
-       subtotal_centavos, frete_centavos, total_centavos, endereco_copia, codigo_rastreio,
-       criado_em, pago_em, enviado_em, excluido_em)
-     VALUES (gen_random_uuid(), $1, $2, $3, 'RETIRADA', $4, 960000, 0, 960000, $5, $6, $7, $8, $9, $10)
-     RETURNING id`,
-    [
-      p.numero,
-      cliente.userId,
-      cliente.sessaoId,
-      p.situacao,
-      JSON.stringify(ENDERECO),
-      p.rastreio ?? null,
-      p.criadoEm,
-      p.pagoEm ?? null,
-      p.enviadoEm ?? null,
-      p.excluido ? p.criadoEm : null,
-    ],
-  );
-  const pedidoId = rows[0].id;
-  await db.query(
-    `INSERT INTO order_item (id, order_id, artwork_id, titulo_copia, preco_centavos_copia, quantidade)
-     VALUES (gen_random_uuid(), $1, $2, 'Metrópole em chamas', 480000, 2)`,
-    [pedidoId, obra],
-  );
-  for (const situacao of p.pagamentos ?? [])
-    await db.query(
-      `INSERT INTO payment (id, order_id, provedor, metodo, situacao, valor_centavos)
-       VALUES (gen_random_uuid(), $1, 'mercado_pago', 'PIX', $2, 960000)`,
-      [pedidoId, situacao],
-    );
-  if (p.reservaAte)
-    await db.query(
-      `INSERT INTO artwork_reservation (id, artwork_id, session_id, quantidade, expira_em)
-       VALUES (gen_random_uuid(), $1, $2, 2, $3)`,
-      [obra, cliente.sessaoId, p.reservaAte],
-    );
-}
+const novoCliente = (email: string) => fabrica.novoCliente(email);
+// Sem obra informada, o pedido usa a "metropole".
+const pedidoDeTeste = (cliente: ClienteTeste, p: Omit<PedidoTeste, "obra"> & { obra?: string }) =>
+  fabrica.pedidoDeTeste(cliente, { ...p, obra: p.obra ?? obraId });
 
 it("RF16 lista só os pedidos visíveis do próprio cliente, do mais recente ao mais antigo", async () => {
   const { listarMeusPedidos } = await import("../../src/modules/orders");
