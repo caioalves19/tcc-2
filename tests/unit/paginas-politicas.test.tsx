@@ -48,6 +48,16 @@ describe("Política de privacidade", () => {
       expect(dados).toMatch(dado);
   });
 
+  it("PBI-44: declara o formulário de contato, a Cloudflare e o limite por IP", () => {
+    render(<PaginaPrivacidade />);
+    const dados = secao("Quais dados usamos e para quê").textContent ?? "";
+    expect(dados).toMatch(/formulário de contato/i);
+    expect(dados).toMatch(/nome, e-mail e a mensagem/i);
+    expect(dados).toMatch(/3 envios a cada 15 minutos/i);
+    expect(secao("Com quem compartilhamos").textContent).toMatch(/Cloudflare.*Turnstile/);
+    expect(secao("Por quanto tempo guardamos").textContent).toMatch(/mensagens de contato/i);
+  });
+
   it("RNF18 e RNF10 afirmam que o site não coleta dados de saúde nem do cartão", () => {
     render(<PaginaPrivacidade />);
     const naoColetamos = secao("O que não coletamos").textContent ?? "";
@@ -160,7 +170,7 @@ describe("As três políticas", () => {
     (_, Pagina) => {
       render(<Pagina />);
       expect(document.body.textContent).not.toMatch(
-        /CPF|nota fiscal|Google Calendar|\b3D\b|certificado de autenticidade|formulário de contato|lembrete/i,
+        /CPF|nota fiscal|Google Calendar|\b3D\b|certificado de autenticidade|lembrete/i,
       );
     },
   );
