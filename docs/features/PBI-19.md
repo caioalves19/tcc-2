@@ -91,4 +91,5 @@ Seams: `listarCatalogo`; os componentes `CatalogoObras`, `SeletorOrdem` e `CardO
 
 - **PBI-21:** a home pode reaproveitar `CardObra` e um `listarCatalogo({ ordem: "destaque" })` (ou
   uma consulta própria só de destaques).
-- **PBI-41:** a busca textual entra no mesmo `listarCatalogo`, como mais um parâmetro da URL.
+- **PBI-41:** a busca textual entra no mesmo `listarCatalogo`, como mais um parâmetro da URL
+  (feito no PBI-41).

@@ -551,9 +551,18 @@ Consome o formato real do pedido e das cópias de dados pessoais definido no PBI
 
 **Referências:** Fase 1, item 13; modelo de dados · **Prioridade:** P1 · **Deps:** PBI-19.
 
-- [ ] Adicionar busca textual tolerante a acentos, integrada à paginação e ordenação
-- [ ] Preservar regras de visibilidade de rascunhos e esgotadas
-- [ ] Testar acentos, ausência de resultados e consultas inválidas; não adicionar filtros de catálogo adiados
+- [x] Adicionar busca textual tolerante a acentos, integrada à paginação e ordenação
+- [x] Preservar regras de visibilidade de rascunhos e esgotadas
+- [x] Testar acentos, ausência de resultados e consultas inválidas; não adicionar filtros de catálogo adiados
+
+**Decisões:**
+
+- Busca em título, descrição e técnica, por começo de palavra ("metro" acha "Metrópole"), sem acento e sem diferenciar maiúsculas; várias palavras exigem todas. Sem filtros nem busca por artista.
+- Migração `0006`: extensão `unaccent`, configuração `kolo_busca` e índice `artwork_busca_idx` no lugar do `artwork_search_idx`.
+- A busca fica na URL (`?busca=`) e convive com a paginação e as ordenações do PBI-19.
+- Contrato completo em [PBI-41](features/PBI-41.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-41-busca-catalogo`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
 
 ### PBI-42 — Modalidades adicionais de frete
 
