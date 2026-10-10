@@ -52,15 +52,15 @@ export function PedidoCheckout({ pedido, pagar, voltouDoPagamento = false }: Pro
       setRecusa(await pagar(pedido.numero));
     } catch (falha) {
       // O redirect para o Mercado Pago chega como erro interno do Next e precisa seguir adiante.
+      // O botão fica travado até a página sair: um segundo clique abriria outra preferência.
       unstable_rethrow(falha);
       setRecusa({
         ok: false,
         erro: "falha",
         mensagem: "Não foi possível abrir o pagamento agora. Tente de novo em instantes.",
       });
-    } finally {
-      setAbrindo(false);
     }
+    setAbrindo(false);
   }
 
   useEffect(() => {

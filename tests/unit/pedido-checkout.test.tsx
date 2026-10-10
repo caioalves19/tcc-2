@@ -3,7 +3,13 @@ import { act, cleanup, fireEvent, render, screen, within } from "@testing-librar
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { PedidoCheckout } from "../../src/components/loja/pedido-checkout";
 
-vi.mock("next/navigation", () => ({ unstable_rethrow: vi.fn() }));
+// Como no Next: unstable_rethrow relança só os erros internos (aqui, o do redirect).
+const REDIRECT = Object.assign(new Error("NEXT_REDIRECT"), { digest: "NEXT_REDIRECT;push;x" });
+vi.mock("next/navigation", () => ({
+  unstable_rethrow: (erro: unknown) => {
+    if (erro === REDIRECT) throw erro;
+  },
+}));
 
 const AGORA = new Date("2026-10-08T15:00:00Z");
 beforeEach(() => {
@@ -89,6 +95,40 @@ it("RF13 pagar envia o número do pedido e trava o botão enquanto o Mercado Pag
   expect(screen.getByRole("button", { name: "Pagar com Mercado Pago" })).toHaveProperty(
     "disabled",
     false,
+  );
+});
+
+it("RF13 erro inesperado na chamada vira mensagem na tela e libera nova tentativa", async () => {
+  const pagar = vi.fn<(numero: string) => Promise<never>>().mockRejectedValue(new Error("rede"));
+  render(<PedidoCheckout pedido={pedido()} pagar={pagar} />);
+
+  await act(async () => {
+    fireEvent.click(screen.getByRole("button", { name: "Pagar com Mercado Pago" }));
+  });
+  expect(screen.getByRole("alert").textContent).toContain("Não foi possível abrir o pagamento");
+  expect(screen.getByRole("button", { name: "Pagar com Mercado Pago" })).toHaveProperty(
+    "disabled",
+    false,
+  );
+});
+
+it("RF13 no redirecionamento para o Mercado Pago o botão segue travado até a página sair", async () => {
+  const relancados: unknown[] = [];
+  const guardar = (motivo: unknown) => relancados.push(motivo);
+  process.on("unhandledRejection", guardar);
+  const pagar = vi.fn<(numero: string) => Promise<never>>().mockRejectedValue(REDIRECT);
+  render(<PedidoCheckout pedido={pedido()} pagar={pagar} />);
+
+  await act(async () => {
+    fireEvent.click(screen.getByRole("button", { name: "Pagar com Mercado Pago" }));
+  });
+  await act(async () => {});
+  process.off("unhandledRejection", guardar);
+  expect(relancados).toEqual([REDIRECT]);
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(screen.getByRole("button", { name: "Abrindo o pagamento…" })).toHaveProperty(
+    "disabled",
+    true,
   );
 });
 
