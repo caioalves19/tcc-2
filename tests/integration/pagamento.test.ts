@@ -77,7 +77,7 @@ it("RF13 o dono do pedido pendente com reserva ativa recebe o checkout do Mercad
         },
       ],
       expires: true,
-      expiration_date_to: RESERVA_ATE,
+      expiration_date_to: "2026-10-10T15:08:00.000Z",
       notification_url: "https://kolo.com.br/api/webhooks/mercadopago",
     }),
   ]);
@@ -184,6 +184,40 @@ it("RN03 com a reserva vencida (ou já liberada), o pedido não vai ao Mercado P
       mensagem: "A reserva das obras expirou. Finalize de novo pelo carrinho.",
     });
   expect(gateway.recebidos).toEqual([]);
+});
+
+it("RN03/RN06 nos 2 minutos finais da reserva o checkout já fechou: o webhook precisa de folga para prorrogar", async () => {
+  const { iniciarPagamento } = await import("../../src/modules/payments");
+  const obra = await fabrica.obraPublicada("folga", "4.800,00", 2);
+  const lucas = await fabrica.novoCliente("folga@pbi27.test");
+  await fabrica.pedidoDeTeste(lucas, {
+    numero: "20261010-FOLGA2",
+    situacao: "PENDENTE",
+    criadoEm: "2026-10-10T14:52:00.000Z",
+    obra,
+    reservaAte: "2026-10-10T15:02:00.000Z",
+  });
+  const gateway = gatewayDeTeste();
+
+  expect(
+    await iniciarPagamento("20261010-FOLGA2", lucas, {
+      gateway,
+      agora: new Date("2026-10-10T15:00:00.000Z"),
+      appUrl: APP_URL,
+    }),
+  ).toEqual({
+    ok: false,
+    erro: "reserva_expirada",
+    mensagem: "O prazo para pagar este pedido acabou. Finalize de novo pelo carrinho.",
+  });
+  expect(gateway.recebidos).toEqual([]);
+  expect(
+    await iniciarPagamento("20261010-FOLGA2", lucas, {
+      gateway,
+      agora: new Date("2026-10-10T14:59:59.000Z"),
+      appUrl: APP_URL,
+    }),
+  ).toMatchObject({ ok: true });
 });
 
 it("RF13 falha do Mercado Pago volta como erro tratado, sem mexer no pedido, e a nova tentativa funciona", async () => {

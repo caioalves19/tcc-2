@@ -29,7 +29,7 @@ const pedido = (extra: Record<string, unknown> = {}) => ({
   ...extra,
 });
 
-it("RF13 a preferência leva o número do pedido, os itens gravados em reais e vence com a reserva (RN03)", () => {
+it("RF13 a preferência leva o número do pedido, os itens gravados em reais e fecha 2 min antes da reserva (RN03/RN06)", () => {
   expect(montarPreferencia(pedido(), "https://kolo.com.br/")).toEqual({
     ok: true,
     dados: {
@@ -52,7 +52,7 @@ it("RF13 a preferência leva o número do pedido, os itens gravados em reais e v
       auto_return: "approved",
       notification_url: "https://kolo.com.br/api/webhooks/mercadopago",
       expires: true,
-      expiration_date_to: "2026-10-10T15:10:00.000Z",
+      expiration_date_to: "2026-10-10T15:08:00.000Z",
     },
   });
 });

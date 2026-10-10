@@ -5,6 +5,7 @@ import { unstable_rethrow } from "next/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatarPreco } from "@/modules/catalog/cliente";
 import type { PedidoResumo, SituacaoPedido } from "@/modules/orders";
+import { prazoParaPagar } from "@/modules/payments/cliente";
 
 const SITUACAO: Record<SituacaoPedido, string> = {
   PENDENTE: "Aguardando pagamento",
@@ -34,10 +35,12 @@ function mmss(ms: number): string {
   return `${String(minutos).padStart(2, "0")}:${String(segundos % 60).padStart(2, "0")}`;
 }
 
-// RN03: as unidades ficam presas por 10 minutos. O cronômetro só informa; quem solta a
-// reserva é o servidor (PBI-25), não esta tela.
+// RN03: as unidades ficam presas por 10 minutos, e o checkout fecha 2 minutos antes (RN06, folga
+// para o webhook). O cronômetro só informa; quem decide o prazo é o servidor.
 export function PedidoCheckout({ pedido, pagar, voltouDoPagamento = false }: Props) {
-  const [restante, setRestante] = useState(() => restanteDe(pedido.reservaExpiraEm));
+  const [restante, setRestante] = useState(() =>
+    restanteDe(prazoParaPagar(pedido.reservaExpiraEm)),
+  );
   const [abrindo, setAbrindo] = useState(false);
   const [recusa, setRecusa] = useState<Recusa | null>(null);
   const pendente = pedido.situacao === "PENDENTE";
@@ -62,7 +65,8 @@ export function PedidoCheckout({ pedido, pagar, voltouDoPagamento = false }: Pro
 
   useEffect(() => {
     if (!pendente || !pedido.reservaExpiraEm) return;
-    const relogio = setInterval(() => setRestante(restanteDe(pedido.reservaExpiraEm)), 1000);
+    const fim = prazoParaPagar(pedido.reservaExpiraEm);
+    const relogio = setInterval(() => setRestante(restanteDe(fim)), 1000);
     return () => clearInterval(relogio);
   }, [pendente, pedido.reservaExpiraEm]);
 
@@ -94,20 +98,21 @@ export function PedidoCheckout({ pedido, pagar, voltouDoPagamento = false }: Pro
               className="rounded-card border-2 border-neutro-grafite bg-primary p-5 text-primary-foreground shadow-adesivo-sm"
             >
               <p className="font-display uppercase">
-                Suas obras estão reservadas por{" "}
+                Você tem{" "}
                 <span suppressHydrationWarning className="text-titulo-lg">
                   {mmss(restante)}
-                </span>
+                </span>{" "}
+                para iniciar o pagamento
               </p>
               <p className="mt-2">
-                Conclua o pagamento antes do fim do prazo; depois disso, as obras voltam à vitrine.
+                Suas obras ficam reservadas até lá; depois disso, voltam à vitrine.
               </p>
             </div>
           )}
           {pendente && restante === 0 && (
             <div role="status" className="grid gap-3 rounded-card border-2 border-destructive p-5">
-              <p className="font-display uppercase text-destructive">A reserva expirou</p>
-              <p>As obras voltaram a ficar disponíveis. Finalize de novo pelo carrinho.</p>
+              <p className="font-display uppercase text-destructive">O prazo para pagar acabou</p>
+              <p>As obras voltam a ficar disponíveis. Finalize de novo pelo carrinho.</p>
               <div>
                 <a href="/carrinho" className={buttonVariants({ variant: "contorno", size: "sm" })}>
                   Voltar ao carrinho

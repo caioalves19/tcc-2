@@ -1,4 +1,5 @@
 import type { PedidoResumo } from "../orders/index";
+import { prazoParaPagar } from "./cliente";
 
 export type CorpoPreferencia = {
   items: { id: string; title: string; quantity: number; unit_price: number; currency_id: "BRL" }[];
@@ -14,10 +15,10 @@ export type ResultadoPreferencia =
   { ok: true; dados: CorpoPreferencia } | { ok: false; erro: "invalido"; mensagem: string };
 
 // RF13: o Checkout Pro cobra exatamente o que o pedido gravou (cópia de título e preço), e a
-// preferência deixa de aceitar pagamento quando a reserva de 10 minutos acaba (RN03).
+// preferência deixa de aceitar pagamento novo no prazo para pagar.
 export function montarPreferencia(pedido: PedidoResumo, appUrl: string): ResultadoPreferencia {
-  if (!pedido.reservaExpiraEm)
-    return { ok: false, erro: "invalido", mensagem: "A reserva do pedido expirou." };
+  const prazo = prazoParaPagar(pedido.reservaExpiraEm);
+  if (!prazo) return { ok: false, erro: "invalido", mensagem: "A reserva do pedido expirou." };
   // RN07: o gateway recebe só os itens; se eles não somam o total, não há o que cobrar com
   // segurança (frete pago entra com o PBI-42).
   const somaItens = pedido.itens.reduce((soma, i) => soma + i.precoCentavos * i.quantidade, 0);
@@ -43,7 +44,7 @@ export function montarPreferencia(pedido: PedidoResumo, appUrl: string): Resulta
       back_urls: { success: retorno, pending: retorno, failure: retorno },
       ...publico,
       expires: true,
-      expiration_date_to: pedido.reservaExpiraEm.toISOString(),
+      expiration_date_to: prazo.toISOString(),
     },
   };
 }

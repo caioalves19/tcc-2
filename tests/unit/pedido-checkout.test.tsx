@@ -42,14 +42,15 @@ const pedido = (extra: Record<string, unknown> = {}) => ({
 
 const recusou = () => vi.fn().mockResolvedValue({ ok: false, erro: "falha", mensagem: "x" });
 
-it("RF12/RN03 pedido pendente mostra número, resumo e o tempo que resta da reserva", () => {
+it("RF12/RN03 pedido pendente mostra número, resumo e o tempo para pagar, 2 min antes do fim da reserva", () => {
   render(<PedidoCheckout pedido={pedido()} pagar={recusou()} />);
   expect(screen.getByRole("heading", { level: 1 }).textContent).toContain("20261008-ABC234");
   expect(screen.getByText("Aguardando pagamento")).toBeDefined();
   const reserva = screen.getByRole("timer");
-  expect(reserva.textContent).toContain("09:30");
+  // Reserva com 9:30 restantes: o checkout fecha 2 minutos antes (RN06, folga para o webhook).
+  expect(reserva.textContent).toContain("07:30");
   act(() => vi.advanceTimersByTime(1000));
-  expect(reserva.textContent).toContain("09:29");
+  expect(reserva.textContent).toContain("07:29");
 
   const resumo = screen.getByRole("complementary", { name: "Resumo do pedido" });
   expect(within(resumo).getByRole("listitem").textContent).toContain("Metrópole em chamas");
@@ -91,17 +92,17 @@ it("RF13 pagar envia o número do pedido e trava o botão enquanto o Mercado Pag
   );
 });
 
-it("RN03 reserva vencida avisa e leva de volta ao carrinho", () => {
+it("RN03 com o prazo para pagar vencido, avisa e leva de volta ao carrinho", () => {
   render(
     <PedidoCheckout
-      pedido={pedido({ reservaExpiraEm: new Date(AGORA.getTime() + 2000) })}
+      pedido={pedido({ reservaExpiraEm: new Date(AGORA.getTime() + 2 * 60 * 1000 + 2000) })}
       pagar={recusou()}
     />,
   );
   act(() => vi.advanceTimersByTime(3000));
   expect(screen.queryByRole("timer")).toBeNull();
   const aviso = screen.getByRole("status");
-  expect(aviso.textContent).toContain("A reserva expirou");
+  expect(aviso.textContent).toContain("O prazo para pagar acabou");
   expect(within(aviso).getByRole("link", { name: "Voltar ao carrinho" }).getAttribute("href")).toBe(
     "/carrinho",
   );

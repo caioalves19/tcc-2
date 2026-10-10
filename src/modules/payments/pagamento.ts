@@ -1,5 +1,6 @@
 import { obterPrisma } from "../../lib/prisma";
 import { lerPedido, type ContextoCarrinho } from "../orders/index";
+import { prazoParaPagar } from "./cliente";
 import { montarPreferencia, type CorpoPreferencia } from "./preferencia";
 
 // Porta do provedor: o módulo só pede a preferência e recebe a URL do checkout hospedado.
@@ -53,6 +54,15 @@ export async function iniciarPagamento(
       ok: false,
       erro: "reserva_expirada",
       mensagem: "A reserva das obras expirou. Finalize de novo pelo carrinho.",
+    };
+  // RN06: nos minutos finais da reserva o checkout já fechou (FOLGA_PAGAMENTO_MS), para um Pix ou
+  // boleto gerado no último instante ainda encontrar a reserva quando o webhook chegar.
+  const prazo = prazoParaPagar(pedido.reservaExpiraEm);
+  if (!prazo || prazo <= agora)
+    return {
+      ok: false,
+      erro: "reserva_expirada",
+      mensagem: "O prazo para pagar este pedido acabou. Finalize de novo pelo carrinho.",
     };
   const preferencia = montarPreferencia(pedido, opcoes.appUrl ?? process.env.APP_URL ?? "");
   if (!preferencia.ok) return { ok: false, erro: "falha", mensagem: preferencia.mensagem };
