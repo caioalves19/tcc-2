@@ -64,3 +64,23 @@ it("RF13 resposta sem init_point vira erro, nunca um redirecionamento vazio", as
     "init_point",
   );
 });
+
+it("RF13 só redireciona para o checkout do próprio Mercado Pago, em https", async () => {
+  const gateway = gatewayMercadoPago("APP_USR-teste");
+  for (const init_point of [
+    "https://evil.example/checkout",
+    "http://www.mercadopago.com.br/checkout/v1/redirect?pref_id=pref-1",
+    "https://mercadopago.com.br.evil.example/x",
+    "javascript:alert(1)",
+  ]) {
+    sdk.resposta = { id: "pref-1", init_point };
+    await expect(gateway.criarPreferencia(CORPO)).rejects.toThrow("init_point");
+  }
+  sdk.resposta = {
+    id: "pref-1",
+    init_point: "https://sandbox.mercadopago.com.br/checkout/v1/redirect?pref_id=pref-1",
+  };
+  expect(await gateway.criarPreferencia(CORPO)).toEqual({
+    url: "https://sandbox.mercadopago.com.br/checkout/v1/redirect?pref_id=pref-1",
+  });
+});
