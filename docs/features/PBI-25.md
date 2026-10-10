@@ -59,9 +59,10 @@ Entrada inválida volta como `invalido`. O relógio (`agora`) pode ser injetado 
 ## Ciclo com Pix e boleto (RN06)
 
 1. **Checkout (PBI-26):** `reservarItens` → reserva por 10 minutos.
-2. **Checkout Pro aberto (PBI-27):** a preferência do Mercado Pago vence junto com a reserva, então
-   o cliente só gera Pix, boleto ou pagamento de cartão enquanto as unidades estão presas. O PBI-27
-   não grava `payment` nem prorroga nada.
+2. **Checkout Pro aberto (PBI-27):** a preferência do Mercado Pago fecha 2 minutos antes da
+   reserva. O cliente só gera Pix, boleto ou pagamento de cartão enquanto as unidades estão presas,
+   e o webhook ainda tem essa folga para prorrogar a reserva. O PBI-27 não grava `payment` nem
+   prorroga nada.
 3. **Pagamento criado (webhook, PBI-28):**
    - cartão: a aprovação costuma chegar dentro dos 10 minutos;
    - Pix ou boleto: o pedido fica pendente, e o webhook chama `prorrogarReserva(sessaoId,
