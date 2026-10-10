@@ -83,16 +83,21 @@ Variáveis no `.env` (documentadas no `.env.example`, nunca versionadas):
 
 ### Credenciais de sandbox
 
-1. Com a conta do Mercado Pago da equipe, abra o painel de desenvolvedor (Suas integrações) e
-   crie uma aplicação do tipo **Checkout Pro**.
-2. Na aplicação, em **Contas de teste**, crie duas contas do Brasil: uma **vendedor** e uma
-   **comprador**. Guarde usuário e senha fora do repositório.
-3. Entre com o **vendedor de teste** (janela anônima), abra o painel de desenvolvedor, crie uma
-   aplicação Checkout Pro e copie o **Access Token de produção** dessa conta de teste
-   (`APP_USR-…`) para `MP_ACCESS_TOKEN`. Por ser conta de teste, o dinheiro é fictício.
-4. Para pagar, entre no checkout com o **comprador de teste**. Cartões de teste publicados pelo
-   Mercado Pago, por exemplo Mastercard `5031 4332 1540 6351`, CVV `123`, validade `11/30`. O
-   nome do titular define o resultado: `APRO` aprova, `OTHE` recusa. CPF `12345678909`.
+Fluxo do painel em 10/10/2026 (Mercado Pago Developers):
+
+1. Com a conta real da equipe, em **Suas integrações → Criar aplicação → Criar no painel de
+   integração**, escolha **Checkout Pro** com **API de Preferences**.
+2. Em **Credenciais de teste**, clique em **Ativar credenciais** (aceite de termos e reCAPTCHA).
+   A ativação cria sozinha, em **Contas de teste**, um **Seller Test User** (vendedor) e um
+   **Buyer Test User** (comprador), ambos do Brasil. Usuário, senha e código de verificação ficam
+   nessa página; guarde-os fora do repositório.
+3. Copie o **Access Token** de **Credenciais de teste** (`APP_USR-…`) para `MP_ACCESS_TOKEN`. Ele
+   termina com o User ID do Seller Test User, e o dinheiro é fictício (os pagamentos aparecem com
+   `live_mode: true` porque contas de teste usam o ambiente real com saldo fictício).
+4. Para pagar, use cartões de teste do Mercado Pago com titular `APRO` (aprova) ou `OTHE`
+   (recusa), CVV `123`, validade `11/30`, CPF `12345678909`. **Visa `4235 6477 2802 5682`
+   funcionou**; o Mastercard `5031 4332 1540 6351` foi recusado no formulário ("A transação não
+   aceita este meio de pagamento").
 
 ## Testes
 
@@ -116,16 +121,29 @@ Variáveis no `.env` (documentadas no `.env.example`, nunca versionadas):
 
 ## Evidência no sandbox
 
-_Pendente: depende das credenciais de teste da equipe._ Registrar aqui a data, quem testou, o
-número do pedido e as capturas destas etapas:
+10/10/2026, app local (`APP_URL=http://localhost:3000`), conta de teste da aplicação
+`kolo-tcc-sandbox`, pedido **20261010-6XV73U** (obra sintética, R$ 150,00, retirada).
 
-1. botão → checkout do Mercado Pago com o valor do pedido;
-2. pagamento com cartão `APRO` aprovado no sandbox;
-3. volta para `/checkout/[numero]` com o aviso, e o pedido ainda **Aguardando pagamento** (a
-   confirmação é do PBI-28);
-4. `GET /checkout/preferences/{id}`: o `expiration_date_to` gravado é o fim da reserva menos 2
-   minutos, no horário certo;
-5. tentativa de pagar pela mesma preferência depois desse prazo é recusada pelo Mercado Pago.
+1. **Botão → checkout:** "Pagar com Mercado Pago" abriu o Checkout Pro com o item e o total de
+   R$ 150. Meios oferecidos: cartão e boleto. O Pix não apareceu: a preferência não exclui nenhum
+   meio (`excluded_payment_types` vazio), então a ausência vem da conta de teste sem chave Pix.
+2. **Preferência gravada** (`GET /checkout/preferences/{id}`): `external_reference`
+   `20261010-6XV73U`; 1 × R$ 150 em BRL; `expires: true`; `expiration_date_to`
+   `12:07:19.768-03:00` com a reserva vencendo às `12:09:19.768` (2 minutos de folga, fuso
+   interpretado certo).
+3. **Pagamento aprovado** (`GET /v1/payments/search?external_reference=…`): pagamento
+   `182441100783`, `approved` / `accredited`, Visa crédito, R$ 150 em BRL.
+4. **Kolô depois da aprovação:** pedido `PENDENTE`, nenhuma linha em `payment`, obra com estoque
+   1 e `DISPONIVEL`. Na página `/checkout/20261010-6XV73U?retorno=mercadopago&status=approved…`,
+   o pedido segue **Aguardando pagamento** com o aviso "Estamos confirmando seu pagamento": os
+   parâmetros da URL não decidem nada (RN05). A confirmação é do PBI-28.
+
+**Limites do teste local:**
+
+- O Mercado Pago **descartou as `back_urls` com `http://localhost`** (gravadas vazias): depois de
+  pagar não há link de volta, e a volta foi simulada abrindo a URL. Validar a volta real exige
+  `APP_URL` em https (túnel), o mesmo de que o webhook do PBI-28 precisa.
+- Não testado: tentativa de pagar pela mesma preferência depois do `expiration_date_to`.
 
 ## Passagem para o PBI-28
 
