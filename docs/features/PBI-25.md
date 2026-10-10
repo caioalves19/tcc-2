@@ -8,8 +8,9 @@ Prender as unidades das obras durante o checkout, sem vender além do estoque me
 simultâneas. Decisões confirmadas antes de codar (07/10/2026):
 
 - **A reserva fica ligada à sessão** (`artwork_reservation.session_id`, como no DER). Não houve
-  migração. Para Pix e boleto (RN06), o checkout prorroga a reserva da sessão até o vencimento do
-  meio de pagamento.
+  migração. Para Pix e boleto (RN06), a reserva da sessão é prorrogada até o vencimento do meio
+  de pagamento. Quem prorroga é o webhook (PBI-28): no Checkout Pro, o meio só é conhecido depois
+  que o Mercado Pago cria o pagamento (decisão do PBI-27, 10/10/2026).
 - **pg-boss no `instrumentation.ts`:** o worker sobe junto com o servidor do Next. Não há script
   nem serviço novo.
 - **A baixa do estoque fica neste PBI** (`baixarEstoque`). O webhook (PBI-28) só chama, com o
@@ -24,7 +25,7 @@ Implementação no módulo `src/modules/orders`, com API pública em `index.ts`.
 | Função | Uso | Resultado |
 |--------|-----|-----------|
 | `reservarItens(sessaoId, itens, agora?)` | PBI-26, ao ir para o pagamento | `{ ok, dados: { expiraEm } }`, `indisponivel` com as obras ou `pendente` |
-| `prorrogarReserva(sessaoId, itens, ate, agora?)` | PBI-26/27, Pix ou boleto pendente | `{ ok, dados: { expiraEm } }`, `sem_reserva` ou `invalido` |
+| `prorrogarReserva(sessaoId, itens, ate, agora?)` | PBI-28, Pix ou boleto pendente | `{ ok, dados: { expiraEm } }`, `sem_reserva` ou `invalido` |
 | `liberarReservas(sessaoId)` | Cliente desiste ou pedido cancelado antes de pagar | — |
 | `estoqueDisponivel(obraId, agora?, sessaoId?)` | Checkout, para avisar antes de reservar | unidades livres (0 se a obra não está à venda); com `sessaoId`, as reservas dela contam como livres |
 | `baixarEstoque(sessaoId \| null, itens, agora?, tx?)` | PBI-28, pagamento aprovado | `{ ok }` ou `sem_estoque` com as obras |
@@ -58,9 +59,12 @@ Entrada inválida volta como `invalido`. O relógio (`agora`) pode ser injetado 
 ## Ciclo com Pix e boleto (RN06)
 
 1. **Checkout (PBI-26):** `reservarItens` → reserva por 10 minutos.
-2. **Pagamento criado (PBI-27):**
+2. **Checkout Pro aberto (PBI-27):** a preferência do Mercado Pago vence junto com a reserva, então
+   o cliente só gera Pix, boleto ou pagamento de cartão enquanto as unidades estão presas. O PBI-27
+   não grava `payment` nem prorroga nada.
+3. **Pagamento criado (webhook, PBI-28):**
    - cartão: a aprovação costuma chegar dentro dos 10 minutos;
-   - Pix ou boleto: o pedido fica pendente, e o checkout chama `prorrogarReserva(sessaoId,
+   - Pix ou boleto: o pedido fica pendente, e o webhook chama `prorrogarReserva(sessaoId,
      itens, vencimento)` com os itens do pedido e o vencimento do meio de pagamento. Só prorroga
      se as reservas ativas da sessão forem exatamente esses itens; reserva já vencida não é
      ressuscitada, e um carrinho trocado por um novo checkout não é prorrogado no lugar do pedido.
@@ -68,7 +72,7 @@ Entrada inválida volta como `invalido`. O relógio (`agora`) pode ser injetado 
      garantidas.
      A prorrogação recusa (`invalido`) itens inválidos, prazo no passado, data inválida ou prazo
      menor que o atual: ela nunca encurta a reserva.
-3. **Aprovação (PBI-28):** `baixarEstoque(sessaoId, itens, agora, tx)`, dentro da transação do
+4. **Aprovação (PBI-28):** `baixarEstoque(sessaoId, itens, agora, tx)`, dentro da transação do
    webhook. O PBI-28 grava o `webhook_event` (id único), paga o pedido e baixa o estoque na mesma
    `tx`: se algo falha, tudo é desfeito. A idempotência (RNF11) fica com o evento único, porque uma
    segunda baixa de uma tiragem com estoque sobrando passaria.
@@ -77,7 +81,7 @@ Entrada inválida volta como `invalido`. O relógio (`agora`) pode ser injetado 
    - Reserva vencida, ou sessão apagada (logout, com `sessaoId` `null`): baixa só se nenhuma outra
      sessão segura a unidade. Senão volta `sem_estoque`, e o estoque fica como estava. O pedido pago
      sem unidade segue para estorno (PBI-43).
-4. **Vencimento sem pagamento:** a reserva expira sozinha e o pg-boss a apaga.
+5. **Vencimento sem pagamento:** a reserva expira sozinha e o pg-boss a apaga.
 
 O estoque nunca fica negativo, porque a baixa confere as unidades livres dentro da mesma trava.
 
@@ -92,12 +96,13 @@ O estoque nunca fica negativo, porque a baixa confere as unidades livres dentro 
   um novo checkout da mesma sessão substitui a reserva. Por isso o PBI-26 deve consultar o pedido
   pendente da sessão antes de chamar `reservarItens`, e não depender só do `pendente`.
 - **Prorrogação na virada do prazo:** se outra sessão levou a peça logo depois do vencimento, a
-  prorrogação volta `sem_reserva`. O PBI-27 não deve emitir o Pix/boleto com essas unidades.
+  prorrogação volta `sem_reserva`. O Pix/boleto já foi emitido pelo Mercado Pago: o PBI-28 decide
+  como tratá-lo, e a aprovação posterior cai na reconciliação (baixa só se a unidade estiver livre).
 - **Limpeza e prorrogação na mesma virada:** o job do pg-boss apaga reservas sem travar as obras.
   Bem no vencimento, com duas ou mais reservas da mesma sessão, a limpeza e uma prorrogação podem
   travar as mesmas linhas em ordem cruzada. O Postgres detecta (`40P01`) e aborta uma das duas: a
   limpeza roda de novo no minuto seguinte, sem efeito colateral; a prorrogação lança erro, e o
-  PBI-27 deve tratá-lo como falha (não emitir o Pix/boleto com as unidades garantidas).
+  PBI-28 deve tratá-lo como falha da notificação (responder erro para o Mercado Pago reenviar).
 - **Baixa de obra que saiu de venda:** se o pagamento é aprovado depois que o admin despublicou ou
   arquivou a obra, a baixa acontece mesmo assim (o cliente pagou), e a obra em rascunho continua
   em rascunho.
