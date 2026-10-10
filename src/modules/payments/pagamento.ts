@@ -69,10 +69,16 @@ export async function iniciarPagamento(
   try {
     return { ok: true, dados: await opcoes.gateway.criarPreferencia(preferencia.dados) };
   } catch (erro) {
-    // Só o tipo do erro: a resposta do provedor pode trazer dados do pedido ou da conta.
+    // Só o tipo e o status HTTP: a mensagem e a resposta do provedor podem trazer dados do pedido
+    // ou da conta.
+    const status =
+      erro instanceof Error && "status" in erro && typeof erro.status === "number"
+        ? erro.status
+        : null;
     console.error(
       "Falha ao criar a preferência no Mercado Pago",
       erro instanceof Error ? erro.name : "erro desconhecido",
+      status,
     );
     return {
       ok: false,

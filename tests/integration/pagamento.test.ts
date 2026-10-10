@@ -1,5 +1,5 @@
 import type { Client } from "pg";
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, expect, it, vi } from "vitest";
 import { prepararContas } from "./contas-pbi17";
 import { fabricaDePedidos } from "./pedidos-de-teste";
 
@@ -260,4 +260,40 @@ it("RF13 falha do Mercado Pago volta como erro tratado, sem mexer no pedido, e a
       appUrl: APP_URL,
     }),
   ).toMatchObject({ ok: true });
+});
+
+it("RF13 o log da falha traz o tipo e o status HTTP do erro, nunca a resposta do Mercado Pago", async () => {
+  const { iniciarPagamento } = await import("../../src/modules/payments");
+  const obra = await fabrica.obraPublicada("log", "4.800,00", 2);
+  const lucas = await fabrica.novoCliente("log@pbi27.test");
+  await fabrica.pedidoDeTeste(lucas, {
+    numero: "20261010-LOGER2",
+    situacao: "PENDENTE",
+    criadoEm: AGORA.toISOString(),
+    obra,
+    reservaAte: RESERVA_ATE,
+  });
+  class MPBadRequestError extends Error {
+    name = "MPBadRequestError";
+    status = 400;
+  }
+  const recusou = {
+    async criarPreferencia(): Promise<{ url: string }> {
+      throw new MPBadRequestError("payer email lucas@pbi27.test inválido");
+    },
+  };
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+
+  await iniciarPagamento("20261010-LOGER2", lucas, {
+    gateway: recusou,
+    agora: AGORA,
+    appUrl: APP_URL,
+  });
+  expect(log).toHaveBeenCalledWith(
+    "Falha ao criar a preferência no Mercado Pago",
+    "MPBadRequestError",
+    400,
+  );
+  expect(JSON.stringify(log.mock.calls)).not.toContain("lucas@pbi27.test");
+  log.mockRestore();
 });
