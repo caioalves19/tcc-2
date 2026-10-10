@@ -26,6 +26,7 @@ vi.mock("@/modules/orders", () => ({
   juntarCarrinhos: vi.fn(),
 }));
 vi.mock("@/app/checkout/actions", () => ({ finalizarCompraAcao: vi.fn() }));
+vi.mock("@/app/checkout/[numero]/actions", () => ({ pagarPedidoAcao: vi.fn() }));
 
 import PaginaCheckout from "@/app/checkout/page";
 import PaginaPedido from "@/app/checkout/[numero]/page";
@@ -111,7 +112,10 @@ it("RF12 com resumo válido mostra a tela de checkout", async () => {
 it("RN01 pedido de outro cliente ou inexistente responde como página não encontrada", async () => {
   mocks.pedido.mockResolvedValueOnce(null);
   await expect(
-    PaginaPedido({ params: Promise.resolve({ numero: "20261008-ABC234" }) }),
+    PaginaPedido({
+      params: Promise.resolve({ numero: "20261008-ABC234" }),
+      searchParams: Promise.resolve({}),
+    }),
   ).rejects.toThrow("notFound");
   expect(mocks.pedido).toHaveBeenCalledWith(
     "20261008-ABC234",
@@ -134,6 +138,41 @@ it("RF12 o dono vê o pedido criado", async () => {
     freteCentavos: 0,
     totalCentavos: 285000,
   });
-  render(await PaginaPedido({ params: Promise.resolve({ numero: "20261008-ABC234" }) }));
+  render(
+    await PaginaPedido({
+      params: Promise.resolve({ numero: "20261008-ABC234" }),
+      searchParams: Promise.resolve({}),
+    }),
+  );
   expect(screen.getByRole("heading", { level: 1 }).textContent).toContain("20261008-ABC234");
+});
+
+it("RN05 a volta do Mercado Pago só troca o aviso; o pedido segue lido do banco", async () => {
+  mocks.pedido.mockResolvedValueOnce({
+    numero: "20261008-ABC234",
+    situacao: "PENDENTE",
+    modalidade: "RETIRADA",
+    criadoEm: new Date(),
+    reservaExpiraEm: new Date(Date.now() + 5 * 60 * 1000),
+    itens: [
+      { obraId: "obra-1", titulo: "Metrópole em chamas", precoCentavos: 285000, quantidade: 1 },
+    ],
+    endereco: ENDERECO,
+    subtotalCentavos: 285000,
+    freteCentavos: 0,
+    totalCentavos: 285000,
+  });
+  render(
+    await PaginaPedido({
+      params: Promise.resolve({ numero: "20261008-ABC234" }),
+      // O Mercado Pago acrescenta seus próprios parâmetros; nenhum deles decide nada aqui.
+      searchParams: Promise.resolve({
+        retorno: "mercadopago",
+        collection_status: "approved",
+        status: "approved",
+      }),
+    }),
+  );
+  expect(screen.getByRole("status").textContent).toContain("Estamos confirmando seu pagamento");
+  expect(screen.getByText("Aguardando pagamento")).toBeDefined();
 });

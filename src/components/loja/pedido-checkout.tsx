@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { unstable_rethrow } from "next/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatarPreco } from "@/modules/catalog/cliente";
 import type { PedidoResumo, SituacaoPedido } from "@/modules/orders";
+import { prazoParaPagar } from "@/modules/payments/cliente";
 
 const SITUACAO: Record<SituacaoPedido, string> = {
   PENDENTE: "Aguardando pagamento",
@@ -12,6 +14,15 @@ const SITUACAO: Record<SituacaoPedido, string> = {
   ENVIADO: "Enviado",
   ENTREGUE: "Entregue",
   CANCELADO: "Pedido cancelado",
+};
+
+type Recusa = { ok: false; erro: string; mensagem: string };
+type Props = {
+  pedido: PedidoResumo;
+  // Server Action: em sucesso redireciona para o Checkout Pro; só volta quando recusa.
+  pagar: (numero: string) => Promise<Recusa>;
+  // Chegou pelas back_urls do Checkout Pro. Só muda o aviso: quem confirma é o webhook (RN05).
+  voltouDoPagamento?: boolean;
 };
 
 function restanteDe(expiraEm: Date | null): number {
@@ -24,15 +35,48 @@ function mmss(ms: number): string {
   return `${String(minutos).padStart(2, "0")}:${String(segundos % 60).padStart(2, "0")}`;
 }
 
-// RN03: as unidades ficam presas por 10 minutos. O cronômetro só informa; quem solta a
-// reserva é o servidor (PBI-25), não esta tela.
-export function PedidoCheckout({ pedido }: { pedido: PedidoResumo }) {
-  const [restante, setRestante] = useState(() => restanteDe(pedido.reservaExpiraEm));
+// RN03: as unidades ficam presas por 10 minutos, e o checkout fecha 2 minutos antes (RN06, folga
+// para o webhook). O cronômetro só informa; quem decide o prazo é o servidor.
+export function PedidoCheckout({ pedido, pagar, voltouDoPagamento = false }: Props) {
+  const [restante, setRestante] = useState(() =>
+    restanteDe(prazoParaPagar(pedido.reservaExpiraEm)),
+  );
+  const [abrindo, setAbrindo] = useState(false);
+  const [recusa, setRecusa] = useState<Recusa | null>(null);
   const pendente = pedido.situacao === "PENDENTE";
+
+  async function abrirPagamento() {
+    setAbrindo(true);
+    setRecusa(null);
+    try {
+      setRecusa(await pagar(pedido.numero));
+    } catch (falha) {
+      // O redirect para o Mercado Pago chega como erro interno do Next e precisa seguir adiante.
+      // O botão fica travado até a página sair: um segundo clique abriria outra preferência.
+      unstable_rethrow(falha);
+      setRecusa({
+        ok: false,
+        erro: "falha",
+        mensagem: "Não foi possível abrir o pagamento agora. Tente de novo em instantes.",
+      });
+    }
+    setAbrindo(false);
+  }
+
+  // Voltar do Mercado Pago pelo histórico pode restaurar a página do cache (bfcache) com o botão
+  // ainda travado pelo redirect: o cliente precisa poder tentar de novo.
+  useEffect(() => {
+    const aoVoltar = (evento: PageTransitionEvent) => {
+      if (evento.persisted) setAbrindo(false);
+    };
+    window.addEventListener("pageshow", aoVoltar);
+    return () => window.removeEventListener("pageshow", aoVoltar);
+  }, []);
 
   useEffect(() => {
     if (!pendente || !pedido.reservaExpiraEm) return;
-    const relogio = setInterval(() => setRestante(restanteDe(pedido.reservaExpiraEm)), 1000);
+    const fim = prazoParaPagar(pedido.reservaExpiraEm);
+    const relogio = setInterval(() => setRestante(restanteDe(fim)), 1000);
     return () => clearInterval(relogio);
   }, [pendente, pedido.reservaExpiraEm]);
 
@@ -45,6 +89,18 @@ export function PedidoCheckout({ pedido }: { pedido: PedidoResumo }) {
       </h1>
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="grid content-start gap-6">
+          {pendente && voltouDoPagamento && (
+            <div
+              role="status"
+              className="grid gap-2 rounded-card border-2 border-neutro-grafite p-5"
+            >
+              <p className="font-display uppercase">Estamos confirmando seu pagamento</p>
+              <p>
+                Assim que o Mercado Pago aprovar, o pedido passa para Pago. Com Pix ou boleto, a
+                confirmação chega depois que o pagamento é compensado.
+              </p>
+            </div>
+          )}
           {pendente && restante > 0 && (
             <div
               role="timer"
@@ -52,20 +108,21 @@ export function PedidoCheckout({ pedido }: { pedido: PedidoResumo }) {
               className="rounded-card border-2 border-neutro-grafite bg-primary p-5 text-primary-foreground shadow-adesivo-sm"
             >
               <p className="font-display uppercase">
-                Suas obras estão reservadas por{" "}
+                Você tem{" "}
                 <span suppressHydrationWarning className="text-titulo-lg">
                   {mmss(restante)}
-                </span>
+                </span>{" "}
+                para iniciar o pagamento
               </p>
               <p className="mt-2">
-                Conclua o pagamento antes do fim do prazo; depois disso, as obras voltam à vitrine.
+                Suas obras ficam reservadas até lá; depois disso, voltam à vitrine.
               </p>
             </div>
           )}
           {pendente && restante === 0 && (
             <div role="status" className="grid gap-3 rounded-card border-2 border-destructive p-5">
-              <p className="font-display uppercase text-destructive">A reserva expirou</p>
-              <p>As obras voltaram a ficar disponíveis. Finalize de novo pelo carrinho.</p>
+              <p className="font-display uppercase text-destructive">O prazo para pagar acabou</p>
+              <p>As obras voltam a ficar disponíveis. Finalize de novo pelo carrinho.</p>
               <div>
                 <a href="/carrinho" className={buttonVariants({ variant: "contorno", size: "sm" })}>
                   Voltar ao carrinho
@@ -124,11 +181,22 @@ export function PedidoCheckout({ pedido }: { pedido: PedidoResumo }) {
           </dl>
           {pendente && restante > 0 && (
             <>
-              {/* O Checkout Pro do Mercado Pago entra no PBI-27. */}
-              <Button type="button" size="lg" disabled>
-                Pagar com Mercado Pago
+              {recusa && (
+                <p role="alert" className="text-destructive">
+                  {recusa.mensagem}
+                </p>
+              )}
+              <Button
+                type="button"
+                size="lg"
+                disabled={abrindo}
+                onClick={() => void abrirPagamento()}
+              >
+                {abrindo ? "Abrindo o pagamento…" : "Pagar com Mercado Pago"}
               </Button>
-              <p className="text-nota">O pagamento online estará disponível em breve.</p>
+              <p className="text-nota">
+                Você paga com Pix, cartão ou boleto no ambiente seguro do Mercado Pago.
+              </p>
             </>
           )}
         </aside>
