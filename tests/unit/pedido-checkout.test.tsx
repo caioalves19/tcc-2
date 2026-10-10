@@ -132,6 +132,26 @@ it("RF13 no redirecionamento para o Mercado Pago o botão segue travado até a p
   );
 });
 
+it("RF13 voltar do Mercado Pago pelo histórico (página restaurada do cache) libera o botão", async () => {
+  const pagar = vi.fn<(numero: string) => Promise<never>>().mockRejectedValue(REDIRECT);
+  const ignorar = () => {};
+  process.on("unhandledRejection", ignorar);
+  render(<PedidoCheckout pedido={pedido()} pagar={pagar} />);
+  await act(async () => {
+    fireEvent.click(screen.getByRole("button", { name: "Pagar com Mercado Pago" }));
+  });
+  await act(async () => {});
+  process.off("unhandledRejection", ignorar);
+
+  act(() => {
+    window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
+  });
+  expect(screen.getByRole("button", { name: "Pagar com Mercado Pago" })).toHaveProperty(
+    "disabled",
+    false,
+  );
+});
+
 it("RN03 com o prazo para pagar vencido, avisa e leva de volta ao carrinho", () => {
   render(
     <PedidoCheckout

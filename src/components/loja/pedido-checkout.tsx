@@ -63,6 +63,16 @@ export function PedidoCheckout({ pedido, pagar, voltouDoPagamento = false }: Pro
     setAbrindo(false);
   }
 
+  // Voltar do Mercado Pago pelo histórico pode restaurar a página do cache (bfcache) com o botão
+  // ainda travado pelo redirect: o cliente precisa poder tentar de novo.
+  useEffect(() => {
+    const aoVoltar = (evento: PageTransitionEvent) => {
+      if (evento.persisted) setAbrindo(false);
+    };
+    window.addEventListener("pageshow", aoVoltar);
+    return () => window.removeEventListener("pageshow", aoVoltar);
+  }, []);
+
   useEffect(() => {
     if (!pendente || !pedido.reservaExpiraEm) return;
     const fim = prazoParaPagar(pedido.reservaExpiraEm);
