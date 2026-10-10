@@ -1,3 +1,4 @@
+import { obterPrisma } from "../../lib/prisma";
 import { lerPedido, type ContextoCarrinho } from "../orders/index";
 import { montarPreferencia, type CorpoPreferencia } from "./preferencia";
 
@@ -10,7 +11,12 @@ export type OpcoesPagamento = { gateway: GatewayPagamento; agora?: Date; appUrl?
 
 export type ResultadoPagamento =
   | { ok: true; dados: { url: string } }
-  | { ok: false; erro: "nao_encontrado" | "falha"; mensagem: string };
+  | {
+      ok: false;
+      erro:
+        "nao_encontrado" | "nao_pendente" | "pagamento_em_aberto" | "reserva_expirada" | "falha";
+      mensagem: string;
+    };
 
 const NAO_ENCONTRADO = {
   ok: false,
@@ -28,7 +34,40 @@ export async function iniciarPagamento(
   const agora = opcoes.agora ?? new Date();
   const pedido = await lerPedido(numero, contexto, agora);
   if (!pedido) return NAO_ENCONTRADO;
+  if (pedido.situacao !== "PENDENTE")
+    return { ok: false, erro: "nao_pendente", mensagem: "Este pedido não aguarda pagamento." };
+  // RN06: Pix ou boleto emitido segura as unidades até vencer; outra cobrança do mesmo pedido
+  // abriria a porta para pagar duas vezes.
+  const emAberto = await obterPrisma().payment.count({
+    where: { status: "PENDENTE", order: { number: pedido.numero } },
+  });
+  if (emAberto > 0)
+    return {
+      ok: false,
+      erro: "pagamento_em_aberto",
+      mensagem: "Este pedido já tem um pagamento aguardando confirmação.",
+    };
+  // RN03: sem unidades presas, pagar agora poderia vender o que já voltou à vitrine.
+  if (!pedido.reservaExpiraEm)
+    return {
+      ok: false,
+      erro: "reserva_expirada",
+      mensagem: "A reserva das obras expirou. Finalize de novo pelo carrinho.",
+    };
   const preferencia = montarPreferencia(pedido, opcoes.appUrl ?? process.env.APP_URL ?? "");
   if (!preferencia.ok) return { ok: false, erro: "falha", mensagem: preferencia.mensagem };
-  return { ok: true, dados: await opcoes.gateway.criarPreferencia(preferencia.dados) };
+  try {
+    return { ok: true, dados: await opcoes.gateway.criarPreferencia(preferencia.dados) };
+  } catch (erro) {
+    // Só o tipo do erro: a resposta do provedor pode trazer dados do pedido ou da conta.
+    console.error(
+      "Falha ao criar a preferência no Mercado Pago",
+      erro instanceof Error ? erro.name : "erro desconhecido",
+    );
+    return {
+      ok: false,
+      erro: "falha",
+      mensagem: "Não foi possível abrir o pagamento agora. Tente de novo em instantes.",
+    };
+  }
 }
