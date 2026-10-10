@@ -77,7 +77,7 @@ it("RF13 o dono do pedido pendente com reserva ativa recebe o checkout do Mercad
         },
       ],
       expires: true,
-      expiration_date_to: "2026-10-10T15:08:00.000Z",
+      expiration_date_to: "2026-10-10T12:08:00.000-03:00",
       notification_url: "https://kolo.com.br/api/webhooks/mercadopago",
     }),
   ]);

@@ -52,7 +52,7 @@ it("RF13 a preferência leva o número do pedido, os itens gravados em reais e f
       auto_return: "approved",
       notification_url: "https://kolo.com.br/api/webhooks/mercadopago",
       expires: true,
-      expiration_date_to: "2026-10-10T15:08:00.000Z",
+      expiration_date_to: "2026-10-10T12:08:00.000-03:00",
     },
   });
 });

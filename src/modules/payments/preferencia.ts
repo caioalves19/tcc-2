@@ -14,6 +14,13 @@ export type CorpoPreferencia = {
 export type ResultadoPreferencia =
   { ok: true; dados: CorpoPreferencia } | { ok: false; erro: "invalido"; mensagem: string };
 
+// A documentação do Mercado Pago só mostra datas com deslocamento explícito; Brasília é UTC-3 o
+// ano todo desde 2019, então o "Z" do toISOString vira -03:00 sem depender do fuso do servidor.
+const UTC_MENOS_3_MS = 3 * 60 * 60 * 1000;
+function horarioDeBrasilia(data: Date): string {
+  return new Date(data.getTime() - UTC_MENOS_3_MS).toISOString().replace("Z", "-03:00");
+}
+
 // RF13: o Checkout Pro cobra exatamente o que o pedido gravou (cópia de título e preço), e a
 // preferência deixa de aceitar pagamento novo no prazo para pagar.
 export function montarPreferencia(pedido: PedidoResumo, appUrl: string): ResultadoPreferencia {
@@ -44,7 +51,7 @@ export function montarPreferencia(pedido: PedidoResumo, appUrl: string): Resulta
       back_urls: { success: retorno, pending: retorno, failure: retorno },
       ...publico,
       expires: true,
-      expiration_date_to: prazo.toISOString(),
+      expiration_date_to: horarioDeBrasilia(prazo),
     },
   };
 }
