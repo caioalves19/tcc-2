@@ -78,7 +78,7 @@ Variáveis no `.env` (documentadas no `.env.example`, nunca versionadas):
 
 | Variável | Valor |
 |----------|-------|
-| `MP_ACCESS_TOKEN` | Access Token do **vendedor de teste** (sandbox) ou da conta real (produção). Sem ela o app sobe, mas o pagamento responde com erro. |
+| `MP_ACCESS_TOKEN` | Access Token do **vendedor de teste** (sandbox) ou da conta real (produção). Sem ela o app sobe, mas o pagamento responde com erro. **Token da conta real só depois do PBI-28:** até o webhook existir, `/api/webhooks/mercadopago` responde 404, o pagamento real é cobrado e o pedido fica `PENDENTE` até a reserva vencer e as obras voltarem à vitrine. |
 | `APP_URL` | URL pública do app. Em produção o servidor não sobe sem `https://` (`verificarAmbienteDeProducao`). Para receber webhook em desenvolvimento, use um túnel https (ngrok/cloudflared). |
 
 ### Credenciais de sandbox
@@ -150,6 +150,8 @@ Fluxo do painel em 10/10/2026 (Mercado Pago Developers):
 - O webhook encontra o pedido por `external_reference` (número), consulta o pagamento na API,
   grava o `payment` e, para Pix/boleto pendente, chama `prorrogarReserva` (ver PBI-25).
 - `MP_WEBHOOK_SECRET` e a validação de `x-signature` ficam com o PBI-28.
+- **Produção:** o PBI-27 sozinho só vai ao ar com token de sandbox. O `MP_ACCESS_TOKEN` da conta
+  real entra junto com o webhook do PBI-28; antes disso, nenhum pagamento real seria confirmado.
 - **Riscos que o PBI-27 não fecha (achado 1 da revisão).** Até o webhook chegar, um pedido em
   pagamento parece abandonado: `PENDENTE` e sem `payment`. Por isso:
   - um novo checkout da mesma conta cancela esse pedido e solta a reserva (regra do PBI-26),
