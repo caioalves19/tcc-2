@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { unstable_rethrow } from "next/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatarPreco } from "@/modules/catalog/cliente";
 import type { PedidoResumo, SituacaoPedido } from "@/modules/orders";
@@ -12,6 +13,15 @@ const SITUACAO: Record<SituacaoPedido, string> = {
   ENVIADO: "Enviado",
   ENTREGUE: "Entregue",
   CANCELADO: "Pedido cancelado",
+};
+
+type Recusa = { ok: false; erro: string; mensagem: string };
+type Props = {
+  pedido: PedidoResumo;
+  // Server Action: em sucesso redireciona para o Checkout Pro; só volta quando recusa.
+  pagar: (numero: string) => Promise<Recusa>;
+  // Chegou pelas back_urls do Checkout Pro. Só muda o aviso: quem confirma é o webhook (RN05).
+  voltouDoPagamento?: boolean;
 };
 
 function restanteDe(expiraEm: Date | null): number {
@@ -26,9 +36,29 @@ function mmss(ms: number): string {
 
 // RN03: as unidades ficam presas por 10 minutos. O cronômetro só informa; quem solta a
 // reserva é o servidor (PBI-25), não esta tela.
-export function PedidoCheckout({ pedido }: { pedido: PedidoResumo }) {
+export function PedidoCheckout({ pedido, pagar, voltouDoPagamento = false }: Props) {
   const [restante, setRestante] = useState(() => restanteDe(pedido.reservaExpiraEm));
+  const [abrindo, setAbrindo] = useState(false);
+  const [recusa, setRecusa] = useState<Recusa | null>(null);
   const pendente = pedido.situacao === "PENDENTE";
+
+  async function abrirPagamento() {
+    setAbrindo(true);
+    setRecusa(null);
+    try {
+      setRecusa(await pagar(pedido.numero));
+    } catch (falha) {
+      // O redirect para o Mercado Pago chega como erro interno do Next e precisa seguir adiante.
+      unstable_rethrow(falha);
+      setRecusa({
+        ok: false,
+        erro: "falha",
+        mensagem: "Não foi possível abrir o pagamento agora. Tente de novo em instantes.",
+      });
+    } finally {
+      setAbrindo(false);
+    }
+  }
 
   useEffect(() => {
     if (!pendente || !pedido.reservaExpiraEm) return;
@@ -45,6 +75,18 @@ export function PedidoCheckout({ pedido }: { pedido: PedidoResumo }) {
       </h1>
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="grid content-start gap-6">
+          {pendente && voltouDoPagamento && (
+            <div
+              role="status"
+              className="grid gap-2 rounded-card border-2 border-neutro-grafite p-5"
+            >
+              <p className="font-display uppercase">Estamos confirmando seu pagamento</p>
+              <p>
+                Assim que o Mercado Pago aprovar, o pedido passa para Pago. Com Pix ou boleto, a
+                confirmação chega depois que o pagamento é compensado.
+              </p>
+            </div>
+          )}
           {pendente && restante > 0 && (
             <div
               role="timer"
@@ -124,11 +166,22 @@ export function PedidoCheckout({ pedido }: { pedido: PedidoResumo }) {
           </dl>
           {pendente && restante > 0 && (
             <>
-              {/* O Checkout Pro do Mercado Pago entra no PBI-27. */}
-              <Button type="button" size="lg" disabled>
-                Pagar com Mercado Pago
+              {recusa && (
+                <p role="alert" className="text-destructive">
+                  {recusa.mensagem}
+                </p>
+              )}
+              <Button
+                type="button"
+                size="lg"
+                disabled={abrindo}
+                onClick={() => void abrirPagamento()}
+              >
+                {abrindo ? "Abrindo o pagamento…" : "Pagar com Mercado Pago"}
               </Button>
-              <p className="text-nota">O pagamento online estará disponível em breve.</p>
+              <p className="text-nota">
+                Você paga com Pix, cartão ou boleto no ambiente seguro do Mercado Pago.
+              </p>
             </>
           )}
         </aside>
