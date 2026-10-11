@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import { WizardAgendamento } from "../../src/components/scheduling/wizard-agendamento";
@@ -61,3 +61,37 @@ it.each(AVISOS)(
     expect(caixa(nomeFaltando).getAttribute("aria-invalid")).toBe("true");
   },
 );
+
+it("RF21 envia os três aceites à revisão e os preserva ao voltar e editar", async () => {
+  const revisar = vi.fn().mockImplementation(async (dados) => ({
+    ok: true,
+    dados: { ...dados, preferenciaEm: "2099-10-18T17:30:00.000Z" },
+  }));
+  render(<WizardAgendamento opcoes={opcoes} revisar={revisar} />);
+  const usuario = await irParaAvisos();
+  for (const [, nome] of AVISOS) await usuario.click(caixa(nome));
+  await usuario.click(screen.getByRole("button", { name: "Voltar" }));
+  await usuario.click(screen.getByRole("button", { name: "Avançar" }));
+  for (const [, nome] of AVISOS) expect(caixa(nome).checked).toBe(true);
+  await usuario.click(screen.getByRole("button", { name: "Revisar preferências" }));
+  await waitFor(() =>
+    expect(screen.getByRole("heading", { name: "Revise suas preferências" })).toBeTruthy(),
+  );
+  expect(revisar).toHaveBeenCalledWith(
+    expect.objectContaining({ aceites: { anamnese: true, termo: true, maioridade: true } }),
+  );
+  await usuario.click(screen.getByRole("button", { name: "Editar preferências" }));
+  expect(screen.getByRole("heading", { name: "7. Avisos" })).toBeTruthy();
+  for (const [, nome] of AVISOS) expect(caixa(nome).checked).toBe(true);
+});
+
+it("RF23–RF25 desmarcar um aviso volta a bloquear a revisão", async () => {
+  const revisar = vi.fn();
+  render(<WizardAgendamento opcoes={opcoes} revisar={revisar} />);
+  const usuario = await irParaAvisos();
+  for (const [, nome] of AVISOS) await usuario.click(caixa(nome));
+  await usuario.click(caixa(AVISOS[1][1]));
+  await usuario.click(screen.getByRole("button", { name: "Revisar preferências" }));
+  expect(revisar).not.toHaveBeenCalled();
+  expect(document.activeElement).toBe(caixa(AVISOS[1][1]));
+});
