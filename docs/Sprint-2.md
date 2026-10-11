@@ -537,9 +537,22 @@ Implementação em `/agendamento`, com tamanhos de `SizeTier`. Contrato, testes 
 
 **Referências:** RF23–RF25; RNF18 · **Prioridade:** P0 · **Deps:** PBI-31.
 
-- [ ] Exibir avisos e exigir aceites de anamnese presencial, termo presencial e declaração de maioridade
-- [ ] Bloquear conclusão se qualquer aceite estiver ausente
-- [ ] Testar cada bloqueio sem coletar ou persistir respostas clínicas
+- [x] Exibir avisos e exigir aceites de anamnese presencial, termo presencial e declaração de maioridade
+- [x] Bloquear conclusão se qualquer aceite estiver ausente
+- [x] Testar cada bloqueio sem coletar ou persistir respostas clínicas
+
+**Decisões:**
+
+- Etapa 7 "Avisos" no wizard, entre a Preferência e a revisão, com os textos da tela `wizard-7-avisos`.
+- O servidor também exige os três aceites (`z.literal(true)`) e os devolve em `PreferenciaWizard` para o PBI-33. Nada é gravado (RNF18), sem migração.
+- Sem algum aceite: erro com `role="alert"` e foco no primeiro aviso desmarcado, como nas outras etapas.
+- Contrato completo em [PBI-32](features/PBI-32.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-32-checks`, com conferência no navegador. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+
+**Pendências para os próximos PBIs:**
+
+- PBI-33: ler `aceites` de `PreferenciaWizard` para a mensagem do `wa.me` e habilitar "Continuar para confirmação".
 
 ### PBI-33 — Conclusão pelo WhatsApp e integração da home
 
