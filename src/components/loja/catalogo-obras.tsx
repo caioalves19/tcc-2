@@ -4,6 +4,9 @@ import { SeletorOrdem } from "@/components/loja/seletor-ordem";
 import type { PaginaCatalogo } from "@/modules/catalog";
 import { hrefCatalogo, OBRAS_POR_PAGINA } from "@/modules/catalog/cliente";
 
+// RNF13: a primeira linha da grade (4 colunas no desktop) aparece sem rolar a página.
+const CARDS_ACIMA_DA_DOBRA = 4;
+
 type Props = PaginaCatalogo & {
   // URL pública do R2 (R2_PUBLIC_URL); sem ela, as fotos viram espaço reservado.
   baseImagens: string | null;
@@ -87,8 +90,13 @@ export function CatalogoObras({
             {busca && ` para “${busca}”`}
           </p>
           <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {obras.map((obra) => (
-              <CardObra key={obra.slug} obra={obra} baseImagens={baseImagens} />
+            {obras.map((obra, i) => (
+              <CardObra
+                key={obra.slug}
+                obra={obra}
+                baseImagens={baseImagens}
+                prioridade={i < CARDS_ACIMA_DA_DOBRA}
+              />
             ))}
           </div>
           {totalPaginas > 1 && (

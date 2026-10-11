@@ -3,8 +3,17 @@ import type { CardObra as DadosCard } from "@/modules/catalog";
 import { formatarPreco } from "@/modules/catalog/cliente";
 
 // Card da vitrine (PBI-20, "Outras obras do artista"); o catálogo (PBI-19) pode reaproveitar.
-// O cartão inteiro é clicável pelo link do título, sem link aninhado.
-export function CardObra({ obra, baseImagens }: { obra: DadosCard; baseImagens: string | null }) {
+// O cartão inteiro é clicável pelo link do título, sem link aninhado. `prioridade` carrega a
+// imagem sem lazy: só para os cards acima da dobra, cuja foto costuma ser o LCP da página.
+export function CardObra({
+  obra,
+  baseImagens,
+  prioridade = false,
+}: {
+  obra: DadosCard;
+  baseImagens: string | null;
+  prioridade?: boolean;
+}) {
   const base = baseImagens?.replace(/\/+$/, "") ?? null;
   const ficha = [obra.dimensoes, obra.tecnica].filter(Boolean).join(" · ");
   return (
@@ -16,6 +25,8 @@ export function CardObra({ obra, baseImagens }: { obra: DadosCard; baseImagens: 
             alt={obra.imagem.textoAlternativo}
             fill
             sizes="(min-width: 1024px) 22vw, (min-width: 640px) 45vw, 100vw"
+            loading={prioridade ? "eager" : "lazy"}
+            fetchPriority={prioridade ? "high" : "auto"}
             className={`object-cover ${obra.disponivel ? "" : "opacity-60 grayscale"}`}
           />
         ) : (
