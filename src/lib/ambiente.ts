@@ -4,6 +4,7 @@ type Ambiente = {
   NODE_ENV?: string;
   BETTER_AUTH_URL?: string;
   APP_URL?: string;
+  MP_WEBHOOK_SECRET?: string;
   RESEND_API_KEY?: string;
   EMAIL_REMETENTE?: string;
 };
@@ -23,6 +24,12 @@ export function verificarAmbienteDeProducao(ambiente: Ambiente): void {
   if (ambiente.NODE_ENV === "production" && !ambiente.APP_URL?.trim().startsWith("https://")) {
     throw new Error(
       "APP_URL precisa ser https em produção: sem isso o Mercado Pago não notifica os pagamentos.",
+    );
+  }
+  // RF14/RNF11 (PBI-28): sem o segredo, nenhuma assinatura confere e o webhook recusa todo aviso.
+  if (ambiente.NODE_ENV === "production" && !ambiente.MP_WEBHOOK_SECRET?.trim()) {
+    throw new Error(
+      "MP_WEBHOOK_SECRET ausente em produção: o webhook não confirmaria nenhum pagamento.",
     );
   }
 }
