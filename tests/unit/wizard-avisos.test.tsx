@@ -95,3 +95,13 @@ it("RF23–RF25 desmarcar um aviso volta a bloquear a revisão", async () => {
   expect(revisar).not.toHaveBeenCalled();
   expect(document.activeElement).toBe(caixa(AVISOS[1][1]));
 });
+
+it("RF23–RF25 sem nenhum aceite leva o foco ao primeiro aviso e marca os três como inválidos", async () => {
+  const revisar = vi.fn();
+  render(<WizardAgendamento opcoes={opcoes} revisar={revisar} />);
+  const usuario = await irParaAvisos();
+  await usuario.click(screen.getByRole("button", { name: "Revisar preferências" }));
+  expect(revisar).not.toHaveBeenCalled();
+  expect(document.activeElement).toBe(caixa(AVISOS[0][1]));
+  for (const [, nome] of AVISOS) expect(caixa(nome).getAttribute("aria-invalid")).toBe("true");
+});

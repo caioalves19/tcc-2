@@ -64,6 +64,10 @@ it("bloqueia edição durante revisão e preserva preferências quando o servido
   expect(
     screen.getByRole("button", { name: "Revisar preferências" }).hasAttribute("disabled"),
   ).toBe(false);
+  await usuario.click(screen.getByRole("button", { name: "Voltar" }));
+  expect((screen.getByLabelText("Data de preferência") as HTMLInputElement).value).toBe(
+    "2099-10-18",
+  );
 });
 
 it("RF20 navega pelas sete etapas, preserva dados e apresenta resumo sem concluir agendamento", async () => {

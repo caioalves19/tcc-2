@@ -62,7 +62,7 @@ Seams: `validarDadosWizard`, `revisarPreferenciaWizard` (Server Action) e `Wizar
   os aceites a Server Action recusa e `appointment` continua vazia.
 
 Evidências (11/10/2026): `npm run lint` e `npm run typecheck` sem erros; `npm test` com 83 arquivos
-e 370 testes; `npm run test:integration` com 26 arquivos e 153 testes; `npm run build -- --webpack`
+e 371 testes; `npm run test:integration` com 26 arquivos e 153 testes; `npm run build -- --webpack`
 concluído. No navegador (`next dev`, banco local com um estilo temporário ligado ao artista do seed
 e removido depois): revisar sem aceites mostrou o alerta, levou o foco ao aviso de anamnese e marcou
 os três como inválidos; com os três marcados, o servidor devolveu a revisão; em 320 px os avisos
