@@ -9,7 +9,13 @@ import { lerPagamento, type PagamentoLido, type SituacaoPagamento } from "./leit
 // Porta da consulta: o webhook só confia na situação que a API de pagamentos devolve (RN05).
 export type ConsultaPagamento = { consultarPagamento(id: string): Promise<unknown | null> };
 
-export type RequisicaoNotificacao = { url: string; cabecalhos: Headers; corpo: unknown };
+// O corpo é lido sob demanda: só depois de a assinatura (que depende só da URL e dos cabeçalhos)
+// conferir, para um POST anônimo não custar o parse do corpo.
+export type RequisicaoNotificacao = {
+  url: string;
+  cabecalhos: Headers;
+  lerCorpo(): Promise<unknown>;
+};
 export type OpcoesNotificacao = { gateway: ConsultaPagamento; segredo: string; agora?: Date };
 export type RespostaNotificacao = { status: 200 | 401 | 500 };
 
@@ -216,7 +222,7 @@ export async function processarNotificacao(
     segredo: opcoes.segredo,
   });
   if (!assinada || !idDado) return { status: 401 };
-  const corpo = schemaCorpo.safeParse(requisicao.corpo);
+  const corpo = schemaCorpo.safeParse(await requisicao.lerCorpo());
   const aviso = corpo.success ? corpo.data : {};
   // Só avisos de pagamento mudam o pedido; os demais (merchant_order etc.) só confirmam o recebimento.
   const tipo = parametros.get("type") ?? aviso.type;

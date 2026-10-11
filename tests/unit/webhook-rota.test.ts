@@ -35,11 +35,23 @@ it("RF14 repassa URL, cabeçalhos e corpo do aviso e responde com o status do pr
 
   expect(resposta.status).toBe(200);
   expect(mocks.processar).toHaveBeenCalledWith(
-    { url: URL_AVISO, cabecalhos: expect.any(Headers), corpo },
+    { url: URL_AVISO, cabecalhos: expect.any(Headers), lerCorpo: expect.any(Function) },
     { gateway: mocks.gateway, segredo: "segredo-do-webhook" },
   );
-  const [{ cabecalhos }] = mocks.processar.mock.calls[0] as [{ cabecalhos: Headers }];
+  const [{ cabecalhos, lerCorpo }] = mocks.processar.mock.calls[0] as [
+    { cabecalhos: Headers; lerCorpo: () => Promise<unknown> },
+  ];
   expect(cabecalhos.get("x-signature")).toBe("ts=1,v1=abc");
+  expect(await lerCorpo()).toEqual(corpo);
+});
+
+it("RNF11 o corpo só é lido por quem processa: recusado pela assinatura, nem é lido", async () => {
+  mocks.processar.mockResolvedValue({ status: 401 });
+  const anonimo = new Request(URL_AVISO, { method: "POST", body: "x".repeat(100_000) });
+
+  await POST(anonimo);
+
+  expect(anonimo.bodyUsed).toBe(false);
 });
 
 it.each([401, 500])("RNF11 devolve %i ao Mercado Pago quando o processamento pede", async (s) => {
@@ -48,13 +60,11 @@ it.each([401, 500])("RNF11 devolve %i ao Mercado Pago quando o processamento ped
   expect(resposta.status).toBe(s);
 });
 
-it("RF14 corpo que não é JSON segue sem corpo; a assinatura decide", async () => {
-  mocks.processar.mockResolvedValue({ status: 401 });
+it("RF14 corpo que não é JSON é lido como vazio", async () => {
+  mocks.processar.mockResolvedValue({ status: 200 });
   await POST(new Request(URL_AVISO, { method: "POST", body: "não é json" }));
-  expect(mocks.processar).toHaveBeenCalledWith(
-    expect.objectContaining({ corpo: null }),
-    expect.anything(),
-  );
+  const [{ lerCorpo }] = mocks.processar.mock.calls[0] as [{ lerCorpo: () => Promise<unknown> }];
+  expect(await lerCorpo()).toBeNull();
 });
 
 it("RNF11 sem MP_WEBHOOK_SECRET responde 500 sem processar, para o Mercado Pago reenviar", async () => {

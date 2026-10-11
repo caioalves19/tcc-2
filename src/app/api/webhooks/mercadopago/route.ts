@@ -9,9 +9,12 @@ export async function POST(request: Request): Promise<Response> {
     console.error("MP_WEBHOOK_SECRET não configurado");
     return new Response(null, { status: 500 });
   }
-  const corpo: unknown = await request.json().catch(() => null);
   const { status } = await processarNotificacao(
-    { url: request.url, cabecalhos: request.headers, corpo },
+    {
+      url: request.url,
+      cabecalhos: request.headers,
+      lerCorpo: () => request.json().catch(() => null),
+    },
     { gateway: gatewayMercadoPago(), segredo },
   );
   return new Response(null, { status });

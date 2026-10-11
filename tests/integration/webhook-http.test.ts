@@ -31,6 +31,7 @@ it("RNF11 notificação com assinatura inválida responde 401 e não consulta ne
   ).toEqual({ status: 401 });
 
   expect(gateway.consultados).toEqual([]);
+  expect(forjada.corpoLido).toBe(0);
   const final = await estado("20261011-FORJA1", obra);
   expect(final).toMatchObject({ situacao: "PENDENTE", estoque: 2, pagamentos: [] });
 });
@@ -58,7 +59,7 @@ it("RNF11 avisos sem id no corpo não se confundem: cada requisição é um even
   });
   const semId = (idPagamento: string) => {
     const aviso = notificacao(idPagamento);
-    aviso.corpo = { type: "payment", data: { id: idPagamento } } as typeof aviso.corpo;
+    aviso.corpo = { type: "payment", data: { id: idPagamento } };
     return aviso;
   };
   const opcoes = { gateway, segredo: SEGREDO, agora: AGORA };
@@ -165,7 +166,7 @@ it.each(["payment", "merchant_order"])(
     const ipn = {
       url: `https://kolo.test/api/webhooks/mercadopago?id=183623486996&topic=${topico}`,
       cabecalhos: new Headers(),
-      corpo: { resource: "183623486996", topic: topico },
+      lerCorpo: async () => ({ resource: "183623486996", topic: topico }),
     };
 
     expect(await processarNotificacao(ipn, { gateway, segredo: SEGREDO, agora: AGORA })).toEqual({

@@ -13,14 +13,15 @@ export const RESERVA_ATE = "2026-10-11T15:10:00.000Z";
 export const SEGREDO = "segredo-do-webhook-de-teste";
 
 // Notificação como o Mercado Pago manda: data.id na URL e no corpo, assinada com o segredo
-// (HMAC-SHA256 de "id:...;request-id:...;ts:...;").
+// (HMAC-SHA256 de "id:...;request-id:...;ts:...;"). O corpo é lido sob demanda, como no Route
+// Handler, e `corpoLido` conta quantas vezes ele foi lido.
 export function notificacao(idPagamento: string, idNotificacao: string = randomUUID()) {
   const idRequisicao = randomUUID();
   const ts = "1760194800";
   const v1 = createHmac("sha256", SEGREDO)
     .update(`id:${idPagamento};request-id:${idRequisicao};ts:${ts};`)
     .digest("hex");
-  return {
+  const aviso = {
     url: `https://kolo.test/api/webhooks/mercadopago?data.id=${idPagamento}&type=payment`,
     cabecalhos: new Headers({ "x-signature": `ts=${ts},v1=${v1}`, "x-request-id": idRequisicao }),
     corpo: {
@@ -29,8 +30,14 @@ export function notificacao(idPagamento: string, idNotificacao: string = randomU
       action: "payment.updated",
       data: { id: idPagamento },
       live_mode: false,
+    } as Record<string, unknown>,
+    corpoLido: 0,
+    async lerCorpo(): Promise<unknown> {
+      aviso.corpoLido++;
+      return aviso.corpo;
     },
   };
+  return aviso;
 }
 
 // Resposta do GET /v1/payments/{id}: cartão aprovado de R$ 9.600,00 para o pedido.
