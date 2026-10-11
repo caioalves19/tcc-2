@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { assinaturaValida } from "../../src/modules/payments";
 
 // HMAC-SHA256 de "id:123456;request-id:bb56a2f1-...;ts:1742505638683;" com "segredo-de-teste",
@@ -10,6 +10,10 @@ const VALIDA = {
   idDado: "123456",
   segredo: "segredo-de-teste",
 };
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 it("RNF11 aceita a notificação assinada pelo Mercado Pago com o segredo do Kolô", () => {
   expect(assinaturaValida(VALIDA)).toBe(true);
@@ -25,5 +29,16 @@ it.each([
   ["sem v1", { assinatura: "ts=1742505638683" }],
   ["cabeçalho malformado", { assinatura: "qualquer-coisa" }],
 ])("RNF11 recusa a notificação com %s", (_caso, troca) => {
+  vi.spyOn(console, "warn").mockImplementation(() => {});
   expect(assinaturaValida({ ...VALIDA, ...troca })).toBe(false);
+});
+
+it("RNF11 a recusa vai para o log com o motivo e o x-request-id, sem o segredo", () => {
+  const log = vi.spyOn(console, "warn").mockImplementation(() => {});
+  assinaturaValida({ ...VALIDA, segredo: "outro-segredo" });
+  expect(log).toHaveBeenCalledWith(
+    "Assinatura do webhook recusada",
+    "SignatureMismatch",
+    "bb56a2f1-6aae-46ac-982e-9dcd3581d08e",
+  );
 });

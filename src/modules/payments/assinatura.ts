@@ -1,4 +1,4 @@
-import { WebhookSignatureValidator } from "mercadopago";
+import { InvalidWebhookSignatureError, WebhookSignatureValidator } from "mercadopago";
 
 export type DadosAssinatura = {
   assinatura: string | null;
@@ -18,7 +18,13 @@ export function assinaturaValida(dados: DadosAssinatura): boolean {
       secret: dados.segredo,
     });
     return true;
-  } catch {
+  } catch (erro) {
+    // O motivo e o x-request-id localizam o aviso no painel do Mercado Pago; nunca o segredo.
+    console.warn(
+      "Assinatura do webhook recusada",
+      erro instanceof InvalidWebhookSignatureError ? erro.reason : "erro desconhecido",
+      dados.idRequisicao,
+    );
     return false;
   }
 }
