@@ -1,4 +1,6 @@
 export { assinaturaValida } from "./assinatura";
+export { lerPagamento } from "./leitura";
+export type { MeioPagamento, PagamentoLido, ResultadoLeitura, SituacaoPagamento } from "./leitura";
 export { iniciarPagamento } from "./pagamento";
 export { gatewayMercadoPago } from "./mercado-pago";
 export type { GatewayPagamento, OpcoesPagamento, ResultadoPagamento } from "./pagamento";
