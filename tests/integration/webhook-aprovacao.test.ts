@@ -1,3 +1,4 @@
+import { Client } from "pg";
 import { expect, it, vi } from "vitest";
 import {
   cenarioWebhook,
@@ -312,3 +313,58 @@ it.each([
   expect(pagamentos.rowCount).toBe(0);
   expect(log).toHaveBeenCalledWith("Pagamento sem pedido no Kolô", idPagamento);
 });
+
+// Espera até `quantas` consultas deste banco estarem paradas numa trava de linha.
+async function esperandoTrava(quantas: number, limiteMs = 10_000) {
+  const ate = Date.now() + limiteMs;
+  while (Date.now() < ate) {
+    const { rows } = await cenario.db.query(
+      `SELECT count(*)::int AS n FROM pg_stat_activity
+        WHERE datname = current_database() AND wait_event_type = 'Lock'`,
+    );
+    if (rows[0].n >= quantas) return true;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  return false;
+}
+
+it("RN05 'Finalizar' da mesma conta durante a aprovação não cancela o pedido que acabou de ser pago", async () => {
+  const { processarNotificacao } = await import("../../src/modules/payments");
+  const { finalizarCompra } = await import("../../src/modules/orders");
+  const { obra, cliente, pedidoId } = await pedidoPendente(
+    "t5-checkout",
+    "20261011-CORRI1",
+    "corrida@pbi28.test",
+    4,
+  );
+  const outra = await cenario.fabrica.obraPublicada("t5-checkout-outra", "100,00", 1);
+  await itensNoCarrinho(cliente, outra);
+  const gateway = gatewayDeTeste({ "700051": pagamentoMp("700051", "20261011-CORRI1") });
+
+  // Ordem fixada: o aviso fica parado na trava do pedido (já com a do usuário) e o checkout
+  // chega depois, enquanto o pedido ainda está PENDENTE e sem pagamento em aberto. A trava vem
+  // de outra conexão: dentro de uma transação, o pg_stat_activity não se atualiza.
+  const trava = new Client({ connectionString: process.env.DATABASE_URL });
+  await trava.connect();
+  try {
+    await trava.query("BEGIN");
+    await trava.query('SELECT id FROM "order" WHERE id = $1 FOR UPDATE', [pedidoId]);
+    const aviso = processarNotificacao(notificacao("700051"), {
+      gateway,
+      segredo: SEGREDO,
+      agora: AGORA,
+    });
+    expect(await esperandoTrava(1)).toBe(true);
+    const checkout = finalizarCompra({ modalidade: "RETIRADA" }, cliente, { agora: AGORA });
+    await Promise.race([checkout, esperandoTrava(2)]);
+    await trava.query("ROLLBACK");
+
+    expect(await aviso).toEqual({ status: 200 });
+    expect(await checkout).toMatchObject({ ok: true });
+  } finally {
+    await trava.end();
+  }
+  const final = await estado("20261011-CORRI1", obra);
+  expect(final).toMatchObject({ situacao: "PAGO", pagoEm: AGORA, estoque: 2 });
+  expect(final.pagamentos).toMatchObject([{ id_externo: "700051", situacao: "APROVADO" }]);
+}, 30_000);
