@@ -3,7 +3,7 @@ import type { Prisma } from "../../../generated/prisma/client";
 import { obterPrisma } from "../../lib/prisma";
 import { baixarEstoque } from "../orders/index";
 import { assinaturaValida } from "./assinatura";
-import { lerPagamento, type PagamentoLido } from "./leitura";
+import { lerPagamento, type PagamentoLido, type SituacaoPagamento } from "./leitura";
 
 // Porta da consulta: o webhook só confia na situação que a API de pagamentos devolve (RN05).
 export type ConsultaPagamento = { consultarPagamento(id: string): Promise<unknown> };
@@ -18,27 +18,47 @@ const schemaCorpo = z.object({ id: z.union([z.string(), z.number()]).nullish() }
 
 type Tx = Prisma.TransactionClient;
 
+// Pendente vira aprovado ou recusado, que só viram estornado.
+const ORDEM: Record<SituacaoPagamento, number> = {
+  PENDENTE: 0,
+  APROVADO: 1,
+  RECUSADO: 1,
+  ESTORNADO: 2,
+};
+
 // RF14/RN05: com o pagamento aprovado, o pedido vai a PAGO, o estoque baixa e as obras saem do
 // carrinho, tudo na mesma transação do evento (RNF11).
 async function aplicar(tx: Tx, pagamento: PagamentoLido, idEvento: string, agora: Date) {
-  await tx.webhookEvent.create({
+  // RNF11: aviso já visto não faz nada. Um reenvio simultâneo espera aqui o primeiro terminar a
+  // transação; se o primeiro foi desfeito, este processa no lugar dele.
+  const { count } = await tx.webhookEvent.createMany({
     data: { eventId: idEvento, source: PROVEDOR, payload: pagamento.registro, processedAt: agora },
+    skipDuplicates: true,
   });
+  if (count === 0) return;
+  const numero = pagamento.numeroPedido ?? "";
+  const dono = await tx.order.findUniqueOrThrow({ where: { number: numero } });
+  // Mesma ordem de travas do checkout (usuário → pedido → sessão → obras): avisos do mesmo
+  // pedido, e um checkout da mesma conta, se enfileiram aqui.
+  await tx.$queryRaw`SELECT id FROM "user" WHERE id = ${dono.userId}::uuid FOR UPDATE`;
+  await tx.$queryRaw`SELECT id FROM "order" WHERE id = ${dono.id}::uuid FOR UPDATE`;
   const pedido = await tx.order.findUniqueOrThrow({
-    where: { number: pagamento.numeroPedido ?? "" },
+    where: { id: dono.id },
     include: { items: true },
   });
-  await tx.payment.create({
-    data: {
-      orderId: pedido.id,
-      provider: PROVEDOR,
-      externalId: pagamento.idExterno,
-      method: pagamento.meio,
-      status: pagamento.situacao,
-      amountCents: pagamento.valorCentavos,
-      payload: pagamento.registro,
-    },
-  });
+
+  const chave = { provider: PROVEDOR, externalId: pagamento.idExterno };
+  const anterior = await tx.payment.findUnique({ where: { provider_externalId: chave } });
+  // Avisos fora de ordem: a situação do pagamento nunca volta atrás.
+  if (anterior && ORDEM[anterior.status] >= ORDEM[pagamento.situacao]) return;
+  const dados = {
+    method: pagamento.meio,
+    status: pagamento.situacao,
+    amountCents: pagamento.valorCentavos,
+    payload: pagamento.registro,
+  };
+  if (anterior) await tx.payment.update({ where: { id: anterior.id }, data: dados });
+  else await tx.payment.create({ data: { ...chave, orderId: pedido.id, ...dados } });
   if (pagamento.situacao !== "APROVADO") return;
   const itens = pedido.items.map((i) => ({ obraId: i.artworkId, quantidade: i.quantity }));
   await tx.order.update({ where: { id: pedido.id }, data: { status: "PAGO", paidAt: agora } });

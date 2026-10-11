@@ -115,8 +115,8 @@ async function estado(numero: string, obra: string) {
   };
 }
 
-async function pedidoPendente(slug: string, numero: string, email: string) {
-  const obra = await fabrica.obraPublicada(slug, "4.800,00", 2);
+async function pedidoPendente(slug: string, numero: string, email: string, estoque = 2) {
+  const obra = await fabrica.obraPublicada(slug, "4.800,00", estoque);
   const cliente = await fabrica.novoCliente(email);
   const pedidoId = await fabrica.pedidoDeTeste(cliente, {
     numero,
@@ -270,4 +270,53 @@ it("RF13 aprovação com saldo da conta Mercado Pago grava o meio certo e paga o
       payload: { payment_type_id: "account_money", payment_method_id: "account_money" },
     },
   ]);
+});
+
+it("RNF11 o mesmo aviso reenviado é processado uma vez só", async () => {
+  const { processarNotificacao } = await import("../../src/modules/payments");
+  const { obra } = await pedidoPendente("t5-reenvio", "20261011-REENV1", "reenvio@pbi28.test", 4);
+  const gateway = gatewayDeTeste({ "700004": pagamentoMp("700004", "20261011-REENV1") });
+  const aviso = notificacao("700004", "aviso-700004");
+  const opcoes = { gateway, segredo: SEGREDO, agora: AGORA };
+
+  expect(await processarNotificacao(aviso, opcoes)).toEqual({ status: 200 });
+  expect(await processarNotificacao(aviso, opcoes)).toEqual({ status: 200 });
+
+  const final = await estado("20261011-REENV1", obra);
+  expect(final).toMatchObject({ situacao: "PAGO", estoque: 2 });
+  expect(final.pagamentos).toHaveLength(1);
+});
+
+it("RNF11 dois avisos diferentes da mesma aprovação, ao mesmo tempo, baixam o estoque uma vez", async () => {
+  const { processarNotificacao } = await import("../../src/modules/payments");
+  const { obra } = await pedidoPendente("t5-paralelo", "20261011-PARAL1", "paralelo@pbi28.test", 4);
+  const gateway = gatewayDeTeste({ "700005": pagamentoMp("700005", "20261011-PARAL1") });
+  const opcoes = { gateway, segredo: SEGREDO, agora: AGORA };
+
+  const respostas = await Promise.all([
+    processarNotificacao(notificacao("700005", "aviso-700005-criado"), opcoes),
+    processarNotificacao(notificacao("700005", "aviso-700005-atualizado"), opcoes),
+  ]);
+
+  expect(respostas).toEqual([{ status: 200 }, { status: 200 }]);
+  const final = await estado("20261011-PARAL1", obra);
+  expect(final).toMatchObject({ situacao: "PAGO", estoque: 2 });
+  expect(final.pagamentos).toHaveLength(1);
+});
+
+it("RNF11 aviso novo de um pagamento já aprovado não paga nem baixa de novo", async () => {
+  const { processarNotificacao } = await import("../../src/modules/payments");
+  const { obra } = await pedidoPendente("t5-depois", "20261011-DEPOI1", "depois@pbi28.test", 4);
+  const gateway = gatewayDeTeste({ "700006": pagamentoMp("700006", "20261011-DEPOI1") });
+  const opcoes = { gateway, segredo: SEGREDO, agora: AGORA };
+  await processarNotificacao(notificacao("700006", "aviso-700006-criado"), opcoes);
+  const depois = { ...opcoes, agora: new Date("2026-10-11T15:30:00.000Z") };
+
+  expect(
+    await processarNotificacao(notificacao("700006", "aviso-700006-atualizado"), depois),
+  ).toEqual({ status: 200 });
+
+  const final = await estado("20261011-DEPOI1", obra);
+  expect(final).toMatchObject({ situacao: "PAGO", pagoEm: AGORA, estoque: 2 });
+  expect(final.pagamentos).toHaveLength(1);
 });
