@@ -320,3 +320,108 @@ it("RNF11 aviso novo de um pagamento já aprovado não paga nem baixa de novo", 
   expect(final).toMatchObject({ situacao: "PAGO", pagoEm: AGORA, estoque: 2 });
   expect(final.pagamentos).toHaveLength(1);
 });
+
+it("RN05 aprovação de pedido cancelado não o reabre nem baixa estoque; o log pede estorno", async () => {
+  const { processarNotificacao } = await import("../../src/modules/payments");
+  const obra = await fabrica.obraPublicada("t6-cancelado", "4.800,00", 2);
+  const cliente = await fabrica.novoCliente("cancelado@pbi28.test");
+  await fabrica.pedidoDeTeste(cliente, {
+    numero: "20261011-CANCE1",
+    situacao: "CANCELADO",
+    criadoEm: AGORA.toISOString(),
+    obra,
+  });
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  const gateway = gatewayDeTeste({ "700007": pagamentoMp("700007", "20261011-CANCE1") });
+
+  expect(
+    await processarNotificacao(notificacao("700007"), { gateway, segredo: SEGREDO, agora: AGORA }),
+  ).toEqual({ status: 200 });
+
+  const final = await estado("20261011-CANCE1", obra);
+  expect(final).toMatchObject({ situacao: "CANCELADO", pagoEm: null, estoque: 2 });
+  expect(final.pagamentos).toMatchObject([{ id_externo: "700007", situacao: "APROVADO" }]);
+  expect(log).toHaveBeenCalledWith(
+    "Pagamento aprovado de pedido que não aguardava pagamento: estornar (PBI-43)",
+    "20261011-CANCE1",
+    "700007",
+  );
+});
+
+it("RN05 segunda aprovação do mesmo pedido, por outro pagamento, não paga de novo", async () => {
+  const { processarNotificacao } = await import("../../src/modules/payments");
+  const { obra } = await pedidoPendente("t6-dobro", "20261011-DOBRO1", "dobro@pbi28.test", 4);
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  const gateway = gatewayDeTeste({
+    "700008": pagamentoMp("700008", "20261011-DOBRO1"),
+    "700009": pagamentoMp("700009", "20261011-DOBRO1"),
+  });
+  const opcoes = { gateway, segredo: SEGREDO, agora: AGORA };
+
+  await processarNotificacao(notificacao("700008"), opcoes);
+  expect(await processarNotificacao(notificacao("700009"), opcoes)).toEqual({ status: 200 });
+
+  const final = await estado("20261011-DOBRO1", obra);
+  expect(final).toMatchObject({ situacao: "PAGO", estoque: 2 });
+  expect(final.pagamentos).toMatchObject([
+    { id_externo: "700008", situacao: "APROVADO" },
+    { id_externo: "700009", situacao: "APROVADO" },
+  ]);
+  expect(log).toHaveBeenCalledWith(
+    "Pagamento aprovado de pedido que não aguardava pagamento: estornar (PBI-43)",
+    "20261011-DOBRO1",
+    "700009",
+  );
+});
+
+it.each([
+  ["valor menor", { transaction_amount: 96 }],
+  ["outra moeda", { currency_id: "USD" }],
+])("RN07 aprovação com %s que o pedido não paga o pedido", async (caso, troca) => {
+  const { processarNotificacao } = await import("../../src/modules/payments");
+  const sufixo = caso === "valor menor" ? "1" : "2";
+  const numero = `20261011-VALOR${sufixo}`;
+  const idPagamento = `70001${sufixo}`;
+  const { obra } = await pedidoPendente(`t6-valor-${sufixo}`, numero, `valor${sufixo}@pbi28.test`);
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  const gateway = gatewayDeTeste({ [idPagamento]: pagamentoMp(idPagamento, numero, troca) });
+
+  expect(
+    await processarNotificacao(notificacao(idPagamento), {
+      gateway,
+      segredo: SEGREDO,
+      agora: AGORA,
+    }),
+  ).toEqual({ status: 200 });
+
+  expect(await estado(numero, obra)).toMatchObject({ situacao: "PENDENTE", estoque: 2 });
+  expect(log).toHaveBeenCalledWith(
+    "Pagamento aprovado com valor diferente do pedido: estornar (PBI-43)",
+    numero,
+    idPagamento,
+  );
+});
+
+it.each([
+  ["número desconhecido", "20261011-NAOEXI"],
+  ["sem referência", null],
+])("RF14 pagamento com %s de pedido responde 200 e não grava nada", async (_caso, referencia) => {
+  const { processarNotificacao } = await import("../../src/modules/payments");
+  const idPagamento = referencia ? "700021" : "700022";
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  const gateway = gatewayDeTeste({
+    [idPagamento]: pagamentoMp(idPagamento, "", { external_reference: referencia }),
+  });
+
+  expect(
+    await processarNotificacao(notificacao(idPagamento), {
+      gateway,
+      segredo: SEGREDO,
+      agora: AGORA,
+    }),
+  ).toEqual({ status: 200 });
+
+  const pagamentos = await db.query("SELECT 1 FROM payment WHERE id_externo = $1", [idPagamento]);
+  expect(pagamentos.rowCount).toBe(0);
+  expect(log).toHaveBeenCalledWith("Pagamento sem pedido no Kolô", idPagamento);
+});

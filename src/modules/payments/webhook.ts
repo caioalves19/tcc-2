@@ -28,7 +28,15 @@ const ORDEM: Record<SituacaoPagamento, number> = {
 
 // RF14/RN05: com o pagamento aprovado, o pedido vai a PAGO, o estoque baixa e as obras saem do
 // carrinho, tudo na mesma transação do evento (RNF11).
-async function aplicar(tx: Tx, pagamento: PagamentoLido, idEvento: string, agora: Date) {
+type Dono = { id: string; userId: string };
+
+async function aplicar(
+  tx: Tx,
+  pagamento: PagamentoLido,
+  dono: Dono,
+  idEvento: string,
+  agora: Date,
+) {
   // RNF11: aviso já visto não faz nada. Um reenvio simultâneo espera aqui o primeiro terminar a
   // transação; se o primeiro foi desfeito, este processa no lugar dele.
   const { count } = await tx.webhookEvent.createMany({
@@ -36,8 +44,6 @@ async function aplicar(tx: Tx, pagamento: PagamentoLido, idEvento: string, agora
     skipDuplicates: true,
   });
   if (count === 0) return;
-  const numero = pagamento.numeroPedido ?? "";
-  const dono = await tx.order.findUniqueOrThrow({ where: { number: numero } });
   // Mesma ordem de travas do checkout (usuário → pedido → sessão → obras): avisos do mesmo
   // pedido, e um checkout da mesma conta, se enfileiram aqui.
   await tx.$queryRaw`SELECT id FROM "user" WHERE id = ${dono.userId}::uuid FOR UPDATE`;
@@ -60,6 +66,25 @@ async function aplicar(tx: Tx, pagamento: PagamentoLido, idEvento: string, agora
   if (anterior) await tx.payment.update({ where: { id: anterior.id }, data: dados });
   else await tx.payment.create({ data: { ...chave, orderId: pedido.id, ...dados } });
   if (pagamento.situacao !== "APROVADO") return;
+  // Pedido cancelado (um novo checkout o substituiu) ou já pago por outro pagamento: não reabre
+  // nem paga de novo; o dinheiro volta pelo estorno (PBI-43).
+  if (pedido.status !== "PENDENTE") {
+    console.error(
+      "Pagamento aprovado de pedido que não aguardava pagamento: estornar (PBI-43)",
+      pedido.number,
+      pagamento.idExterno,
+    );
+    return;
+  }
+  // RN07: só paga o pedido o pagamento que cobriu exatamente o total gravado, em reais.
+  if (pagamento.valorCentavos !== pedido.totalCents || pagamento.moeda !== "BRL") {
+    console.error(
+      "Pagamento aprovado com valor diferente do pedido: estornar (PBI-43)",
+      pedido.number,
+      pagamento.idExterno,
+    );
+    return;
+  }
   const itens = pedido.items.map((i) => ({ obraId: i.artworkId, quantidade: i.quantity }));
   await tx.order.update({ where: { id: pedido.id }, data: { status: "PAGO", paidAt: agora } });
   // RN06: o cliente pagou, então o pedido fica pago; sem unidade livre, quem resolve é o
@@ -96,6 +121,17 @@ export async function processarNotificacao(
 
   const lido = lerPagamento(await opcoes.gateway.consultarPagamento(idDado));
   if (!lido.ok) return { status: 500 };
-  await obterPrisma().$transaction((tx) => aplicar(tx, lido.dados, idEvento, agora));
+  // Pagamento de outra integração da conta, ou de pedido apagado: reenviar não ajuda.
+  const dono = lido.dados.numeroPedido
+    ? await obterPrisma().order.findUnique({
+        where: { number: lido.dados.numeroPedido },
+        select: { id: true, userId: true },
+      })
+    : null;
+  if (!dono) {
+    console.error("Pagamento sem pedido no Kolô", lido.dados.idExterno);
+    return { status: 200 };
+  }
+  await obterPrisma().$transaction((tx) => aplicar(tx, lido.dados, dono, idEvento, agora));
   return { status: 200 };
 }
