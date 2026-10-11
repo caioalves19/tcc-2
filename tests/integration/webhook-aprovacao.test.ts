@@ -368,3 +368,34 @@ it("RN05 'Finalizar' da mesma conta durante a aprovação não cancela o pedido 
   expect(final).toMatchObject({ situacao: "PAGO", pagoEm: AGORA, estoque: 2 });
   expect(final.pagamentos).toMatchObject([{ id_externo: "700051", situacao: "APROVADO" }]);
 }, 30_000);
+
+it.each(["refunded", "charged_back"])(
+  "RN05 pagamento %s de pedido já pago fica no log para revisar o envio; o pedido segue pago",
+  async (status) => {
+    const { processarNotificacao } = await import("../../src/modules/payments");
+    const sufixo = status === "refunded" ? "1" : "2";
+    const numero = `20261011-ESTOR${sufixo}`;
+    const id = `70006${sufixo}`;
+    const { obra } = await pedidoPendente(
+      `t5-estorno-${sufixo}`,
+      numero,
+      `estorno${sufixo}@pbi28.test`,
+    );
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const gateway = gatewayDeTeste({ [id]: pagamentoMp(id, numero) });
+    const opcoes = { gateway, segredo: SEGREDO, agora: AGORA };
+    await processarNotificacao(notificacao(id), opcoes);
+    gateway.trocar(id, pagamentoMp(id, numero, { status }));
+
+    expect(await processarNotificacao(notificacao(id), opcoes)).toEqual({ status: 200 });
+
+    const final = await estado(numero, obra);
+    expect(final).toMatchObject({ situacao: "PAGO", estoque: 0 });
+    expect(final.pagamentos).toMatchObject([{ id_externo: id, situacao: "ESTORNADO" }]);
+    expect(log).toHaveBeenCalledWith(
+      "Pagamento estornado de pedido já pago: revisar antes de enviar (PBI-43)",
+      numero,
+      id,
+    );
+  },
+);

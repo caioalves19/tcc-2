@@ -164,6 +164,18 @@ async function aplicar(
   if (pagamento.situacao === "APROVADO") await aprovar(tx, pedido, itens, pagamento, agora);
   if (pagamento.situacao === "PENDENTE") await prorrogar(tx, pedido, itens, pagamento, agora);
   if (pagamento.situacao === "RECUSADO") await encerrar(tx, pedido, itens, pagamento);
+  // Estorno ou chargeback de pedido já pago: o pedido segue na fila do admin, que precisa saber
+  // antes de enviar. Tratar o pedido é do estorno administrativo (PBI-43).
+  if (
+    pagamento.situacao === "ESTORNADO" &&
+    pedido.status !== "PENDENTE" &&
+    pedido.status !== "CANCELADO"
+  )
+    console.error(
+      "Pagamento estornado de pedido já pago: revisar antes de enviar (PBI-43)",
+      pedido.number,
+      pagamento.idExterno,
+    );
 }
 
 async function tratar(
