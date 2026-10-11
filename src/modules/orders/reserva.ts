@@ -13,6 +13,10 @@ export type ResultadoReserva<T> =
   | { ok: false; erro: "invalido"; mensagem: string }
   | { ok: false; erro: "indisponivel"; obras: string[] }
   | { ok: false; erro: "pendente" };
+export type ResultadoProrrogacao =
+  | { ok: true; dados: { expiraEm: Date } }
+  | { ok: false; erro: "sem_reserva" }
+  | { ok: false; erro: "invalido"; mensagem: string };
 export type ResultadoBaixa =
   | { ok: true }
   | { ok: false; erro: "invalido"; mensagem: string }
@@ -121,17 +125,15 @@ export async function reservarItens(
 // nunca encurta a reserva. Só prorroga se as reservas ativas da sessão forem exatamente os
 // itens do pedido (um novo checkout pode ter trocado o carrinho). Trava a sessão e as obras e
 // confere, dentro da trava, que nenhuma outra sessão levou a peça na virada do prazo; se
-// levou, volta sem_reserva.
+// levou, volta sem_reserva. O webhook (PBI-28) passa a própria transação (`tx`): o pagamento
+// pendente e a prorrogação são gravados juntos ou nenhum dos dois.
 export async function prorrogarReserva(
   sessaoId: string,
   entrada: unknown,
   ate: Date,
   agora: Date = new Date(),
-): Promise<
-  | { ok: true; dados: { expiraEm: Date } }
-  | { ok: false; erro: "sem_reserva" }
-  | { ok: false; erro: "invalido"; mensagem: string }
-> {
+  tx?: Tx,
+): Promise<ResultadoProrrogacao> {
   const validado = schemaItens.safeParse(entrada);
   if (!validado.success)
     return { ok: false, erro: "invalido", mensagem: mensagemDe(validado.error) };
@@ -139,7 +141,7 @@ export async function prorrogarReserva(
     return { ok: false, erro: "invalido", mensagem: "Prazo da prorrogação inválido." };
   const itens = validado.data;
   const ids = itens.map((i) => i.obraId).sort();
-  return obterPrisma().$transaction(async (tx) => {
+  const prorrogar = async (tx: Tx): Promise<ResultadoProrrogacao> => {
     await travarSessao(tx, sessaoId);
     const { obras, ocupadas } = await travarObras(tx, ids, sessaoId, agora);
     const ativas = await tx.artworkReservation.findMany({
@@ -166,7 +168,8 @@ export async function prorrogarReserva(
       data: { expiresAt: ate },
     });
     return { ok: true, dados: { expiraEm: ate } };
-  });
+  };
+  return tx ? prorrogar(tx) : obterPrisma().$transaction(prorrogar);
 }
 
 // Tarefa do pg-boss: apaga as reservas vencidas. A disponibilidade já ignora as vencidas,
