@@ -26,6 +26,7 @@ export default async function PaginaPedido({
         pedido={pedido}
         pagar={pagarPedidoAcao}
         voltouDoPagamento={retorno === "mercadopago"}
+        agora={Date.now()}
       />
     </section>
   );

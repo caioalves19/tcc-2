@@ -23,10 +23,13 @@ type Props = {
   pagar: (numero: string) => Promise<Recusa>;
   // Chegou pelas back_urls do Checkout Pro. Só muda o aviso: quem confirma é o webhook (RN05).
   voltouDoPagamento?: boolean;
+  // Instante do render no servidor (ms): o primeiro render usa o mesmo relógio nos dois lados,
+  // para a hidratação não divergir quando o prazo vence entre um e outro.
+  agora?: number;
 };
 
-function restanteDe(expiraEm: Date | null): number {
-  return expiraEm ? Math.max(0, expiraEm.getTime() - Date.now()) : 0;
+function restanteDe(expiraEm: Date | null, agora: number = Date.now()): number {
+  return expiraEm ? Math.max(0, expiraEm.getTime() - agora) : 0;
 }
 
 function mmss(ms: number): string {
@@ -37,9 +40,9 @@ function mmss(ms: number): string {
 
 // RN03: as unidades ficam presas por 10 minutos, e o checkout fecha 2 minutos antes (RN06, folga
 // para o webhook). O cronômetro só informa; quem decide o prazo é o servidor.
-export function PedidoCheckout({ pedido, pagar, voltouDoPagamento = false }: Props) {
+export function PedidoCheckout({ pedido, pagar, voltouDoPagamento = false, agora }: Props) {
   const [restante, setRestante] = useState(() =>
-    restanteDe(prazoParaPagar(pedido.reservaExpiraEm)),
+    restanteDe(prazoParaPagar(pedido.reservaExpiraEm), agora),
   );
   const [abrindo, setAbrindo] = useState(false);
   const [recusa, setRecusa] = useState<Recusa | null>(null);
@@ -76,6 +79,8 @@ export function PedidoCheckout({ pedido, pagar, voltouDoPagamento = false }: Pro
   useEffect(() => {
     if (!pendente || !pedido.reservaExpiraEm) return;
     const fim = prazoParaPagar(pedido.reservaExpiraEm);
+    // Montado, o relógio passa a ser o do navegador.
+    setRestante(restanteDe(fim));
     const relogio = setInterval(() => setRestante(restanteDe(fim)), 1000);
     return () => clearInterval(relogio);
   }, [pendente, pedido.reservaExpiraEm]);

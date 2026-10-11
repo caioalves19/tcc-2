@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { createRequire } from "node:module";
+import type { ReactElement } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { PedidoCheckout } from "../../src/components/loja/pedido-checkout";
 
@@ -187,4 +189,28 @@ it("RN05 na volta do Mercado Pago a tela só avisa que a confirmação está a c
   const aviso = screen.getByRole("status");
   expect(aviso.textContent).toContain("Estamos confirmando seu pagamento");
   expect(aviso.textContent).toContain("Pix ou boleto");
+});
+
+it("RN03 servidor antes e navegador depois do fim do prazo: hidrata sem divergência e mostra o prazo vencido", async () => {
+  const prazo = AGORA.getTime() + (9 * 60 + 30) * 1000 - 2 * 60 * 1000;
+  vi.setSystemTime(prazo - 500);
+  const agoraServidor = Date.now();
+  const tela = () => <PedidoCheckout pedido={pedido()} pagar={recusou()} agora={agoraServidor} />;
+  // HTML como o servidor o gerou (renderToString), meio segundo antes do fim do prazo.
+  const { renderToString } = createRequire(import.meta.url)("react-dom/server") as {
+    renderToString: (elemento: ReactElement) => string;
+  };
+  const html = renderToString(tela());
+  vi.setSystemTime(prazo + 500);
+  const raiz = document.createElement("div");
+  raiz.innerHTML = html;
+  document.body.appendChild(raiz);
+  const divergencias = vi.fn();
+
+  await act(async () => {
+    render(tela(), { container: raiz, hydrate: true, onRecoverableError: divergencias });
+  });
+
+  expect(divergencias).not.toHaveBeenCalled();
+  expect(within(raiz).getByText("O prazo para pagar acabou")).toBeDefined();
 });
