@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Prisma } from "../../../generated/prisma/client";
 import { obterPrisma } from "../../lib/prisma";
-import { baixarEstoque } from "../orders/index";
+import { baixarEstoque, prorrogarReserva } from "../orders/index";
 import { assinaturaValida } from "./assinatura";
 import { lerPagamento, type PagamentoLido, type SituacaoPagamento } from "./leitura";
 
@@ -26,9 +26,93 @@ const ORDEM: Record<SituacaoPagamento, number> = {
   ESTORNADO: 2,
 };
 
-// RF14/RN05: com o pagamento aprovado, o pedido vai a PAGO, o estoque baixa e as obras saem do
-// carrinho, tudo na mesma transação do evento (RNF11).
 type Dono = { id: string; userId: string };
+type Pedido = Prisma.OrderGetPayload<{ include: { items: true } }>;
+type Item = { obraId: string; quantidade: number };
+
+// RF14/RN05: com o pagamento aprovado, o pedido vai a PAGO, o estoque baixa e as obras saem do
+// carrinho, na mesma transação do evento (RNF11).
+async function aprovar(
+  tx: Tx,
+  pedido: Pedido,
+  itens: Item[],
+  pagamento: PagamentoLido,
+  agora: Date,
+) {
+  // Pedido cancelado (um novo checkout o substituiu) ou já pago por outro pagamento: não reabre
+  // nem paga de novo; o dinheiro volta pelo estorno (PBI-43).
+  if (pedido.status !== "PENDENTE") {
+    console.error(
+      "Pagamento aprovado de pedido que não aguardava pagamento: estornar (PBI-43)",
+      pedido.number,
+      pagamento.idExterno,
+    );
+    return;
+  }
+  // RN07: só paga o pedido o pagamento que cobriu exatamente o total gravado, em reais.
+  if (pagamento.valorCentavos !== pedido.totalCents || pagamento.moeda !== "BRL") {
+    console.error(
+      "Pagamento aprovado com valor diferente do pedido: estornar (PBI-43)",
+      pedido.number,
+      pagamento.idExterno,
+    );
+    return;
+  }
+  await tx.order.update({ where: { id: pedido.id }, data: { status: "PAGO", paidAt: agora } });
+  // RN06: o cliente pagou, então o pedido fica pago; sem unidade livre, quem resolve é o
+  // estorno (PBI-43).
+  const baixa = await baixarEstoque(pedido.sessionId, itens, agora, tx);
+  if (!baixa.ok)
+    console.error(
+      "Pagamento aprovado sem unidade livre: estornar (PBI-43)",
+      pedido.number,
+      pagamento.idExterno,
+    );
+  await tx.cartItem.deleteMany({
+    where: { cart: { userId: pedido.userId }, artworkId: { in: itens.map((i) => i.obraId) } },
+  });
+}
+
+// RN06: Pix ou boleto emitido segura as unidades até o vencimento do meio de pagamento.
+async function prorrogar(
+  tx: Tx,
+  pedido: Pedido,
+  itens: Item[],
+  pagamento: PagamentoLido,
+  agora: Date,
+) {
+  if (pagamento.meio !== "PIX" && pagamento.meio !== "BOLETO") return;
+  if (pedido.status !== "PENDENTE" || !pedido.sessionId || !pagamento.venceEm) return;
+  const prorrogada = await prorrogarReserva(pedido.sessionId, itens, pagamento.venceEm, agora, tx);
+  // Sem reserva (venceu, ou o carrinho mudou), a aprovação cai na reconciliação da baixa.
+  if (!prorrogada.ok)
+    console.error(
+      "Reserva não prorrogada para o pagamento pendente",
+      pedido.number,
+      pagamento.idExterno,
+      prorrogada.erro,
+    );
+}
+
+// RN06: Pix ou boleto que venceu (ou foi cancelado) sem pagar encerra o pedido e devolve as
+// unidades. Cartão recusado não: o cliente pode tentar de novo enquanto a reserva durar.
+async function encerrar(tx: Tx, pedido: Pedido, itens: Item[], pagamento: PagamentoLido) {
+  if (pagamento.meio !== "PIX" && pagamento.meio !== "BOLETO") return;
+  if (pedido.status !== "PENDENTE") return;
+  const outroEmAberto = await tx.payment.count({
+    where: {
+      orderId: pedido.id,
+      externalId: { not: pagamento.idExterno },
+      status: { in: ["PENDENTE", "APROVADO"] },
+    },
+  });
+  if (outroEmAberto > 0) return;
+  await tx.order.update({ where: { id: pedido.id }, data: { status: "CANCELADO" } });
+  if (pedido.sessionId)
+    await tx.artworkReservation.deleteMany({
+      where: { sessionId: pedido.sessionId, artworkId: { in: itens.map((i) => i.obraId) } },
+    });
+}
 
 async function aplicar(
   tx: Tx,
@@ -65,40 +149,11 @@ async function aplicar(
   };
   if (anterior) await tx.payment.update({ where: { id: anterior.id }, data: dados });
   else await tx.payment.create({ data: { ...chave, orderId: pedido.id, ...dados } });
-  if (pagamento.situacao !== "APROVADO") return;
-  // Pedido cancelado (um novo checkout o substituiu) ou já pago por outro pagamento: não reabre
-  // nem paga de novo; o dinheiro volta pelo estorno (PBI-43).
-  if (pedido.status !== "PENDENTE") {
-    console.error(
-      "Pagamento aprovado de pedido que não aguardava pagamento: estornar (PBI-43)",
-      pedido.number,
-      pagamento.idExterno,
-    );
-    return;
-  }
-  // RN07: só paga o pedido o pagamento que cobriu exatamente o total gravado, em reais.
-  if (pagamento.valorCentavos !== pedido.totalCents || pagamento.moeda !== "BRL") {
-    console.error(
-      "Pagamento aprovado com valor diferente do pedido: estornar (PBI-43)",
-      pedido.number,
-      pagamento.idExterno,
-    );
-    return;
-  }
+
   const itens = pedido.items.map((i) => ({ obraId: i.artworkId, quantidade: i.quantity }));
-  await tx.order.update({ where: { id: pedido.id }, data: { status: "PAGO", paidAt: agora } });
-  // RN06: o cliente pagou, então o pedido fica pago; sem unidade livre, quem resolve é o
-  // estorno (PBI-43).
-  const baixa = await baixarEstoque(pedido.sessionId, itens, agora, tx);
-  if (!baixa.ok)
-    console.error(
-      "Pagamento aprovado sem unidade livre: estornar (PBI-43)",
-      pedido.number,
-      pagamento.idExterno,
-    );
-  await tx.cartItem.deleteMany({
-    where: { cart: { userId: pedido.userId }, artworkId: { in: itens.map((i) => i.obraId) } },
-  });
+  if (pagamento.situacao === "APROVADO") await aprovar(tx, pedido, itens, pagamento, agora);
+  if (pagamento.situacao === "PENDENTE") await prorrogar(tx, pedido, itens, pagamento, agora);
+  if (pagamento.situacao === "RECUSADO") await encerrar(tx, pedido, itens, pagamento);
 }
 
 // RF14/RNF11: Route Handler do Mercado Pago. Responde 401 sem assinatura válida, 200 quando o
