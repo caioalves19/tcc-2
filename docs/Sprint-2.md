@@ -702,6 +702,11 @@ Consome reservas (25), confirmação/reconciliação de pagamento (28) e operaç
 
 **Herdado do PBI-28 (revisão, achado R4):** o webhook (`src/modules/payments/webhook.ts`) grava direto as transições do pedido (`PAGO` com `pago_em`, `CANCELADO` com a reserva liberada e a limpeza do carrinho), e o cancelamento repete a regra dos pedidos abandonados de `finalizarCompra`. Este PBI vai precisar das mesmas transições: expor em `src/modules/orders/index.ts` funções que aceitam a transação do chamador (por exemplo `confirmarPedidoPago(tx, …)` e `cancelarPedidoPendente(tx, …)`) e usá-las no webhook, no checkout e no cancelamento do admin, sem mudar comportamento. Os casos que o webhook deixa no log para este PBI estão em [PBI-28](features/PBI-28.md#pendências-para-os-próximos-pbis).
 
+**Herdado do PBI-28 (revisão das PRs, [comentário na #51](https://github.com/caioalves19/tcc-2/pull/51#issuecomment-6114518780)):** dois riscos que este PBI também resolve.
+
+1. **Frete no valor conferido (RN07).** `aprovar` em `src/modules/payments/webhook.ts` só paga o pedido se `transaction_amount` for igual a `totalCents`, e a preferência hoje só manda os itens (`preferencia.ts`: frete pago entra com o PBI-42). Se o frete entrar no `totalCents` sem entrar na preferência, nenhum pagamento confere e todos caem no log "valor diferente do pedido: estornar". O frete precisa ir na preferência (por exemplo, em `shipments.cost`), ou a comparação precisa considerar o frete.
+2. **Pix vencido seguido de cartão aprovado.** Pix vencido faz `encerrar` cancelar o pedido e devolver as unidades. Se a preferência ainda aceitar pagamento, o cliente pode voltar e pagar com cartão: a aprovação chega para um pedido `CANCELADO`, que não é reaberto e vai ao log de estorno. O cliente paga e fica esperando o dinheiro voltar. Saída sugerida: a preferência (PBI-27) expirar junto com a reserva, ou este PBI tratar o caso de forma explícita.
+
 ### PBI-44 — Contato com proteção antibot
 
 **Referências:** Fase 1, item 14; RNF08 · **Prioridade:** P1 · **Deps:** Sprint 1 (concluída).
