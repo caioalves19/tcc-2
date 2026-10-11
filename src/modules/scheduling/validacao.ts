@@ -1,6 +1,10 @@
 import { z } from "zod";
 import type { OpcoesWizard, ResultadoWizard } from "./tipos";
 
+// RF23–RF25: aceites dos avisos presenciais; validados aqui e nunca persistidos (RNF18).
+const MENSAGEM_AVISOS = "Confirme os três avisos para continuar.";
+const aceite = z.literal(true, { error: MENSAGEM_AVISOS });
+
 const schemaWizard = z
   .object({
     nome: z.string().trim().min(2, "Informe seu nome (mínimo de 2 caracteres).").max(100),
@@ -10,10 +14,18 @@ const schemaWizard = z
     tamanhoId: z.uuid("Selecione um tamanho."),
     data: z.iso.date("Informe uma data válida."),
     horario: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Informe um horário válido."),
+    aceites: z.strictObject(
+      { anamnese: aceite, termo: aceite, maioridade: aceite },
+      { error: MENSAGEM_AVISOS },
+    ),
   })
   .strict();
 export type DadosWizard = z.infer<typeof schemaWizard>;
 export type PreferenciaWizard = DadosWizard & { preferenciaEm: string };
+// Estado do formulário: os aceites começam desmarcados; só `true` passa na validação.
+export type EntradaWizard = Omit<DadosWizard, "aceites"> & {
+  aceites: Record<keyof DadosWizard["aceites"], boolean>;
+};
 
 export function validarDadosWizard(
   entrada: unknown,

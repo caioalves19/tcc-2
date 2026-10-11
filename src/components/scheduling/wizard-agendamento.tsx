@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { unstable_rethrow } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import type {
-  DadosWizard,
+  EntradaWizard,
   OpcoesWizard,
   PreferenciaWizard,
   ResultadoWizard,
@@ -13,7 +13,7 @@ import type {
 const ETAPAS = ["Nome", "Artista", "Estilo", "Região", "Tamanho", "Preferência"];
 const CAMPO =
   "mt-2 min-h-12 w-full rounded-campo border-2 border-[var(--kolo-contorno)] bg-[var(--kolo-superficie)] px-3 py-2 text-[var(--kolo-superficie-texto)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--kolo-acao)]";
-const INICIAL: DadosWizard = {
+const INICIAL: EntradaWizard = {
   nome: "",
   artistaId: "",
   estiloId: "",
@@ -21,6 +21,7 @@ const INICIAL: DadosWizard = {
   tamanhoId: "",
   data: "",
   horario: "",
+  aceites: { anamnese: false, termo: false, maioridade: false },
 };
 
 export function WizardAgendamento({
@@ -28,10 +29,10 @@ export function WizardAgendamento({
   revisar,
 }: {
   opcoes: OpcoesWizard;
-  revisar: (entrada: DadosWizard) => Promise<ResultadoWizard<PreferenciaWizard>>;
+  revisar: (entrada: EntradaWizard) => Promise<ResultadoWizard<PreferenciaWizard>>;
 }) {
   const [etapa, setEtapa] = useState(0);
-  const [dados, setDados] = useState<DadosWizard>(INICIAL);
+  const [dados, setDados] = useState<EntradaWizard>(INICIAL);
   const [resumo, setResumo] = useState<PreferenciaWizard | null>(null);
   const [erro, setErro] = useState("");
   const [ocupado, setOcupado] = useState(false);
@@ -44,7 +45,7 @@ export function WizardAgendamento({
     titulo.current?.focus();
   }, [etapa, resumo]);
 
-  function alterar(campo: keyof DadosWizard, valor: string) {
+  function alterar(campo: Exclude<keyof EntradaWizard, "aceites">, valor: string) {
     setDados((atual) => ({
       ...atual,
       [campo]: valor,

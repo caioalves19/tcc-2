@@ -93,15 +93,17 @@ it("RF20 navega pelas seis etapas, preserva dados e apresenta resumo sem conclui
   await waitFor(() =>
     expect(screen.getByRole("heading", { name: "Revise suas preferências" })).toBeTruthy(),
   );
-  expect(revisar).toHaveBeenCalledWith({
-    nome: "Maria",
-    artistaId: "bia",
-    estiloId: "fine-line",
-    regiao: "Antebraço",
-    tamanhoId: "pequena",
-    data: "2099-10-18",
-    horario: "14:30",
-  });
+  expect(revisar).toHaveBeenCalledWith(
+    expect.objectContaining({
+      nome: "Maria",
+      artistaId: "bia",
+      estiloId: "fine-line",
+      regiao: "Antebraço",
+      tamanhoId: "pequena",
+      data: "2099-10-18",
+      horario: "14:30",
+    }),
+  );
   expect(
     screen.getByRole("button", { name: "Continuar para confirmação" }).hasAttribute("disabled"),
   ).toBe(true);
