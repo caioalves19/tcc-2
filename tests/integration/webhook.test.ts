@@ -735,3 +735,36 @@ it("RN05 disputa aberta no Mercado Pago responde 200 sem mexer no pedido", async
     pagamentos: [],
   });
 });
+
+it("RF14 pagamento que a API não encontra responde 200 com log, sem reenvio sem fim", async () => {
+  const { processarNotificacao } = await import("../../src/modules/payments");
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  const inexistente = { consultarPagamento: async () => null };
+
+  expect(
+    await processarNotificacao(notificacao("123456"), {
+      gateway: inexistente,
+      segredo: SEGREDO,
+      agora: AGORA,
+    }),
+  ).toEqual({ status: 200 });
+  expect(log).toHaveBeenCalledWith("Pagamento inexistente na API do Mercado Pago", "123456");
+});
+
+it.each(["payment", "merchant_order"])(
+  "RF14 aviso no formato IPN (topic=%s) responde 200 sem consultar nem gravar: só o assinado muda o pedido",
+  async (topico) => {
+    const { processarNotificacao } = await import("../../src/modules/payments");
+    const gateway = gatewayDeTeste({});
+    const ipn = {
+      url: `https://kolo.test/api/webhooks/mercadopago?id=183623486996&topic=${topico}`,
+      cabecalhos: new Headers(),
+      corpo: { resource: "183623486996", topic: topico },
+    };
+
+    expect(await processarNotificacao(ipn, { gateway, segredo: SEGREDO, agora: AGORA })).toEqual({
+      status: 200,
+    });
+    expect(gateway.consultados).toEqual([]);
+  },
+);

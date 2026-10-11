@@ -39,10 +39,16 @@ export function gatewayMercadoPago(
         throw new Error("Preferência criada sem init_point do Mercado Pago");
       return { url: criada.init_point };
     },
-    // RF14: a situação real do pagamento, que o webhook lê com lerPagamento.
+    // RF14: a situação real do pagamento, que o webhook lê com lerPagamento. Pagamento que a
+    // API não encontra (404) volta null: reenviar o aviso não o faria aparecer.
     async consultarPagamento(id) {
       const config = configurar();
-      return new Payment(config).get({ id, requestOptions: { timeout: TEMPO_LIMITE_MS } });
+      try {
+        return await new Payment(config).get({ id, requestOptions: { timeout: TEMPO_LIMITE_MS } });
+      } catch (erro) {
+        if (erro instanceof Error && "status" in erro && erro.status === 404) return null;
+        throw erro;
+      }
     },
   };
 }

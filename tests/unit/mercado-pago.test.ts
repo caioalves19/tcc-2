@@ -7,6 +7,7 @@ const sdk = vi.hoisted(() => ({
   resposta: {} as Record<string, unknown>,
   consultas: [] as unknown[],
   pagamento: {} as Record<string, unknown>,
+  falha: null as Error | null,
 }));
 vi.mock("mercadopago", () => ({
   MercadoPagoConfig: class {
@@ -23,6 +24,7 @@ vi.mock("mercadopago", () => ({
   Payment: class {
     async get(dados: unknown) {
       sdk.consultas.push(dados);
+      if (sdk.falha) throw sdk.falha;
       return sdk.pagamento;
     }
   },
@@ -46,6 +48,7 @@ beforeEach(() => {
   sdk.configs.length = 0;
   sdk.criadas.length = 0;
   sdk.consultas.length = 0;
+  sdk.falha = null;
   sdk.resposta = {
     id: "pref-1",
     init_point: "https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=pref-1",
@@ -108,4 +111,16 @@ it("RF14 consulta o pagamento pelo id do aviso, com o token do ambiente e tempo 
 it("RNF12 sem MP_ACCESS_TOKEN a consulta não chama o Mercado Pago e lança erro de configuração", async () => {
   await expect(gatewayMercadoPago("").consultarPagamento("1")).rejects.toThrow("MP_ACCESS_TOKEN");
   expect(sdk.consultas).toEqual([]);
+});
+
+it("RF14 pagamento que a API não encontra (404) volta null, não erro", async () => {
+  sdk.falha = Object.assign(new Error("not_found"), { name: "MPNotFoundError", status: 404 });
+  expect(await gatewayMercadoPago("APP_USR-teste").consultarPagamento("123456")).toBeNull();
+});
+
+it("RF14 outras falhas da API seguem como erro, para o webhook pedir reenvio", async () => {
+  sdk.falha = Object.assign(new Error("server"), { name: "MPServerError", status: 503 });
+  await expect(gatewayMercadoPago("APP_USR-teste").consultarPagamento("1")).rejects.toThrow(
+    "server",
+  );
 });

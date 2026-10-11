@@ -7,7 +7,7 @@ import { assinaturaValida } from "./assinatura";
 import { lerPagamento, type PagamentoLido, type SituacaoPagamento } from "./leitura";
 
 // Porta da consulta: o webhook só confia na situação que a API de pagamentos devolve (RN05).
-export type ConsultaPagamento = { consultarPagamento(id: string): Promise<unknown> };
+export type ConsultaPagamento = { consultarPagamento(id: string): Promise<unknown | null> };
 
 export type RequisicaoNotificacao = { url: string; cabecalhos: Headers; corpo: unknown };
 export type OpcoesNotificacao = { gateway: ConsultaPagamento; segredo: string; agora?: Date };
@@ -166,7 +166,13 @@ async function tratar(
   gateway: ConsultaPagamento,
   agora: Date,
 ): Promise<RespostaNotificacao> {
-  const lido = lerPagamento(await gateway.consultarPagamento(idDado));
+  const resposta = await gateway.consultarPagamento(idDado);
+  // Aviso de teste do painel, ou de pagamento de outra conta: reenviar não ajuda.
+  if (resposta === null) {
+    console.error("Pagamento inexistente na API do Mercado Pago", idDado);
+    return { status: 200 };
+  }
+  const lido = lerPagamento(resposta);
   if (!lido.ok) {
     // Disputa aberta e afins não mudam o pedido; reenviar não ajuda.
     if (lido.erro === "situacao_ignorada") return { status: 200 };
@@ -198,7 +204,11 @@ export async function processarNotificacao(
   opcoes: OpcoesNotificacao,
 ): Promise<RespostaNotificacao> {
   const agora = opcoes.agora ?? new Date();
-  const idDado = new URL(requisicao.url).searchParams.get("data.id");
+  const parametros = new URL(requisicao.url).searchParams;
+  const idDado = parametros.get("data.id");
+  // IPN (formato antigo, ?topic=&id=) não tem assinatura verificável: só confirma o recebimento,
+  // para não ser reenviado; quem muda o pedido é o aviso assinado de Webhooks.
+  if (!idDado && parametros.has("topic")) return { status: 200 };
   const assinada = assinaturaValida({
     assinatura: requisicao.cabecalhos.get("x-signature"),
     idRequisicao: requisicao.cabecalhos.get("x-request-id"),
@@ -209,7 +219,7 @@ export async function processarNotificacao(
   const corpo = schemaCorpo.safeParse(requisicao.corpo);
   const aviso = corpo.success ? corpo.data : {};
   // Só avisos de pagamento mudam o pedido; os demais (merchant_order etc.) só confirmam o recebimento.
-  const tipo = new URL(requisicao.url).searchParams.get("type") ?? aviso.type;
+  const tipo = parametros.get("type") ?? aviso.type;
   if (tipo !== "payment") return { status: 200 };
   // RNF11: o id do aviso se repete nos reenvios. Sem ele, cada requisição é um evento; a
   // idempotência continua pelo pagamento (linha única e situação que não volta atrás).

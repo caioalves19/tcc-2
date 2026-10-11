@@ -7,7 +7,8 @@ import { montarPreferencia, type CorpoPreferencia } from "./preferencia";
 // pagamento pelo id do aviso (o webhook só confia nessa resposta, RN05).
 export type GatewayPagamento = {
   criarPreferencia(corpo: CorpoPreferencia): Promise<{ url: string }>;
-  consultarPagamento(id: string): Promise<unknown>;
+  // null: o pagamento não existe para esta conta (404).
+  consultarPagamento(id: string): Promise<unknown | null>;
 };
 
 export type OpcoesPagamento = {
