@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Prisma } from "../../../generated/prisma/client";
 import { obterPrisma } from "../../lib/prisma";
@@ -14,7 +15,10 @@ export type RespostaNotificacao = { status: 200 | 401 | 500 };
 
 const PROVEDOR = "mercado_pago";
 
-const schemaCorpo = z.object({ id: z.union([z.string(), z.number()]).nullish() });
+const schemaCorpo = z.object({
+  id: z.union([z.string(), z.number()]).nullish(),
+  type: z.string().nullish(),
+});
 
 type Tx = Prisma.TransactionClient;
 
@@ -156,6 +160,37 @@ async function aplicar(
   if (pagamento.situacao === "RECUSADO") await encerrar(tx, pedido, itens, pagamento);
 }
 
+async function tratar(
+  idDado: string,
+  idEvento: string,
+  gateway: ConsultaPagamento,
+  agora: Date,
+): Promise<RespostaNotificacao> {
+  const lido = lerPagamento(await gateway.consultarPagamento(idDado));
+  if (!lido.ok) {
+    // Disputa aberta e afins não mudam o pedido; reenviar não ajuda.
+    if (lido.erro === "situacao_ignorada") return { status: 200 };
+    // Meio novo no Checkout Pro: não grava como outro meio; o reenvio dá tempo de ajustar o Kolô.
+    if (lido.erro === "meio_desconhecido")
+      console.error("Pagamento com meio que o Kolô não conhece", idDado, lido.tipo);
+    else console.error("Resposta inesperada da API de pagamentos", idDado);
+    return { status: 500 };
+  }
+  // Pagamento de outra integração da conta, ou de pedido apagado: reenviar não ajuda.
+  const dono = lido.dados.numeroPedido
+    ? await obterPrisma().order.findUnique({
+        where: { number: lido.dados.numeroPedido },
+        select: { id: true, userId: true },
+      })
+    : null;
+  if (!dono) {
+    console.error("Pagamento sem pedido no Kolô", lido.dados.idExterno);
+    return { status: 200 };
+  }
+  await obterPrisma().$transaction((tx) => aplicar(tx, lido.dados, dono, idEvento, agora));
+  return { status: 200 };
+}
+
 // RF14/RNF11: Route Handler do Mercado Pago. Responde 401 sem assinatura válida, 200 quando o
 // aviso foi tratado e 500 quando vale o Mercado Pago reenviar.
 export async function processarNotificacao(
@@ -172,21 +207,29 @@ export async function processarNotificacao(
   });
   if (!assinada || !idDado) return { status: 401 };
   const corpo = schemaCorpo.safeParse(requisicao.corpo);
-  const idEvento = `${PROVEDOR}:${corpo.success ? corpo.data.id : ""}`;
+  const aviso = corpo.success ? corpo.data : {};
+  // Só avisos de pagamento mudam o pedido; os demais (merchant_order etc.) só confirmam o recebimento.
+  const tipo = new URL(requisicao.url).searchParams.get("type") ?? aviso.type;
+  if (tipo !== "payment") return { status: 200 };
+  // RNF11: o id do aviso se repete nos reenvios. Sem ele, cada requisição é um evento; a
+  // idempotência continua pelo pagamento (linha única e situação que não volta atrás).
+  const idAviso = aviso.id ?? requisicao.cabecalhos.get("x-request-id") ?? randomUUID();
+  const idEvento = `${PROVEDOR}:${idAviso}`;
 
-  const lido = lerPagamento(await opcoes.gateway.consultarPagamento(idDado));
-  if (!lido.ok) return { status: 500 };
-  // Pagamento de outra integração da conta, ou de pedido apagado: reenviar não ajuda.
-  const dono = lido.dados.numeroPedido
-    ? await obterPrisma().order.findUnique({
-        where: { number: lido.dados.numeroPedido },
-        select: { id: true, userId: true },
-      })
-    : null;
-  if (!dono) {
-    console.error("Pagamento sem pedido no Kolô", lido.dados.idExterno);
-    return { status: 200 };
+  try {
+    return await tratar(idDado, idEvento, opcoes.gateway, agora);
+  } catch (erro) {
+    // API fora, tempo esgotado, deadlock (40P01) ou banco fora: nada foi gravado, e o Mercado
+    // Pago reenvia. Só o tipo e o status HTTP: a mensagem pode trazer dados da conta.
+    const status =
+      erro instanceof Error && "status" in erro && typeof erro.status === "number"
+        ? erro.status
+        : null;
+    console.error(
+      "Falha ao processar o aviso do Mercado Pago",
+      erro instanceof Error ? erro.name : "erro desconhecido",
+      status,
+    );
+    return { status: 500 };
   }
-  await obterPrisma().$transaction((tx) => aplicar(tx, lido.dados, dono, idEvento, agora));
-  return { status: 200 };
 }

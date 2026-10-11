@@ -3,12 +3,18 @@ import { lerPedido, type ContextoCarrinho } from "../orders/index";
 import { prazoParaPagar } from "./cliente";
 import { montarPreferencia, type CorpoPreferencia } from "./preferencia";
 
-// Porta do provedor: o módulo só pede a preferência e recebe a URL do checkout hospedado.
+// Porta do provedor: pede a preferência (recebe a URL do checkout hospedado) e consulta um
+// pagamento pelo id do aviso (o webhook só confia nessa resposta, RN05).
 export type GatewayPagamento = {
   criarPreferencia(corpo: CorpoPreferencia): Promise<{ url: string }>;
+  consultarPagamento(id: string): Promise<unknown>;
 };
 
-export type OpcoesPagamento = { gateway: GatewayPagamento; agora?: Date; appUrl?: string };
+export type OpcoesPagamento = {
+  gateway: Pick<GatewayPagamento, "criarPreferencia">;
+  agora?: Date;
+  appUrl?: string;
+};
 
 export type ResultadoPagamento =
   | { ok: true; dados: { url: string } }
