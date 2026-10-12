@@ -2,7 +2,11 @@ export { adicionarAoCarrinho, alterarQuantidade, lerCarrinho, removerDoCarrinho 
 export type { ContextoCarrinho, ResultadoCarrinho } from "./carrinho";
 export { juntarCarrinhos } from "./juntar";
 export {
+  acaoDeEstorno,
+  estornoCancelaPedido,
+  estornoDevolveEstoque,
   numeroDoPedido,
+  podeCancelarPedido,
   proximasSituacoes,
   quantidadeValida,
   resumirCarrinho,
@@ -10,12 +14,13 @@ export {
   situacaoParaCliente,
   transicaoPermitida,
 } from "./regras";
-export type { SituacaoCliente } from "./regras";
+export type { MotivoEstorno, SituacaoCliente } from "./regras";
 export {
   baixarEstoque,
   estoqueDisponivel,
   liberarReservas,
   liberarReservasExpiradas,
+  PRAZO_RESERVA_MS,
   prorrogarReserva,
   reservarItens,
 } from "./reserva";
@@ -26,6 +31,13 @@ export type {
   ResultadoReserva,
 } from "./reserva";
 export { FILA_LIBERAR_RESERVAS, registrarTarefasDeReserva } from "./tarefas";
+export {
+  cancelarPedidoPago,
+  cancelarPedidoPendente,
+  confirmarPedidoPago,
+  voltarReservaAoPrazo,
+} from "./transicoes";
+export type { ResultadoConfirmacao } from "./transicoes";
 export { finalizarCompra, resumoCheckout } from "./checkout";
 export type {
   ItemCheckout,

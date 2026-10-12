@@ -1,10 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import type { Prisma } from "../../../generated/prisma/client";
+import type { Prisma, RefundReason } from "../../../generated/prisma/client";
 import { obterPrisma } from "../../lib/prisma";
-import { baixarEstoque, prorrogarReserva } from "../orders/index";
+import {
+  cancelarPedidoPendente,
+  confirmarPedidoPago,
+  PRAZO_RESERVA_MS,
+  prorrogarReserva,
+  voltarReservaAoPrazo,
+} from "../orders/index";
 import { assinaturaValida } from "./assinatura";
-import { lerPagamento, type PagamentoLido, type SituacaoPagamento } from "./leitura";
+import { prazoParaPagar } from "./cliente";
+import { lerPagamento, PROVEDOR, type PagamentoLido, type SituacaoPagamento } from "./leitura";
 
 // Porta da consulta: o webhook só confia na situação que a API de pagamentos devolve (RN05).
 export type ConsultaPagamento = { consultarPagamento(id: string): Promise<unknown | null> };
@@ -18,8 +25,6 @@ export type RequisicaoNotificacao = {
 };
 export type OpcoesNotificacao = { gateway: ConsultaPagamento; segredo: string; agora?: Date };
 export type RespostaNotificacao = { status: 200 | 401 | 500 };
-
-const PROVEDOR = "mercado_pago";
 
 const schemaCorpo = z.object({
   id: z.union([z.string(), z.number()]).nullish(),
@@ -40,47 +45,55 @@ type Dono = { id: string; userId: string };
 type Pedido = Prisma.OrderGetPayload<{ include: { items: true } }>;
 type Item = { obraId: string; quantidade: number };
 
+// PBI-43: o pagamento aprovado que não pagou o pedido (ou pagou sem unidade livre) fica marcado
+// para o admin estornar. O log continua para quem acompanha a operação.
+async function marcarEstorno(
+  tx: Tx,
+  pagamento: PagamentoLido,
+  motivo: RefundReason,
+  mensagem: string,
+  numero: string,
+) {
+  await tx.payment.update({
+    where: { provider_externalId: { provider: PROVEDOR, externalId: pagamento.idExterno } },
+    data: { refundReason: motivo },
+  });
+  console.error(mensagem, numero, pagamento.idExterno);
+}
+
 // RF14/RN05: com o pagamento aprovado, o pedido vai a PAGO, o estoque baixa e as obras saem do
 // carrinho, na mesma transação do evento (RNF11).
-async function aprovar(
-  tx: Tx,
-  pedido: Pedido,
-  itens: Item[],
-  pagamento: PagamentoLido,
-  agora: Date,
-) {
+async function aprovar(tx: Tx, pedido: Pedido, pagamento: PagamentoLido, agora: Date) {
   // Pedido cancelado (um novo checkout o substituiu) ou já pago por outro pagamento: não reabre
   // nem paga de novo; o dinheiro volta pelo estorno (PBI-43).
-  if (pedido.status !== "PENDENTE") {
-    console.error(
+  if (pedido.status !== "PENDENTE")
+    return marcarEstorno(
+      tx,
+      pagamento,
+      "PEDIDO_NAO_PENDENTE",
       "Pagamento aprovado de pedido que não aguardava pagamento: estornar (PBI-43)",
       pedido.number,
-      pagamento.idExterno,
     );
-    return;
-  }
   // RN07: só paga o pedido o pagamento que cobriu exatamente o total gravado, em reais.
-  if (pagamento.valorCentavos !== pedido.totalCents || pagamento.moeda !== "BRL") {
-    console.error(
+  if (pagamento.valorCentavos !== pedido.totalCents || pagamento.moeda !== "BRL")
+    return marcarEstorno(
+      tx,
+      pagamento,
+      "VALOR_DIVERGENTE",
       "Pagamento aprovado com valor diferente do pedido: estornar (PBI-43)",
       pedido.number,
-      pagamento.idExterno,
     );
-    return;
-  }
-  await tx.order.update({ where: { id: pedido.id }, data: { status: "PAGO", paidAt: agora } });
   // RN06: o cliente pagou, então o pedido fica pago; sem unidade livre, quem resolve é o
   // estorno (PBI-43).
-  const baixa = await baixarEstoque(pedido.sessionId, itens, agora, tx);
-  if (!baixa.ok)
-    console.error(
+  const confirmado = await confirmarPedidoPago(tx, pedido.id, agora);
+  if (confirmado.ok && !confirmado.estoqueBaixado)
+    await marcarEstorno(
+      tx,
+      pagamento,
+      "SEM_ESTOQUE",
       "Pagamento aprovado sem unidade livre: estornar (PBI-43)",
       pedido.number,
-      pagamento.idExterno,
     );
-  await tx.cartItem.deleteMany({
-    where: { cart: { userId: pedido.userId }, artworkId: { in: itens.map((i) => i.obraId) } },
-  });
 }
 
 // RN06: Pix ou boleto emitido segura as unidades até o vencimento do meio de pagamento.
@@ -106,7 +119,9 @@ async function prorrogar(
 
 // RN06: Pix ou boleto que venceu (ou foi cancelado) sem pagar encerra o pedido e devolve as
 // unidades. Cartão recusado não: o cliente pode tentar de novo enquanto a reserva durar.
-async function encerrar(tx: Tx, pedido: Pedido, itens: Item[], pagamento: PagamentoLido) {
+// PBI-43: enquanto a preferência ainda aceita pagamento (prazo do checkout), o pedido também
+// fica aberto, senão um cartão pago em seguida chegaria para um pedido cancelado.
+async function encerrar(tx: Tx, pedido: Pedido, pagamento: PagamentoLido, agora: Date) {
   if (pagamento.meio !== "PIX" && pagamento.meio !== "BOLETO") return;
   if (pedido.status !== "PENDENTE") return;
   const outroEmAberto = await tx.payment.count({
@@ -117,11 +132,9 @@ async function encerrar(tx: Tx, pedido: Pedido, itens: Item[], pagamento: Pagame
     },
   });
   if (outroEmAberto > 0) return;
-  await tx.order.update({ where: { id: pedido.id }, data: { status: "CANCELADO" } });
-  if (pedido.sessionId)
-    await tx.artworkReservation.deleteMany({
-      where: { sessionId: pedido.sessionId, artworkId: { in: itens.map((i) => i.obraId) } },
-    });
+  const prazo = prazoParaPagar(new Date(pedido.createdAt.getTime() + PRAZO_RESERVA_MS));
+  if (prazo && agora < prazo) return voltarReservaAoPrazo(tx, pedido.id);
+  await cancelarPedidoPendente(tx, pedido.id);
 }
 
 async function aplicar(
@@ -161,9 +174,9 @@ async function aplicar(
   else await tx.payment.create({ data: { ...chave, orderId: pedido.id, ...dados } });
 
   const itens = pedido.items.map((i) => ({ obraId: i.artworkId, quantidade: i.quantity }));
-  if (pagamento.situacao === "APROVADO") await aprovar(tx, pedido, itens, pagamento, agora);
+  if (pagamento.situacao === "APROVADO") await aprovar(tx, pedido, pagamento, agora);
   if (pagamento.situacao === "PENDENTE") await prorrogar(tx, pedido, itens, pagamento, agora);
-  if (pagamento.situacao === "RECUSADO") await encerrar(tx, pedido, itens, pagamento);
+  if (pagamento.situacao === "RECUSADO") await encerrar(tx, pedido, pagamento, agora);
   // Estorno ou chargeback de pedido já pago: o pedido segue na fila do admin, que precisa saber
   // antes de enviar. Tratar o pedido é do estorno administrativo (PBI-43).
   if (

@@ -11,6 +11,7 @@ const ROTULO_FILTRO: Record<FiltroPedidos, string> = {
   enviados: "Prontos ou enviados",
   entregues: "Retirados ou entregues",
   cancelados: "Cancelados",
+  "estorno-pendente": "Estorno pendente",
   todos: "Todos",
 };
 
