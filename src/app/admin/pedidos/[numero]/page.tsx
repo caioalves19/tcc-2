@@ -3,7 +3,12 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { PedidoAdminDetalhe } from "@/components/admin/pedido-admin";
 import { lerPedidoAdmin } from "@/modules/orders";
-import { mudarSituacaoAcao, registrarRastreioAcao } from "../actions";
+import {
+  cancelarPedidoAcao,
+  estornarPagamentoAcao,
+  mudarSituacaoAcao,
+  registrarRastreioAcao,
+} from "../actions";
 
 export const metadata: Metadata = { title: "Pedido · Administração · Kolô" };
 
@@ -19,7 +24,12 @@ export default async function PaginaPedidoAdmin({
   return (
     <PedidoAdminDetalhe
       pedido={resultado.dados}
-      acoes={{ mudarSituacao: mudarSituacaoAcao, registrarRastreio: registrarRastreioAcao }}
+      acoes={{
+        mudarSituacao: mudarSituacaoAcao,
+        registrarRastreio: registrarRastreioAcao,
+        cancelarPedido: cancelarPedidoAcao,
+        estornarPagamento: estornarPagamentoAcao,
+      }}
     />
   );
 }

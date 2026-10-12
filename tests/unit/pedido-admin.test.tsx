@@ -57,7 +57,12 @@ const PEDIDO: PedidoAdmin = {
   ],
 };
 
-const acoes = { mudarSituacao: vi.fn(), registrarRastreio: vi.fn() };
+const acoes = {
+  mudarSituacao: vi.fn(),
+  registrarRastreio: vi.fn(),
+  cancelarPedido: vi.fn(),
+  estornarPagamento: vi.fn(),
+};
 
 it("RF29 mostra cliente, datas, pagamentos, entrega, resumo e as ações do pedido", () => {
   render(<PedidoAdminDetalhe pedido={PEDIDO} acoes={acoes} />);
