@@ -738,7 +738,9 @@ Consome o cálculo e o contrato de frete/total do checkout (26). Pode avançar j
 
 **Evidências:**
 
-- `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test` (462 testes) e `npm run build` sem erros; `npm run test:integration` com 242 de 243 testes (tempo esgotado de 5 s em `perfil.test.ts`, arquivo não tocado, que passa sozinho).
+- `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test` (465 testes) e `npm run build` sem erros; `npm run test:integration` com 245 de 246 testes (tempo esgotado de 5 s em `wizard-agendamento.test.ts`, arquivo não tocado, que passa sozinho; numa rodada anterior o mesmo aconteceu em `perfil.test.ts`).
+- Revisão read-only por agente: FAIL na primeira passada (o pagador com `SEM_ESTOQUE` não impedia "Concluir estorno", e o pedido voltava unidades que nunca saíram do estoque). Corrigido em TDD, com testes da regra pura e do webhook com frete; segunda passada PASS. Fica sem teste a nova conferência da segunda transação do estorno (a corrida não tem onde ser injetada).
+- Conferência no navegador: pendente.
 
 **Herdado do PBI-28 (risco do [comentário na #51](https://github.com/caioalves19/tcc-2/pull/51#issuecomment-6114518780), passado do PBI-43 em 12/10/2026) — resolvido:** o frete precisa entrar na preferência e no valor conferido (RN07). Hoje `montarPreferencia` (`src/modules/payments/preferencia.ts`) manda só os itens e recusa o pedido cujo total não fecha com eles; o webhook (`aprovar` em `src/modules/payments/webhook.ts`) só paga o pedido se `transaction_amount` for igual a `totalCents`. Com frete acima de 0, o frete vai na preferência (por exemplo, em `shipments.cost`) e a conferência da preferência passa a ser itens + frete = total. O risco só existe com este PBI: com frete sempre 0, nada muda.
 
