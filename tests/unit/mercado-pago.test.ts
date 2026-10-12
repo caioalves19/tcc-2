@@ -8,6 +8,8 @@ const sdk = vi.hoisted(() => ({
   consultas: [] as unknown[],
   pagamento: {} as Record<string, unknown>,
   falha: null as Error | null,
+  estornos: [] as unknown[],
+  cancelamentos: [] as unknown[],
 }));
 vi.mock("mercadopago", () => ({
   MercadoPagoConfig: class {
@@ -26,6 +28,18 @@ vi.mock("mercadopago", () => ({
       sdk.consultas.push(dados);
       if (sdk.falha) throw sdk.falha;
       return sdk.pagamento;
+    }
+    async cancel(dados: unknown) {
+      sdk.cancelamentos.push(dados);
+      if (sdk.falha) throw sdk.falha;
+      return { id: 1, status: "cancelled" };
+    }
+  },
+  PaymentRefund: class {
+    async total(dados: unknown) {
+      sdk.estornos.push(dados);
+      if (sdk.falha) throw sdk.falha;
+      return { id: 99, status: "approved" };
     }
   },
 }));
@@ -48,6 +62,8 @@ beforeEach(() => {
   sdk.configs.length = 0;
   sdk.criadas.length = 0;
   sdk.consultas.length = 0;
+  sdk.estornos.length = 0;
+  sdk.cancelamentos.length = 0;
   sdk.falha = null;
   sdk.resposta = {
     id: "pref-1",
@@ -123,4 +139,30 @@ it("RF14 outras falhas da API seguem como erro, para o webhook pedir reenvio", a
   await expect(gatewayMercadoPago("APP_USR-teste").consultarPagamento("1")).rejects.toThrow(
     "server",
   );
+});
+
+it("PBI-43 estorna o valor total do pagamento com chave de idempotência e tempo limite", async () => {
+  await gatewayMercadoPago("APP_USR-teste").estornarPagamento("182441100783", "estorno-abc");
+
+  expect(sdk.configs).toEqual([expect.objectContaining({ accessToken: "APP_USR-teste" })]);
+  expect(sdk.estornos).toEqual([
+    {
+      payment_id: "182441100783",
+      requestOptions: { timeout: 10_000, idempotencyKey: "estorno-abc" },
+    },
+  ]);
+});
+
+it("PBI-43 cancela o Pix ou boleto em aberto pelo id, com tempo limite", async () => {
+  await gatewayMercadoPago("APP_USR-teste").cancelarPagamento("182441100784");
+
+  expect(sdk.cancelamentos).toEqual([{ id: "182441100784", requestOptions: { timeout: 10_000 } }]);
+});
+
+it("RNF12 sem MP_ACCESS_TOKEN estorno e cancelamento não chamam o Mercado Pago", async () => {
+  const gateway = gatewayMercadoPago("");
+  await expect(gateway.estornarPagamento("1", "chave")).rejects.toThrow("MP_ACCESS_TOKEN");
+  await expect(gateway.cancelarPagamento("1")).rejects.toThrow("MP_ACCESS_TOKEN");
+  expect(sdk.estornos).toEqual([]);
+  expect(sdk.cancelamentos).toEqual([]);
 });

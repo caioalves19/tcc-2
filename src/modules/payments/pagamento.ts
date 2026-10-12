@@ -9,6 +9,10 @@ export type GatewayPagamento = {
   criarPreferencia(corpo: CorpoPreferencia): Promise<{ url: string }>;
   // null: o pagamento não existe para esta conta (404).
   consultarPagamento(id: string): Promise<unknown | null>;
+  // PBI-43: estorno total. A chave de idempotência faz a nova tentativa não estornar de novo.
+  estornarPagamento(id: string, chaveIdempotencia: string): Promise<void>;
+  // PBI-43: cancela o Pix ou boleto que ainda não foi pago.
+  cancelarPagamento(id: string): Promise<void>;
 };
 
 export type OpcoesPagamento = {
