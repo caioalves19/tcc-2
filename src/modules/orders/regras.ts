@@ -137,3 +137,47 @@ export function aceitaRastreio(situacao: SituacaoNoBanco): boolean {
   const ordem: readonly SituacaoNoBanco[] = ANDAMENTO;
   return ordem.includes(situacao);
 }
+
+// PBI-43: por que o webhook marcou o pagamento para estorno (null: pagamento normal).
+export type MotivoEstorno = "PEDIDO_NAO_PENDENTE" | "VALOR_DIVERGENTE" | "SEM_ESTOQUE";
+type MetodoPagamento = "PIX" | "CARTAO" | "BOLETO" | "SALDO_MERCADO_PAGO";
+
+// O pagamento que pagou o pedido (sem motivo, ou pago sem unidade livre) cancela o pedido no
+// estorno; o que não pagou (pedido que não aguardava, valor diferente) só devolve o dinheiro.
+export function estornoCancelaPedido(motivo: MotivoEstorno | null): boolean {
+  return motivo === null || motivo === "SEM_ESTOQUE";
+}
+
+// As unidades só voltam se a aprovação as baixou.
+export function estornoDevolveEstoque(motivo: MotivoEstorno | null): boolean {
+  return motivo === null;
+}
+
+// PBI-43: o que o admin pode fazer com o pagamento. "estornar": pedir o estorno total ao gateway.
+// "concluir": o estorno já foi feito no Mercado Pago e falta cancelar o pedido. Pedido enviado ou
+// entregue não é cancelado pelo sistema (a devolução é combinada fora dele).
+export function acaoDeEstorno(
+  pagamento: { situacao: SituacaoPagamento; motivo: MotivoEstorno | null },
+  situacaoPedido: SituacaoNoBanco,
+): "estornar" | "concluir" | null {
+  const cancela = estornoCancelaPedido(pagamento.motivo);
+  if (pagamento.situacao === "APROVADO")
+    return cancela && (situacaoPedido === "ENVIADO" || situacaoPedido === "ENTREGUE")
+      ? null
+      : "estornar";
+  if (pagamento.situacao === "ESTORNADO" && cancela)
+    return situacaoPedido === "PAGO" || situacaoPedido === "PROCESSANDO" ? "concluir" : null;
+  return null;
+}
+
+// PBI-43: só pedido aguardando pagamento é cancelado pelo admin. Cartão em análise (ou saldo)
+// pendente espera a resposta do Mercado Pago; Pix e boleto em aberto são cancelados lá antes.
+export function podeCancelarPedido(
+  situacaoPedido: SituacaoNoBanco,
+  pagamentosPendentes: readonly MetodoPagamento[],
+): boolean {
+  return (
+    situacaoPedido === "PENDENTE" &&
+    pagamentosPendentes.every((metodo) => metodo === "PIX" || metodo === "BOLETO")
+  );
+}

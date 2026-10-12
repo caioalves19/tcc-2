@@ -1,4 +1,4 @@
-import { MercadoPagoConfig, Payment, Preference } from "mercadopago";
+import { MercadoPagoConfig, Payment, PaymentRefund, Preference } from "mercadopago";
 import type { GatewayPagamento } from "./pagamento";
 
 const TEMPO_LIMITE_MS = 10_000;
@@ -49,6 +49,19 @@ export function gatewayMercadoPago(
         if (erro instanceof Error && "status" in erro && erro.status === 404) return null;
         throw erro;
       }
+    },
+    // PBI-43: estorno total; a mesma chave numa nova tentativa devolve o mesmo estorno.
+    async estornarPagamento(id, chaveIdempotencia) {
+      const config = configurar();
+      await new PaymentRefund(config).total({
+        payment_id: id,
+        requestOptions: { timeout: TEMPO_LIMITE_MS, idempotencyKey: chaveIdempotencia },
+      });
+    },
+    // PBI-43: Pix ou boleto ainda não pago deixa de aceitar pagamento.
+    async cancelarPagamento(id) {
+      const config = configurar();
+      await new Payment(config).cancel({ id, requestOptions: { timeout: TEMPO_LIMITE_MS } });
     },
   };
 }

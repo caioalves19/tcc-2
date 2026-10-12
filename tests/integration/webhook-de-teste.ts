@@ -1,7 +1,7 @@
 import { createHmac, randomUUID } from "node:crypto";
 import type { Client } from "pg";
 import { afterAll, afterEach, beforeAll, vi } from "vitest";
-import { prepararContas } from "./contas-pbi17";
+import { prepararContas, type Contas } from "./contas-pbi17";
 import { fabricaDePedidos } from "./pedidos-de-teste";
 
 // Cenário compartilhado dos testes do webhook (PBI-28): banco descartável, fábrica de pedidos,
@@ -88,9 +88,10 @@ export const PIX_PENDENTE = {
 export function cenarioWebhook(nomeBanco: string) {
   let db: Client;
   let fabrica: ReturnType<typeof fabricaDePedidos>;
+  let contas: Contas;
 
   beforeAll(async () => {
-    const contas = await prepararContas(nomeBanco);
+    contas = await prepararContas(nomeBanco);
     db = contas.db;
     fabrica = fabricaDePedidos(db, contas.admin, contas.idAna);
   }, 120_000);
@@ -167,6 +168,10 @@ export function cenarioWebhook(nomeBanco: string) {
     },
     get fabrica() {
       return fabrica;
+    },
+    // Sessões de ADMIN, CLIENTE e ARTISTA (ana), para as ações do admin (PBI-43).
+    get contas() {
+      return contas;
     },
     itensNoCarrinho,
     estado,

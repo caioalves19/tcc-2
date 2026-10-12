@@ -3,7 +3,14 @@ import { comoAdmin, ErroGestao, validar } from "../artists/index";
 import type { DadosEndereco } from "../endereco/index";
 import { comReservaAtiva, situacaoDe } from "./acompanhamento";
 import type { Modalidade } from "./checkout";
-import { aceitaRastreio, transicaoPermitida, type SituacaoCliente } from "./regras";
+import {
+  aceitaRastreio,
+  acaoDeEstorno,
+  podeCancelarPedido,
+  transicaoPermitida,
+  type MotivoEstorno,
+  type SituacaoCliente,
+} from "./regras";
 import {
   PEDIDOS_POR_PAGINA,
   schemaListaAdmin,
@@ -38,13 +45,44 @@ export type PaginaPedidosAdmin = {
   busca: string;
 };
 
-const SITUACOES_DO_FILTRO: Record<FiltroPedidos, SituacaoNoBanco[] | null> = {
-  "a-fazer": ["PAGO", "PROCESSANDO"],
-  pendentes: ["PENDENTE"],
-  enviados: ["ENVIADO"],
-  entregues: ["ENTREGUE"],
-  cancelados: ["CANCELADO"],
-  todos: null,
+// PBI-43: aprovação que o webhook marcou para estorno e ainda não foi estornada, ou pedido pago
+// (ainda não enviado) cujo pagamento já foi estornado no Mercado Pago e falta cancelar.
+const ESTORNO_PENDENTE: Prisma.OrderWhereInput = {
+  OR: [
+    {
+      payments: {
+        some: {
+          status: "APROVADO",
+          refundReason: { in: ["PEDIDO_NAO_PENDENTE", "VALOR_DIVERGENTE"] },
+        },
+      },
+    },
+    // Sem unidade livre cancela o pedido no estorno: o pedido já enviado não tem mais o que fazer
+    // aqui (mesma regra de acaoDeEstorno).
+    {
+      status: { notIn: ["ENVIADO", "ENTREGUE"] },
+      payments: { some: { status: "APROVADO", refundReason: "SEM_ESTOQUE" } },
+    },
+    {
+      status: { in: ["PAGO", "PROCESSANDO"] },
+      payments: {
+        some: {
+          status: "ESTORNADO",
+          OR: [{ refundReason: null }, { refundReason: "SEM_ESTOQUE" }],
+        },
+      },
+    },
+  ],
+};
+
+const ONDE_DO_FILTRO: Record<FiltroPedidos, Prisma.OrderWhereInput> = {
+  "a-fazer": { status: { in: ["PAGO", "PROCESSANDO"] } },
+  pendentes: { status: "PENDENTE" },
+  enviados: { status: "ENVIADO" },
+  entregues: { status: "ENTREGUE" },
+  cancelados: { status: "CANCELADO" },
+  "estorno-pendente": ESTORNO_PENDENTE,
+  todos: {},
 };
 
 // "A fazer" é a fila de trabalho: os mais antigos primeiro. Os demais filtros mostram os mais
@@ -54,10 +92,9 @@ export function listarPedidosAdmin(entrada: unknown, cabecalhos: Headers, agora 
     const { filtro, busca, pagina } = schemaListaAdmin.parse(
       typeof entrada === "object" && entrada !== null ? entrada : {},
     );
-    const situacoes = SITUACOES_DO_FILTRO[filtro];
     const onde: Prisma.OrderWhereInput = {
       deletedAt: null,
-      ...(situacoes && { status: { in: situacoes } }),
+      AND: [ONDE_DO_FILTRO[filtro]],
       ...(busca && {
         OR: [
           { number: { contains: busca, mode: "insensitive" } },
@@ -113,12 +150,17 @@ export type PedidoAdmin = {
   rastreio: string | null;
   pagoEm: Date | null;
   enviadoEm: Date | null;
+  // PBI-43: o admin pode cancelar o pedido que não foi pago.
+  cancelavel: boolean;
   pagamentos: {
     provedor: string;
     idExterno: string | null;
     metodo: "PIX" | "CARTAO" | "BOLETO" | "SALDO_MERCADO_PAGO";
     situacao: "PENDENTE" | "APROVADO" | "RECUSADO" | "ESTORNADO";
     valorCentavos: number;
+    // PBI-43: por que o webhook pediu estorno e o que o admin pode fazer com o pagamento.
+    motivoEstorno: MotivoEstorno | null;
+    acaoEstorno: "estornar" | "concluir" | null;
   }[];
 };
 
@@ -139,6 +181,7 @@ export function lerPedidoAdmin(numero: unknown, cabecalhos: Headers, agora = new
                   method: true,
                   status: true,
                   amountCents: true,
+                  refundReason: true,
                 },
               },
               user: { select: { name: true, email: true, phone: true } },
@@ -167,12 +210,23 @@ export function lerPedidoAdmin(numero: unknown, cabecalhos: Headers, agora = new
       rastreio: pedido.trackingCode,
       pagoEm: pedido.paidAt,
       enviadoEm: pedido.shippedAt,
+      cancelavel: podeCancelarPedido(
+        pedido.status,
+        pedido.payments.filter((p) => p.status === "PENDENTE").map((p) => p.method),
+      ),
       pagamentos: pedido.payments.map((pagamento) => ({
         provedor: pagamento.provider,
         idExterno: pagamento.externalId,
         metodo: pagamento.method,
         situacao: pagamento.status,
         valorCentavos: pagamento.amountCents,
+        motivoEstorno: pagamento.refundReason,
+        acaoEstorno: pagamento.externalId
+          ? acaoDeEstorno(
+              { situacao: pagamento.status, motivo: pagamento.refundReason },
+              pedido.status,
+            )
+          : null,
       })),
     };
   });

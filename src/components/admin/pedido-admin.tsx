@@ -6,6 +6,7 @@ import { formatarPreco } from "@/modules/catalog/cliente";
 import type { PedidoAdmin } from "@/modules/orders";
 import { rotuloSituacao } from "@/modules/orders/cliente";
 import { AcoesPedido } from "./acoes-pedido";
+import { EstornoPedido } from "./estorno-pedido";
 
 type Pagamento = PedidoAdmin["pagamentos"][number];
 
@@ -26,13 +27,14 @@ const PROVEDOR: Record<string, string> = { mercado_pago: "Mercado Pago" };
 const SECAO = "grid content-start gap-3";
 
 // RF29: detalhe do pedido para o ADMIN (lerPedidoAdmin). Dados de pagamento sem o payload do
-// gateway; as ações (situação e rastreio) ficam no componente de cliente AcoesPedido.
+// gateway; as ações (situação e rastreio) ficam no componente de cliente AcoesPedido, e as de
+// cancelamento e estorno (PBI-43) no EstornoPedido.
 export function PedidoAdminDetalhe({
   pedido,
   acoes,
 }: {
   pedido: PedidoAdmin;
-  acoes: Parameters<typeof AcoesPedido>[0]["acoes"];
+  acoes: Parameters<typeof AcoesPedido>[0]["acoes"] & Parameters<typeof EstornoPedido>[0]["acoes"];
 }) {
   const datas = [
     `Feito em ${dataDoPedido(pedido.criadoEm)}`,
@@ -66,6 +68,12 @@ export function PedidoAdminDetalhe({
             situacao={pedido.situacaoBanco}
             modalidade={pedido.modalidade}
             rastreio={pedido.rastreio}
+            acoes={acoes}
+          />
+          <EstornoPedido
+            numero={pedido.numero}
+            cancelavel={pedido.cancelavel}
+            pagamentos={pedido.pagamentos}
             acoes={acoes}
           />
 

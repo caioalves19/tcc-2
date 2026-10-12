@@ -194,6 +194,7 @@ it("RF29 o detalhe traz cliente, itens, valores, entrega e pagamentos, sem o pay
     rastreio: "BR123456789SP",
     pagoEm: new Date("2026-10-02T15:05:00Z"),
     enviadoEm: new Date("2026-10-03T10:00:00Z"),
+    cancelavel: false,
   });
   expect(pagamentos).toHaveLength(2);
   expect(pagamentos).toEqual(
@@ -204,6 +205,8 @@ it("RF29 o detalhe traz cliente, itens, valores, entrega e pagamentos, sem o pay
         metodo: "PIX",
         situacao: "RECUSADO",
         valorCentavos: 960000,
+        motivoEstorno: null,
+        acaoEstorno: null,
       },
       expect.objectContaining({ idExterno: "mp-20261002-DETAL1-2", situacao: "APROVADO" }),
     ]),

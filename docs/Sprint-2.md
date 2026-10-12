@@ -728,9 +728,34 @@ Consome o cálculo e o contrato de frete/total do checkout (26). Pode avançar j
 
 Consome reservas (25), confirmação/reconciliação de pagamento (28) e operações administrativas de pedidos (30). Não depende das modalidades adicionais de frete (42).
 
-- [ ] Permitir ao ADMIN cancelar pedido não pago e solicitar estorno pelo gateway
-- [ ] Conciliar estado do pagamento, pedido e liberação de reserva sem duplicar operações
-- [ ] Testar falhas, reenvios e permissões no sandbox; não implementar política automática de cancelamento
+- [x] Permitir ao ADMIN cancelar pedido não pago e solicitar estorno pelo gateway
+- [x] Conciliar estado do pagamento, pedido e liberação de reserva sem duplicar operações
+- [x] Testar falhas, reenvios e permissões no sandbox; não implementar política automática de cancelamento
+
+**Decisões (registradas em 12/10/2026):**
+
+- Estorno só total, um por pagamento; pedido enviado ou entregue não é cancelado pelo sistema. O estorno do pedido pago devolve as unidades ao estoque na mesma transação.
+- O webhook grava em `payment.estornar_motivo` (migração `0008`) os casos que antes ficavam só no log; o admin os encontra no filtro "Estorno pendente" e estorna pela tela do pedido.
+- O gateway é chamado fora da transação do banco, com chave de idempotência por pagamento; falha ou resposta perdida são conferidas pela consulta do pagamento.
+- O risco "Pix vencido seguido de cartão" foi tratado aqui; o do frete no valor conferido passou ao PBI-42. Contrato completo em [PBI-43](features/PBI-43.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-43-estorno`, com evidência no sandbox. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+
+**Entregas:**
+
+- `orders`: `confirmarPedidoPago`, `cancelarPedidoPendente`, `cancelarPedidoPago` e `voltarReservaAoPrazo` (transação de quem chama, achado R4), regras puras de estorno e filtro "Estorno pendente".
+- `payments`: `estornarPagamento` e `cancelarPedido` (só ADMIN), estorno e cancelamento no adaptador do Mercado Pago, motivo do estorno gravado pelo webhook.
+- Migração `0008`; seção "Cancelamento e estorno" em `/admin/pedidos/[numero]`.
+
+**Evidências:**
+
+- `npm run lint`, `npm run typecheck`, `npm test` (444 testes) e `npm run build` sem erros; `npm run test:integration` com 227 de 228 testes (um tempo esgotado de 5 s em `wizard-agendamento.test.ts`, arquivo não tocado, que passa sozinho).
+- Sandbox: a recusa do gateway não mudou nada; o estorno feito no painel do Mercado Pago foi concluído pela tela do admin (pedido cancelado, estoque devolvido). Detalhes em [PBI-43](features/PBI-43.md#evidência-no-sandbox-12102026).
+- Revisão read-only por agente: PASS; os achados foram corrigidos em TDD, salvo a mensagem da corrida rara, registrada como pendência.
+
+**Pendências:**
+
+- Antes do deploy: migração `0008`, credenciais de produção ativadas e um primeiro estorno real pela tela do admin (no sandbox, a API recusa o estorno com credenciais de usuário de teste).
 
 **Herdado do PBI-28 (revisão, achado R4):** o webhook (`src/modules/payments/webhook.ts`) grava direto as transições do pedido (`PAGO` com `pago_em`, `CANCELADO` com a reserva liberada e a limpeza do carrinho), e o cancelamento repete a regra dos pedidos abandonados de `finalizarCompra`. Este PBI vai precisar das mesmas transições: expor em `src/modules/orders/index.ts` funções que aceitam a transação do chamador (por exemplo `confirmarPedidoPago(tx, …)` e `cancelarPedidoPendente(tx, …)`) e usá-las no webhook, no checkout e no cancelamento do admin, sem mudar comportamento. Os casos que o webhook deixa no log para este PBI estão em [PBI-28](features/PBI-28.md#pendências-para-os-próximos-pbis).
 

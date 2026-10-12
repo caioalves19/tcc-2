@@ -190,6 +190,7 @@ erDiagram
         enum situacao
         int valor_centavos
         jsonb payload
+        enum estornar_motivo "pedido_nao_pendente valor_divergente sem_estoque (nulo)"
     }
 
     webhook_event {
@@ -335,6 +336,7 @@ O wizard (RF20, RF21, RF23–RF25) **não** gera linha em `appointment`.
 | `address` | No máximo um por `user` (`user_id` único) |
 | `payment` | Pertence sempre a um `order` — não há cobrança de sinal para agendamento (fora de escopo, seção 14) |
 | `payment` | Único por (`provedor`, `id_externo`): notificações repetidas do mesmo pagamento atualizam uma linha só (RNF11). O `metodo` inclui o saldo da conta Mercado Pago, que o Checkout Pro oferece e não deixa excluir |
+| `payment` | `estornar_motivo` (PBI-43) é gravado pelo webhook quando a aprovação não paga o pedido ou o paga sem unidade livre; o admin estorna pelo filtro "Estorno pendente". Nulo é pagamento normal |
 | `webhook_event.id_evento` | Único, para o webhook do Mercado Pago ser idempotente (RNF11) |
 | `order.endereco_copia` | Endereço congelado no pedido; não é FK viva para `address` |
 | `order_item` | Cópia de título, preço e quantidade no momento da compra |
