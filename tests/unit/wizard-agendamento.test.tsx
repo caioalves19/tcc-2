@@ -31,7 +31,13 @@ async function preencherWizard() {
   }
   await usuario.type(screen.getByLabelText("Data de preferência"), "2099-10-18");
   await usuario.type(screen.getByLabelText("Horário de preferência"), "14:30");
+  await marcarAvisos(usuario);
   return usuario;
+}
+
+async function marcarAvisos(usuario: ReturnType<typeof userEvent.setup>) {
+  await usuario.click(screen.getByRole("button", { name: "Avançar" }));
+  for (const aviso of screen.getAllByRole("checkbox")) await usuario.click(aviso);
 }
 
 it("bloqueia edição durante revisão e preserva preferências quando o servidor rejeita", async () => {
@@ -45,7 +51,7 @@ it("bloqueia edição durante revisão e preserva preferências quando o servido
   render(<WizardAgendamento opcoes={opcoes} revisar={revisar} />);
   const usuario = await preencherWizard();
   await usuario.click(screen.getByRole("button", { name: "Revisar preferências" }));
-  expect(screen.getByLabelText("Data de preferência").hasAttribute("disabled")).toBe(true);
+  expect(screen.getAllByRole("checkbox")[0]?.hasAttribute("disabled")).toBe(true);
   expect(screen.getByRole("button", { name: "Voltar" }).hasAttribute("disabled")).toBe(true);
   responder({
     ok: false,
@@ -55,15 +61,19 @@ it("bloqueia edição durante revisão e preserva preferências quando o servido
     expect(screen.getByRole("alert").textContent).toContain("Artista indisponível"),
   );
   expect(screen.queryByRole("heading", { name: "Revise suas preferências" })).toBeNull();
-  expect((screen.getByLabelText("Data de preferência") as HTMLInputElement).value).toBe(
-    "2099-10-18",
-  );
+  expect(
+    screen.getAllByRole("checkbox").every((aviso) => (aviso as HTMLInputElement).checked),
+  ).toBe(true);
   expect(
     screen.getByRole("button", { name: "Revisar preferências" }).hasAttribute("disabled"),
   ).toBe(false);
+  await usuario.click(screen.getByRole("button", { name: "Voltar" }));
+  expect((screen.getByLabelText("Data de preferência") as HTMLInputElement).value).toBe(
+    "2099-10-18",
+  );
 });
 
-it("RF20 navega pelas seis etapas, preserva dados e apresenta resumo sem concluir agendamento", async () => {
+it("RF20 navega pelas sete etapas, preserva dados e apresenta resumo sem concluir agendamento", async () => {
   const usuario = userEvent.setup();
   const revisar = vi.fn().mockImplementation(async (dados) => ({
     ok: true,
@@ -92,24 +102,28 @@ it("RF20 navega pelas seis etapas, preserva dados e apresenta resumo sem conclui
   await usuario.click(screen.getByRole("button", { name: "Avançar" }));
   await usuario.type(screen.getByLabelText("Data de preferência"), "2099-10-18");
   await usuario.type(screen.getByLabelText("Horário de preferência"), "14:30");
+  await marcarAvisos(usuario);
   await usuario.click(screen.getByRole("button", { name: "Revisar preferências" }));
   await waitFor(() =>
     expect(screen.getByRole("heading", { name: "Revise suas preferências" })).toBeTruthy(),
   );
-  expect(revisar).toHaveBeenCalledWith({
-    nome: "Maria",
-    artistaId: "bia",
-    estiloId: "fine-line",
-    regiao: "Antebraço",
-    tamanhoId: "pequena",
-    data: "2099-10-18",
-    horario: "14:30",
-  });
+  expect(revisar).toHaveBeenCalledWith(
+    expect.objectContaining({
+      nome: "Maria",
+      artistaId: "bia",
+      estiloId: "fine-line",
+      regiao: "Antebraço",
+      tamanhoId: "pequena",
+      data: "2099-10-18",
+      horario: "14:30",
+    }),
+  );
   expect(
     screen.getByRole("button", { name: "Continuar para confirmação" }).hasAttribute("disabled"),
   ).toBe(true);
   expect(screen.queryByRole("link", { name: /WhatsApp/ })).toBeNull();
   await usuario.click(screen.getByRole("button", { name: "Editar preferências" }));
+  await usuario.click(screen.getByRole("button", { name: "Voltar" }));
   expect((screen.getByLabelText("Data de preferência") as HTMLInputElement).value).toBe(
     "2099-10-18",
   );

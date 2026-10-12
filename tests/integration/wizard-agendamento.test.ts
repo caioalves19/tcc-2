@@ -67,6 +67,7 @@ it("RF20 valida a preferência sem sessão e sem gravar pedido ou reservar agend
     regiao: "Antebraço",
     data: "2099-10-18",
     horario: "14:30",
+    aceites: { anamnese: true, termo: true, maioridade: true },
   };
   expect(
     await revisarPreferenciaWizard(entrada, new Headers({ "x-real-ip": "pbi31-revisao" })),
@@ -89,6 +90,32 @@ it("RF20 valida a preferência sem sessão e sem gravar pedido ou reservar agend
     artistaId,
     estiloId,
   ]);
+});
+
+it("RF23–RF25/RNF18 recusa a revisão sem os três aceites e não grava nada", async () => {
+  const { revisarPreferenciaWizard } = await import("../../src/modules/scheduling/index");
+  const cabecalhos = new Headers({ "x-real-ip": "pbi32-aceites" });
+  const entrada = {
+    nome: "Maria",
+    artistaId,
+    estiloId,
+    tamanhoId,
+    regiao: "Antebraço",
+    data: "2099-10-18",
+    horario: "14:30",
+  };
+  for (const aceites of [
+    undefined,
+    { anamnese: false, termo: true, maioridade: true },
+    { anamnese: true, termo: false, maioridade: true },
+    { anamnese: true, termo: true, maioridade: false },
+  ])
+    expect(await revisarPreferenciaWizard({ ...entrada, aceites }, cabecalhos)).toEqual({
+      ok: false,
+      mensagem: "Confirme os três avisos para continuar.",
+    });
+  const total = await db.query("SELECT COUNT(*)::int AS total FROM appointment");
+  expect(total.rows).toEqual([{ total: 0 }]);
 });
 
 it("RNF08 compartilha o limite entre consulta de opções e revisão da preferência", async () => {

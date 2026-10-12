@@ -1,19 +1,42 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { CircleAlert, ShieldCheck, TriangleAlert } from "lucide-react";
 import { unstable_rethrow } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import type {
-  DadosWizard,
+  EntradaWizard,
   OpcoesWizard,
   PreferenciaWizard,
   ResultadoWizard,
 } from "@/modules/scheduling";
 
-const ETAPAS = ["Nome", "Artista", "Estilo", "Região", "Tamanho", "Preferência"];
+const ETAPAS = ["Nome", "Artista", "Estilo", "Região", "Tamanho", "Preferência", "Avisos"];
+const ULTIMA = ETAPAS.length - 1;
+// RF23–RF25: avisos sobre o que acontece no estúdio; o aceite não é gravado (RNF18).
+const AVISOS = [
+  {
+    chave: "anamnese",
+    Icone: TriangleAlert,
+    texto:
+      "A ficha de anamnese será preenchida presencialmente. Se não comparecer para preenchê-la, o horário pode ser cancelado.",
+  },
+  {
+    chave: "termo",
+    Icone: CircleAlert,
+    texto:
+      "O termo de consentimento será assinado presencialmente. Sem a assinatura, o horário pode ser cancelado.",
+  },
+  {
+    chave: "maioridade",
+    Icone: ShieldCheck,
+    texto:
+      "Declaro ter 18 anos ou mais. Meu documento com foto será conferido no estúdio; sem ele, o horário será cancelado.",
+  },
+] as const;
 const CAMPO =
   "mt-2 min-h-12 w-full rounded-campo border-2 border-[var(--kolo-contorno)] bg-[var(--kolo-superficie)] px-3 py-2 text-[var(--kolo-superficie-texto)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--kolo-acao)]";
-const INICIAL: DadosWizard = {
+const INICIAL: EntradaWizard = {
   nome: "",
   artistaId: "",
   estiloId: "",
@@ -21,6 +44,7 @@ const INICIAL: DadosWizard = {
   tamanhoId: "",
   data: "",
   horario: "",
+  aceites: { anamnese: false, termo: false, maioridade: false },
 };
 
 export function WizardAgendamento({
@@ -28,10 +52,10 @@ export function WizardAgendamento({
   revisar,
 }: {
   opcoes: OpcoesWizard;
-  revisar: (entrada: DadosWizard) => Promise<ResultadoWizard<PreferenciaWizard>>;
+  revisar: (entrada: EntradaWizard) => Promise<ResultadoWizard<PreferenciaWizard>>;
 }) {
   const [etapa, setEtapa] = useState(0);
-  const [dados, setDados] = useState<DadosWizard>(INICIAL);
+  const [dados, setDados] = useState<EntradaWizard>(INICIAL);
   const [resumo, setResumo] = useState<PreferenciaWizard | null>(null);
   const [erro, setErro] = useState("");
   const [ocupado, setOcupado] = useState(false);
@@ -44,12 +68,18 @@ export function WizardAgendamento({
     titulo.current?.focus();
   }, [etapa, resumo]);
 
-  function alterar(campo: keyof DadosWizard, valor: string) {
+  function alterar(campo: Exclude<keyof EntradaWizard, "aceites">, valor: string) {
     setDados((atual) => ({
       ...atual,
       [campo]: valor,
       ...(campo === "artistaId" && valor !== atual.artistaId ? { estiloId: "" } : {}),
     }));
+    setErro("");
+    setResumo(null);
+  }
+
+  function marcarAviso(chave: keyof EntradaWizard["aceites"], marcado: boolean) {
+    setDados((atual) => ({ ...atual, aceites: { ...atual.aceites, [chave]: marcado } }));
     setErro("");
     setResumo(null);
   }
@@ -67,11 +97,15 @@ export function WizardAgendamento({
         ((campo.name === "nome" || campo.name === "regiao") && campo.value.trim().length < 2),
     );
     if (invalido) {
-      setErro("Preencha corretamente os campos desta etapa para continuar.");
+      setErro(
+        invalido.type === "checkbox"
+          ? "Confirme os três avisos para continuar."
+          : "Preencha corretamente os campos desta etapa para continuar.",
+      );
       invalido.focus();
       return;
     }
-    if (etapa < 5) {
+    if (etapa < ULTIMA) {
       setErro("");
       setEtapa(etapa + 1);
       return;
@@ -107,7 +141,7 @@ export function WizardAgendamento({
     <div className="min-w-0">
       <ol
         aria-label="Etapas do agendamento"
-        className="mb-8 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3 lg:grid-cols-6"
+        className="mb-8 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4 lg:grid-cols-7"
       >
         {ETAPAS.map((nome, indice) => (
           <li
@@ -324,6 +358,33 @@ export function WizardAgendamento({
               </p>
             </div>
           )}
+          {etapa === 6 && (
+            <fieldset className="grid gap-3">
+              <legend className="mb-2">Três avisos rápidos sobre o dia da sessão.</legend>
+              {AVISOS.map(({ chave, Icone, texto }) => (
+                <label
+                  key={chave}
+                  htmlFor={`wizard-aviso-${chave}`}
+                  className="flex items-start gap-3 rounded-campo border border-[var(--kolo-contorno)] p-4"
+                >
+                  <input
+                    id={`wizard-aviso-${chave}`}
+                    name={`aceite-${chave}`}
+                    type="checkbox"
+                    disabled={ocupado}
+                    required
+                    checked={dados.aceites[chave]}
+                    onChange={(e) => marcarAviso(chave, e.target.checked)}
+                    aria-describedby={erroId}
+                    aria-invalid={!!erro && !dados.aceites[chave]}
+                    className="mt-1 size-5 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--kolo-acao)]"
+                  />
+                  <Icone aria-hidden className="mt-0.5 size-5 shrink-0" />
+                  <span>{texto}</span>
+                </label>
+              ))}
+            </fieldset>
+          )}
           {erro && (
             <p id="wizard-erro" role="alert" className="text-destructive">
               {erro}
@@ -336,7 +397,7 @@ export function WizardAgendamento({
               </Button>
             )}
             <Button type="submit" disabled={ocupado}>
-              {ocupado ? "Revisando…" : etapa === 5 ? "Revisar preferências" : "Avançar"}
+              {ocupado ? "Revisando…" : etapa === ULTIMA ? "Revisar preferências" : "Avançar"}
             </Button>
           </div>
         </form>

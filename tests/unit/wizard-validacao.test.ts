@@ -16,10 +16,11 @@ const dados = {
   tamanhoId: tamanho,
   data: "2026-10-18",
   horario: "14:30",
+  aceites: { anamnese: true, termo: true, maioridade: true },
 };
 const agora = new Date("2026-10-05T12:00:00Z");
 
-it("RF20 valida as seis etapas, normaliza o nome e interpreta a preferência em São Paulo", () => {
+it("RF20/RF23–RF25 valida as etapas com os três aceites, normaliza o nome e interpreta a preferência em São Paulo", () => {
   expect(validarDadosWizard(dados, opcoes, agora)).toEqual({
     ok: true,
     dados: { ...dados, nome: "Maria", preferenciaEm: "2026-10-18T17:30:00.000Z" },
@@ -47,4 +48,21 @@ it("rejeita preferência que já passou no mesmo dia, respeitando São Paulo", (
   expect(
     validarDadosWizard({ ...dados, data: "2026-10-05", horario: "08:59" }, opcoes, agora).ok,
   ).toBe(false);
+});
+
+it.each([
+  { aceites: undefined },
+  { aceites: { termo: true, maioridade: true } },
+  { aceites: { anamnese: true, maioridade: true } },
+  { aceites: { anamnese: true, termo: true } },
+  { aceites: { anamnese: false, termo: true, maioridade: true } },
+  { aceites: { anamnese: true, termo: false, maioridade: true } },
+  { aceites: { anamnese: true, termo: true, maioridade: false } },
+  { aceites: { anamnese: "true", termo: true, maioridade: true } },
+  { aceites: { anamnese: true, termo: true, maioridade: true, saude: "não permitido" } },
+])("RF23–RF25/RNF18 rejeita aceite ausente, falso ou campo extra: %j", (alteracao) => {
+  expect(validarDadosWizard({ ...dados, ...alteracao }, opcoes, agora)).toEqual({
+    ok: false,
+    mensagem: "Confirme os três avisos para continuar.",
+  });
 });
