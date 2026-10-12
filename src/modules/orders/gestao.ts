@@ -49,7 +49,20 @@ export type PaginaPedidosAdmin = {
 // (ainda não enviado) cujo pagamento já foi estornado no Mercado Pago e falta cancelar.
 const ESTORNO_PENDENTE: Prisma.OrderWhereInput = {
   OR: [
-    { payments: { some: { status: "APROVADO", refundReason: { not: null } } } },
+    {
+      payments: {
+        some: {
+          status: "APROVADO",
+          refundReason: { in: ["PEDIDO_NAO_PENDENTE", "VALOR_DIVERGENTE"] },
+        },
+      },
+    },
+    // Sem unidade livre cancela o pedido no estorno: o pedido já enviado não tem mais o que fazer
+    // aqui (mesma regra de acaoDeEstorno).
+    {
+      status: { notIn: ["ENVIADO", "ENTREGUE"] },
+      payments: { some: { status: "APROVADO", refundReason: "SEM_ESTOQUE" } },
+    },
     {
       status: { in: ["PAGO", "PROCESSANDO"] },
       payments: {

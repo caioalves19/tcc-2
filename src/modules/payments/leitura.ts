@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+// Nome do provedor em payment.provedor e webhook_event.origem.
+export const PROVEDOR = "mercado_pago";
+
 export type SituacaoPagamento = "PENDENTE" | "APROVADO" | "RECUSADO" | "ESTORNADO";
 export type MeioPagamento = "PIX" | "CARTAO" | "BOLETO" | "SALDO_MERCADO_PAGO";
 

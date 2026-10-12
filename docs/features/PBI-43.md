@@ -89,6 +89,18 @@ operações com o webhook. Decisões confirmadas antes de codar (12/10/2026):
 - `tests/unit/mercado-pago.test.ts`, `estorno-pedido.test.tsx` e `estorno-acoes.test.ts`:
   adaptador, tela e Server Actions.
 
+## Revisão (12/10/2026)
+
+Revisão read-only por agente: PASS. Corrigidos em TDD: o filtro "Estorno pendente" seguia
+mostrando a aprovação `SEM_ESTOQUE` de pedido já enviado (sem ação possível), e o cancelamento
+passou a conferir de novo, na segunda transação, se chegou um pagamento novo (cartão em análise
+ou outro Pix) enquanto o Pix era cancelado no Mercado Pago. `PROVEDOR` ficou numa constante só.
+
+Pendência aceita: se a segunda transação do estorno falhar por concorrência (um aviso `refunded`
+gravado ao mesmo tempo), o admin vê a mensagem genérica de concorrência, embora o dinheiro já tenha
+voltado. Repetir é seguro (mesma chave; a ação vira "Concluir estorno"), mas a mensagem poderia
+dizer isso.
+
 ## Antes do deploy
 
 - Migração `0008` (`npm run db:migrate`).

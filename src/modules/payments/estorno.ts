@@ -8,7 +8,7 @@ import {
   estornoDevolveEstoque,
   type MotivoEstorno,
 } from "../orders/index";
-import { lerPagamento } from "./leitura";
+import { lerPagamento, PROVEDOR } from "./leitura";
 import type { GatewayPagamento } from "./pagamento";
 
 // PBI-43 (complemento do RF29): estorno e cancelamento pelo ADMIN. A chamada ao Mercado Pago fica
@@ -16,8 +16,6 @@ import type { GatewayPagamento } from "./pagamento";
 // aceitar, grava o resultado numa transação nova que confere tudo de novo.
 
 type Tx = Prisma.TransactionClient;
-
-export const PROVEDOR = "mercado_pago";
 
 const schemaEstorno = z.object({
   numero: z.string().min(1).max(32),

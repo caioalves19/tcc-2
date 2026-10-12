@@ -94,6 +94,15 @@ export async function cancelarPedido(
       where: { id: { in: plano.emAberto.map((p) => p.id) }, status: "PENDENTE" },
       data: { status: "RECUSADO" },
     });
+    // Pagamento novo (cartão em análise, outro Pix) chegou depois da conferência: nada é gravado.
+    const novos = await tx.payment.count({
+      where: { orderId: plano.pedidoId, status: "PENDENTE" },
+    });
+    if (novos > 0)
+      throw new ErroGestao(
+        "invalido",
+        "Chegou um pagamento novo para este pedido no Mercado Pago. Atualize a página.",
+      );
     // Pago (ou cancelado) entre a conferência e aqui: nada é gravado.
     const cancelado = await cancelarPedidoPendente(tx, plano.pedidoId);
     if (!cancelado.ok) throw naoPendente();

@@ -118,3 +118,18 @@ it("PBI-43 o detalhe diz se o pedido pode ser cancelado e o que fazer com cada p
   expect(enviado.ok && enviado.dados.cancelavel).toBe(false);
   expect(enviado.ok && enviado.dados.pagamentos.map((p) => p.acaoEstorno)).toEqual([null]);
 });
+
+it("PBI-43 aprovação sem unidade livre de pedido já enviado sai do filtro (não há ação para ela)", async () => {
+  const { listarPedidosAdmin } = await import("../../src/modules/orders");
+  await pedido({
+    numero: "20261009-ENVSE1",
+    situacao: "ENVIADO",
+    criadoEm: dia(9),
+    pagamentos: ["APROVADO"],
+  });
+  await marcar("mp-20261009-ENVSE1-1", "SEM_ESTOQUE");
+
+  const lista = await listarPedidosAdmin({ filtro: "estorno-pendente" }, admin);
+
+  expect(lista.ok && lista.dados.pedidos.map((p) => p.numero)).toEqual([]);
+});

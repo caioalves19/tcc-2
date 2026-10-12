@@ -170,3 +170,28 @@ it("PBI-43 só o admin cancela: cliente, artista e visitante não chamam o gatew
     reservas: 1,
   });
 });
+
+it("PBI-43 cartão que entra em análise durante o cancelamento do Pix: o pedido não é cancelado", async () => {
+  const { cancelarPedido } = await import("../../src/modules/payments");
+  const { obra } = await pedidoPendente("c7-corrida", "20261012-C7COR1", ["PENDENTE"]);
+  const gateway = gatewayDeCancelamento();
+  // O cliente abre um cartão enquanto o admin cancela o Pix no Mercado Pago.
+  const cancelarNoMp = gateway.cancelarPagamento;
+  gateway.cancelarPagamento = async (id: string) => {
+    await cancelarNoMp(id);
+    await cenario.db.query(
+      `INSERT INTO payment (id, order_id, provedor, id_externo, metodo, situacao, valor_centavos)
+       SELECT gen_random_uuid(), id, 'mercado_pago', 'cartao-novo', 'CARTAO', 'PENDENTE', 960000
+         FROM "order" WHERE numero = '20261012-C7COR1'`,
+    );
+  };
+
+  expect(
+    await cancelarPedido({ numero: "20261012-C7COR1" }, cenario.contas.admin, { gateway }),
+  ).toMatchObject({ ok: false, erro: "invalido" });
+
+  expect(await estado("20261012-C7COR1", obra)).toMatchObject({
+    situacao: "PENDENTE",
+    reservas: 1,
+  });
+});

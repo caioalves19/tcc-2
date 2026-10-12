@@ -11,7 +11,7 @@ import {
 } from "../orders/index";
 import { assinaturaValida } from "./assinatura";
 import { prazoParaPagar } from "./cliente";
-import { lerPagamento, type PagamentoLido, type SituacaoPagamento } from "./leitura";
+import { lerPagamento, PROVEDOR, type PagamentoLido, type SituacaoPagamento } from "./leitura";
 
 // Porta da consulta: o webhook só confia na situação que a API de pagamentos devolve (RN05).
 export type ConsultaPagamento = { consultarPagamento(id: string): Promise<unknown | null> };
@@ -25,8 +25,6 @@ export type RequisicaoNotificacao = {
 };
 export type OpcoesNotificacao = { gateway: ConsultaPagamento; segredo: string; agora?: Date };
 export type RespostaNotificacao = { status: 200 | 401 | 500 };
-
-const PROVEDOR = "mercado_pago";
 
 const schemaCorpo = z.object({
   id: z.union([z.string(), z.number()]).nullish(),
