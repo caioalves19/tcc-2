@@ -57,3 +57,76 @@ it("RN06 cancelarPedidoPendente cancela o pedido e devolve as unidades que ele s
     reservas: 0,
   });
 });
+
+async function pedidoPago(slug: string, numero: string, situacao: "PAGO" | "ENVIADO" = "PAGO") {
+  const obra = await cenario.fabrica.obraPublicada(slug, "4.800,00", 2);
+  const cliente = await cenario.fabrica.novoCliente(`${slug}@pbi43.test`);
+  const pedidoId = await cenario.fabrica.pedidoDeTeste(cliente, {
+    numero,
+    situacao,
+    criadoEm: AGORA.toISOString(),
+    pagoEm: AGORA.toISOString(),
+    obra,
+  });
+  // As duas unidades já saíram do estoque na aprovação.
+  await cenario.db.query(
+    "UPDATE artwork SET quantidade_estoque = 0, situacao = 'ESGOTADA' WHERE id = $1",
+    [obra],
+  );
+  return { obra, pedidoId };
+}
+
+it("PBI-43 cancelarPedidoPago cancela o pedido pago e devolve as unidades ao estoque", async () => {
+  const { cancelarPedidoPago } = await import("../../src/modules/orders");
+  const { obra, pedidoId } = await pedidoPago("t6-devolve", "20261012-T6DEV1");
+
+  expect(
+    await naTransacao((tx) => cancelarPedidoPago(tx, pedidoId, { devolverEstoque: true })),
+  ).toEqual({ ok: true });
+
+  expect(await estado("20261012-T6DEV1", obra)).toMatchObject({
+    situacao: "CANCELADO",
+    estoque: 2,
+    situacaoObra: "DISPONIVEL",
+  });
+});
+
+it("PBI-43 cancelarPedidoPago sem devolver estoque (a aprovação não baixou) não mexe na obra", async () => {
+  const { cancelarPedidoPago } = await import("../../src/modules/orders");
+  const { obra, pedidoId } = await pedidoPago("t6-sem-baixa", "20261012-T6SEM1");
+
+  await naTransacao((tx) => cancelarPedidoPago(tx, pedidoId, { devolverEstoque: false }));
+
+  expect(await estado("20261012-T6SEM1", obra)).toMatchObject({
+    situacao: "CANCELADO",
+    estoque: 0,
+    situacaoObra: "ESGOTADA",
+  });
+});
+
+it("PBI-43 cancelarPedidoPago devolve estoque à obra em rascunho sem publicá-la", async () => {
+  const { cancelarPedidoPago } = await import("../../src/modules/orders");
+  const { obra, pedidoId } = await pedidoPago("t6-rascunho", "20261012-T6RAS1");
+  await cenario.db.query("UPDATE artwork SET situacao = 'RASCUNHO' WHERE id = $1", [obra]);
+
+  await naTransacao((tx) => cancelarPedidoPago(tx, pedidoId, { devolverEstoque: true }));
+
+  expect(await estado("20261012-T6RAS1", obra)).toMatchObject({
+    estoque: 2,
+    situacaoObra: "RASCUNHO",
+  });
+});
+
+it("PBI-43 cancelarPedidoPago recusa pedido já enviado e não mexe em nada", async () => {
+  const { cancelarPedidoPago } = await import("../../src/modules/orders");
+  const { obra, pedidoId } = await pedidoPago("t6-enviado", "20261012-T6ENV1", "ENVIADO");
+
+  expect(
+    await naTransacao((tx) => cancelarPedidoPago(tx, pedidoId, { devolverEstoque: true })),
+  ).toEqual({ ok: false, erro: "nao_cancelavel" });
+
+  expect(await estado("20261012-T6ENV1", obra)).toMatchObject({
+    situacao: "ENVIADO",
+    estoque: 0,
+  });
+});

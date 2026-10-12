@@ -1,4 +1,5 @@
 import type { Prisma } from "../../../generated/prisma/client";
+import { situacaoPorEstoque } from "../catalog/index";
 import { baixarEstoque, PRAZO_RESERVA_MS } from "./reserva";
 
 // PBI-43 (achado R4 do PBI-28): as transições do pedido ficam em `orders` e rodam na transação
@@ -74,4 +75,36 @@ export async function voltarReservaAoPrazo(tx: Tx, pedidoId: string): Promise<vo
     },
     data: { expiresAt: prazo },
   });
+}
+
+// PBI-43: pedido pago e ainda não enviado que foi estornado vira CANCELADO. As unidades voltam
+// ao estoque se a aprovação as baixou (`devolverEstoque`); a situação da obra acompanha o
+// estoque (RN11), salvo rascunho.
+export async function cancelarPedidoPago(
+  tx: Tx,
+  pedidoId: string,
+  opcoes: { devolverEstoque: boolean },
+): Promise<{ ok: true } | { ok: false; erro: "nao_cancelavel" }> {
+  const { count } = await tx.order.updateMany({
+    where: { id: pedidoId, status: { in: ["PAGO", "PROCESSANDO"] } },
+    data: { status: "CANCELADO" },
+  });
+  if (count === 0) return { ok: false, erro: "nao_cancelavel" };
+  if (!opcoes.devolverEstoque) return { ok: true };
+  const itens = await tx.orderItem.findMany({
+    where: { orderId: pedidoId },
+    orderBy: { artworkId: "asc" },
+  });
+  for (const item of itens) {
+    const obra = await tx.artwork.update({
+      where: { id: item.artworkId },
+      data: { stockQuantity: { increment: item.quantity } },
+    });
+    if (obra.status !== "RASCUNHO")
+      await tx.artwork.update({
+        where: { id: obra.id },
+        data: { status: situacaoPorEstoque(true, obra.stockQuantity) },
+      });
+  }
+  return { ok: true };
 }
