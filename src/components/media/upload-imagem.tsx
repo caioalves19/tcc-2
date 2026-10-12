@@ -16,6 +16,7 @@ export function UploadImagem({
   solicitar,
   processar,
   aoConcluir,
+  aoEnviar,
   enviar = fetch,
 }: {
   destino: EntradaUpload["destino"];
@@ -24,6 +25,7 @@ export function UploadImagem({
   processar: (chave: string) => Promise<ResultadoProcessamento>;
   aoConcluir: (imagem: Concluido) => void;
   enviar?: Envio;
+  aoEnviar?: (enviando: boolean) => void;
 }) {
   const [estado, setEstado] = useState<"ocioso" | "enviando" | "sucesso">("ocioso");
   const [erro, setErro] = useState<string | null>(null);
@@ -32,6 +34,7 @@ export function UploadImagem({
 
   function falhar(mensagem: string) {
     setEstado("ocioso");
+    aoEnviar?.(false);
     setErro(mensagem);
   }
 
@@ -39,6 +42,7 @@ export function UploadImagem({
   async function iniciar(arquivo: File) {
     setErro(null);
     setImagem(arquivo);
+    aoEnviar?.(true);
     const validacao = validarImagem({ tipo: arquivo.type, tamanho: arquivo.size });
     if (!validacao.ok) return falhar(MENSAGENS_UPLOAD[validacao.motivo] ?? "Imagem inválida.");
     setEstado("enviando");
@@ -59,6 +63,7 @@ export function UploadImagem({
       const processado = await processar(assinado.dados.chave);
       if (!processado.ok) return falhar(processado.mensagem);
       setEstado("sucesso");
+      aoEnviar?.(false);
       aoConcluir({ chave: assinado.dados.chave, chaveMiniatura: processado.dados.chaveMiniatura });
     } catch {
       falhar(FALHA_NO_ENVIO);
@@ -66,11 +71,12 @@ export function UploadImagem({
   }
 
   return (
-    <div className="grid gap-3">
+    <div className="grid min-w-0 grid-cols-1 gap-3">
       <label htmlFor={idCampo}>Imagem</label>
       <input
         id={idCampo}
         type="file"
+        className="w-full min-w-0"
         accept="image/jpeg,image/png,image/webp"
         disabled={estado === "enviando"}
         onChange={(evento) => {

@@ -638,10 +638,12 @@ Consome artistas/estilos (16) e upload (17). Pode avançar em paralelo ao CRUD d
 
 **Contrato do upload (PBI-17):** só gravar em `portfolio_item.imagem_url` uma chave que `processarImagem` devolveu com sucesso, e nunca uma chave recebida direto do navegador: é o `processarImagem` que confirma que o objeto é uma imagem JPEG, PNG ou WebP de verdade.
 
-- [ ] Reutilizar upload para incluir, editar, ordenar, destacar e remover trabalhos
-- [ ] Associar artista, estilos e região do corpo aos trabalhos
-- [ ] Permitir gestão pelo ADMIN e pelo próprio artista, com autorização no servidor
-- [ ] Testar persistência e impedir alterações em portfólio de outro artista
+- [x] Reutilizar upload para incluir, editar, ordenar, destacar e remover trabalhos
+- [x] Associar artista, estilos e região do corpo aos trabalhos
+- [x] Permitir gestão pelo ADMIN e pelo próprio artista, com autorização no servidor
+- [x] Testar persistência e impedir alterações em portfólio de outro artista
+
+**Situação (12/10/2026):** implementado localmente em `/portfolio/gestao`, com tela compartilhada e ordenação por botões. Contrato e validação em [PBI-35](features/PBI-35.md). Revisão independente concluída com PASS após corrigir o header ADMIN e a seleção de imagem depois de falha. Trabalho na branch `feat/pbi-35-portfolio`, com revisão independente concluída e sem push. Envio real ao R2 aguarda configuração do bucket e das credenciais locais; passo a passo no README.
 
 ### PBI-36 — Galeria pública de tatuagens
 

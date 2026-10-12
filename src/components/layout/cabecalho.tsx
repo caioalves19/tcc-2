@@ -20,7 +20,7 @@ const LINKS = [
 type PropsConta = {
   logado?: boolean;
   administrador?: boolean;
-  // ARTISTA ou ADMIN: mostra a agenda (PBI-34). O acesso de verdade é conferido no servidor.
+  // ARTISTA ou ADMIN: agenda e portfólio. O acesso é conferido no servidor.
   equipe?: boolean;
   acaoSair?: () => Promise<void>;
 };
@@ -39,27 +39,35 @@ function AcaoConta({
         {equipe && (
           <a
             href="/agenda"
-            className={buttonVariants({ size: "sm", variant: "contorno", className: "mr-2" })}
+            className={buttonVariants({ size: "sm", variant: "contorno", className: "px-2" })}
           >
             Agenda
+          </a>
+        )}
+        {equipe && (
+          <a
+            href="/portfolio/gestao"
+            className={buttonVariants({ size: "sm", variant: "contorno", className: "px-2" })}
+          >
+            Portfólio
           </a>
         )}
         {administrador && (
           <a
             href="/admin"
-            className={buttonVariants({ size: "sm", variant: "contorno", className: "mr-2" })}
+            className={buttonVariants({ size: "sm", variant: "contorno", className: "px-2" })}
           >
             Administração
           </a>
         )}
         <a
           href="/conta"
-          className={buttonVariants({ size: "sm", variant: "contorno", className: "mr-2" })}
+          className={buttonVariants({ size: "sm", variant: "contorno", className: "px-2" })}
         >
           Minha conta
         </a>
         <form action={acaoSair}>
-          <Button type="submit" size="sm" variant="contorno" className="w-full">
+          <Button type="submit" size="sm" variant="contorno" className="w-full px-2">
             Sair
           </Button>
         </form>
@@ -85,23 +93,26 @@ export function Cabecalho({
   return (
     <header className="sticky top-0 z-50 border-b-2 border-neutro-grafite bg-[var(--kolo-fundo)]">
       <div className="mx-auto flex h-20 max-w-pagina items-center justify-between gap-4 px-margem md:px-margem-desktop">
-        <a href="/" className="rounded-campo focus-visible:ring-3 focus-visible:ring-ring/50">
+        <a
+          href="/"
+          className="shrink-0 rounded-campo focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
           <Marca preload />
         </a>
 
-        <nav aria-label="Navegação principal" className="hidden items-center gap-1 lg:flex">
+        <nav aria-label="Navegação principal" className="hidden items-center xl:flex">
           {LINKS.map((link) => (
             <a
               key={link.href}
               href={link.href}
-              className="rounded-campo px-3 py-2 font-display text-selo uppercase text-[var(--kolo-texto)] hover:bg-accent focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="rounded-campo px-2 py-2 font-display text-selo uppercase text-[var(--kolo-texto)] hover:bg-accent focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               {link.rotulo}
             </a>
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {/* RF11: a contagem vem do servidor (layout), em unidades disponíveis. */}
           <a
             href="/carrinho"
@@ -131,12 +142,12 @@ export function Cabecalho({
             administrador={administrador}
             equipe={equipe}
             acaoSair={acaoSair}
-            className="hidden sm:inline-flex"
+            className="hidden items-center gap-2 xl:inline-flex"
           />
           <Button
             variant="contorno"
             size="icon-sm"
-            className="lg:hidden"
+            className="xl:hidden"
             aria-expanded={menuAberto}
             aria-controls="menu-mobile"
             aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
@@ -151,7 +162,7 @@ export function Cabecalho({
         <nav
           id="menu-mobile"
           aria-label="Menu mobile"
-          className="border-t-2 border-neutro-grafite bg-[var(--kolo-superficie)] px-margem py-4 lg:hidden"
+          className="border-t-2 border-neutro-grafite bg-[var(--kolo-superficie)] px-margem py-4 xl:hidden"
         >
           <ul className="flex flex-col gap-1">
             {LINKS.map((link) => (
@@ -165,13 +176,13 @@ export function Cabecalho({
                 </a>
               </li>
             ))}
-            <li className="pt-2 sm:hidden">
+            <li className="pt-2">
               <AcaoConta
                 logado={logado}
                 administrador={administrador}
                 equipe={equipe}
                 acaoSair={acaoSair}
-                className="w-full"
+                className="flex flex-wrap items-center gap-2"
               />
             </li>
           </ul>

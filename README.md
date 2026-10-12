@@ -73,13 +73,43 @@ Configuração (variáveis no `.env` local, nunca versionadas; modelo em `.env.e
 | `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | Token de API do R2 com leitura e escrita **só nesse bucket** (R2 → Manage API Tokens) |
 | `R2_PUBLIC_URL` | URL pública do bucket; também libera o host no `next/image` |
 
-Para criar o bucket de teste (R2 → Create bucket): habilite o acesso público em Settings → Public access → **R2.dev subdomain** (é a `R2_PUBLIC_URL`) e crie o token em R2 → Manage API Tokens, com **Object Read & Write** aplicado só a esse bucket.
+Para configurar do zero:
+
+1. No painel Cloudflare, abra **Storage & databases → R2 → Overview** e ative o R2, caso ainda não esteja ativo. Essa ativação é feita pelo dono da conta.
+2. Em **Create bucket**, crie `kolo-imagens-teste`, sem selecionar uma jurisdição específica: o app usa o endpoint global do R2.
+3. No bucket, em **Settings → Public Development URL / R2.dev subdomain**, habilite o endereço público de desenvolvimento. Copie o endereço `https://pub-....r2.dev` para `R2_PUBLIC_URL`.
+4. Em **R2 → Manage API Tokens**, crie um token **Object Read & Write**, limitado a `kolo-imagens-teste`. Preencha `R2_ACCESS_KEY_ID` e `R2_SECRET_ACCESS_KEY` com os valores exibidos; o Secret Access Key só aparece nessa etapa. O `R2_ACCOUNT_ID` vem do Overview, e `R2_BUCKET` deve ser `kolo-imagens-teste`.
+5. Preencha este bloco no `.env` local com os valores da sua conta (sem `NEXT_PUBLIC_`):
+
+```dotenv
+R2_ACCOUNT_ID="preencha-o-account-id"
+R2_BUCKET="kolo-imagens-teste"
+R2_ACCESS_KEY_ID="preencha-o-access-key-id"
+R2_SECRET_ACCESS_KEY="preencha-o-secret-access-key"
+R2_PUBLIC_URL="https://pub-preencha.r2.dev"
+```
+
+As etapas seguem a documentação oficial de [início do R2](https://developers.cloudflare.com/r2/get-started/), [credenciais](https://developers.cloudflare.com/r2/api/tokens/) e [bucket público](https://developers.cloudflare.com/r2/buckets/public-buckets/).
 
 No bucket, configure o **CORS** para o navegador conseguir o `PUT` direto (Settings → CORS Policy). Em desenvolvimento:
 
 ```json
-[{"AllowedOrigins":["http://localhost:3000"],"AllowedMethods":["GET","PUT","HEAD"],"AllowedHeaders":["*"],"ExposeHeaders":["ETag"],"MaxAgeSeconds":3600}]
+[
+  {
+    "AllowedOrigins": ["http://localhost:3000", "http://localhost:3100"],
+    "AllowedMethods": ["GET", "PUT", "HEAD"],
+    "AllowedHeaders": ["Content-Type"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
 ```
+
+A origem deve ser exatamente a usada no navegador, incluindo a porta e sem caminho: se abrir pelo IP da máquina, acrescente aquela origem. Consulte a [configuração de CORS do R2](https://developers.cloudflare.com/r2/buckets/cors/).
+
+Depois de preencher o `.env`, reinicie `npm run dev`. Em `/portfolio/gestao`, selecione um artista, envie uma imagem JPEG/PNG/WebP de até 5 MB e aguarde “Imagem enviada com sucesso”. Salve o trabalho e recarregue: a miniatura precisa continuar visível. No bucket devem existir o original e o arquivo `_thumb.webp`.
+
+Sem as credenciais, o formulário informa “O envio de imagens ainda não está configurado”. Se estiverem preenchidas e o envio falhar, confira o CORS e o escopo do token.
 
 Em produção, troque a origem pelo domínio do site e use um domínio próprio no bucket: a URL `r2.dev` tem limite de requisições e não é recomendada para produção. A mudança de `R2_PUBLIC_URL` exige reiniciar o servidor: o `next start` lê o `next.config.ts` na subida e é dali que sai o host liberado para o `next/image`. Se o deploy passar a usar `output: "standalone"`, a configuração é congelada no build, e então a variável precisa existir também durante o `npm run build`.
 
