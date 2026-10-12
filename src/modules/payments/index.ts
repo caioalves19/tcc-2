@@ -14,3 +14,5 @@ export type { GatewayPagamento, OpcoesPagamento, ResultadoPagamento } from "./pa
 export { montarPreferencia } from "./preferencia";
 export type { CorpoPreferencia, ResultadoPreferencia } from "./preferencia";
 export { FOLGA_PAGAMENTO_MS, prazoParaPagar } from "./cliente";
+export { estornarPagamento } from "./estorno";
+export type { OpcoesEstorno } from "./estorno";
