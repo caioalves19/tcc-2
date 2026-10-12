@@ -643,7 +643,7 @@ Consome artistas/estilos (16) e upload (17). Pode avançar em paralelo ao CRUD d
 - [x] Permitir gestão pelo ADMIN e pelo próprio artista, com autorização no servidor
 - [x] Testar persistência e impedir alterações em portfólio de outro artista
 
-**Situação (12/10/2026):** implementado localmente em `/portfolio/gestao`, com tela compartilhada e ordenação por botões. Contrato e validação em [PBI-35](features/PBI-35.md). Revisão independente concluída com PASS após corrigir o header ADMIN e a seleção de imagem depois de falha. Trabalho na branch `feat/pbi-35-portfolio`, com revisão independente concluída e sem push. Envio real ao R2 aguarda configuração do bucket e das credenciais locais; passo a passo no README.
+**Situação:** integrado à `main` pelo PR #57 em 12/10/2026, aprovado por outro integrante. Gestão em `/portfolio/gestao`, com tela compartilhada e ordenação por botões; contrato e validação em [PBI-35](features/PBI-35.md). A entrega está disponível para a galeria pública (36). O envio real ao R2 aguarda a configuração do bucket e das credenciais; passo a passo no README.
 
 ### PBI-36 — Galeria pública de tatuagens
 
@@ -682,6 +682,8 @@ O formulário e a persistência de configurações podem ser preparados com a ba
 - [ ] Permitir ao ADMIN editar contato, horários, textos institucionais e políticas
 - [ ] Integrar os valores às páginas públicas e ao número usado no WhatsApp
 - [ ] Validar entradas no servidor e testar persistência e controle de acesso
+
+**Herdado do PBI-42 (12/10/2026):** o valor fixo da entrega em São Paulo/SP e a tabela de frete por UF ficam em constantes no módulo `orders`; mudar um valor exige commit. Uma tela para o ADMIN editar esses valores cabe aqui, mas o RF31 não cita frete: decidir com a equipe se entra neste PBI ou fica como pendência.
 
 ### PBI-40 — Exclusão de conta e anonimização
 
@@ -722,6 +724,8 @@ Consome o cálculo e o contrato de frete/total do checkout (26). Pode avançar j
 
 **Herdado do PBI-28 (risco do [comentário na #51](https://github.com/caioalves19/tcc-2/pull/51#issuecomment-6114518780), passado do PBI-43 em 12/10/2026):** o frete precisa entrar na preferência e no valor conferido (RN07). Hoje `montarPreferencia` (`src/modules/payments/preferencia.ts`) manda só os itens e recusa o pedido cujo total não fecha com eles; o webhook (`aprovar` em `src/modules/payments/webhook.ts`) só paga o pedido se `transaction_amount` for igual a `totalCents`. Com frete acima de 0, o frete vai na preferência (por exemplo, em `shipments.cost`) e a conferência da preferência passa a ser itens + frete = total. O risco só existe com este PBI: com frete sempre 0, nada muda.
 
+**Herdado do PBI-43 (revisão do PR #58, 12/10/2026):** "Concluir estorno" pode cancelar um pedido pago por outro pagamento. Quando o primeiro aviso que o webhook processa de um pagamento já é `refunded` (a aprovação dele se perdeu), o pagamento é gravado `ESTORNADO` sem `estornar_motivo`, e `acaoDeEstorno` (`src/modules/orders/regras.ts`) responde `"concluir"` se o pedido estiver `PAGO` ou `PROCESSANDO`. Exemplo: o cliente paga duas vezes (A e B), o aviso de aprovação de A se perde, B paga o pedido, o vendedor estorna A no painel do Mercado Pago e o aviso de A chega já como `refunded`. O pedido aparece em "Estorno pendente", e "Concluir estorno" cancela o pedido e devolve o estoque, mas B, que pagou, continua aprovado. Correção em TDD: só oferecer "concluir" quando nenhum outro pagamento do pedido estiver `APROVADO` sem motivo, com a mesma regra no terceiro ramo de `ESTORNO_PENDENTE` (`src/modules/orders/gestao.ts`) e em `estornarPagamento` (`src/modules/payments/estorno.ts`). Gate: um teste de integração em `tests/integration/estorno.test.ts` com esse cenário (o pedido segue `PAGO`, o estoque não muda e a ação fica `null`), e outro em `tests/integration/pedidos-admin-estorno.test.ts` com o pedido fora do filtro.
+
 ### PBI-43 — Cancelamento e estorno administrativo
 
 **Referências:** Complemento do RF29 · **Prioridade:** P1 · **Deps:** PBI-25, PBI-28, PBI-30.
@@ -739,7 +743,7 @@ Consome reservas (25), confirmação/reconciliação de pagamento (28) e operaç
 - O gateway é chamado fora da transação do banco, com chave de idempotência por pagamento; falha ou resposta perdida são conferidas pela consulta do pagamento.
 - O risco "Pix vencido seguido de cartão" foi tratado aqui; o do frete no valor conferido passou ao PBI-42. Contrato completo em [PBI-43](features/PBI-43.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-43-estorno`, com evidência no sandbox. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+**Situação:** integrado à `main` pelo PR #58 em 12/10/2026, aprovado por outro integrante, com evidência no sandbox. O achado da revisão sobre "Concluir estorno" passou ao PBI-42 (ver a nota na seção do PBI-42).
 
 **Entregas:**
 
