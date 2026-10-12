@@ -11,7 +11,7 @@ import type { GatewayPagamento } from "./pagamento";
 
 type Tx = Prisma.TransactionClient;
 
-const PROVEDOR = "mercado_pago";
+export const PROVEDOR = "mercado_pago";
 
 const schemaEstorno = z.object({
   numero: z.string().min(1).max(32),
@@ -54,7 +54,7 @@ async function pagamentoDoPedido(tx: Tx, numero: string, idExterno: string) {
   return pagamento;
 }
 
-function tipoEStatus(erro: unknown): [string, number | null] {
+export function tipoEStatus(erro: unknown): [string, number | null] {
   const status =
     erro instanceof Error && "status" in erro && typeof erro.status === "number"
       ? erro.status
