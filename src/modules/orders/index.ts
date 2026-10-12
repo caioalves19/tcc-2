@@ -26,6 +26,8 @@ export type {
   ResultadoReserva,
 } from "./reserva";
 export { FILA_LIBERAR_RESERVAS, registrarTarefasDeReserva } from "./tarefas";
+export { confirmarPedidoPago } from "./transicoes";
+export type { ResultadoConfirmacao } from "./transicoes";
 export { finalizarCompra, resumoCheckout } from "./checkout";
 export type {
   ItemCheckout,

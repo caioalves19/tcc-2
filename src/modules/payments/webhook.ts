@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Prisma } from "../../../generated/prisma/client";
 import { obterPrisma } from "../../lib/prisma";
-import { baixarEstoque, prorrogarReserva } from "../orders/index";
+import { confirmarPedidoPago, prorrogarReserva } from "../orders/index";
 import { assinaturaValida } from "./assinatura";
 import { lerPagamento, type PagamentoLido, type SituacaoPagamento } from "./leitura";
 
@@ -42,13 +42,7 @@ type Item = { obraId: string; quantidade: number };
 
 // RF14/RN05: com o pagamento aprovado, o pedido vai a PAGO, o estoque baixa e as obras saem do
 // carrinho, na mesma transação do evento (RNF11).
-async function aprovar(
-  tx: Tx,
-  pedido: Pedido,
-  itens: Item[],
-  pagamento: PagamentoLido,
-  agora: Date,
-) {
+async function aprovar(tx: Tx, pedido: Pedido, pagamento: PagamentoLido, agora: Date) {
   // Pedido cancelado (um novo checkout o substituiu) ou já pago por outro pagamento: não reabre
   // nem paga de novo; o dinheiro volta pelo estorno (PBI-43).
   if (pedido.status !== "PENDENTE") {
@@ -68,19 +62,15 @@ async function aprovar(
     );
     return;
   }
-  await tx.order.update({ where: { id: pedido.id }, data: { status: "PAGO", paidAt: agora } });
   // RN06: o cliente pagou, então o pedido fica pago; sem unidade livre, quem resolve é o
   // estorno (PBI-43).
-  const baixa = await baixarEstoque(pedido.sessionId, itens, agora, tx);
-  if (!baixa.ok)
+  const confirmado = await confirmarPedidoPago(tx, pedido.id, agora);
+  if (confirmado.ok && !confirmado.estoqueBaixado)
     console.error(
       "Pagamento aprovado sem unidade livre: estornar (PBI-43)",
       pedido.number,
       pagamento.idExterno,
     );
-  await tx.cartItem.deleteMany({
-    where: { cart: { userId: pedido.userId }, artworkId: { in: itens.map((i) => i.obraId) } },
-  });
 }
 
 // RN06: Pix ou boleto emitido segura as unidades até o vencimento do meio de pagamento.
@@ -161,7 +151,7 @@ async function aplicar(
   else await tx.payment.create({ data: { ...chave, orderId: pedido.id, ...dados } });
 
   const itens = pedido.items.map((i) => ({ obraId: i.artworkId, quantidade: i.quantity }));
-  if (pagamento.situacao === "APROVADO") await aprovar(tx, pedido, itens, pagamento, agora);
+  if (pagamento.situacao === "APROVADO") await aprovar(tx, pedido, pagamento, agora);
   if (pagamento.situacao === "PENDENTE") await prorrogar(tx, pedido, itens, pagamento, agora);
   if (pagamento.situacao === "RECUSADO") await encerrar(tx, pedido, itens, pagamento);
   // Estorno ou chargeback de pedido já pago: o pedido segue na fila do admin, que precisa saber
