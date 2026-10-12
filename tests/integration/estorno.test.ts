@@ -1,5 +1,12 @@
-import { expect, it } from "vitest";
-import { cenarioWebhook, AGORA } from "./webhook-de-teste";
+import { expect, it, vi } from "vitest";
+import {
+  cenarioWebhook,
+  AGORA,
+  SEGREDO,
+  gatewayDeTeste,
+  notificacao,
+  pagamentoMp,
+} from "./webhook-de-teste";
 
 // PBI-43: estorno pelo admin. O gateway é um dublê; pedido, pagamento e estoque no PostgreSQL real.
 const cenario = cenarioWebhook("kolo_pbi43_estorno_test");
@@ -193,4 +200,113 @@ it("PBI-43 pagamento pendente ou recusado não tem o que estornar", async () => 
   }
   expect(gateway.estornos).toEqual([]);
   expect(await estado("20261012-E8REC1", obra)).toMatchObject({ situacao: "PAGO", estoque: 0 });
+});
+
+it("PBI-43 Mercado Pago fora do ar: o estorno falha sem mudar pagamento, pedido nem estoque", async () => {
+  const { estornarPagamento } = await import("../../src/modules/payments");
+  const { obra, idExterno } = await pedidoPago("e9-fora", "20261012-E9FOR1");
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  const gateway = gatewayDeEstorno({
+    falha: Object.assign(new Error("server"), { name: "MPServerError", status: 503 }),
+  });
+
+  expect(
+    await estornarPagamento({ numero: "20261012-E9FOR1", idExterno }, cenario.contas.admin, {
+      gateway,
+    }),
+  ).toMatchObject({ ok: false, erro: "falha" });
+
+  const final = await estado("20261012-E9FOR1", obra);
+  expect(final).toMatchObject({ situacao: "PAGO", estoque: 0 });
+  expect(final.pagamentos).toMatchObject([{ situacao: "APROVADO" }]);
+  expect(log).toHaveBeenCalledWith("Falha ao estornar no Mercado Pago", "MPServerError", 503);
+});
+
+it("PBI-43 resposta do estorno perdida: a consulta mostra o estorno feito e o Kolô conclui", async () => {
+  const { estornarPagamento } = await import("../../src/modules/payments");
+  const { obra, idExterno } = await pedidoPago("e9-perdida", "20261012-E9PER1");
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  const gateway = gatewayDeEstorno({
+    falha: Object.assign(new Error("timeout"), { name: "AbortError" }),
+    situacaoNaConsulta: "refunded",
+  });
+
+  expect(
+    await estornarPagamento({ numero: "20261012-E9PER1", idExterno }, cenario.contas.admin, {
+      gateway,
+    }),
+  ).toMatchObject({ ok: true });
+
+  const final = await estado("20261012-E9PER1", obra);
+  expect(final).toMatchObject({ situacao: "CANCELADO", estoque: 2 });
+  expect(final.pagamentos).toMatchObject([{ situacao: "ESTORNADO" }]);
+});
+
+it("PBI-43 clique duplo no estorno: a mesma chave no gateway e o estoque devolvido uma vez", async () => {
+  const { estornarPagamento } = await import("../../src/modules/payments");
+  const { obra, idExterno } = await pedidoPago("e9-duplo", "20261012-E9DUP1");
+  const gateway = gatewayDeEstorno();
+  const estornar = () =>
+    estornarPagamento({ numero: "20261012-E9DUP1", idExterno }, cenario.contas.admin, {
+      gateway,
+    });
+
+  const respostas = await Promise.all([estornar(), estornar()]);
+
+  expect(respostas.some((r) => r.ok)).toBe(true);
+  const chaves = new Set(gateway.estornos.map((e) => e.chave));
+  expect(chaves.size).toBe(1);
+  const final = await estado("20261012-E9DUP1", obra);
+  expect(final).toMatchObject({ situacao: "CANCELADO", estoque: 2 });
+  expect(final.pagamentos).toMatchObject([{ situacao: "ESTORNADO" }]);
+});
+
+it("PBI-43 estorno feito no painel do Mercado Pago (webhook antes): o admin conclui sem estornar de novo", async () => {
+  const { estornarPagamento } = await import("../../src/modules/payments");
+  const { obra, idExterno } = await pedidoPago("e9-painel", "20261012-E9PAI1");
+  await cenario.db.query("UPDATE payment SET situacao = 'ESTORNADO' WHERE id_externo = $1", [
+    idExterno,
+  ]);
+  const gateway = gatewayDeEstorno();
+
+  expect(
+    await estornarPagamento({ numero: "20261012-E9PAI1", idExterno }, cenario.contas.admin, {
+      gateway,
+    }),
+  ).toMatchObject({ ok: true });
+
+  expect(gateway.estornos).toEqual([]);
+  const final = await estado("20261012-E9PAI1", obra);
+  expect(final).toMatchObject({ situacao: "CANCELADO", estoque: 2 });
+  expect(final.pagamentos).toMatchObject([{ situacao: "ESTORNADO" }]);
+});
+
+it("PBI-43 aviso 'refunded' que chega depois do estorno do admin não muda nada", async () => {
+  const { estornarPagamento, processarNotificacao } = await import("../../src/modules/payments");
+  const { obra, idExterno } = await pedidoPago("e9-depois", "20261012-E9DEP1");
+  await cenario.db.query("UPDATE payment SET id_externo = '720001' WHERE id_externo = $1", [
+    idExterno,
+  ]);
+  await estornarPagamento(
+    { numero: "20261012-E9DEP1", idExterno: "720001" },
+    cenario.contas.admin,
+    { gateway: gatewayDeEstorno() },
+  );
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  const avisos = gatewayDeTeste({
+    "720001": pagamentoMp("720001", "20261012-E9DEP1", { status: "refunded" }),
+  });
+
+  expect(
+    await processarNotificacao(notificacao("720001"), {
+      gateway: avisos,
+      segredo: SEGREDO,
+      agora: AGORA,
+    }),
+  ).toEqual({ status: 200 });
+
+  const final = await estado("20261012-E9DEP1", obra);
+  expect(final).toMatchObject({ situacao: "CANCELADO", estoque: 2 });
+  expect(final.pagamentos).toMatchObject([{ situacao: "ESTORNADO" }]);
+  expect(log).not.toHaveBeenCalled();
 });

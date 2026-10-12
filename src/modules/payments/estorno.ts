@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { Prisma, RefundReason } from "../../../generated/prisma/client";
 import { comoAdmin, ErroGestao, validar, type ResultadoGestao } from "../artists/index";
 import { cancelarPedidoPago } from "../orders/index";
+import { lerPagamento } from "./leitura";
 import type { GatewayPagamento } from "./pagamento";
 
 // PBI-43 (complemento do RF29): estorno e cancelamento pelo ADMIN. A chamada ao Mercado Pago fica
@@ -31,6 +32,7 @@ type Plano = {
   pedidoId: string;
   userId: string;
   efeito: Efeito;
+  jaEstornado: boolean;
 };
 
 function efeitoDo(motivo: RefundReason | null): Efeito {
@@ -52,6 +54,33 @@ async function pagamentoDoPedido(tx: Tx, numero: string, idExterno: string) {
   return pagamento;
 }
 
+function tipoEStatus(erro: unknown): [string, number | null] {
+  const status =
+    erro instanceof Error && "status" in erro && typeof erro.status === "number"
+      ? erro.status
+      : null;
+  return [erro instanceof Error ? erro.name : "erro desconhecido", status];
+}
+
+// A chave de idempotência é do pagamento: a nova tentativa (clique duplo, resposta perdida) não
+// estorna de novo. Se a resposta se perdeu mas o estorno aconteceu, a consulta mostra o
+// pagamento estornado e o Kolô conclui. Só o tipo e o status HTTP vão ao log.
+async function estornarNoGateway(gateway: OpcoesEstorno["gateway"], plano: Plano) {
+  try {
+    await gateway.estornarPagamento(plano.idExterno, `kolo-estorno-${plano.pagamentoId}`);
+    return true;
+  } catch (erro) {
+    console.error("Falha ao estornar no Mercado Pago", ...tipoEStatus(erro));
+  }
+  try {
+    const lido = lerPagamento(await gateway.consultarPagamento(plano.idExterno));
+    return lido.ok && lido.dados.situacao === "ESTORNADO";
+  } catch (erro) {
+    console.error("Falha ao consultar o pagamento estornado", ...tipoEStatus(erro));
+    return false;
+  }
+}
+
 // RF29/PBI-43: estorno total do pagamento pelo gateway. Só ADMIN (sessão e papel relidos no banco).
 export async function estornarPagamento(
   entrada: unknown,
@@ -61,9 +90,14 @@ export async function estornarPagamento(
   const conferido = await comoAdmin(cabecalhos, async (tx): Promise<Plano> => {
     const { numero, idExterno } = validar(schemaEstorno, entrada);
     const pagamento = await pagamentoDoPedido(tx, numero, idExterno);
-    if (pagamento.status !== "APROVADO")
-      throw new ErroGestao("invalido", "Só pagamento aprovado pode ser estornado.");
     const efeito = efeitoDo(pagamento.refundReason);
+    // Estornado no painel do Mercado Pago (o webhook já gravou): falta só o pedido.
+    const jaEstornado =
+      pagamento.status === "ESTORNADO" &&
+      efeito !== "nenhum" &&
+      (pagamento.order.status === "PAGO" || pagamento.order.status === "PROCESSANDO");
+    if (pagamento.status !== "APROVADO" && !jaEstornado)
+      throw new ErroGestao("invalido", "Só pagamento aprovado pode ser estornado.");
     // Pedido que já saiu do ateliê: a devolução é combinada fora do sistema.
     if (
       efeito !== "nenhum" &&
@@ -76,12 +110,18 @@ export async function estornarPagamento(
       pedidoId: pagamento.orderId,
       userId: pagamento.order.userId,
       efeito,
+      jaEstornado,
     };
   });
   if (!conferido.ok) return conferido;
   const plano = conferido.dados;
 
-  await opcoes.gateway.estornarPagamento(plano.idExterno, `kolo-estorno-${plano.pagamentoId}`);
+  if (!plano.jaEstornado && !(await estornarNoGateway(opcoes.gateway, plano)))
+    return {
+      ok: false,
+      erro: "falha",
+      mensagem: "Não foi possível estornar agora. Tente de novo em instantes.",
+    };
 
   return comoAdmin(cabecalhos, async (tx) => {
     // Mesma ordem de travas do webhook (usuário → pedido): um aviso do mesmo pedido espera aqui.
