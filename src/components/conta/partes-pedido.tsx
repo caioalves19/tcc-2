@@ -1,13 +1,9 @@
 import { formatarPreco } from "@/modules/catalog/cliente";
 import type { PedidoDetalhado } from "@/modules/orders";
+import { ROTULO_MODALIDADE } from "@/modules/orders/cliente";
 
 // Partes do pedido iguais na conta do cliente (PBI-29) e no admin (PBI-30). Itens, valores e
 // endereço são as cópias gravadas no checkout (PBI-26).
-
-const MODALIDADE: Record<PedidoDetalhado["modalidade"], string> = {
-  RETIRADA: "Retirada no ateliê",
-  ENTREGA: "Entrega no endereço",
-};
 
 export const TITULO_SECAO = "font-display text-titulo-lg uppercase";
 
@@ -22,7 +18,7 @@ export function EntregaPedido({
       <h2 id="pedido-entrega" className={TITULO_SECAO}>
         Entrega
       </h2>
-      <p>{MODALIDADE[pedido.modalidade]}</p>
+      <p>{ROTULO_MODALIDADE[pedido.modalidade]}</p>
       <address className="grid gap-1 not-italic">
         <strong>{endereco.destinatario}</strong>
         <span>
@@ -70,7 +66,7 @@ export function ResumoPedido({
           <dd>{formatarPreco(pedido.subtotalCentavos)}</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt>{MODALIDADE[pedido.modalidade]}</dt>
+          <dt>{ROTULO_MODALIDADE[pedido.modalidade]}</dt>
           <dd>{formatarPreco(pedido.freteCentavos)}</dd>
         </div>
         <div className="flex justify-between gap-4 border-t-2 border-neutro-grafite pt-2 font-display text-titulo-lg">

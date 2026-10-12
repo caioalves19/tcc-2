@@ -4,6 +4,12 @@
 export const MODALIDADES = ["RETIRADA", "ENTREGA"] as const;
 export type ModalidadeFrete = (typeof MODALIDADES)[number];
 
+// Nome da modalidade no checkout, no pedido do cliente e no admin.
+export const ROTULO_MODALIDADE: Record<ModalidadeFrete, string> = {
+  RETIRADA: "Retirada no ateliê",
+  ENTREGA: "Entrega no endereço",
+};
+
 // Valores de exemplo, a confirmar com a equipe. Mudar um valor exige commit; a tela para o ADMIN
 // editar fica anotada no PBI-39.
 const FRETE_CAPITAL_SP_CENTAVOS = 3000;

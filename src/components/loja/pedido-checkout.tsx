@@ -5,6 +5,7 @@ import { unstable_rethrow } from "next/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatarPreco } from "@/modules/catalog/cliente";
 import type { PedidoResumo, SituacaoPedido } from "@/modules/orders";
+import { ROTULO_MODALIDADE } from "@/modules/orders/cliente";
 import { prazoParaPagar } from "@/modules/payments/cliente";
 
 const SITUACAO: Record<SituacaoPedido, string> = {
@@ -176,7 +177,7 @@ export function PedidoCheckout({ pedido, pagar, voltouDoPagamento = false, agora
               <dd>{formatarPreco(pedido.subtotalCentavos)}</dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt>Retirada no ateliê</dt>
+              <dt>{ROTULO_MODALIDADE[pedido.modalidade]}</dt>
               <dd>{formatarPreco(pedido.freteCentavos)}</dd>
             </div>
             <div className="flex justify-between gap-4 border-t-2 border-neutro-grafite pt-2 font-display text-titulo-lg">

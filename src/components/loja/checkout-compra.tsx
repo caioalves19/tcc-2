@@ -5,13 +5,14 @@ import { unstable_rethrow } from "next/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatarPreco } from "@/modules/catalog/cliente";
 import type { ResumoCheckout } from "@/modules/orders";
+import { ROTULO_MODALIDADE, type ModalidadeFrete } from "@/modules/orders/cliente";
 
 type Recusa = { ok: false; erro: string; mensagem: string };
 type Props = ResumoCheckout & {
   // URL pública do R2 (R2_PUBLIC_URL); sem ela, a foto vira um espaço reservado.
   baseImagens: string | null;
   // Server Action: em sucesso redireciona para o pedido; só volta quando recusa.
-  finalizar: (entrada: { modalidade: "RETIRADA" }) => Promise<Recusa>;
+  finalizar: (entrada: { modalidade: ModalidadeFrete }) => Promise<Recusa>;
 };
 
 const ROTULO_ETAPA =
@@ -19,16 +20,25 @@ const ROTULO_ETAPA =
 const CARTAO =
   "grid gap-4 rounded-card border-2 border-neutro-grafite bg-[var(--kolo-superficie)] p-5 text-[var(--kolo-superficie-texto)] shadow-adesivo-sm";
 
-// RF12: tudo o que aparece aqui veio calculado do servidor; a tela não soma nem decide preço.
+const DETALHE_MODALIDADE: Record<ModalidadeFrete, string> = {
+  RETIRADA: "Sem custo de envio.",
+  ENTREGA: "Enviamos para o endereço acima.",
+};
+
+// RF12: preços e frete vieram calculados do servidor. A tela só mostra o total da modalidade
+// escolhida; ao finalizar, o servidor recalcula tudo e envia-se só a modalidade (PBI-42).
 export function CheckoutCompra({
   itens,
   endereco,
+  modalidade: inicial,
   subtotalCentavos,
-  freteCentavos,
-  totalCentavos,
+  modalidades,
   baseImagens,
   finalizar,
 }: Props) {
+  const [modalidade, setModalidade] = useState<ModalidadeFrete>(inicial);
+  const freteCentavos = modalidades.find((m) => m.modalidade === modalidade)?.freteCentavos ?? 0;
+  const totalCentavos = subtotalCentavos + freteCentavos;
   const [pendente, setPendente] = useState(false);
   const [recusa, setRecusa] = useState<Recusa | null>(null);
   const base = baseImagens?.replace(/\/+$/, "") ?? null;
@@ -37,7 +47,7 @@ export function CheckoutCompra({
     setPendente(true);
     setRecusa(null);
     try {
-      setRecusa(await finalizar({ modalidade: "RETIRADA" }));
+      setRecusa(await finalizar({ modalidade }));
     } catch (falha) {
       // O redirect de sucesso chega como erro interno do Next e precisa seguir adiante.
       unstable_rethrow(falha);
@@ -96,25 +106,41 @@ export function CheckoutCompra({
               </span>
               Forma de entrega
             </h2>
-            {/* PBI-26: retirada é a modalidade mínima; entregas com custo entram no PBI-42. */}
-            <label className="flex items-start gap-3 rounded-campo border-2 border-[var(--kolo-contorno)] p-4">
-              <input
-                type="radio"
-                name="modalidade"
-                value="RETIRADA"
-                checked
-                readOnly
-                className="mt-1 size-4 accent-[var(--primary)]"
-              />
-              <span className="grid flex-1 gap-1">
-                <span className="font-display uppercase">Retirada no ateliê</span>
-                <span className="text-nota">Sem custo de envio.</span>
-              </span>
-              <span className="text-right font-display">
-                {formatarPreco(0)}
-                <span className="block text-nota uppercase">Grátis</span>
-              </span>
-            </label>
+            {/* PBI-42: frete null é a entrega indisponível para o endereço (UF fora da tabela). */}
+            {modalidades.map((opcao) => (
+              <label
+                key={opcao.modalidade}
+                className="flex items-start gap-3 rounded-campo border-2 border-[var(--kolo-contorno)] p-4 has-[:disabled]:opacity-60"
+              >
+                <input
+                  type="radio"
+                  name="modalidade"
+                  value={opcao.modalidade}
+                  checked={modalidade === opcao.modalidade}
+                  disabled={opcao.freteCentavos === null}
+                  onChange={() => setModalidade(opcao.modalidade)}
+                  className="mt-1 size-4 accent-[var(--primary)]"
+                />
+                <span className="grid flex-1 gap-1">
+                  <span className="font-display uppercase">
+                    {ROTULO_MODALIDADE[opcao.modalidade]}
+                  </span>
+                  <span className="text-nota">
+                    {opcao.freteCentavos === null
+                      ? "Indisponível para o seu endereço."
+                      : DETALHE_MODALIDADE[opcao.modalidade]}
+                  </span>
+                </span>
+                {opcao.freteCentavos !== null && (
+                  <span className="text-right font-display">
+                    {formatarPreco(opcao.freteCentavos)}
+                    {opcao.freteCentavos === 0 && (
+                      <span className="block text-nota uppercase">Grátis</span>
+                    )}
+                  </span>
+                )}
+              </label>
+            ))}
           </section>
         </div>
 
@@ -159,7 +185,7 @@ export function CheckoutCompra({
               <dd>{formatarPreco(subtotalCentavos)}</dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt>Retirada no ateliê</dt>
+              <dt>{ROTULO_MODALIDADE[modalidade]}</dt>
               <dd>{formatarPreco(freteCentavos)}</dd>
             </div>
             <div className="flex justify-between gap-4 border-t-2 border-neutro-grafite pt-2 font-display text-titulo-lg">
