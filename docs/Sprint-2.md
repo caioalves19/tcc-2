@@ -431,10 +431,25 @@ Consome estoque e obras do PBI-18 e a sessão existente. A API de reserva pode s
 
 **Referências:** RF13; RNF10, RNF12 · **Prioridade:** P0 · **Deps:** PBI-26.
 
-- [ ] Integrar Checkout Pro com Pix, cartão e boleto, sem trafegar dados de cartão pelo sistema
-- [ ] Criar preferência com referência do pedido e URLs de retorno/notificação; tratar erros e nova tentativa
-- [ ] Documentar credenciais de sandbox e realizar pagamentos de teste
-- [ ] Não confirmar pedido nem baixar estoque pela URL de retorno do navegador
+- [x] Integrar Checkout Pro com Pix, cartão e boleto, sem trafegar dados de cartão pelo sistema
+- [x] Criar preferência com referência do pedido e URLs de retorno/notificação; tratar erros e nova tentativa
+- [x] Documentar credenciais de sandbox e realizar pagamentos de teste
+- [x] Não confirmar pedido nem baixar estoque pela URL de retorno do navegador
+
+**Decisões (registradas em 10/10/2026):**
+
+- A preferência nasce no botão "Pagar com Mercado Pago" da página do pedido (`/checkout/[numero]`), e não no `finalizarCompra`; a nova tentativa é o mesmo botão, enquanto a reserva durar.
+- O checkout fecha 2 minutos antes da reserva (`FOLGA_PAGAMENTO_MS`), para um Pix ou boleto gerado no fim do prazo ainda encontrar a reserva quando o webhook chegar.
+- Sem migração e sem linha em `payment`: `external_reference` é o número do pedido, e o `payment` nasce no webhook (PBI-28), quando o meio já é conhecido.
+- A preferência não exclui nenhum meio; testes com dublê do gateway e PostgreSQL real para pedido e reserva. Contrato completo em [PBI-27](features/PBI-27.md).
+
+**Situação:** integrado à `main` pelo PR #50 em 12/10/2026, aprovado por outro integrante. A entrega está disponível para o webhook (28).
+
+**Entregas:** módulo `src/modules/payments` com `iniciarPagamento`, `montarPreferencia`, `gatewayMercadoPago` e `prazoParaPagar`; Server Action em `src/app/checkout/[numero]/actions.ts`; botão, cronômetro e aviso de volta na página do pedido; `MP_ACCESS_TOKEN` e `APP_URL` em https obrigatória em produção.
+
+**Evidências:** `npm run lint` e `npm run typecheck` sem erros; `npm test` com 371 testes e a integração do pagamento com 8 testes passando (PostgreSQL real, gateway dublê). No sandbox (10/10/2026), o pedido `20261010-6XV73U` abriu o Checkout Pro com o total certo e o prazo com folga; o pagamento com cartão foi aprovado no Mercado Pago e o pedido seguiu `PENDENTE` na volta pela URL (RN05). O Pix não apareceu na conta de teste, sem chave Pix; cartão e boleto apareceram. Detalhes em [PBI-27](features/PBI-27.md#evidência-no-sandbox).
+
+**Pendências:** o `MP_ACCESS_TOKEN` da conta real só entra junto com o webhook do PBI-28 (ver as pendências do PBI-28).
 
 ### PBI-28 — Webhook e confirmação do pedido
 
@@ -453,7 +468,7 @@ Consome estoque e obras do PBI-18 e a sessão existente. A API de reserva pode s
 - O saldo da conta Mercado Pago é um meio próprio (`SALDO_MERCADO_PAGO`, migração `0007`, que também torna o pagamento único por provedor).
 - O Mercado Pago assina o aviso com o segredo da conta que recebe: no sandbox, o webhook é configurado na conta do vendedor de teste. Contrato completo em [PBI-28](features/PBI-28.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-28-webhook`, que sai da `feat/pbi-27-mercado-pago` (PR #50): integrar depois dele. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+**Situação:** integrado à `main` pelo PR #51 em 12/10/2026, depois do PR #50, aprovado por outro integrante. A entrega está disponível para o cancelamento e estorno (43).
 
 **Entregas:**
 
@@ -575,7 +590,7 @@ Implementação em `/agendamento`, com tamanhos de `SizeTier`. Contrato, testes 
 - Sem algum aceite: erro com `role="alert"` e foco no primeiro aviso desmarcado, como nas outras etapas.
 - Contrato completo em [PBI-32](features/PBI-32.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-32-checks`, com conferência no navegador. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+**Situação:** integrado à `main` pelo PR #55 em 12/10/2026, aprovado por outro integrante, com conferência no navegador. A entrega está disponível para a conclusão pelo WhatsApp (33).
 
 **Pendências para os próximos PBIs:**
 
@@ -703,6 +718,8 @@ Consome o cálculo e o contrato de frete/total do checkout (26). Pode avançar j
 - [ ] Calcular modalidade e valor no servidor e preservar cópia no pedido
 - [ ] Testar totais e indisponibilidade de modalidade; sem integração com Correios
 
+**Herdado do PBI-28 (risco do [comentário na #51](https://github.com/caioalves19/tcc-2/pull/51#issuecomment-6114518780), passado do PBI-43 em 12/10/2026):** o frete precisa entrar na preferência e no valor conferido (RN07). Hoje `montarPreferencia` (`src/modules/payments/preferencia.ts`) manda só os itens e recusa o pedido cujo total não fecha com eles; o webhook (`aprovar` em `src/modules/payments/webhook.ts`) só paga o pedido se `transaction_amount` for igual a `totalCents`. Com frete acima de 0, o frete vai na preferência (por exemplo, em `shipments.cost`) e a conferência da preferência passa a ser itens + frete = total. O risco só existe com este PBI: com frete sempre 0, nada muda.
+
 ### PBI-43 — Cancelamento e estorno administrativo
 
 **Referências:** Complemento do RF29 · **Prioridade:** P1 · **Deps:** PBI-25, PBI-28, PBI-30.
@@ -715,9 +732,9 @@ Consome reservas (25), confirmação/reconciliação de pagamento (28) e operaç
 
 **Herdado do PBI-28 (revisão, achado R4):** o webhook (`src/modules/payments/webhook.ts`) grava direto as transições do pedido (`PAGO` com `pago_em`, `CANCELADO` com a reserva liberada e a limpeza do carrinho), e o cancelamento repete a regra dos pedidos abandonados de `finalizarCompra`. Este PBI vai precisar das mesmas transições: expor em `src/modules/orders/index.ts` funções que aceitam a transação do chamador (por exemplo `confirmarPedidoPago(tx, …)` e `cancelarPedidoPendente(tx, …)`) e usá-las no webhook, no checkout e no cancelamento do admin, sem mudar comportamento. Os casos que o webhook deixa no log para este PBI estão em [PBI-28](features/PBI-28.md#pendências-para-os-próximos-pbis).
 
-**Herdado do PBI-28 (revisão das PRs, [comentário na #51](https://github.com/caioalves19/tcc-2/pull/51#issuecomment-6114518780)):** dois riscos que este PBI também resolve.
+**Herdado do PBI-28 (revisão das PRs, [comentário na #51](https://github.com/caioalves19/tcc-2/pull/51#issuecomment-6114518780)):** dois riscos.
 
-1. **Frete no valor conferido (RN07).** `aprovar` em `src/modules/payments/webhook.ts` só paga o pedido se `transaction_amount` for igual a `totalCents`, e a preferência hoje só manda os itens (`preferencia.ts`: frete pago entra com o PBI-42). Se o frete entrar no `totalCents` sem entrar na preferência, nenhum pagamento confere e todos caem no log "valor diferente do pedido: estornar". O frete precisa ir na preferência (por exemplo, em `shipments.cost`), ou a comparação precisa considerar o frete.
+1. **Frete no valor conferido (RN07): passou ao PBI-42 em 12/10/2026.** O risco só existe com frete acima de 0, que só o PBI-42 cria; hoje `montarPreferencia` recusa o pedido cujo total não fecha com os itens, antes de cobrar. Ver a nota na seção do PBI-42.
 2. **Pix vencido seguido de cartão aprovado.** Pix vencido faz `encerrar` cancelar o pedido e devolver as unidades. Se a preferência ainda aceitar pagamento, o cliente pode voltar e pagar com cartão: a aprovação chega para um pedido `CANCELADO`, que não é reaberto e vai ao log de estorno. O cliente paga e fica esperando o dinheiro voltar. Saída sugerida: a preferência (PBI-27) expirar junto com a reserva, ou este PBI tratar o caso de forma explícita.
 
 ### PBI-44 — Contato com proteção antibot
