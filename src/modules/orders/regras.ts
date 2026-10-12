@@ -114,9 +114,10 @@ const ROTULOS: Record<SituacaoCliente | "NAO_CONCLUIDO", string> = {
 };
 
 // Na retirada no ateliê não há envio: o pedido fica pronto e o cliente retira. No banco continua
-// ENVIADO e ENTREGUE. Cada modalidade nova do PBI-42 entra aqui com os rótulos dela.
+// ENVIADO e ENTREGUE. A entrega no endereço (PBI-42) usa os rótulos de sempre.
 const ROTULOS_POR_MODALIDADE: Record<Modalidade, Partial<Record<SituacaoCliente, string>>> = {
   RETIRADA: { ENVIADO: "Pronto para retirada", ENTREGUE: "Retirado" },
+  ENTREGA: {},
 };
 
 export function rotuloSituacao(

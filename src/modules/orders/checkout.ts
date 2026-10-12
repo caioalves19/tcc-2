@@ -4,13 +4,13 @@ import { Prisma } from "../../../generated/prisma/client";
 import { obterPrisma } from "../../lib/prisma";
 import { validarEndereco, type DadosEndereco } from "../endereco/index";
 import { lerCarrinho, sessaoAtiva, type ContextoCarrinho } from "./carrinho";
+import { calcularFrete, MODALIDADES, type ModalidadeFrete } from "./frete";
 import { numeroDoPedido } from "./regras";
 import { reservarItens } from "./reserva";
 import { cancelarPedidoPendente } from "./transicoes";
 
-// PBI-26: retirada no ateliê é a modalidade mínima, sem custo. As outras entram no PBI-42.
-export type Modalidade = "RETIRADA";
-const FRETE_RETIRADA_CENTAVOS = 0;
+// PBI-26: retirada no ateliê, sem custo. PBI-42: entrega no endereço, com o frete de calcularFrete.
+export type Modalidade = ModalidadeFrete;
 
 export type ItemCheckout = {
   obraId: string;
@@ -28,6 +28,8 @@ export type ResumoCheckout = {
   subtotalCentavos: number;
   freteCentavos: number;
   totalCentavos: number;
+  // PBI-42: o frete de cada modalidade para o endereço do cliente; null é indisponível.
+  modalidades: { modalidade: Modalidade; freteCentavos: number | null }[];
 };
 export type ResultadoCheckout<T> =
   | { ok: true; dados: T }
@@ -52,14 +54,18 @@ export async function resumoCheckout(
   contexto: ContextoCarrinho,
   agora: Date = new Date(),
 ): Promise<ResultadoCheckout<ResumoCheckout>> {
-  const montado = await montarResumo(contexto, agora);
+  const montado = await montarResumo(contexto, agora, "RETIRADA");
   return montado.ok ? { ok: true, dados: montado.dados.resumo } : montado;
 }
 
+// O resumo usa o frete da modalidade escolhida; a página abre na retirada.
 async function montarResumo(
   contexto: ContextoCarrinho,
   agora: Date,
-): Promise<ResultadoCheckout<{ resumo: ResumoCheckout; comprador: Comprador }>> {
+  modalidade: Modalidade,
+): Promise<
+  ResultadoCheckout<{ resumo: ResumoCheckout; comprador: Comprador; freteCentavos: number | null }>
+> {
   const sessao = await sessaoAtiva(contexto.cabecalhos);
   if (!sessao)
     return { ok: false, erro: "nao_autenticado", mensagem: "Entre na sua conta para comprar." };
@@ -123,18 +129,25 @@ async function montarResumo(
     textoAlternativo: item.textoAlternativo,
   }));
   const subtotalCentavos = itens.reduce((soma, i) => soma + i.precoCentavos * i.quantidade, 0);
+  const modalidades = MODALIDADES.map((m) => ({
+    modalidade: m,
+    freteCentavos: calcularFrete(m, endereco.dados),
+  }));
+  const freteCentavos = calcularFrete(modalidade, endereco.dados);
   return {
     ok: true,
     dados: {
       resumo: {
         itens,
         endereco: endereco.dados,
-        modalidade: "RETIRADA",
+        modalidade,
         subtotalCentavos,
-        freteCentavos: FRETE_RETIRADA_CENTAVOS,
-        totalCentavos: subtotalCentavos + FRETE_RETIRADA_CENTAVOS,
+        freteCentavos: freteCentavos ?? 0,
+        totalCentavos: subtotalCentavos + (freteCentavos ?? 0),
+        modalidades,
       },
       comprador: { userId, sessaoId },
+      freteCentavos,
     },
   };
 }
@@ -142,7 +155,7 @@ async function montarResumo(
 // O formulário só escolhe a modalidade. Preço, total, quantidade e endereço que venham junto
 // são descartados pelo schema: o pedido sai do banco (RN07).
 const schemaFinalizar = z.object({
-  modalidade: z.literal("RETIRADA", { error: "Escolha uma forma de entrega válida." }),
+  modalidade: z.enum(MODALIDADES, { error: "Escolha uma forma de entrega válida." }),
 });
 
 // O número é sorteado; se repetir um existente, a transação inteira cai e roda de novo.
@@ -182,9 +195,15 @@ export async function finalizarCompra(
       erro: "invalido",
       mensagem: validado.error.issues.map((i) => i.message).join(" "),
     };
-  const montado = await montarResumo(contexto, agora);
+  const montado = await montarResumo(contexto, agora, validado.data.modalidade);
   if (!montado.ok) return montado;
   const { resumo, comprador } = montado.dados;
+  if (montado.dados.freteCentavos === null)
+    return {
+      ok: false,
+      erro: "invalido",
+      mensagem: "A entrega não está disponível para o seu endereço. Escolha a retirada no ateliê.",
+    };
 
   const criar = async (tx: Prisma.TransactionClient): Promise<ResultadoFinalizar> => {
     // Cliques simultâneos da mesma conta se enfileiram aqui: cada um vê o pedido que o anterior
@@ -246,7 +265,7 @@ export async function finalizarCompra(
         number: numero,
         userId: comprador.userId,
         sessionId: comprador.sessaoId,
-        deliveryMethod: validado.data.modalidade,
+        deliveryMethod: resumo.modalidade,
         subtotalCents: resumo.subtotalCentavos,
         shippingCents: resumo.freteCentavos,
         totalCents: resumo.totalCentavos,

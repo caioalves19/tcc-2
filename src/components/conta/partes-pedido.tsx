@@ -6,6 +6,7 @@ import type { PedidoDetalhado } from "@/modules/orders";
 
 const MODALIDADE: Record<PedidoDetalhado["modalidade"], string> = {
   RETIRADA: "Retirada no ateliê",
+  ENTREGA: "Entrega no endereço",
 };
 
 export const TITULO_SECAO = "font-display text-titulo-lg uppercase";

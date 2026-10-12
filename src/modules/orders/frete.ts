@@ -1,7 +1,8 @@
 // PBI-42 (complemento do RF12): o frete é calculado no servidor a partir da modalidade e do
 // endereço de entrega (RF05). Valores em centavos (RN07).
 
-export type ModalidadeFrete = "RETIRADA" | "ENTREGA";
+export const MODALIDADES = ["RETIRADA", "ENTREGA"] as const;
+export type ModalidadeFrete = (typeof MODALIDADES)[number];
 
 // Valores de exemplo, a confirmar com a equipe. Mudar um valor exige commit; a tela para o ADMIN
 // editar fica anotada no PBI-39.

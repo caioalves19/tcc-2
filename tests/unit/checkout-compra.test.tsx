@@ -42,6 +42,10 @@ const resumo = {
   subtotalCentavos: 304980,
   freteCentavos: 0,
   totalCentavos: 304980,
+  modalidades: [
+    { modalidade: "RETIRADA" as const, freteCentavos: 0 },
+    { modalidade: "ENTREGA" as const, freteCentavos: 3000 },
+  ],
 };
 
 function montar(
