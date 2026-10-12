@@ -26,10 +26,10 @@ function horarioDeBrasilia(data: Date): string {
 export function montarPreferencia(pedido: PedidoResumo, appUrl: string): ResultadoPreferencia {
   const prazo = prazoParaPagar(pedido.reservaExpiraEm);
   if (!prazo) return { ok: false, erro: "invalido", mensagem: "A reserva do pedido expirou." };
-  // RN07: o gateway recebe só os itens; se eles não somam o total, não há o que cobrar com
-  // segurança (frete pago entra com o PBI-42).
+  // RN07: o gateway recebe os itens e o frete (PBI-42); se eles não somam o total, não há o que
+  // cobrar com segurança. Assim o valor aprovado é o total que o webhook confere.
   const somaItens = pedido.itens.reduce((soma, i) => soma + i.precoCentavos * i.quantidade, 0);
-  if (somaItens !== pedido.totalCentavos)
+  if (somaItens + pedido.freteCentavos !== pedido.totalCentavos)
     return { ok: false, erro: "invalido", mensagem: "O total do pedido não confere com os itens." };
   const base = appUrl.replace(/\/+$/, "");
   const retorno = `${base}/checkout/${encodeURIComponent(pedido.numero)}?retorno=mercadopago`;
@@ -40,13 +40,27 @@ export function montarPreferencia(pedido: PedidoResumo, appUrl: string): Resulta
   return {
     ok: true,
     dados: {
-      items: pedido.itens.map((i) => ({
-        id: i.obraId,
-        title: i.titulo,
-        quantity: i.quantidade,
-        unit_price: i.precoCentavos / 100,
-        currency_id: "BRL",
-      })),
+      items: [
+        ...pedido.itens.map((i) => ({
+          id: i.obraId,
+          title: i.titulo,
+          quantity: i.quantidade,
+          unit_price: i.precoCentavos / 100,
+          currency_id: "BRL" as const,
+        })),
+        // Item próprio, e não shipments.cost: assim o frete entra no transaction_amount.
+        ...(pedido.freteCentavos > 0
+          ? [
+              {
+                id: "frete",
+                title: "Frete",
+                quantity: 1,
+                unit_price: pedido.freteCentavos / 100,
+                currency_id: "BRL" as const,
+              },
+            ]
+          : []),
+      ],
       external_reference: pedido.numero,
       back_urls: { success: retorno, pending: retorno, failure: retorno },
       ...publico,
