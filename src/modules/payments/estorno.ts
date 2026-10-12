@@ -1,7 +1,13 @@
 import { z } from "zod";
-import type { Prisma, RefundReason } from "../../../generated/prisma/client";
+import type { Prisma } from "../../../generated/prisma/client";
 import { comoAdmin, ErroGestao, validar, type ResultadoGestao } from "../artists/index";
-import { cancelarPedidoPago } from "../orders/index";
+import {
+  acaoDeEstorno,
+  cancelarPedidoPago,
+  estornoCancelaPedido,
+  estornoDevolveEstoque,
+  type MotivoEstorno,
+} from "../orders/index";
 import { lerPagamento } from "./leitura";
 import type { GatewayPagamento } from "./pagamento";
 
@@ -22,24 +28,16 @@ export type OpcoesEstorno = {
   gateway: Pick<GatewayPagamento, "estornarPagamento" | "consultarPagamento">;
 };
 
-// O que o estorno faz com o pedido. O pagamento que pagou o pedido cancela o pedido e devolve as
-// unidades que a aprovação baixou (sem unidade livre, não baixou nada). O que não pagou o pedido
-// (pedido que não aguardava pagamento, valor diferente) só devolve o dinheiro.
-type Efeito = "cancelar_devolvendo" | "cancelar_sem_devolver" | "nenhum";
+// O que o estorno faz com o pedido segue o motivo marcado pelo webhook (regras em `orders`).
 type Plano = {
   pagamentoId: string;
   idExterno: string;
   pedidoId: string;
   userId: string;
-  efeito: Efeito;
+  motivo: MotivoEstorno | null;
+  // Estornado no painel do Mercado Pago (o webhook já gravou): falta só o pedido.
   jaEstornado: boolean;
 };
-
-function efeitoDo(motivo: RefundReason | null): Efeito {
-  if (motivo === null) return "cancelar_devolvendo";
-  if (motivo === "SEM_ESTOQUE") return "cancelar_sem_devolver";
-  return "nenhum";
-}
 
 async function pagamentoDoPedido(tx: Tx, numero: string, idExterno: string) {
   const pagamento = await tx.payment.findFirst({
@@ -90,27 +88,24 @@ export async function estornarPagamento(
   const conferido = await comoAdmin(cabecalhos, async (tx): Promise<Plano> => {
     const { numero, idExterno } = validar(schemaEstorno, entrada);
     const pagamento = await pagamentoDoPedido(tx, numero, idExterno);
-    const efeito = efeitoDo(pagamento.refundReason);
-    // Estornado no painel do Mercado Pago (o webhook já gravou): falta só o pedido.
-    const jaEstornado =
-      pagamento.status === "ESTORNADO" &&
-      efeito !== "nenhum" &&
-      (pagamento.order.status === "PAGO" || pagamento.order.status === "PROCESSANDO");
-    if (pagamento.status !== "APROVADO" && !jaEstornado)
-      throw new ErroGestao("invalido", "Só pagamento aprovado pode ser estornado.");
-    // Pedido que já saiu do ateliê: a devolução é combinada fora do sistema.
-    if (
-      efeito !== "nenhum" &&
-      (pagamento.order.status === "ENVIADO" || pagamento.order.status === "ENTREGUE")
-    )
-      throw new ErroGestao("invalido", "Pedido enviado ou entregue não pode ser estornado aqui.");
+    const acao = acaoDeEstorno(
+      { situacao: pagamento.status, motivo: pagamento.refundReason },
+      pagamento.order.status,
+    );
+    if (!acao)
+      throw new ErroGestao(
+        "invalido",
+        pagamento.order.status === "ENVIADO" || pagamento.order.status === "ENTREGUE"
+          ? "Pedido enviado ou entregue não pode ser estornado aqui."
+          : "Só pagamento aprovado pode ser estornado.",
+      );
     return {
       pagamentoId: pagamento.id,
       idExterno,
       pedidoId: pagamento.orderId,
       userId: pagamento.order.userId,
-      efeito,
-      jaEstornado,
+      motivo: pagamento.refundReason,
+      jaEstornado: acao === "concluir",
     };
   });
   if (!conferido.ok) return conferido;
@@ -128,9 +123,9 @@ export async function estornarPagamento(
     await tx.$queryRaw`SELECT id FROM "user" WHERE id = ${plano.userId}::uuid FOR UPDATE`;
     await tx.$queryRaw`SELECT id FROM "order" WHERE id = ${plano.pedidoId}::uuid FOR UPDATE`;
     await tx.payment.update({ where: { id: plano.pagamentoId }, data: { status: "ESTORNADO" } });
-    if (plano.efeito !== "nenhum")
+    if (estornoCancelaPedido(plano.motivo))
       await cancelarPedidoPago(tx, plano.pedidoId, {
-        devolverEstoque: plano.efeito === "cancelar_devolvendo",
+        devolverEstoque: estornoDevolveEstoque(plano.motivo),
       });
     return { situacao: "ESTORNADO" as const };
   });

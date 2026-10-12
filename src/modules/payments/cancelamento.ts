@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { comoAdmin, ErroGestao, validar, type ResultadoGestao } from "../artists/index";
-import { cancelarPedidoPendente } from "../orders/index";
+import { cancelarPedidoPendente, podeCancelarPedido } from "../orders/index";
 import { tipoEStatus } from "./estorno";
 import { lerPagamento } from "./leitura";
 import type { GatewayPagamento } from "./pagamento";
@@ -58,7 +58,12 @@ export async function cancelarPedido(
     if (!pedido) throw new ErroGestao("nao_encontrado", "Pedido não encontrado.");
     if (pedido.status !== "PENDENTE") throw naoPendente();
     // Cartão em análise (ou saldo) não se cancela: o Mercado Pago aprova ou recusa sozinho.
-    if (pedido.payments.some((p) => p.method !== "PIX" && p.method !== "BOLETO"))
+    if (
+      !podeCancelarPedido(
+        pedido.status,
+        pedido.payments.map((p) => p.method),
+      )
+    )
       throw new ErroGestao(
         "invalido",
         "O pagamento deste pedido está em análise no Mercado Pago. Aguarde a resposta.",

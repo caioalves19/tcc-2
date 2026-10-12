@@ -47,6 +47,7 @@ it("RF29 filtra por situação mantendo a busca, com o filtro atual marcado", ()
     ["Prontos ou enviados", "/admin/pedidos?filtro=enviados&busca=lucas"],
     ["Retirados ou entregues", "/admin/pedidos?filtro=entregues&busca=lucas"],
     ["Cancelados", "/admin/pedidos?filtro=cancelados&busca=lucas"],
+    ["Estorno pendente", "/admin/pedidos?filtro=estorno-pendente&busca=lucas"],
     ["Todos", "/admin/pedidos?filtro=todos&busca=lucas"],
   ]);
   expect(within(filtros).getByRole("link", { name: "Todos" }).getAttribute("aria-current")).toBe(

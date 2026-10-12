@@ -34,6 +34,7 @@ const PEDIDO: PedidoAdmin = {
   rastreio: "BR123456789SP",
   pagoEm: new Date("2026-10-02T15:05:00Z"),
   enviadoEm: new Date("2026-10-03T10:00:00Z"),
+  cancelavel: false,
   pagamentos: [
     {
       provedor: "mercado_pago",
@@ -41,6 +42,8 @@ const PEDIDO: PedidoAdmin = {
       metodo: "PIX",
       situacao: "RECUSADO",
       valorCentavos: 960000,
+      motivoEstorno: null,
+      acaoEstorno: null,
     },
     {
       provedor: "mercado_pago",
@@ -48,6 +51,8 @@ const PEDIDO: PedidoAdmin = {
       metodo: "CARTAO",
       situacao: "APROVADO",
       valorCentavos: 960000,
+      motivoEstorno: null,
+      acaoEstorno: null,
     },
   ],
 };
@@ -118,6 +123,8 @@ it("RF29 pagamento com saldo da conta Mercado Pago aparece com o meio certo", ()
     metodo: "SALDO_MERCADO_PAGO",
     situacao: "APROVADO",
     valorCentavos: 960000,
+    motivoEstorno: null,
+    acaoEstorno: null,
   } as const;
   render(<PedidoAdminDetalhe pedido={{ ...PEDIDO, pagamentos: [pagamento] }} acoes={acoes} />);
   const pagamentos = within(screen.getByRole("region", { name: "Pagamentos" })).getAllByRole(

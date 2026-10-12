@@ -23,13 +23,15 @@ export const schemaRastreio = z.object({
     .transform((codigo) => (codigo === "" ? null : codigo)),
 });
 
-// RF29: filtros da lista do admin. "A fazer" (pagos e em preparação) é o padrão.
+// RF29: filtros da lista do admin. "A fazer" (pagos e em preparação) é o padrão. PBI-43:
+// "Estorno pendente" junta os pagamentos que o admin ainda precisa estornar ou concluir.
 export const FILTROS_PEDIDOS = [
   "a-fazer",
   "pendentes",
   "enviados",
   "entregues",
   "cancelados",
+  "estorno-pendente",
   "todos",
 ] as const;
 export type FiltroPedidos = (typeof FILTROS_PEDIDOS)[number];
