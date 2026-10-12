@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Prisma } from "../../../generated/prisma/client";
+import type { Prisma, RefundReason } from "../../../generated/prisma/client";
 import { comoAdmin, ErroGestao, validar, type ResultadoGestao } from "../artists/index";
 import { cancelarPedidoPago } from "../orders/index";
 import type { GatewayPagamento } from "./pagamento";
@@ -21,9 +21,23 @@ export type OpcoesEstorno = {
   gateway: Pick<GatewayPagamento, "estornarPagamento" | "consultarPagamento">;
 };
 
-// O que o estorno faz com o pedido: o pagamento que pagou o pedido cancela o pedido e devolve as
-// unidades que a aprovação baixou.
-type Plano = { pagamentoId: string; idExterno: string; pedidoId: string; userId: string };
+// O que o estorno faz com o pedido. O pagamento que pagou o pedido cancela o pedido e devolve as
+// unidades que a aprovação baixou (sem unidade livre, não baixou nada). O que não pagou o pedido
+// (pedido que não aguardava pagamento, valor diferente) só devolve o dinheiro.
+type Efeito = "cancelar_devolvendo" | "cancelar_sem_devolver" | "nenhum";
+type Plano = {
+  pagamentoId: string;
+  idExterno: string;
+  pedidoId: string;
+  userId: string;
+  efeito: Efeito;
+};
+
+function efeitoDo(motivo: RefundReason | null): Efeito {
+  if (motivo === null) return "cancelar_devolvendo";
+  if (motivo === "SEM_ESTOQUE") return "cancelar_sem_devolver";
+  return "nenhum";
+}
 
 async function pagamentoDoPedido(tx: Tx, numero: string, idExterno: string) {
   const pagamento = await tx.payment.findFirst({
@@ -47,14 +61,21 @@ export async function estornarPagamento(
   const conferido = await comoAdmin(cabecalhos, async (tx): Promise<Plano> => {
     const { numero, idExterno } = validar(schemaEstorno, entrada);
     const pagamento = await pagamentoDoPedido(tx, numero, idExterno);
+    if (pagamento.status !== "APROVADO")
+      throw new ErroGestao("invalido", "Só pagamento aprovado pode ser estornado.");
+    const efeito = efeitoDo(pagamento.refundReason);
     // Pedido que já saiu do ateliê: a devolução é combinada fora do sistema.
-    if (pagamento.order.status === "ENVIADO" || pagamento.order.status === "ENTREGUE")
+    if (
+      efeito !== "nenhum" &&
+      (pagamento.order.status === "ENVIADO" || pagamento.order.status === "ENTREGUE")
+    )
       throw new ErroGestao("invalido", "Pedido enviado ou entregue não pode ser estornado aqui.");
     return {
       pagamentoId: pagamento.id,
       idExterno,
       pedidoId: pagamento.orderId,
       userId: pagamento.order.userId,
+      efeito,
     };
   });
   if (!conferido.ok) return conferido;
@@ -67,7 +88,10 @@ export async function estornarPagamento(
     await tx.$queryRaw`SELECT id FROM "user" WHERE id = ${plano.userId}::uuid FOR UPDATE`;
     await tx.$queryRaw`SELECT id FROM "order" WHERE id = ${plano.pedidoId}::uuid FOR UPDATE`;
     await tx.payment.update({ where: { id: plano.pagamentoId }, data: { status: "ESTORNADO" } });
-    await cancelarPedidoPago(tx, plano.pedidoId, { devolverEstoque: true });
+    if (plano.efeito !== "nenhum")
+      await cancelarPedidoPago(tx, plano.pedidoId, {
+        devolverEstoque: plano.efeito === "cancelar_devolvendo",
+      });
     return { situacao: "ESTORNADO" as const };
   });
 }

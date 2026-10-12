@@ -9,7 +9,12 @@ type Situacao = "PAGO" | "PROCESSANDO" | "ENVIADO" | "ENTREGUE" | "CANCELADO" | 
 
 // Pedido de 2 × R$ 4.800,00 pago por um pagamento aprovado (`mp-<numero>-1`); as duas unidades já
 // saíram do estoque quando o pedido foi pago.
-async function pedidoPago(slug: string, numero: string, situacao: Situacao = "PAGO") {
+async function pedidoPago(
+  slug: string,
+  numero: string,
+  situacao: Situacao = "PAGO",
+  pagamentos: "APROVADO"[] = ["APROVADO"],
+) {
   const obra = await cenario.fabrica.obraPublicada(slug, "4.800,00", 2);
   const cliente = await cenario.fabrica.novoCliente(`${slug}@pbi43.test`);
   await cenario.fabrica.pedidoDeTeste(cliente, {
@@ -18,13 +23,21 @@ async function pedidoPago(slug: string, numero: string, situacao: Situacao = "PA
     criadoEm: AGORA.toISOString(),
     pagoEm: AGORA.toISOString(),
     obra,
-    pagamentos: ["APROVADO"],
+    pagamentos,
   });
   await cenario.db.query(
     "UPDATE artwork SET quantidade_estoque = 0, situacao = 'ESGOTADA' WHERE id = $1",
     [obra],
   );
   return { obra, cliente, idExterno: `mp-${numero}-1` };
+}
+
+// O webhook marcou o pagamento para estorno (PBI-43, migração 0008).
+async function marcar(idExterno: string, motivo: string) {
+  await cenario.db.query("UPDATE payment SET estornar_motivo = $2 WHERE id_externo = $1", [
+    idExterno,
+    motivo,
+  ]);
 }
 
 // Dublê do Mercado Pago: registra os estornos pedidos e responde à consulta do pagamento.
@@ -103,4 +116,81 @@ it("PBI-43 pedido enviado ou entregue não é estornado pelo sistema", async () 
     expect(final.pagamentos).toMatchObject([{ situacao: "APROVADO" }]);
   }
   expect(gateway.estornos).toEqual([]);
+});
+
+it("PBI-43 a segunda aprovação do pedido pago é estornada sem cancelar o pedido", async () => {
+  const { estornarPagamento } = await import("../../src/modules/payments");
+  const { obra } = await pedidoPago("e8-dobro", "20261012-E8DOB1", "PAGO", [
+    "APROVADO",
+    "APROVADO",
+  ]);
+  await marcar("mp-20261012-E8DOB1-2", "PEDIDO_NAO_PENDENTE");
+  const gateway = gatewayDeEstorno();
+
+  expect(
+    await estornarPagamento(
+      { numero: "20261012-E8DOB1", idExterno: "mp-20261012-E8DOB1-2" },
+      cenario.contas.admin,
+      { gateway },
+    ),
+  ).toMatchObject({ ok: true });
+
+  expect(gateway.estornos).toMatchObject([{ id: "mp-20261012-E8DOB1-2" }]);
+  const final = await estado("20261012-E8DOB1", obra);
+  expect(final).toMatchObject({ situacao: "PAGO", estoque: 0 });
+  expect(final.pagamentos).toMatchObject([
+    { id_externo: "mp-20261012-E8DOB1-1", situacao: "APROVADO" },
+    { id_externo: "mp-20261012-E8DOB1-2", situacao: "ESTORNADO" },
+  ]);
+});
+
+it("PBI-43 aprovação sem unidade livre: o estorno cancela o pedido sem inventar estoque", async () => {
+  const { estornarPagamento } = await import("../../src/modules/payments");
+  const { obra, idExterno } = await pedidoPago("e8-sem-estoque", "20261012-E8SEM1");
+  await marcar(idExterno, "SEM_ESTOQUE");
+
+  expect(
+    await estornarPagamento({ numero: "20261012-E8SEM1", idExterno }, cenario.contas.admin, {
+      gateway: gatewayDeEstorno(),
+    }),
+  ).toMatchObject({ ok: true });
+
+  const final = await estado("20261012-E8SEM1", obra);
+  expect(final).toMatchObject({ situacao: "CANCELADO", estoque: 0, situacaoObra: "ESGOTADA" });
+  expect(final.pagamentos).toMatchObject([{ situacao: "ESTORNADO" }]);
+});
+
+it("PBI-43 aprovação com valor diferente: o estorno devolve o dinheiro e o pedido segue aguardando", async () => {
+  const { estornarPagamento } = await import("../../src/modules/payments");
+  const { obra, idExterno } = await pedidoPago("e8-valor", "20261012-E8VAL1", "PENDENTE");
+  await marcar(idExterno, "VALOR_DIVERGENTE");
+
+  expect(
+    await estornarPagamento({ numero: "20261012-E8VAL1", idExterno }, cenario.contas.admin, {
+      gateway: gatewayDeEstorno(),
+    }),
+  ).toMatchObject({ ok: true });
+
+  const final = await estado("20261012-E8VAL1", obra);
+  expect(final).toMatchObject({ situacao: "PENDENTE", estoque: 0 });
+  expect(final.pagamentos).toMatchObject([{ situacao: "ESTORNADO" }]);
+});
+
+it("PBI-43 pagamento pendente ou recusado não tem o que estornar", async () => {
+  const { estornarPagamento } = await import("../../src/modules/payments");
+  const { obra, idExterno } = await pedidoPago("e8-recusado", "20261012-E8REC1");
+  const gateway = gatewayDeEstorno();
+  for (const situacao of ["PENDENTE", "RECUSADO"]) {
+    await cenario.db.query("UPDATE payment SET situacao = $2 WHERE id_externo = $1", [
+      idExterno,
+      situacao,
+    ]);
+    expect(
+      await estornarPagamento({ numero: "20261012-E8REC1", idExterno }, cenario.contas.admin, {
+        gateway,
+      }),
+    ).toMatchObject({ ok: false, erro: "invalido" });
+  }
+  expect(gateway.estornos).toEqual([]);
+  expect(await estado("20261012-E8REC1", obra)).toMatchObject({ situacao: "PAGO", estoque: 0 });
 });
