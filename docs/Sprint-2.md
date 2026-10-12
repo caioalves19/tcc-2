@@ -741,7 +741,7 @@ Consome reservas (25), confirmação/reconciliação de pagamento (28) e operaç
 - O gateway é chamado fora da transação do banco, com chave de idempotência por pagamento; falha ou resposta perdida são conferidas pela consulta do pagamento.
 - O risco "Pix vencido seguido de cartão" foi tratado aqui; o do frete no valor conferido passou ao PBI-42. Contrato completo em [PBI-43](features/PBI-43.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-43-estorno`, com evidência no sandbox. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+**Situação:** integrado à `main` pelo PR #58 em 12/10/2026, aprovado por outro integrante, com evidência no sandbox. O achado da revisão sobre "Concluir estorno" passou ao PBI-42 (ver a nota na seção do PBI-42).
 
 **Entregas:**
 
