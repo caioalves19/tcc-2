@@ -102,6 +102,10 @@ it("RF12 com resumo válido mostra a tela de checkout", async () => {
       subtotalCentavos: 285000,
       freteCentavos: 0,
       totalCentavos: 285000,
+      modalidades: [
+        { modalidade: "RETIRADA", freteCentavos: 0 },
+        { modalidade: "ENTREGA", freteCentavos: 3000 },
+      ],
     },
   });
   render(await PaginaCheckout());
