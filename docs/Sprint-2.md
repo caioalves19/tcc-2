@@ -718,13 +718,31 @@ Consome o formato real do pedido e das cópias de dados pessoais definido no PBI
 
 Consome o cálculo e o contrato de frete/total do checkout (26). Pode avançar junto com o gateway; validar as modalidades adicionais no fluxo integrado antes do fechamento.
 
-- [ ] Complementar retirada com valor fixo e tabela de frete
-- [ ] Calcular modalidade e valor no servidor e preservar cópia no pedido
-- [ ] Testar totais e indisponibilidade de modalidade; sem integração com Correios
+- [x] Complementar retirada com valor fixo e tabela de frete
+- [x] Calcular modalidade e valor no servidor e preservar cópia no pedido
+- [x] Testar totais e indisponibilidade de modalidade; sem integração com Correios
 
-**Herdado do PBI-28 (risco do [comentário na #51](https://github.com/caioalves19/tcc-2/pull/51#issuecomment-6114518780), passado do PBI-43 em 12/10/2026):** o frete precisa entrar na preferência e no valor conferido (RN07). Hoje `montarPreferencia` (`src/modules/payments/preferencia.ts`) manda só os itens e recusa o pedido cujo total não fecha com eles; o webhook (`aprovar` em `src/modules/payments/webhook.ts`) só paga o pedido se `transaction_amount` for igual a `totalCents`. Com frete acima de 0, o frete vai na preferência (por exemplo, em `shipments.cost`) e a conferência da preferência passa a ser itens + frete = total. O risco só existe com este PBI: com frete sempre 0, nada muda.
+**Decisões (registradas em 12/10/2026):**
 
-**Herdado do PBI-43 (revisão do PR #58, 12/10/2026):** "Concluir estorno" pode cancelar um pedido pago por outro pagamento. Quando o primeiro aviso que o webhook processa de um pagamento já é `refunded` (a aprovação dele se perdeu), o pagamento é gravado `ESTORNADO` sem `estornar_motivo`, e `acaoDeEstorno` (`src/modules/orders/regras.ts`) responde `"concluir"` se o pedido estiver `PAGO` ou `PROCESSANDO`. Exemplo: o cliente paga duas vezes (A e B), o aviso de aprovação de A se perde, B paga o pedido, o vendedor estorna A no painel do Mercado Pago e o aviso de A chega já como `refunded`. O pedido aparece em "Estorno pendente", e "Concluir estorno" cancela o pedido e devolve o estoque, mas B, que pagou, continua aprovado. Correção em TDD: só oferecer "concluir" quando nenhum outro pagamento do pedido estiver `APROVADO` sem motivo, com a mesma regra no terceiro ramo de `ESTORNO_PENDENTE` (`src/modules/orders/gestao.ts`) e em `estornarPagamento` (`src/modules/payments/estorno.ts`). Gate: um teste de integração em `tests/integration/estorno.test.ts` com esse cenário (o pedido segue `PAGO`, o estoque não muda e a ação fica `null`), e outro em `tests/integration/pedidos-admin-estorno.test.ts` com o pedido fora do filtro.
+- Retirada (sem custo) e entrega no endereço (migração `0009`): valor fixo na cidade de São Paulo/SP e tabela por UF fora dela; UF fora da tabela deixa só a retirada. Valores de exemplo em constantes, a confirmar com a equipe; a tela de edição ficou anotada no PBI-39.
+- O frete vai ao Mercado Pago como item "Frete" da preferência, e não em `shipments.cost`: o valor aprovado inclui o frete e a conferência do webhook não muda.
+- Contrato completo em [PBI-42](features/PBI-42.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-42-frete`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+
+**Entregas:**
+
+- `orders`: `calcularFrete` e as modalidades no resumo e em `finalizarCompra`; `ROTULO_MODALIDADE` para checkout, conta e admin.
+- `payments`: item "Frete" na preferência, com a conferência itens + frete = total.
+- Tela `/checkout` com a escolha da modalidade; correção do "Concluir estorno" (abaixo).
+
+**Evidências:**
+
+- `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test` (462 testes) e `npm run build` sem erros; `npm run test:integration` com 242 de 243 testes (tempo esgotado de 5 s em `perfil.test.ts`, arquivo não tocado, que passa sozinho).
+
+**Herdado do PBI-28 (risco do [comentário na #51](https://github.com/caioalves19/tcc-2/pull/51#issuecomment-6114518780), passado do PBI-43 em 12/10/2026) — resolvido:** o frete precisa entrar na preferência e no valor conferido (RN07). Hoje `montarPreferencia` (`src/modules/payments/preferencia.ts`) manda só os itens e recusa o pedido cujo total não fecha com eles; o webhook (`aprovar` em `src/modules/payments/webhook.ts`) só paga o pedido se `transaction_amount` for igual a `totalCents`. Com frete acima de 0, o frete vai na preferência (por exemplo, em `shipments.cost`) e a conferência da preferência passa a ser itens + frete = total. O risco só existe com este PBI: com frete sempre 0, nada muda.
+
+**Herdado do PBI-43 (revisão do PR #58, 12/10/2026) — resolvido, com os dois testes do gate:** "Concluir estorno" pode cancelar um pedido pago por outro pagamento. Quando o primeiro aviso que o webhook processa de um pagamento já é `refunded` (a aprovação dele se perdeu), o pagamento é gravado `ESTORNADO` sem `estornar_motivo`, e `acaoDeEstorno` (`src/modules/orders/regras.ts`) responde `"concluir"` se o pedido estiver `PAGO` ou `PROCESSANDO`. Exemplo: o cliente paga duas vezes (A e B), o aviso de aprovação de A se perde, B paga o pedido, o vendedor estorna A no painel do Mercado Pago e o aviso de A chega já como `refunded`. O pedido aparece em "Estorno pendente", e "Concluir estorno" cancela o pedido e devolve o estoque, mas B, que pagou, continua aprovado. Correção em TDD: só oferecer "concluir" quando nenhum outro pagamento do pedido estiver `APROVADO` sem motivo, com a mesma regra no terceiro ramo de `ESTORNO_PENDENTE` (`src/modules/orders/gestao.ts`) e em `estornarPagamento` (`src/modules/payments/estorno.ts`). Gate: um teste de integração em `tests/integration/estorno.test.ts` com esse cenário (o pedido segue `PAGO`, o estoque não muda e a ação fica `null`), e outro em `tests/integration/pedidos-admin-estorno.test.ts` com o pedido fora do filtro.
 
 ### PBI-43 — Cancelamento e estorno administrativo
 
