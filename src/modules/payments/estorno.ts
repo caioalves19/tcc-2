@@ -6,6 +6,7 @@ import {
   cancelarPedidoPago,
   estornoCancelaPedido,
   estornoDevolveEstoque,
+  pagouOPedido,
   type MotivoEstorno,
 } from "../orders/index";
 import { lerPagamento, PROVEDOR } from "./leitura";
@@ -50,6 +51,17 @@ async function pagamentoDoPedido(tx: Tx, numero: string, idExterno: string) {
   return pagamento;
 }
 
+// PBI-42: outro pagamento aprovado sem motivo pagou o pedido (regra de acaoDeEstorno).
+async function pagoPorOutro(tx: Tx, pedidoId: string) {
+  const pagamentos = await tx.payment.findMany({
+    where: { orderId: pedidoId },
+    select: { status: true, refundReason: true },
+  });
+  return pagamentos.some((p) => pagouOPedido({ situacao: p.status, motivo: p.refundReason }));
+}
+
+const PAGO_POR_OUTRO = "Outro pagamento aprovado pagou este pedido; ele não é cancelado.";
+
 export function tipoEStatus(erro: unknown): [string, number | null] {
   const status =
     erro instanceof Error && "status" in erro && typeof erro.status === "number"
@@ -86,16 +98,20 @@ export async function estornarPagamento(
   const conferido = await comoAdmin(cabecalhos, async (tx): Promise<Plano> => {
     const { numero, idExterno } = validar(schemaEstorno, entrada);
     const pagamento = await pagamentoDoPedido(tx, numero, idExterno);
+    const outro = await pagoPorOutro(tx, pagamento.orderId);
     const acao = acaoDeEstorno(
       { situacao: pagamento.status, motivo: pagamento.refundReason },
       pagamento.order.status,
+      outro,
     );
     if (!acao)
       throw new ErroGestao(
         "invalido",
         pagamento.order.status === "ENVIADO" || pagamento.order.status === "ENTREGUE"
           ? "Pedido enviado ou entregue não pode ser estornado aqui."
-          : "Só pagamento aprovado pode ser estornado.",
+          : pagamento.status === "ESTORNADO" && outro
+            ? PAGO_POR_OUTRO
+            : "Só pagamento aprovado pode ser estornado.",
       );
     return {
       pagamentoId: pagamento.id,
@@ -120,6 +136,10 @@ export async function estornarPagamento(
     // Mesma ordem de travas do webhook (usuário → pedido): um aviso do mesmo pedido espera aqui.
     await tx.$queryRaw`SELECT id FROM "user" WHERE id = ${plano.userId}::uuid FOR UPDATE`;
     await tx.$queryRaw`SELECT id FROM "order" WHERE id = ${plano.pedidoId}::uuid FOR UPDATE`;
+    // Concluir não chama o gateway: um pagamento que pagou o pedido entre as duas transações
+    // ainda impede o cancelamento.
+    if (plano.jaEstornado && (await pagoPorOutro(tx, plano.pedidoId)))
+      throw new ErroGestao("invalido", PAGO_POR_OUTRO);
     await tx.payment.update({ where: { id: plano.pagamentoId }, data: { status: "ESTORNADO" } });
     if (estornoCancelaPedido(plano.motivo))
       await cancelarPedidoPago(tx, plano.pedidoId, {

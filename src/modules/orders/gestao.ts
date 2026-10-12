@@ -6,6 +6,7 @@ import type { Modalidade } from "./checkout";
 import {
   aceitaRastreio,
   acaoDeEstorno,
+  pagouOPedido,
   podeCancelarPedido,
   transicaoPermitida,
   type MotivoEstorno,
@@ -190,6 +191,9 @@ export function lerPedidoAdmin(numero: unknown, cabecalhos: Headers, agora = new
         : null;
     if (!pedido) throw new ErroGestao("nao_encontrado", "Pedido não encontrado.");
     const reservados = await comReservaAtiva([pedido], agora, tx);
+    const pagoPorOutro = pedido.payments.some((p) =>
+      pagouOPedido({ situacao: p.status, motivo: p.refundReason }),
+    );
     return {
       numero: pedido.number,
       criadoEm: pedido.createdAt,
@@ -225,6 +229,7 @@ export function lerPedidoAdmin(numero: unknown, cabecalhos: Headers, agora = new
           ? acaoDeEstorno(
               { situacao: pagamento.status, motivo: pagamento.refundReason },
               pedido.status,
+              pagoPorOutro,
             )
           : null,
       })),

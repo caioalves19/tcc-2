@@ -310,3 +310,36 @@ it("PBI-43 aviso 'refunded' que chega depois do estorno do admin não muda nada"
   expect(final.pagamentos).toMatchObject([{ situacao: "ESTORNADO" }]);
   expect(log).not.toHaveBeenCalled();
 });
+
+it("PBI-42 pagamento visto já estornado não conclui o estorno de pedido pago por outro pagamento", async () => {
+  const { estornarPagamento, processarNotificacao } = await import("../../src/modules/payments");
+  const { lerPedidoAdmin } = await import("../../src/modules/orders");
+  // B pagou o pedido; o aviso de aprovação de A se perdeu e A foi estornado no painel.
+  const { obra } = await pedidoPago("e10-outro", "20261012-E10OU1");
+  const avisos = gatewayDeTeste({
+    "730001": pagamentoMp("730001", "20261012-E10OU1", { status: "refunded" }),
+  });
+  await processarNotificacao(notificacao("730001"), {
+    gateway: avisos,
+    segredo: SEGREDO,
+    agora: AGORA,
+  });
+  const gateway = gatewayDeEstorno();
+
+  expect(
+    await estornarPagamento(
+      { numero: "20261012-E10OU1", idExterno: "730001" },
+      cenario.contas.admin,
+      { gateway },
+    ),
+  ).toMatchObject({ ok: false, erro: "invalido" });
+
+  expect(gateway.estornos).toEqual([]);
+  const final = await estado("20261012-E10OU1", obra);
+  expect(final).toMatchObject({ situacao: "PAGO", estoque: 0 });
+  const detalhe = await lerPedidoAdmin("20261012-E10OU1", cenario.contas.admin);
+  expect(detalhe.ok && detalhe.dados.pagamentos).toMatchObject([
+    { idExterno: "mp-20261012-E10OU1-1", situacao: "APROVADO", acaoEstorno: "estornar" },
+    { idExterno: "730001", situacao: "ESTORNADO", acaoEstorno: null },
+  ]);
+});

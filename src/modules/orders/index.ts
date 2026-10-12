@@ -6,6 +6,7 @@ export {
   estornoCancelaPedido,
   estornoDevolveEstoque,
   numeroDoPedido,
+  pagouOPedido,
   podeCancelarPedido,
   proximasSituacoes,
   quantidadeValida,
