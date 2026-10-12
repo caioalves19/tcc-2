@@ -709,9 +709,16 @@ Consome o cálculo e o contrato de frete/total do checkout (26). Pode avançar j
 
 Consome reservas (25), confirmação/reconciliação de pagamento (28) e operações administrativas de pedidos (30). Não depende das modalidades adicionais de frete (42).
 
-- [ ] Permitir ao ADMIN cancelar pedido não pago e solicitar estorno pelo gateway
-- [ ] Conciliar estado do pagamento, pedido e liberação de reserva sem duplicar operações
+- [x] Permitir ao ADMIN cancelar pedido não pago e solicitar estorno pelo gateway
+- [x] Conciliar estado do pagamento, pedido e liberação de reserva sem duplicar operações
 - [ ] Testar falhas, reenvios e permissões no sandbox; não implementar política automática de cancelamento
+
+**Decisões (registradas em 12/10/2026):**
+
+- Estorno só total, um por pagamento; pedido enviado ou entregue não é cancelado pelo sistema. O estorno do pedido pago devolve as unidades ao estoque na mesma transação.
+- O webhook grava em `payment.estornar_motivo` (migração `0008`) os casos que antes ficavam só no log; o admin os encontra no filtro "Estorno pendente" e estorna pela tela do pedido.
+- O gateway é chamado fora da transação do banco, com chave de idempotência por pagamento; falha ou resposta perdida são conferidas pela consulta do pagamento.
+- O risco "Pix vencido seguido de cartão" foi tratado aqui; o do frete no valor conferido passou ao PBI-42. Contrato completo em [PBI-43](features/PBI-43.md).
 
 **Herdado do PBI-28 (revisão, achado R4):** o webhook (`src/modules/payments/webhook.ts`) grava direto as transições do pedido (`PAGO` com `pago_em`, `CANCELADO` com a reserva liberada e a limpeza do carrinho), e o cancelamento repete a regra dos pedidos abandonados de `finalizarCompra`. Este PBI vai precisar das mesmas transições: expor em `src/modules/orders/index.ts` funções que aceitam a transação do chamador (por exemplo `confirmarPedidoPago(tx, …)` e `cancelarPedidoPendente(tx, …)`) e usá-las no webhook, no checkout e no cancelamento do admin, sem mudar comportamento. Os casos que o webhook deixa no log para este PBI estão em [PBI-28](features/PBI-28.md#pendências-para-os-próximos-pbis).
 
