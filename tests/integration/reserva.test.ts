@@ -329,6 +329,30 @@ it("RNF11 a baixa entra na transação do webhook e é desfeita junto com ela", 
   expect(reservas.rowCount).toBe(1);
 });
 
+it("RNF11 a prorrogação entra na transação do webhook e é desfeita junto com ela", async () => {
+  const { prorrogarReserva, reservarItens } = await import("../../src/modules/orders");
+  const { obterPrisma } = await import("../../src/lib/prisma");
+  const pix = await obraPublicada("t6-prorroga-tx", 1);
+  const [sessao] = (await novasSessoes(1)) as [string];
+  await reservarItens(sessao, [{ obraId: pix, quantidade: 1 }], T0);
+  const vencimentoPix = new Date(T0.getTime() + 30 * 60_000);
+
+  await expect(
+    obterPrisma().$transaction(async (tx) => {
+      const itens = [{ obraId: pix, quantidade: 1 }];
+      const prorrogada = await prorrogarReserva(sessao, itens, vencimentoPix, T0, tx);
+      expect(prorrogada).toEqual({ ok: true, dados: { expiraEm: vencimentoPix } });
+      throw new Error("falha depois da prorrogação, antes de gravar o pagamento");
+    }),
+  ).rejects.toThrow("falha depois da prorrogação");
+
+  const { rows } = await db.query(
+    "SELECT expira_em FROM artwork_reservation WHERE session_id = $1",
+    [sessao],
+  );
+  expect(rows).toEqual([{ expira_em: new Date("2026-10-08T12:10:00.000Z") }]);
+});
+
 it("RN04 tudo ou nada: uma obra que não cabe derruba a reserva e a baixa inteiras", async () => {
   const { baixarEstoque, reservarItens } = await import("../../src/modules/orders");
   const cabe = await obraPublicada("t8-cabe", 2);

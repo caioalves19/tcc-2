@@ -154,3 +154,33 @@ it("RF09 com uma obra só, o resumo fica no singular", () => {
   montar(1, 1, 1);
   expect(screen.getByText("Mostrando 1 a 1 de 1 obra")).toBeDefined();
 });
+
+it("RNF13 só as imagens da primeira linha da grade carregam com prioridade (LCP)", () => {
+  render(
+    <CatalogoObras
+      obras={Array.from({ length: 8 }, (_, i) => ({
+        ...card(i),
+        imagem: { chave: `obras/a/${i}.jpg`, textoAlternativo: `Foto ${i}` },
+      }))}
+      total={8}
+      pagina={1}
+      totalPaginas={1}
+      ordem="recentes"
+      busca=""
+      baseImagens="https://imagens.kolo.test"
+    />,
+  );
+  const carregamento = screen
+    .getAllByRole("img")
+    .map((img) => [img.getAttribute("alt"), img.getAttribute("loading")]);
+  expect(carregamento).toEqual([
+    ["Foto 0", "eager"],
+    ["Foto 1", "eager"],
+    ["Foto 2", "eager"],
+    ["Foto 3", "eager"],
+    ["Foto 4", "lazy"],
+    ["Foto 5", "lazy"],
+    ["Foto 6", "lazy"],
+    ["Foto 7", "lazy"],
+  ]);
+});

@@ -13,6 +13,7 @@ const METODO: Record<Pagamento["metodo"], string> = {
   PIX: "Pix",
   CARTAO: "Cartão",
   BOLETO: "Boleto",
+  SALDO_MERCADO_PAGO: "Saldo Mercado Pago",
 };
 const SITUACAO_PAGAMENTO: Record<Pagamento["situacao"], string> = {
   PENDENTE: "Pendente",

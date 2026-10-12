@@ -1,0 +1,11 @@
+# Texto sempre com LF, também no checkout em Windows (core.autocrlf=true): o Prettier e a CI
+# esperam LF, e sem isto o `npm run format:check` local acusa arquivos corretos no repositório.
+* text=auto eol=lf
+
+# Binários: nunca converter.
+*.png binary
+*.webp binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.woff2 binary
