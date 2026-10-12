@@ -9,5 +9,7 @@ export {
   rotuloSituacao,
 } from "./regras";
 export type { MotivoEstorno, SituacaoCliente, SituacaoDoAndamento } from "./regras";
+export { ROTULO_MODALIDADE } from "./frete";
+export type { ModalidadeFrete } from "./frete";
 export { FILTROS_PEDIDOS } from "./validacao";
 export type { FiltroPedidos } from "./validacao";

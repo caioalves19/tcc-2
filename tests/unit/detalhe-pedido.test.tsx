@@ -112,3 +112,21 @@ it("cancelado não mostra andamento nem pagamento; aponta a política de cancela
     "/politicas/cancelamento",
   );
 });
+
+it("PBI-42 pedido com entrega mostra a modalidade, o frete e o andamento de envio", () => {
+  render(
+    <DetalhePedido
+      pedido={{ ...ENVIADO, modalidade: "ENTREGA", freteCentavos: 3000, totalCentavos: 972990 }}
+    />,
+  );
+
+  const passos = within(screen.getByRole("list", { name: "Andamento do pedido" }))
+    .getAllByRole("listitem")
+    .map((p) => p.textContent);
+  expect(passos).toContain("Enviado04/09/2026");
+  expect(passos).toContain("Entregue");
+  const resumo = screen.getByRole("region", { name: "Resumo do pedido" }).textContent ?? "";
+  expect(resumo).toContain("Entrega no endereço");
+  expect(resumo).toContain("R$ 30,00");
+  expect(resumo).toContain("R$ 9.729,90");
+});

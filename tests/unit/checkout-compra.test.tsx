@@ -42,6 +42,10 @@ const resumo = {
   subtotalCentavos: 304980,
   freteCentavos: 0,
   totalCentavos: 304980,
+  modalidades: [
+    { modalidade: "RETIRADA" as const, freteCentavos: 0 },
+    { modalidade: "ENTREGA" as const, freteCentavos: 3000 },
+  ],
 };
 
 function montar(
@@ -115,4 +119,40 @@ it("RF12 recusa aparece na tela; com obra indisponível, oferece voltar ao carri
   expect(
     within(alerta).getByRole("link", { name: "Voltar ao carrinho" }).getAttribute("href"),
   ).toBe("/carrinho");
+});
+
+it("PBI-42 escolher a entrega mostra o frete e o total dela e envia a modalidade escolhida", async () => {
+  const usuario = userEvent.setup();
+  const finalizar = montar();
+
+  await usuario.click(screen.getByRole("radio", { name: /Entrega no endereço/ }));
+  const pedido = screen.getByRole("complementary", { name: "Resumo do pedido" });
+  expect(pedido.textContent).toContain("Entrega no endereço");
+  expect(pedido.textContent).toContain("R$ 30,00");
+  expect(pedido.textContent).toContain("R$ 3.079,80");
+
+  await usuario.click(screen.getByRole("button", { name: "Finalizar compra" }));
+  expect(finalizar).toHaveBeenCalledWith({ modalidade: "ENTREGA" });
+});
+
+it("PBI-42 entrega indisponível para o endereço fica desabilitada, com o aviso", () => {
+  render(
+    <CheckoutCompra
+      {...resumo}
+      modalidades={[
+        { modalidade: "RETIRADA", freteCentavos: 0 },
+        { modalidade: "ENTREGA", freteCentavos: null },
+      ]}
+      baseImagens={null}
+      finalizar={vi.fn()}
+    />,
+  );
+
+  expect(screen.getByRole("radio", { name: /Entrega no endereço/ })).toHaveProperty(
+    "disabled",
+    true,
+  );
+  expect(screen.getByRole("region", { name: "Forma de entrega" }).textContent).toContain(
+    "Indisponível para o seu endereço.",
+  );
 });

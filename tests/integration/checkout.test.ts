@@ -25,7 +25,7 @@ const ENDERECO = {
 };
 
 // Cada teste usa um cliente novo, para um carrinho não vazar no outro.
-async function novoCliente(email: string, comEndereco = true) {
+async function novoCliente(email: string, comEndereco = true, endereco = ENDERECO) {
   const { cadastrarCliente } = await import("../../src/lib/auth");
   const { salvarEndereco } = await import("../../src/lib/endereco");
   const cadastro = await cadastrarCliente({
@@ -37,7 +37,7 @@ async function novoCliente(email: string, comEndereco = true) {
   if (!cadastro.ok) throw new Error("Falha ao cadastrar cliente");
   const cabecalhos = await comCookie(cadastro.token);
   if (comEndereco) {
-    const salvo = await salvarEndereco(ENDERECO, cabecalhos);
+    const salvo = await salvarEndereco(endereco, cabecalhos);
     if (!salvo.ok) throw new Error("Falha ao salvar endereço");
   }
   return { cabecalhos, tokenVisitante: null };
@@ -297,7 +297,7 @@ it("RF12/RN07 finalizar recusado não deixa pedido nem reserva, e valores enviad
 
   const esperta = await novoCliente("recusa-esperta@pbi26.test");
   await noCarrinho(esperta, [[tiragem, 2]]);
-  for (const entrada of [{ modalidade: "ENTREGA" }, {}, null, "RETIRADA"])
+  for (const entrada of [{ modalidade: "SEDEX" }, {}, null, "RETIRADA"])
     expect(await finalizarCompra(entrada, esperta), JSON.stringify(entrada)).toMatchObject({
       ok: false,
       erro: "invalido",
@@ -583,4 +583,76 @@ it("RF12/RN01 só o dono lê o pedido criado no checkout", async () => {
     expect(await lerPedido(numero, contexto), quem).toBeNull();
   for (const inexistente of ["20991231-ZZZZZZ", "", "x".repeat(500)])
     expect(await lerPedido(inexistente, dono), inexistente).toBeNull();
+});
+
+// PBI-42: valores de exemplo do frete (R$ 30,00 na capital paulista; Amazonas fora da tabela).
+const MANAUS = { ...ENDERECO, cep: "69005010", cidade: "Manaus", uf: "AM" };
+
+it("PBI-42 o resumo lista retirada e entrega com o frete do endereço; fora da tabela a entrega fica indisponível", async () => {
+  const { resumoCheckout } = await import("../../src/modules/orders");
+  const obra = await obraPublicada("frete-resumo", "100,00", 2);
+  const sp = await novoCliente("sp@pbi42.test");
+  const am = await novoCliente("am@pbi42.test", true, MANAUS);
+  await noCarrinho(sp, [[obra, 1]]);
+  await noCarrinho(am, [[obra, 1]]);
+
+  expect(await resumoCheckout(sp)).toMatchObject({
+    ok: true,
+    dados: {
+      modalidades: [
+        { modalidade: "RETIRADA", freteCentavos: 0 },
+        { modalidade: "ENTREGA", freteCentavos: 3000 },
+      ],
+    },
+  });
+  expect(await resumoCheckout(am)).toMatchObject({
+    ok: true,
+    dados: {
+      modalidades: [
+        { modalidade: "RETIRADA", freteCentavos: 0 },
+        { modalidade: "ENTREGA", freteCentavos: null },
+      ],
+    },
+  });
+});
+
+it("PBI-42/RN07 finalizar com entrega grava a modalidade, o frete do servidor e o total; o frete do navegador é ignorado", async () => {
+  const { finalizarCompra } = await import("../../src/modules/orders");
+  const obra = await obraPublicada("frete-entrega", "100,00", 2);
+  const sp = await novoCliente("entrega@pbi42.test");
+  await noCarrinho(sp, [[obra, 2]]);
+
+  const resultado = await finalizarCompra(
+    { modalidade: "ENTREGA", freteCentavos: 0, totalCentavos: 1 },
+    sp,
+  );
+  if (!resultado.ok) throw new Error(resultado.mensagem);
+
+  const { rows } = await db.query(
+    `SELECT modalidade_entrega, subtotal_centavos, frete_centavos, total_centavos
+       FROM "order" WHERE numero = $1`,
+    [resultado.dados.numero],
+  );
+  expect(rows).toEqual([
+    {
+      modalidade_entrega: "ENTREGA",
+      subtotal_centavos: 20000,
+      frete_centavos: 3000,
+      total_centavos: 23000,
+    },
+  ]);
+});
+
+it("PBI-42 entrega para UF fora da tabela é recusada sem pedido nem reserva; a retirada segue possível", async () => {
+  const { finalizarCompra } = await import("../../src/modules/orders");
+  const obra = await obraPublicada("frete-fora", "100,00", 2);
+  const am = await novoCliente("fora@pbi42.test", true, MANAUS);
+  await noCarrinho(am, [[obra, 1]]);
+
+  expect(await finalizarCompra({ modalidade: "ENTREGA" }, am)).toMatchObject({
+    ok: false,
+    erro: "invalido",
+  });
+  expect(await rastrosDe("fora@pbi42.test")).toEqual({ pedidos: 0, reservas: 0 });
+  expect(await finalizarCompra({ modalidade: "RETIRADA" }, am)).toMatchObject({ ok: true });
 });

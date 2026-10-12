@@ -6,6 +6,7 @@ import type { Modalidade } from "./checkout";
 import {
   aceitaRastreio,
   acaoDeEstorno,
+  pagouOPedido,
   podeCancelarPedido,
   transicaoPermitida,
   type MotivoEstorno,
@@ -63,14 +64,28 @@ const ESTORNO_PENDENTE: Prisma.OrderWhereInput = {
       status: { notIn: ["ENVIADO", "ENTREGUE"] },
       payments: { some: { status: "APROVADO", refundReason: "SEM_ESTOQUE" } },
     },
+    // PBI-42: se outro pagamento aprovado sem motivo pagou o pedido, não há o que concluir
+    // (mesma regra de acaoDeEstorno com pagouOPedido).
     {
       status: { in: ["PAGO", "PROCESSANDO"] },
-      payments: {
-        some: {
-          status: "ESTORNADO",
-          OR: [{ refundReason: null }, { refundReason: "SEM_ESTOQUE" }],
+      AND: [
+        {
+          payments: {
+            some: {
+              status: "ESTORNADO",
+              OR: [{ refundReason: null }, { refundReason: "SEM_ESTOQUE" }],
+            },
+          },
         },
-      },
+        {
+          payments: {
+            none: {
+              status: "APROVADO",
+              OR: [{ refundReason: null }, { refundReason: "SEM_ESTOQUE" }],
+            },
+          },
+        },
+      ],
     },
   ],
 };
@@ -190,6 +205,9 @@ export function lerPedidoAdmin(numero: unknown, cabecalhos: Headers, agora = new
         : null;
     if (!pedido) throw new ErroGestao("nao_encontrado", "Pedido não encontrado.");
     const reservados = await comReservaAtiva([pedido], agora, tx);
+    const pagoPorOutro = pedido.payments.some((p) =>
+      pagouOPedido({ situacao: p.status, motivo: p.refundReason }),
+    );
     return {
       numero: pedido.number,
       criadoEm: pedido.createdAt,
@@ -225,6 +243,7 @@ export function lerPedidoAdmin(numero: unknown, cabecalhos: Headers, agora = new
           ? acaoDeEstorno(
               { situacao: pagamento.status, motivo: pagamento.refundReason },
               pedido.status,
+              pagoPorOutro,
             )
           : null,
       })),

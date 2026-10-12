@@ -114,9 +114,10 @@ const ROTULOS: Record<SituacaoCliente | "NAO_CONCLUIDO", string> = {
 };
 
 // Na retirada no ateliê não há envio: o pedido fica pronto e o cliente retira. No banco continua
-// ENVIADO e ENTREGUE. Cada modalidade nova do PBI-42 entra aqui com os rótulos dela.
+// ENVIADO e ENTREGUE. A entrega no endereço (PBI-42) usa os rótulos de sempre.
 const ROTULOS_POR_MODALIDADE: Record<Modalidade, Partial<Record<SituacaoCliente, string>>> = {
   RETIRADA: { ENVIADO: "Pronto para retirada", ENTREGUE: "Retirado" },
+  ENTREGA: {},
 };
 
 export function rotuloSituacao(
@@ -156,18 +157,30 @@ export function estornoDevolveEstoque(motivo: MotivoEstorno | null): boolean {
 // PBI-43: o que o admin pode fazer com o pagamento. "estornar": pedir o estorno total ao gateway.
 // "concluir": o estorno já foi feito no Mercado Pago e falta cancelar o pedido. Pedido enviado ou
 // entregue não é cancelado pelo sistema (a devolução é combinada fora dele).
+// PBI-42: o pagamento visto pela primeira vez já estornado não tem motivo, mas pode não ter pago o
+// pedido. Se outro pagamento pagou (`pagoPorOutro`, ver pagouOPedido), não há o que concluir.
 export function acaoDeEstorno(
   pagamento: { situacao: SituacaoPagamento; motivo: MotivoEstorno | null },
   situacaoPedido: SituacaoNoBanco,
+  pagoPorOutro: boolean,
 ): "estornar" | "concluir" | null {
   const cancela = estornoCancelaPedido(pagamento.motivo);
   if (pagamento.situacao === "APROVADO")
     return cancela && (situacaoPedido === "ENVIADO" || situacaoPedido === "ENTREGUE")
       ? null
       : "estornar";
-  if (pagamento.situacao === "ESTORNADO" && cancela)
+  if (pagamento.situacao === "ESTORNADO" && cancela && !pagoPorOutro)
     return situacaoPedido === "PAGO" || situacaoPedido === "PROCESSANDO" ? "concluir" : null;
   return null;
+}
+
+// O pagamento que pagou o pedido: aprovado sem motivo, ou pago sem unidade livre (a mesma regra
+// de estornoCancelaPedido).
+export function pagouOPedido(pagamento: {
+  situacao: SituacaoPagamento;
+  motivo: MotivoEstorno | null;
+}): boolean {
+  return pagamento.situacao === "APROVADO" && estornoCancelaPedido(pagamento.motivo);
 }
 
 // PBI-43: só pedido aguardando pagamento é cancelado pelo admin. Cartão em análise (ou saldo)

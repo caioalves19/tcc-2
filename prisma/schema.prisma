@@ -37,9 +37,10 @@ enum OrderStatus {
   CANCELADO
 }
 
-// PBI-26: retirada no ateliê, sem custo, é a modalidade mínima; o PBI-42 acrescenta as demais.
+// PBI-26: retirada no ateliê, sem custo. PBI-42: entrega no endereço, com frete.
 enum DeliveryMethod {
   RETIRADA
+  ENTREGA
 }
 
 // PBI-28: o saldo da conta Mercado Pago aparece no Checkout Pro e não pode ser excluído da
