@@ -55,14 +55,25 @@ Os testes de integração criam bancos descartáveis próprios no PostgreSQL loc
 
 As imagens de obras e do portfólio vão do navegador direto para o Cloudflare R2, por URL assinada de 5 minutos. O servidor valida tipo e tamanho **antes** de assinar, gera a chave do objeto e guarda só essa chave. Formatos aceitos: JPEG, PNG e WebP, até 5 MB; SVG não é aceito. Depois do envio, o servidor gera uma miniatura WebP de até 400 px ao lado do original (`<chave sem extensão>_thumb.webp`) e rejeita, apagando o original, qualquer arquivo que não seja de fato JPEG, PNG ou WebP. ADMIN envia para qualquer artista e destino; ARTISTA só para o próprio portfólio.
 
+**Dois buckets, nunca o de produção em desenvolvimento.** Desde 11/10/2026 (PBI-28):
+
+| Bucket | Uso | Token de API |
+| --- | --- | --- |
+| `kolo-imagens` | só produção | só nas variáveis da hospedagem; nunca num `.env` local |
+| `kolo-imagens-teste` | desenvolvimento local, testes manuais e sandbox | só leitura e escrita nesse bucket |
+
+Um `.env` local com o token de produção daria a qualquer teste local (enviar, remover imagem) poder de apagar imagens reais.
+
 Configuração (variáveis no `.env` local, nunca versionadas; modelo em `.env.example`):
 
 | Variável | O que é |
 | --- | --- |
 | `R2_ACCOUNT_ID` | Account ID do Cloudflare (painel → R2 → Overview) |
-| `R2_BUCKET` | Nome do bucket |
+| `R2_BUCKET` | Nome do bucket (`kolo-imagens-teste` no `.env` local) |
 | `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | Token de API do R2 com leitura e escrita **só nesse bucket** (R2 → Manage API Tokens) |
 | `R2_PUBLIC_URL` | URL pública do bucket; também libera o host no `next/image` |
+
+Para criar o bucket de teste (R2 → Create bucket): habilite o acesso público em Settings → Public access → **R2.dev subdomain** (é a `R2_PUBLIC_URL`) e crie o token em R2 → Manage API Tokens, com **Object Read & Write** aplicado só a esse bucket.
 
 No bucket, configure o **CORS** para o navegador conseguir o `PUT` direto (Settings → CORS Policy). Em desenvolvimento:
 

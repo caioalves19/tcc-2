@@ -110,3 +110,20 @@ it("sem pagamento registrado e sem telefone, avisa", () => {
   expect(screen.getByText("Não concluído", { selector: "span" })).toBeDefined();
   expect(screen.getByRole("list", { name: "Datas do pedido" }).textContent).not.toContain("Pago");
 });
+
+it("RF29 pagamento com saldo da conta Mercado Pago aparece com o meio certo", () => {
+  const pagamento = {
+    provedor: "mercado_pago",
+    idExterno: "mp-3",
+    metodo: "SALDO_MERCADO_PAGO",
+    situacao: "APROVADO",
+    valorCentavos: 960000,
+  } as const;
+  render(<PedidoAdminDetalhe pedido={{ ...PEDIDO, pagamentos: [pagamento] }} acoes={acoes} />);
+  const pagamentos = within(screen.getByRole("region", { name: "Pagamentos" })).getAllByRole(
+    "listitem",
+  );
+  expect(pagamentos.map((p) => p.textContent)).toEqual([
+    "Saldo Mercado Pago · Aprovado · R$ 9.600,00Mercado Pago · mp-3",
+  ]);
+});

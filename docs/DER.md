@@ -186,7 +186,7 @@ erDiagram
         uuid order_id FK
         string provedor
         string id_externo
-        enum metodo "pix cartao boleto"
+        enum metodo "pix cartao boleto saldo_mercado_pago"
         enum situacao
         int valor_centavos
         jsonb payload
@@ -334,6 +334,7 @@ O wizard (RF20, RF21, RF23–RF25) **não** gera linha em `appointment`.
 | `cart_item` | Único por (`cart_id`, `artwork_id`); `quantidade` ≥ 1 |
 | `address` | No máximo um por `user` (`user_id` único) |
 | `payment` | Pertence sempre a um `order` — não há cobrança de sinal para agendamento (fora de escopo, seção 14) |
+| `payment` | Único por (`provedor`, `id_externo`): notificações repetidas do mesmo pagamento atualizam uma linha só (RNF11). O `metodo` inclui o saldo da conta Mercado Pago, que o Checkout Pro oferece e não deixa excluir |
 | `webhook_event.id_evento` | Único, para o webhook do Mercado Pago ser idempotente (RNF11) |
 | `order.endereco_copia` | Endereço congelado no pedido; não é FK viva para `address` |
 | `order_item` | Cópia de título, preço e quantidade no momento da compra |
