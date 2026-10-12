@@ -718,6 +718,8 @@ Consome o cálculo e o contrato de frete/total do checkout (26). Pode avançar j
 - [ ] Calcular modalidade e valor no servidor e preservar cópia no pedido
 - [ ] Testar totais e indisponibilidade de modalidade; sem integração com Correios
 
+**Herdado do PBI-28 (risco do [comentário na #51](https://github.com/caioalves19/tcc-2/pull/51#issuecomment-6114518780), passado do PBI-43 em 12/10/2026):** o frete precisa entrar na preferência e no valor conferido (RN07). Hoje `montarPreferencia` (`src/modules/payments/preferencia.ts`) manda só os itens e recusa o pedido cujo total não fecha com eles; o webhook (`aprovar` em `src/modules/payments/webhook.ts`) só paga o pedido se `transaction_amount` for igual a `totalCents`. Com frete acima de 0, o frete vai na preferência (por exemplo, em `shipments.cost`) e a conferência da preferência passa a ser itens + frete = total. O risco só existe com este PBI: com frete sempre 0, nada muda.
+
 ### PBI-43 — Cancelamento e estorno administrativo
 
 **Referências:** Complemento do RF29 · **Prioridade:** P1 · **Deps:** PBI-25, PBI-28, PBI-30.
@@ -730,9 +732,9 @@ Consome reservas (25), confirmação/reconciliação de pagamento (28) e operaç
 
 **Herdado do PBI-28 (revisão, achado R4):** o webhook (`src/modules/payments/webhook.ts`) grava direto as transições do pedido (`PAGO` com `pago_em`, `CANCELADO` com a reserva liberada e a limpeza do carrinho), e o cancelamento repete a regra dos pedidos abandonados de `finalizarCompra`. Este PBI vai precisar das mesmas transições: expor em `src/modules/orders/index.ts` funções que aceitam a transação do chamador (por exemplo `confirmarPedidoPago(tx, …)` e `cancelarPedidoPendente(tx, …)`) e usá-las no webhook, no checkout e no cancelamento do admin, sem mudar comportamento. Os casos que o webhook deixa no log para este PBI estão em [PBI-28](features/PBI-28.md#pendências-para-os-próximos-pbis).
 
-**Herdado do PBI-28 (revisão das PRs, [comentário na #51](https://github.com/caioalves19/tcc-2/pull/51#issuecomment-6114518780)):** dois riscos que este PBI também resolve.
+**Herdado do PBI-28 (revisão das PRs, [comentário na #51](https://github.com/caioalves19/tcc-2/pull/51#issuecomment-6114518780)):** dois riscos.
 
-1. **Frete no valor conferido (RN07).** `aprovar` em `src/modules/payments/webhook.ts` só paga o pedido se `transaction_amount` for igual a `totalCents`, e a preferência hoje só manda os itens (`preferencia.ts`: frete pago entra com o PBI-42). Se o frete entrar no `totalCents` sem entrar na preferência, nenhum pagamento confere e todos caem no log "valor diferente do pedido: estornar". O frete precisa ir na preferência (por exemplo, em `shipments.cost`), ou a comparação precisa considerar o frete.
+1. **Frete no valor conferido (RN07): passou ao PBI-42 em 12/10/2026.** O risco só existe com frete acima de 0, que só o PBI-42 cria; hoje `montarPreferencia` recusa o pedido cujo total não fecha com os itens, antes de cobrar. Ver a nota na seção do PBI-42.
 2. **Pix vencido seguido de cartão aprovado.** Pix vencido faz `encerrar` cancelar o pedido e devolver as unidades. Se a preferência ainda aceitar pagamento, o cliente pode voltar e pagar com cartão: a aprovação chega para um pedido `CANCELADO`, que não é reaberto e vai ao log de estorno. O cliente paga e fica esperando o dinheiro voltar. Saída sugerida: a preferência (PBI-27) expirar junto com a reserva, ou este PBI tratar o caso de forma explícita.
 
 ### PBI-44 — Contato com proteção antibot
