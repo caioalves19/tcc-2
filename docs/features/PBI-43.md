@@ -89,6 +89,30 @@ operações com o webhook. Decisões confirmadas antes de codar (12/10/2026):
 - `tests/unit/mercado-pago.test.ts`, `estorno-pedido.test.tsx` e `estorno-acoes.test.ts`:
   adaptador, tela e Server Actions.
 
+## Evidência no sandbox (12/10/2026)
+
+App local, conta de teste `testeadmin@gmail.com` promovida a ADMIN no banco local, pedido
+**20261011-PTXRNF** (R$ 150,00, cartão Visa de teste final 5682, pago no PBI-28). O vendedor dono
+do `MP_ACCESS_TOKEN` e o comprador são usuários de teste (`test_user`, `@testuser.com`); a API
+marca o pagamento com `live_mode: true` porque usuários de teste usam credenciais de produção.
+
+1. **Estorno pela tela, gateway recusando:** "Estornar pagamento 182609447467" → "Confirmar
+   estorno". O Mercado Pago respondeu 401 "Unauthorized use of live credentials" (código 7). A
+   tela mostrou "Não foi possível estornar agora. Tente de novo em instantes.", o log ficou só com
+   `MPAuthenticationError 401` e nada mudou: pedido `PAGO`, pagamento `APROVADO`, estoque 2 no
+   Kolô; `approved` sem estornos na API. Dois envios chegaram e usaram a mesma chave.
+2. **Estorno feito no painel do Mercado Pago** pela conta do vendedor de teste: a API passou a
+   mostrar `refunded`, `transaction_amount_refunded` 150 e o estorno 3378443699 `approved`. Sem
+   túnel, o aviso do webhook não chegou ao app local e o Kolô seguiu `PAGO`.
+3. **Conclusão pela tela:** novo "Estornar pagamento" → "Confirmar estorno". O gateway recusou de
+   novo (401), a consulta encontrou `refunded` e o Kolô concluiu: pagamento `ESTORNADO`, pedido
+   `CANCELADO`, estoque da obra de 2 para 3 (`DISPONIVEL`). A seção "Cancelamento e estorno" sumiu
+   da tela, porque não há mais ação.
+
+Limites: o estorno pela API não foi aceito com credenciais de usuário de teste (ver "Antes do
+deploy"); papéis, clique duplo e corridas com o webhook foram cobertos pelos testes de
+integração, não no sandbox.
+
 ## Revisão (12/10/2026)
 
 Revisão read-only por agente: PASS. Corrigidos em TDD: o filtro "Estorno pendente" seguia
@@ -105,3 +129,14 @@ dizer isso.
 
 - Migração `0008` (`npm run db:migrate`).
 - O estorno usa o mesmo `MP_ACCESS_TOKEN` do pagamento; nenhuma variável nova.
+- **Credenciais de produção ativadas** no painel de desenvolvedor do Mercado Pago (dados do
+  negócio preenchidos). No sandbox, o token do vendedor de teste consulta pagamentos, mas o
+  estorno pela API responde 401 "Unauthorized use of live credentials"; a mesma resposta aparece
+  quando as credenciais de produção não estão ativadas.
+- **Primeiro estorno real:** fazer uma compra pequena (por exemplo, R$ 1,00) com a conta real e
+  estorná-la pela tela do admin, conferindo `refunded` em `GET /v1/payments/{id}` e o pedido
+  `CANCELADO` com o estoque devolvido. Junto com a conferência do primeiro pagamento real do
+  PBI-28.
+- Se a API recusar o estorno em produção, o plano B já funciona: estornar no painel do Mercado
+  Pago e concluir no Kolô ("Concluir estorno" depois do aviso `refunded`, ou um novo clique em
+  "Estornar pagamento", que confere a consulta).
