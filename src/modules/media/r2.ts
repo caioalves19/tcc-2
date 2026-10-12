@@ -8,9 +8,16 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type { PedidoAssinatura } from "./assinatura";
 import type { Armazenamento } from "./miniatura";
 
+export class ErroConfiguracaoR2 extends Error {
+  constructor(nome: string) {
+    super(`${nome} ausente`);
+    this.name = "ErroConfiguracaoR2";
+  }
+}
+
 function variavel(nome: string): string {
   const valor = process.env[nome];
-  if (valor === undefined || valor.trim() === "") throw new Error(`${nome} ausente`);
+  if (valor === undefined || valor.trim() === "") throw new ErroConfiguracaoR2(nome);
   return valor;
 }
 

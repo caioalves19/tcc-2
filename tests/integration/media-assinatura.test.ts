@@ -145,3 +145,24 @@ it("RF27 trata entrada malformada da Server Action como erro, sem exceção nem 
   }
   expect(assinar).not.toHaveBeenCalled();
 });
+
+it("RF27 informa configuração ausente em vez de tratar como falha temporária", async () => {
+  const { solicitarUpload } = await import("../../src/modules/media");
+  vi.stubEnv("R2_ACCOUNT_ID", "");
+  const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  try {
+    expect(
+      await solicitarUpload(
+        { destino: "portfolio", artistId: idAna, tipo: "image/png", tamanho: 1024 },
+        admin,
+      ),
+    ).toEqual({
+      ok: false,
+      erro: "nao_configurado",
+      mensagem: "O envio de imagens ainda não está configurado. Avise a administração.",
+    });
+  } finally {
+    vi.unstubAllEnvs();
+    log.mockRestore();
+  }
+});

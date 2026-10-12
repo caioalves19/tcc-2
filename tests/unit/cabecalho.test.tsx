@@ -97,3 +97,19 @@ it("RF11 o carrinho do cabeçalho leva a /carrinho e diz quantos itens tem", () 
   render(<Cabecalho />);
   expect(screen.getByRole("link", { name: "Carrinho" }).getAttribute("href")).toBe("/carrinho");
 });
+
+it("RF19 mostra gestão do portfólio somente para a equipe, também no menu mobile", async () => {
+  const usuario = userEvent.setup();
+  const { rerender } = render(<Cabecalho logado />);
+  expect(screen.queryByRole("link", { name: "Portfólio" })).toBeNull();
+  rerender(<Cabecalho logado equipe />);
+  expect(screen.getByRole("link", { name: "Portfólio" }).getAttribute("href")).toBe(
+    "/portfolio/gestao",
+  );
+  await usuario.click(screen.getByRole("button", { name: /abrir menu/i }));
+  expect(
+    within(screen.getByRole("navigation", { name: /menu mobile/i }))
+      .getByRole("link", { name: "Portfólio" })
+      .getAttribute("href"),
+  ).toBe("/portfolio/gestao");
+});

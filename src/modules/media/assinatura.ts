@@ -2,7 +2,7 @@ import { z } from "zod";
 import { autorizarUpload } from "./autorizacao";
 import { gerarChaveObjeto, type DestinoImagem } from "./chave";
 import { MENSAGENS_UPLOAD } from "./mensagens";
-import { assinarComR2 } from "./r2";
+import { assinarComR2, ErroConfiguracaoR2 } from "./r2";
 import { validarImagem } from "./validacao";
 
 const EXPIRACAO_SEGUNDOS = 5 * 60;
@@ -78,7 +78,7 @@ export async function solicitarUpload(
       "Falha ao assinar upload",
       erro instanceof Error ? erro.name : "erro desconhecido",
     );
-    return falha("indisponivel");
+    return falha(erro instanceof ErroConfiguracaoR2 ? "nao_configurado" : "indisponivel");
   }
   return {
     ok: true,

@@ -11,6 +11,7 @@ export const MENSAGENS_UPLOAD: Record<string, string> = {
   tipo_invalido: "Envie uma imagem JPEG, PNG ou WebP.",
   tamanho_invalido: "A imagem deve ter até 5 MB.",
   proibido: "Você não tem permissão para enviar imagens para este perfil.",
+  nao_configurado: "O envio de imagens ainda não está configurado. Avise a administração.",
   indisponivel: "Não foi possível enviar agora. Tente novamente.",
 };
 
