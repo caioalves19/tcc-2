@@ -218,8 +218,10 @@ export async function finalizarCompra(
       },
     });
     if (abandonados.length > 0) {
+      // Só o que ainda está PENDENTE: um aviso de pagamento aprovado que terminou entre a leitura
+      // e esta escrita não pode ter o pedido pago cancelado por cima (PBI-28).
       await tx.order.updateMany({
-        where: { id: { in: abandonados.map((p) => p.id) } },
+        where: { id: { in: abandonados.map((p) => p.id) }, status: "PENDENTE" },
         data: { status: "CANCELADO" },
       });
       const sessoes = abandonados.flatMap((p) => (p.sessionId ? [p.sessionId] : []));

@@ -1,4 +1,4 @@
-import { MercadoPagoConfig, Preference } from "mercadopago";
+import { MercadoPagoConfig, Payment, Preference } from "mercadopago";
 import type { GatewayPagamento } from "./pagamento";
 
 const TEMPO_LIMITE_MS = 10_000;
@@ -24,10 +24,13 @@ function checkoutDoMercadoPago(url: string | undefined): url is string {
 export function gatewayMercadoPago(
   accessToken: string | undefined = process.env.MP_ACCESS_TOKEN,
 ): GatewayPagamento {
+  const configurar = () => {
+    if (!accessToken) throw new Error("MP_ACCESS_TOKEN não configurado");
+    return new MercadoPagoConfig({ accessToken, options: { timeout: TEMPO_LIMITE_MS } });
+  };
   return {
     async criarPreferencia(corpo) {
-      if (!accessToken) throw new Error("MP_ACCESS_TOKEN não configurado");
-      const config = new MercadoPagoConfig({ accessToken, options: { timeout: TEMPO_LIMITE_MS } });
+      const config = configurar();
       const criada = await new Preference(config).create({
         body: corpo,
         requestOptions: { timeout: TEMPO_LIMITE_MS },
@@ -35,6 +38,17 @@ export function gatewayMercadoPago(
       if (!checkoutDoMercadoPago(criada.init_point))
         throw new Error("Preferência criada sem init_point do Mercado Pago");
       return { url: criada.init_point };
+    },
+    // RF14: a situação real do pagamento, que o webhook lê com lerPagamento. Pagamento que a
+    // API não encontra (404) volta null: reenviar o aviso não o faria aparecer.
+    async consultarPagamento(id) {
+      const config = configurar();
+      try {
+        return await new Payment(config).get({ id, requestOptions: { timeout: TEMPO_LIMITE_MS } });
+      } catch (erro) {
+        if (erro instanceof Error && "status" in erro && erro.status === 404) return null;
+        throw erro;
+      }
     },
   };
 }

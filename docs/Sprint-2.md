@@ -310,7 +310,7 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 
 - Confirmar com o cliente razão social, CNPJ e endereço, que entram na privacidade, e as regras de remarcação da sessão de tatuagem.
 - Atualizar os textos quando entrarem o formulário de contato (PBI-44) e a exclusão de conta pelo site (PBI-40).
-- Revisar a seção de dados da privacidade se o PBI-28 guardar o payload completo do Mercado Pago, que pode trazer dados do pagador.
+- ~~Revisar a seção de dados da privacidade se o PBI-28 guardar o payload completo do Mercado Pago~~: o PBI-28 guarda só os campos do pagamento, sem dados do pagador.
 
 ---
 
@@ -440,10 +440,37 @@ Consome estoque e obras do PBI-18 e a sessão existente. A API de reserva pode s
 
 **Referências:** RF14; RN05, RN06, RNF11 · **Prioridade:** P0 · **Deps:** PBI-25, PBI-26, PBI-27.
 
-- [ ] Validar assinatura do webhook e consultar o pagamento na API do provedor
-- [ ] Conferir vínculo e valor do pagamento; confirmar pedido e baixar estoque somente após aprovação
-- [ ] Garantir idempotência e atualização transacional; tratar rejeição, expiração e eventos fora de ordem
-- [ ] Testar assinatura inválida, reenvio, concorrência e aprovação com PostgreSQL real; não enviar e-mail de pedido
+- [x] Validar assinatura do webhook e consultar o pagamento na API do provedor
+- [x] Conferir vínculo e valor do pagamento; confirmar pedido e baixar estoque somente após aprovação
+- [x] Garantir idempotência e atualização transacional; tratar rejeição, expiração e eventos fora de ordem
+- [x] Testar assinatura inválida, reenvio, concorrência e aprovação com PostgreSQL real; não enviar e-mail de pedido
+
+**Decisões (registradas em 11/10/2026):**
+
+- Processamento síncrono no Route Handler `/api/webhooks/mercadopago`: falha responde 500 e o Mercado Pago reenvia. Avisos IPN, de outro tipo, de pagamento inexistente ou sem pedido respondem 200 sem processar.
+- Só os campos úteis do pagamento são gravados, sem dados do pagador: a seção de dados da privacidade não muda.
+- Cartão recusado mantém o pedido pendente; Pix ou boleto expirado cancela o pedido e devolve as unidades. Aprovação de pedido cancelado, segunda aprovação, valor divergente e aprovação sem unidade livre não pagam o pedido e ficam no log para o estorno (PBI-43).
+- O saldo da conta Mercado Pago é um meio próprio (`SALDO_MERCADO_PAGO`, migração `0007`, que também torna o pagamento único por provedor).
+- O Mercado Pago assina o aviso com o segredo da conta que recebe: no sandbox, o webhook é configurado na conta do vendedor de teste. Contrato completo em [PBI-28](features/PBI-28.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-28-webhook`, que sai da `feat/pbi-27-mercado-pago` (PR #50): integrar depois dele. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+
+**Entregas:**
+
+- `processarNotificacao`, `assinaturaValida`, `lerPagamento` e `consultarPagamento` em `src/modules/payments`; Route Handler `src/app/api/webhooks/mercadopago/route.ts`.
+- Migração `0007`; `prorrogarReserva` aceita a transação do webhook; rótulo "Saldo Mercado Pago" no pedido do admin.
+- `MP_WEBHOOK_SECRET` no `.env.example`, obrigatória em produção.
+
+**Evidências:**
+
+- `npm run lint`, `npm run typecheck`, `npm test` e `npm run build` sem erros; integração completa verde, com 32 testes do webhook no PostgreSQL real.
+- No sandbox, por túnel https: pagamento com cartão confirmado sozinho pelo aviso assinado (pedido pago, estoque baixado, volta pelas `back_urls`), aprovação de pedido cancelado tratada sem reabri-lo, e pagamento com saldo confirmado pelo reenvio automático do Mercado Pago. Detalhes em [PBI-28](features/PBI-28.md).
+- Revisão read-only por agente: PASS. Os achados R1, R3, R5 e R6 foram resolvidos em commits próprios; R2 foi registrado como decisão e R4 passou ao PBI-43.
+
+**Pendências:**
+
+- Antes do deploy: migração `0007` e webhook configurado na aplicação da conta real, com a assinatura em `MP_WEBHOOK_SECRET`.
+- PBI-43: estornar os pagamentos marcados no log e levar as transições do pedido para `orders` (achado R4 da revisão, anotado na seção do PBI-43).
 
 ### PBI-29 — Acompanhamento de pedidos pelo cliente
 
@@ -672,6 +699,13 @@ Consome reservas (25), confirmação/reconciliação de pagamento (28) e operaç
 - [ ] Permitir ao ADMIN cancelar pedido não pago e solicitar estorno pelo gateway
 - [ ] Conciliar estado do pagamento, pedido e liberação de reserva sem duplicar operações
 - [ ] Testar falhas, reenvios e permissões no sandbox; não implementar política automática de cancelamento
+
+**Herdado do PBI-28 (revisão, achado R4):** o webhook (`src/modules/payments/webhook.ts`) grava direto as transições do pedido (`PAGO` com `pago_em`, `CANCELADO` com a reserva liberada e a limpeza do carrinho), e o cancelamento repete a regra dos pedidos abandonados de `finalizarCompra`. Este PBI vai precisar das mesmas transições: expor em `src/modules/orders/index.ts` funções que aceitam a transação do chamador (por exemplo `confirmarPedidoPago(tx, …)` e `cancelarPedidoPendente(tx, …)`) e usá-las no webhook, no checkout e no cancelamento do admin, sem mudar comportamento. Os casos que o webhook deixa no log para este PBI estão em [PBI-28](features/PBI-28.md#pendências-para-os-próximos-pbis).
+
+**Herdado do PBI-28 (revisão das PRs, [comentário na #51](https://github.com/caioalves19/tcc-2/pull/51#issuecomment-6114518780)):** dois riscos que este PBI também resolve.
+
+1. **Frete no valor conferido (RN07).** `aprovar` em `src/modules/payments/webhook.ts` só paga o pedido se `transaction_amount` for igual a `totalCents`, e a preferência hoje só manda os itens (`preferencia.ts`: frete pago entra com o PBI-42). Se o frete entrar no `totalCents` sem entrar na preferência, nenhum pagamento confere e todos caem no log "valor diferente do pedido: estornar". O frete precisa ir na preferência (por exemplo, em `shipments.cost`), ou a comparação precisa considerar o frete.
+2. **Pix vencido seguido de cartão aprovado.** Pix vencido faz `encerrar` cancelar o pedido e devolver as unidades. Se a preferência ainda aceitar pagamento, o cliente pode voltar e pagar com cartão: a aprovação chega para um pedido `CANCELADO`, que não é reaberto e vai ao log de estorno. O cliente paga e fica esperando o dinheiro voltar. Saída sugerida: a preferência (PBI-27) expirar junto com a reserva, ou este PBI tratar o caso de forma explícita.
 
 ### PBI-44 — Contato com proteção antibot
 

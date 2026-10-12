@@ -116,7 +116,7 @@ export type PedidoAdmin = {
   pagamentos: {
     provedor: string;
     idExterno: string | null;
-    metodo: "PIX" | "CARTAO" | "BOLETO";
+    metodo: "PIX" | "CARTAO" | "BOLETO" | "SALDO_MERCADO_PAGO";
     situacao: "PENDENTE" | "APROVADO" | "RECUSADO" | "ESTORNADO";
     valorCentavos: number;
   }[];

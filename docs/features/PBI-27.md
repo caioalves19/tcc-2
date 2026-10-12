@@ -78,7 +78,7 @@ Variáveis no `.env` (documentadas no `.env.example`, nunca versionadas):
 
 | Variável | Valor |
 |----------|-------|
-| `MP_ACCESS_TOKEN` | Access Token do **vendedor de teste** (sandbox) ou da conta real (produção). Sem ela o app sobe, mas o pagamento responde com erro. **Token da conta real só depois do PBI-28:** até o webhook existir, `/api/webhooks/mercadopago` responde 404, o pagamento real é cobrado e o pedido fica `PENDENTE` até a reserva vencer e as obras voltarem à vitrine. |
+| `MP_ACCESS_TOKEN` | Access Token do **vendedor de teste** (sandbox) ou da conta real (produção). Sem ela o app sobe, mas o pagamento responde com erro. **Token da conta real só junto com o webhook do PBI-28** (migração `0007` e `MP_WEBHOOK_SECRET`; ver [PBI-28](PBI-28.md#antes-do-deploy)): sem ele, o pagamento real é cobrado e o pedido fica `PENDENTE` até a reserva vencer. |
 | `APP_URL` | URL pública do app. Em produção o servidor não sobe sem `https://` (`verificarAmbienteDeProducao`). Para receber webhook em desenvolvimento, use um túnel https (ngrok/cloudflared). |
 
 ### Credenciais de sandbox
@@ -141,11 +141,14 @@ Fluxo do painel em 10/10/2026 (Mercado Pago Developers):
 **Limites do teste local:**
 
 - O Mercado Pago **descartou as `back_urls` com `http://localhost`** (gravadas vazias): depois de
-  pagar não há link de volta, e a volta foi simulada abrindo a URL. Validar a volta real exige
-  `APP_URL` em https (túnel), o mesmo de que o webhook do PBI-28 precisa.
+  pagar não há link de volta, e a volta foi simulada abrindo a URL. A volta real foi validada no
+  PBI-28, com `APP_URL` em https por túnel.
 - Não testado: tentativa de pagar pela mesma preferência depois do `expiration_date_to`.
 
 ## Passagem para o PBI-28
+
+Atendida no [PBI-28](PBI-28.md): os riscos abaixo têm teste de integração, e o de pagamento de
+pedido cancelado também tem evidência no sandbox.
 
 - O webhook encontra o pedido por `external_reference` (número), consulta o pagamento na API,
   grava o `payment` e, para Pix/boleto pendente, chama `prorrogarReserva` (ver PBI-25).

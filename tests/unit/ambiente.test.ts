@@ -7,6 +7,7 @@ const PRODUCAO_OK = {
   RESEND_API_KEY: "re_teste",
   BETTER_AUTH_URL: "https://kolo.test",
   APP_URL: "https://kolo.test",
+  MP_WEBHOOK_SECRET: "segredo-do-webhook",
 };
 
 describe("checagem do ambiente na subida do servidor", () => {
@@ -30,6 +31,13 @@ describe("checagem do ambiente na subida do servidor", () => {
     for (const APP_URL of [undefined, "", "http://kolo.test"])
       expect(() => verificarAmbienteDeProducao({ ...PRODUCAO_OK, APP_URL })).toThrow(
         "APP_URL precisa ser https em produção",
+      );
+  });
+
+  it("produção sem MP_WEBHOOK_SECRET não sobe: nenhum pagamento seria confirmado", () => {
+    for (const MP_WEBHOOK_SECRET of [undefined, "", "  "])
+      expect(() => verificarAmbienteDeProducao({ ...PRODUCAO_OK, MP_WEBHOOK_SECRET })).toThrow(
+        "MP_WEBHOOK_SECRET ausente em produção",
       );
   });
 
