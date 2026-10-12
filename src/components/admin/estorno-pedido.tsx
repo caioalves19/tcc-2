@@ -55,7 +55,9 @@ export function EstornoPedido({ numero, cancelavel, pagamentos, acoes }: Props) 
   const estornaveis = pagamentos.flatMap((p) =>
     p.acaoEstorno && p.idExterno ? [{ ...p, idExterno: p.idExterno }] : [],
   );
-  if (!cancelavel && estornaveis.length === 0) return null;
+  // Depois da última ação, a seção fica só com o aviso: o router.refresh() traz o pedido sem
+  // nenhum botão, e a confirmação do que foi feito não pode sumir junto.
+  if (!cancelavel && estornaveis.length === 0 && !feedback) return null;
 
   const voltar = () => setEscolha(null);
   return (

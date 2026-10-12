@@ -125,3 +125,30 @@ it("PBI-43 sem nada a cancelar nem estornar, a seção não aparece", () => {
   );
   expect(container.innerHTML).toBe("");
 });
+
+it("PBI-43 depois da última ação, a mensagem de sucesso continua na tela", async () => {
+  const usuario = userEvent.setup();
+  const minhas = acoes();
+  const props = { numero: "20261012-ABC234", acoes: minhas };
+  const { rerender } = render(
+    <EstornoPedido
+      {...props}
+      cancelavel={false}
+      pagamentos={[pagamento({ idExterno: "mp-1", acaoEstorno: "estornar" })]}
+    />,
+  );
+
+  await usuario.click(screen.getByRole("button", { name: "Estornar pagamento mp-1" }));
+  await usuario.click(screen.getByRole("button", { name: "Confirmar estorno" }));
+  // O router.refresh() traz o pedido sem nenhuma ação pendente.
+  rerender(
+    <EstornoPedido
+      {...props}
+      cancelavel={false}
+      pagamentos={[pagamento({ idExterno: "mp-1", situacao: "ESTORNADO" })]}
+    />,
+  );
+
+  expect(screen.getByRole("status").textContent).toBe("Pagamento estornado.");
+  expect(screen.queryAllByRole("button")).toEqual([]);
+});
