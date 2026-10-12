@@ -16,6 +16,7 @@ export {
   estoqueDisponivel,
   liberarReservas,
   liberarReservasExpiradas,
+  PRAZO_RESERVA_MS,
   prorrogarReserva,
   reservarItens,
 } from "./reserva";
@@ -26,7 +27,7 @@ export type {
   ResultadoReserva,
 } from "./reserva";
 export { FILA_LIBERAR_RESERVAS, registrarTarefasDeReserva } from "./tarefas";
-export { cancelarPedidoPendente, confirmarPedidoPago } from "./transicoes";
+export { cancelarPedidoPendente, confirmarPedidoPago, voltarReservaAoPrazo } from "./transicoes";
 export type { ResultadoConfirmacao } from "./transicoes";
 export { finalizarCompra, resumoCheckout } from "./checkout";
 export type {

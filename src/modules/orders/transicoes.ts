@@ -1,5 +1,5 @@
 import type { Prisma } from "../../../generated/prisma/client";
-import { baixarEstoque } from "./reserva";
+import { baixarEstoque, PRAZO_RESERVA_MS } from "./reserva";
 
 // PBI-43 (achado R4 do PBI-28): as transições do pedido ficam em `orders` e rodam na transação
 // de quem chama (webhook, checkout, admin), que já travou o usuário e o pedido.
@@ -54,4 +54,24 @@ export async function cancelarPedidoPendente(
       },
     });
   return { ok: true };
+}
+
+// RN06: o Pix ou boleto que prorrogou a reserva acabou sem pagar, mas o pedido segue aberto (o
+// cliente ainda pode pagar de outro jeito): a reserva volta ao prazo do checkout, e não segura
+// as unidades até o vencimento de um pagamento que não existe mais.
+export async function voltarReservaAoPrazo(tx: Tx, pedidoId: string): Promise<void> {
+  const pedido = await tx.order.findUniqueOrThrow({
+    where: { id: pedidoId },
+    include: { items: true },
+  });
+  if (!pedido.sessionId) return;
+  const prazo = new Date(pedido.createdAt.getTime() + PRAZO_RESERVA_MS);
+  await tx.artworkReservation.updateMany({
+    where: {
+      sessionId: pedido.sessionId,
+      artworkId: { in: pedido.items.map((i) => i.artworkId) },
+      expiresAt: { gt: prazo },
+    },
+    data: { expiresAt: prazo },
+  });
 }

@@ -4,6 +4,7 @@ import {
   AGORA,
   RESERVA_ATE,
   SEGREDO,
+  PIX_PENDENTE,
   notificacao,
   pagamentoMp,
   gatewayDeTeste,
@@ -12,7 +13,7 @@ import {
 // PBI-43: o webhook grava no pagamento por que ele precisa ser estornado (migração 0008), para o
 // admin achar e estornar sem depender do log.
 const cenario = cenarioWebhook("kolo_pbi43_webhook_estorno_test");
-const { pedidoPendente } = cenario;
+const { estado, pedidoPendente, vencimentoDaReserva } = cenario;
 
 async function motivos(numero: string) {
   const { rows } = await cenario.db.query(
@@ -96,4 +97,34 @@ it("PBI-43 aprovação sem unidade livre fica marcada para estorno", async () =>
   expect(await motivos("20261012-E1SEM1")).toEqual([
     { id_externo: "710004", situacao: "APROVADO", estornar_motivo: "SEM_ESTOQUE" },
   ]);
+});
+
+// Risco do PR #51: Pix que vence (ou é cancelado) enquanto a preferência ainda aceita pagamento
+// não pode cancelar o pedido, senão um cartão pago em seguida chega para um pedido cancelado.
+it("RN06 Pix cancelado antes do fim do prazo para pagar deixa o pedido pendente e a reserva no prazo original", async () => {
+  const { processarNotificacao } = await import("../../src/modules/payments");
+  const { obra, cliente } = await pedidoPendente("e2-pix-cedo", "20261012-E2PIX1", "e2@pbi43.test");
+  const gateway = gatewayDeTeste({
+    "710011": pagamentoMp("710011", "20261012-E2PIX1", PIX_PENDENTE),
+  });
+  const opcoes = { gateway, segredo: SEGREDO, agora: AGORA };
+  await processarNotificacao(notificacao("710011"), opcoes);
+  gateway.trocar(
+    "710011",
+    pagamentoMp("710011", "20261012-E2PIX1", {
+      ...PIX_PENDENTE,
+      status: "cancelled",
+      status_detail: "by_payer",
+    }),
+  );
+
+  await processarNotificacao(notificacao("710011"), {
+    ...opcoes,
+    agora: new Date("2026-10-11T15:03:00.000Z"),
+  });
+
+  const final = await estado("20261012-E2PIX1", obra);
+  expect(final).toMatchObject({ situacao: "PENDENTE", estoque: 2, reservas: 1 });
+  expect(final.pagamentos).toMatchObject([{ id_externo: "710011", situacao: "RECUSADO" }]);
+  expect(await vencimentoDaReserva(cliente.sessaoId)).toEqual([new Date(RESERVA_ATE)]);
 });
