@@ -643,7 +643,7 @@ Consome artistas/estilos (16) e upload (17). Pode avançar em paralelo ao CRUD d
 - [x] Permitir gestão pelo ADMIN e pelo próprio artista, com autorização no servidor
 - [x] Testar persistência e impedir alterações em portfólio de outro artista
 
-**Situação (12/10/2026):** implementado localmente em `/portfolio/gestao`, com tela compartilhada e ordenação por botões. Contrato e validação em [PBI-35](features/PBI-35.md). Revisão independente concluída com PASS após corrigir o header ADMIN e a seleção de imagem depois de falha. Trabalho na branch `feat/pbi-35-portfolio`, com revisão independente concluída e sem push. Envio real ao R2 aguarda configuração do bucket e das credenciais locais; passo a passo no README.
+**Situação:** integrado à `main` pelo PR #57 em 12/10/2026, aprovado por outro integrante. Gestão em `/portfolio/gestao`, com tela compartilhada e ordenação por botões; contrato e validação em [PBI-35](features/PBI-35.md). A entrega está disponível para a galeria pública (36). O envio real ao R2 aguarda a configuração do bucket e das credenciais; passo a passo no README.
 
 ### PBI-36 — Galeria pública de tatuagens
 
@@ -682,6 +682,8 @@ O formulário e a persistência de configurações podem ser preparados com a ba
 - [ ] Permitir ao ADMIN editar contato, horários, textos institucionais e políticas
 - [ ] Integrar os valores às páginas públicas e ao número usado no WhatsApp
 - [ ] Validar entradas no servidor e testar persistência e controle de acesso
+
+**Herdado do PBI-42 (12/10/2026):** o valor fixo da entrega em São Paulo/SP e a tabela de frete por UF ficam em constantes no módulo `orders`; mudar um valor exige commit. Uma tela para o ADMIN editar esses valores cabe aqui, mas o RF31 não cita frete: decidir com a equipe se entra neste PBI ou fica como pendência.
 
 ### PBI-40 — Exclusão de conta e anonimização
 
