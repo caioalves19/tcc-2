@@ -58,6 +58,13 @@ enum PaymentStatus {
   ESTORNADO
 }
 
+// PBI-43: por que o pagamento aprovado precisa de estorno do admin (gravado pelo webhook).
+enum RefundReason {
+  PEDIDO_NAO_PENDENTE
+  VALOR_DIVERGENTE
+  SEM_ESTOQUE
+}
+
 enum AppointmentStatus {
   AGENDADO
   CANCELADO
@@ -322,6 +329,7 @@ model Payment {
   status        PaymentStatus @default(PENDENTE) @map("situacao")
   amountCents   Int           @map("valor_centavos")
   payload       Json?
+  refundReason  RefundReason? @map("estornar_motivo")
   order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   // RNF11: o mesmo pagamento do provedor é uma linha só, mesmo com notificações repetidas.

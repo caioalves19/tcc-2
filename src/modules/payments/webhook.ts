@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import type { Prisma } from "../../../generated/prisma/client";
+import type { Prisma, RefundReason } from "../../../generated/prisma/client";
 import { obterPrisma } from "../../lib/prisma";
 import { cancelarPedidoPendente, confirmarPedidoPago, prorrogarReserva } from "../orders/index";
 import { assinaturaValida } from "./assinatura";
@@ -40,36 +40,54 @@ type Dono = { id: string; userId: string };
 type Pedido = Prisma.OrderGetPayload<{ include: { items: true } }>;
 type Item = { obraId: string; quantidade: number };
 
+// PBI-43: o pagamento aprovado que não pagou o pedido (ou pagou sem unidade livre) fica marcado
+// para o admin estornar. O log continua para quem acompanha a operação.
+async function marcarEstorno(
+  tx: Tx,
+  pagamento: PagamentoLido,
+  motivo: RefundReason,
+  mensagem: string,
+  numero: string,
+) {
+  await tx.payment.update({
+    where: { provider_externalId: { provider: PROVEDOR, externalId: pagamento.idExterno } },
+    data: { refundReason: motivo },
+  });
+  console.error(mensagem, numero, pagamento.idExterno);
+}
+
 // RF14/RN05: com o pagamento aprovado, o pedido vai a PAGO, o estoque baixa e as obras saem do
 // carrinho, na mesma transação do evento (RNF11).
 async function aprovar(tx: Tx, pedido: Pedido, pagamento: PagamentoLido, agora: Date) {
   // Pedido cancelado (um novo checkout o substituiu) ou já pago por outro pagamento: não reabre
   // nem paga de novo; o dinheiro volta pelo estorno (PBI-43).
-  if (pedido.status !== "PENDENTE") {
-    console.error(
+  if (pedido.status !== "PENDENTE")
+    return marcarEstorno(
+      tx,
+      pagamento,
+      "PEDIDO_NAO_PENDENTE",
       "Pagamento aprovado de pedido que não aguardava pagamento: estornar (PBI-43)",
       pedido.number,
-      pagamento.idExterno,
     );
-    return;
-  }
   // RN07: só paga o pedido o pagamento que cobriu exatamente o total gravado, em reais.
-  if (pagamento.valorCentavos !== pedido.totalCents || pagamento.moeda !== "BRL") {
-    console.error(
+  if (pagamento.valorCentavos !== pedido.totalCents || pagamento.moeda !== "BRL")
+    return marcarEstorno(
+      tx,
+      pagamento,
+      "VALOR_DIVERGENTE",
       "Pagamento aprovado com valor diferente do pedido: estornar (PBI-43)",
       pedido.number,
-      pagamento.idExterno,
     );
-    return;
-  }
   // RN06: o cliente pagou, então o pedido fica pago; sem unidade livre, quem resolve é o
   // estorno (PBI-43).
   const confirmado = await confirmarPedidoPago(tx, pedido.id, agora);
   if (confirmado.ok && !confirmado.estoqueBaixado)
-    console.error(
+    await marcarEstorno(
+      tx,
+      pagamento,
+      "SEM_ESTOQUE",
       "Pagamento aprovado sem unidade livre: estornar (PBI-43)",
       pedido.number,
-      pagamento.idExterno,
     );
 }
 
