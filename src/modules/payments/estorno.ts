@@ -51,7 +51,7 @@ async function pagamentoDoPedido(tx: Tx, numero: string, idExterno: string) {
   return pagamento;
 }
 
-// PBI-42: outro pagamento aprovado sem motivo pagou o pedido (regra de acaoDeEstorno).
+// PBI-42: outro pagamento pagou o pedido (pagouOPedido, regra de acaoDeEstorno).
 async function pagoPorOutro(tx: Tx, pedidoId: string) {
   const pagamentos = await tx.payment.findMany({
     where: { orderId: pedidoId },

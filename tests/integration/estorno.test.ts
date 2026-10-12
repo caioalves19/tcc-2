@@ -343,3 +343,36 @@ it("PBI-42 pagamento visto já estornado não conclui o estorno de pedido pago p
     { idExterno: "730001", situacao: "ESTORNADO", acaoEstorno: null },
   ]);
 });
+
+it("PBI-42 pagamento visto já estornado não conclui o pedido pago sem unidade livre por outro pagamento", async () => {
+  const { estornarPagamento, processarNotificacao } = await import("../../src/modules/payments");
+  const { lerPedidoAdmin } = await import("../../src/modules/orders");
+  // A pagou o pedido sem unidade livre (o estoque não baixou); B chega já estornado, sem motivo.
+  const { obra, idExterno } = await pedidoPago("e10-semest", "20261012-E10SE1");
+  await marcar(idExterno, "SEM_ESTOQUE");
+  const avisos = gatewayDeTeste({
+    "740001": pagamentoMp("740001", "20261012-E10SE1", { status: "refunded" }),
+  });
+  await processarNotificacao(notificacao("740001"), {
+    gateway: avisos,
+    segredo: SEGREDO,
+    agora: AGORA,
+  });
+  const gateway = gatewayDeEstorno();
+
+  expect(
+    await estornarPagamento(
+      { numero: "20261012-E10SE1", idExterno: "740001" },
+      cenario.contas.admin,
+      { gateway },
+    ),
+  ).toMatchObject({ ok: false, erro: "invalido" });
+
+  expect(gateway.estornos).toEqual([]);
+  expect(await estado("20261012-E10SE1", obra)).toMatchObject({ situacao: "PAGO", estoque: 0 });
+  const detalhe = await lerPedidoAdmin("20261012-E10SE1", cenario.contas.admin);
+  expect(detalhe.ok && detalhe.dados.pagamentos).toMatchObject([
+    { idExterno, situacao: "APROVADO", acaoEstorno: "estornar" },
+    { idExterno: "740001", situacao: "ESTORNADO", acaoEstorno: null },
+  ]);
+});

@@ -77,7 +77,14 @@ const ESTORNO_PENDENTE: Prisma.OrderWhereInput = {
             },
           },
         },
-        { payments: { none: { status: "APROVADO", refundReason: null } } },
+        {
+          payments: {
+            none: {
+              status: "APROVADO",
+              OR: [{ refundReason: null }, { refundReason: "SEM_ESTOQUE" }],
+            },
+          },
+        },
       ],
     },
   ],

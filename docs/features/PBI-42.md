@@ -17,7 +17,7 @@ servidor e copiado no pedido. Decisões confirmadas antes de codar (12/10/2026):
   `shipments.cost`; assim o `transaction_amount` inclui o frete e a conferência do webhook
   (valor = total) não muda. A preferência confere itens + frete = total.
 - **Achado da revisão do PBI-43:** "Concluir estorno" só aparece quando nenhum outro pagamento do
-  pedido está aprovado sem motivo.
+  pedido o pagou (aprovado sem motivo, ou aprovado sem unidade livre, `SEM_ESTOQUE`).
 - **Fora:** Correios ou API de frete, faixa de CEP, tabela no banco, tela de admin e estorno
   parcial do frete.
 
@@ -38,7 +38,7 @@ servidor e copiado no pedido. Decisões confirmadas antes de codar (12/10/2026):
 |--------|-----|-----------|
 | `resumoCheckout(contexto, agora?)` | Página `/checkout` | ganha `modalidades: { modalidade, freteCentavos \| null }[]`; `modalidade`, `freteCentavos` e `totalCentavos` são os da retirada |
 | `finalizarCompra({ modalidade }, contexto, opcoes?)` | Server Action | aceita `RETIRADA` ou `ENTREGA`; recalcula o frete; `invalido` para entrega indisponível, sem pedido nem reserva |
-| `pagouOPedido(pagamento)` | Regra pura | pagamento aprovado e sem motivo de estorno |
+| `pagouOPedido(pagamento)` | Regra pura | pagamento aprovado sem motivo ou com `SEM_ESTOQUE` (a regra de `estornoCancelaPedido`) |
 | `acaoDeEstorno(pagamento, situacaoPedido, pagoPorOutro)` | Regra pura | `"concluir"` só sem outro pagamento que pagou o pedido |
 
 `src/modules/orders/cliente.ts` expõe `ROTULO_MODALIDADE` ("Retirada no ateliê", "Entrega no
@@ -58,8 +58,8 @@ quando o frete é maior que 0.
 - `tests/unit/checkout-compra.test.tsx` e `tests/unit/detalhe-pedido.test.tsx`: escolha da
   modalidade, entrega indisponível desabilitada, rótulos e andamento de envio.
 - `tests/integration/estorno.test.ts` e `tests/integration/pedidos-admin-estorno.test.ts`:
-  pagamento visto já estornado com outro pagamento aprovado não conclui o estorno e fica fora do
-  filtro.
+  pagamento visto já estornado com outro pagamento que pagou o pedido (sem motivo ou sem unidade
+  livre) não conclui o estorno, não devolve estoque e fica fora do filtro.
 
 ## Antes do deploy
 

@@ -148,3 +148,21 @@ it("PBI-42 pagamento visto já estornado de pedido pago por outro pagamento sai 
 
   expect(lista.ok && lista.dados.pedidos.map((p) => p.numero)).toEqual([]);
 });
+
+it("PBI-42 no detalhe, o pagamento visto já estornado de pedido pago sem unidade livre por outro não tem ação", async () => {
+  const { lerPedidoAdmin } = await import("../../src/modules/orders");
+  await pedido({
+    numero: "20261011-OUTSE1",
+    situacao: "PAGO",
+    criadoEm: dia(11),
+    pagamentos: ["APROVADO", "ESTORNADO"],
+  });
+  await marcar("mp-20261011-OUTSE1-1", "SEM_ESTOQUE");
+
+  const detalhe = await lerPedidoAdmin("20261011-OUTSE1", admin);
+
+  expect(detalhe.ok && detalhe.dados.pagamentos.map((p) => p.acaoEstorno)).toEqual([
+    "estornar",
+    null,
+  ]);
+});

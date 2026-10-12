@@ -158,7 +158,7 @@ export function estornoDevolveEstoque(motivo: MotivoEstorno | null): boolean {
 // "concluir": o estorno já foi feito no Mercado Pago e falta cancelar o pedido. Pedido enviado ou
 // entregue não é cancelado pelo sistema (a devolução é combinada fora dele).
 // PBI-42: o pagamento visto pela primeira vez já estornado não tem motivo, mas pode não ter pago o
-// pedido. Se outro pagamento aprovado sem motivo pagou (`pagoPorOutro`), não há o que concluir.
+// pedido. Se outro pagamento pagou (`pagoPorOutro`, ver pagouOPedido), não há o que concluir.
 export function acaoDeEstorno(
   pagamento: { situacao: SituacaoPagamento; motivo: MotivoEstorno | null },
   situacaoPedido: SituacaoNoBanco,
@@ -174,12 +174,13 @@ export function acaoDeEstorno(
   return null;
 }
 
-// O pagamento que pagou o pedido: aprovado e sem motivo de estorno.
+// O pagamento que pagou o pedido: aprovado sem motivo, ou pago sem unidade livre (a mesma regra
+// de estornoCancelaPedido).
 export function pagouOPedido(pagamento: {
   situacao: SituacaoPagamento;
   motivo: MotivoEstorno | null;
 }): boolean {
-  return pagamento.situacao === "APROVADO" && pagamento.motivo === null;
+  return pagamento.situacao === "APROVADO" && estornoCancelaPedido(pagamento.motivo);
 }
 
 // PBI-43: só pedido aguardando pagamento é cancelado pelo admin. Cartão em análise (ou saldo)
