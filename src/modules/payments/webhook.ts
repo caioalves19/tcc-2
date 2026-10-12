@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Prisma } from "../../../generated/prisma/client";
 import { obterPrisma } from "../../lib/prisma";
-import { confirmarPedidoPago, prorrogarReserva } from "../orders/index";
+import { cancelarPedidoPendente, confirmarPedidoPago, prorrogarReserva } from "../orders/index";
 import { assinaturaValida } from "./assinatura";
 import { lerPagamento, type PagamentoLido, type SituacaoPagamento } from "./leitura";
 
@@ -96,7 +96,7 @@ async function prorrogar(
 
 // RN06: Pix ou boleto que venceu (ou foi cancelado) sem pagar encerra o pedido e devolve as
 // unidades. Cartão recusado não: o cliente pode tentar de novo enquanto a reserva durar.
-async function encerrar(tx: Tx, pedido: Pedido, itens: Item[], pagamento: PagamentoLido) {
+async function encerrar(tx: Tx, pedido: Pedido, pagamento: PagamentoLido) {
   if (pagamento.meio !== "PIX" && pagamento.meio !== "BOLETO") return;
   if (pedido.status !== "PENDENTE") return;
   const outroEmAberto = await tx.payment.count({
@@ -107,11 +107,7 @@ async function encerrar(tx: Tx, pedido: Pedido, itens: Item[], pagamento: Pagame
     },
   });
   if (outroEmAberto > 0) return;
-  await tx.order.update({ where: { id: pedido.id }, data: { status: "CANCELADO" } });
-  if (pedido.sessionId)
-    await tx.artworkReservation.deleteMany({
-      where: { sessionId: pedido.sessionId, artworkId: { in: itens.map((i) => i.obraId) } },
-    });
+  await cancelarPedidoPendente(tx, pedido.id);
 }
 
 async function aplicar(
@@ -153,7 +149,7 @@ async function aplicar(
   const itens = pedido.items.map((i) => ({ obraId: i.artworkId, quantidade: i.quantity }));
   if (pagamento.situacao === "APROVADO") await aprovar(tx, pedido, pagamento, agora);
   if (pagamento.situacao === "PENDENTE") await prorrogar(tx, pedido, itens, pagamento, agora);
-  if (pagamento.situacao === "RECUSADO") await encerrar(tx, pedido, itens, pagamento);
+  if (pagamento.situacao === "RECUSADO") await encerrar(tx, pedido, pagamento);
   // Estorno ou chargeback de pedido já pago: o pedido segue na fila do admin, que precisa saber
   // antes de enviar. Tratar o pedido é do estorno administrativo (PBI-43).
   if (

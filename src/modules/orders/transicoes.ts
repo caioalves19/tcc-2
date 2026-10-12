@@ -29,3 +29,29 @@ export async function confirmarPedidoPago(
   });
   return { ok: true, estoqueBaixado: baixa.ok };
 }
+
+// RN06: pedido que não vai ser pago (abandonado, Pix ou boleto vencido, cancelado pelo admin)
+// vira CANCELADO e solta as unidades que a sessão dele segurava. Só o que ainda está PENDENTE:
+// um pagamento aprovado que terminou antes não pode ter o pedido pago cancelado por cima.
+export async function cancelarPedidoPendente(
+  tx: Tx,
+  pedidoId: string,
+): Promise<{ ok: true } | { ok: false; erro: "nao_pendente" }> {
+  const { count } = await tx.order.updateMany({
+    where: { id: pedidoId, status: "PENDENTE" },
+    data: { status: "CANCELADO" },
+  });
+  if (count === 0) return { ok: false, erro: "nao_pendente" };
+  const pedido = await tx.order.findUniqueOrThrow({
+    where: { id: pedidoId },
+    include: { items: true },
+  });
+  if (pedido.sessionId)
+    await tx.artworkReservation.deleteMany({
+      where: {
+        sessionId: pedido.sessionId,
+        artworkId: { in: pedido.items.map((i) => i.artworkId) },
+      },
+    });
+  return { ok: true };
+}

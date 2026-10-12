@@ -6,6 +6,7 @@ import { validarEndereco, type DadosEndereco } from "../endereco/index";
 import { lerCarrinho, sessaoAtiva, type ContextoCarrinho } from "./carrinho";
 import { numeroDoPedido } from "./regras";
 import { reservarItens } from "./reserva";
+import { cancelarPedidoPendente } from "./transicoes";
 
 // PBI-26: retirada no ateliê é a modalidade mínima, sem custo. As outras entram no PBI-42.
 export type Modalidade = "RETIRADA";
@@ -217,16 +218,9 @@ export async function finalizarCompra(
         payments: { none: { status: "PENDENTE" } },
       },
     });
-    if (abandonados.length > 0) {
-      // Só o que ainda está PENDENTE: um aviso de pagamento aprovado que terminou entre a leitura
-      // e esta escrita não pode ter o pedido pago cancelado por cima (PBI-28).
-      await tx.order.updateMany({
-        where: { id: { in: abandonados.map((p) => p.id) }, status: "PENDENTE" },
-        data: { status: "CANCELADO" },
-      });
-      const sessoes = abandonados.flatMap((p) => (p.sessionId ? [p.sessionId] : []));
-      await tx.artworkReservation.deleteMany({ where: { sessionId: { in: sessoes } } });
-    }
+    // Só o que ainda está PENDENTE: um aviso de pagamento aprovado que terminou entre a leitura
+    // e esta escrita não pode ter o pedido pago cancelado por cima (PBI-28).
+    for (const abandonado of abandonados) await cancelarPedidoPendente(tx, abandonado.id);
 
     const reserva = await reservarItens(
       comprador.sessaoId,

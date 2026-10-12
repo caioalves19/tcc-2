@@ -38,3 +38,22 @@ it("RN05 confirmarPedidoPago paga o pedido, baixa o estoque e tira as obras do c
   );
   expect(rows[0].n).toBe(0);
 });
+
+it("RN06 cancelarPedidoPendente cancela o pedido e devolve as unidades que ele segurava", async () => {
+  const { cancelarPedidoPendente } = await import("../../src/modules/orders");
+  const { obra, pedidoId } = await pedidoPendente(
+    "r4-cancela",
+    "20261012-R4CAN1",
+    "r4-cancela@pbi43.test",
+  );
+
+  expect(await naTransacao((tx) => cancelarPedidoPendente(tx, pedidoId))).toEqual({ ok: true });
+
+  expect(await estado("20261012-R4CAN1", obra)).toMatchObject({
+    situacao: "CANCELADO",
+    pagoEm: null,
+    estoque: 2,
+    situacaoObra: "DISPONIVEL",
+    reservas: 0,
+  });
+});
