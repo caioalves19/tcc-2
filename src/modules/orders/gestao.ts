@@ -64,14 +64,21 @@ const ESTORNO_PENDENTE: Prisma.OrderWhereInput = {
       status: { notIn: ["ENVIADO", "ENTREGUE"] },
       payments: { some: { status: "APROVADO", refundReason: "SEM_ESTOQUE" } },
     },
+    // PBI-42: se outro pagamento aprovado sem motivo pagou o pedido, não há o que concluir
+    // (mesma regra de acaoDeEstorno com pagouOPedido).
     {
       status: { in: ["PAGO", "PROCESSANDO"] },
-      payments: {
-        some: {
-          status: "ESTORNADO",
-          OR: [{ refundReason: null }, { refundReason: "SEM_ESTOQUE" }],
+      AND: [
+        {
+          payments: {
+            some: {
+              status: "ESTORNADO",
+              OR: [{ refundReason: null }, { refundReason: "SEM_ESTOQUE" }],
+            },
+          },
         },
-      },
+        { payments: { none: { status: "APROVADO", refundReason: null } } },
+      ],
     },
   ],
 };
