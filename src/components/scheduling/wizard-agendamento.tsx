@@ -45,6 +45,9 @@ const AVISOS = [
       "Declaro ter 18 anos ou mais. Meu documento com foto será conferido no estúdio; sem ele, o horário será cancelado.",
   },
 ] as const;
+// O foco vai para o título a cada etapa; a margem de rolagem (maior que o cabeçalho fixo, ~82 px)
+// impede que o título focado fique escondido embaixo dele no celular.
+const TITULO = "scroll-mt-28 font-display text-2xl";
 const CAMPO =
   "mt-2 min-h-12 w-full rounded-campo border-2 border-[var(--kolo-contorno)] bg-[var(--kolo-superficie)] px-3 py-2 text-[var(--kolo-superficie-texto)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--kolo-acao)]";
 const INICIAL: EntradaWizard = {
@@ -169,7 +172,7 @@ export function WizardAgendamento({
       </ol>
       {resumo ? (
         <section aria-labelledby="wizard-titulo">
-          <h2 id="wizard-titulo" ref={titulo} tabIndex={-1} className="font-display text-2xl">
+          <h2 id="wizard-titulo" ref={titulo} tabIndex={-1} className={TITULO}>
             Revise suas preferências
           </h2>
           <dl className="my-6 grid gap-3 break-words">
@@ -229,7 +232,7 @@ export function WizardAgendamento({
         </section>
       ) : (
         <form noValidate onSubmit={avancar} aria-busy={ocupado} className="grid gap-5">
-          <h2 id="wizard-titulo" ref={titulo} tabIndex={-1} className="font-display text-2xl">
+          <h2 id="wizard-titulo" ref={titulo} tabIndex={-1} className={TITULO}>
             {etapa + 1}. {ETAPAS[etapa]}
           </h2>
           {etapa === 0 && (
