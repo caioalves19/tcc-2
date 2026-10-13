@@ -96,3 +96,26 @@
   feita por outro agente; o envio real ao bucket permanece pendente de configuração externa.
 - Verificações desta rodada: lint e TypeScript; 444 testes unitários em 93 arquivos; 204 testes
   de integração em 31 arquivos. A suíte específica de portfólio e assinatura passou (15 testes).
+
+## Validação real do R2 — 13/10/2026
+
+- Configuração local preenchida pelo usuário para o bucket `kolo-imagens-teste`. O primeiro
+  preflight falhou com 403; após configurar CORS, respondeu 204 para `http://localhost:3000`
+  e `http://localhost:3100`. Nenhuma alteração de código foi necessária nesta rodada.
+- Código da branch testado em cópia isolada na porta 3100, com banco descartável
+  `kolo_pbi35_r2_real_test`, sem alterar a `main` ou o banco de desenvolvimento.
+- Envio real pela API pública: PUT 200, processamento com `sharp`, miniatura WebP de 400 px
+  de largura, URL pública 200 e persistência do trabalho no PostgreSQL.
+- Navegador como ADMIN: cadastro com PNG, título, descrição, região do corpo, estilo e destaque;
+  substituição por WebP; ordenação. Imagens renderizadas com `next/image` e dados/ordem
+  preservados após recarregar a página.
+- Navegador como ARTISTA: envio e cadastro no próprio portfólio. A URL com o ID de outro
+  artista não revelou seus trabalhos; a imagem própria carregou após recarregar.
+- API pública: remoção de trabalho alheio recusada com `nao_encontrado`; remoção pelo ADMIN
+  eliminou os três trabalhos de teste e os vínculos de estilos.
+- Limpeza explícita dos objetos desta validação: quatro originais e quatro miniaturas removidos
+  do bucket de teste, com ausência confirmada. Essa limpeza foi feita pelo teste; a aplicação
+  continua com o limite de retenção de objetos documentado acima.
+- A pendência de envio real ao R2 está resolvida. A revisão independente PASS e os gates
+  anteriores continuam aplicáveis ao mesmo código. A implementação já foi integrada à `main` pelo PR #57 em 12/10/2026; o aceite humano
+  segue o processo da sprint.

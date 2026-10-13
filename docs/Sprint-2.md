@@ -643,7 +643,7 @@ Consome artistas/estilos (16) e upload (17). Pode avançar em paralelo ao CRUD d
 - [x] Permitir gestão pelo ADMIN e pelo próprio artista, com autorização no servidor
 - [x] Testar persistência e impedir alterações em portfólio de outro artista
 
-**Situação:** integrado à `main` pelo PR #57 em 12/10/2026, aprovado por outro integrante. Gestão em `/portfolio/gestao`, com tela compartilhada e ordenação por botões; contrato e validação em [PBI-35](features/PBI-35.md). A entrega está disponível para a galeria pública (36). O envio real ao R2 aguarda a configuração do bucket e das credenciais; passo a passo no README.
+**Situação:** integrado à `main` pelo PR #57 em 12/10/2026, aprovado por outro integrante. Gestão em `/portfolio/gestao`, com tela compartilhada e ordenação por botões; contrato e validação em [PBI-35](features/PBI-35.md). A entrega está disponível para a galeria pública (36). O envio real ao R2 foi validado em 13/10/2026 no bucket de teste após configurar CORS: cadastro como ADMIN e ARTISTA, miniatura pública, renderização, troca de imagem, persistência, ordenação e remoção pela API pública. Nenhuma correção de código foi necessária; os objetos de teste foram limpos. Evidências detalhadas no documento da feature.
 
 ### PBI-36 — Galeria pública de tatuagens
 
