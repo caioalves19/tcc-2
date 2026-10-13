@@ -2,3 +2,5 @@ export { criarTrabalho, editarTrabalho, moverTrabalho, removerTrabalho } from ".
 export type { ResultadoGestao as ResultadoPortfolio } from "../artists/index";
 export { lerPortfolio } from "./leitura";
 export type { PortfolioGestao, TrabalhoPortfolio } from "./leitura";
+export { listarGaleria } from "./publico";
+export type { GaleriaPublica } from "./publico";
