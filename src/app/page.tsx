@@ -8,6 +8,7 @@ import { VitrineDestaques } from "@/components/loja/vitrine-destaques";
 import { buttonVariants } from "@/components/ui/button";
 import { linkWhatsApp } from "@/lib/contato";
 import { listarDestaques } from "@/modules/catalog";
+import { PADRAO } from "@/modules/settings";
 
 const MENSAGEM_MURAL = "Olá! Quero pedir um orçamento de mural.";
 
@@ -142,7 +143,7 @@ export default async function Home() {
             </p>
           </div>
           <a
-            href={linkWhatsApp(MENSAGEM_MURAL)}
+            href={linkWhatsApp(MENSAGEM_MURAL, PADRAO.contato.whatsapp)}
             target="_blank"
             rel="noopener noreferrer"
             // O rótulo é longo: no celular quebra a linha em vez de passar da borda do cartão.

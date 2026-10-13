@@ -1,4 +1,5 @@
 import { expect, it } from "vitest";
+import { linkWhatsApp } from "../../src/lib/contato";
 import { validarDadosWizard } from "../../src/modules/scheduling/index";
 
 const artista = "11111111-1111-4111-8111-111111111111";
@@ -28,19 +29,18 @@ it("RF20/RF23–RF25 valida as etapas com os três aceites, normaliza o nome e i
       nome: "Maria",
       preferenciaEm: "2026-10-18T17:30:00.000Z",
       mensagem: expect.stringContaining("Sou Maria e quero agendar uma tatuagem com Ana."),
-      linkWhatsApp: expect.stringMatching(/^https:\/\/wa\.me\/5511950901191\?text=/),
     },
   });
 });
 
-it("RF21 a revisão devolve a mensagem com os nomes escolhidos e o link codificado para o estúdio", () => {
+it("RF21 a mensagem leva os nomes escolhidos e chega inteira, codificada, pelo link", () => {
   const resultado = validarDadosWizard(
     { ...dados, nome: "Zé & Ana", regiao: "Ombro / costas" },
     opcoes,
     agora,
   );
   if (!resultado.ok) throw new Error(resultado.mensagem);
-  const { mensagem, linkWhatsApp } = resultado.dados;
+  const { mensagem } = resultado.dados;
   expect(mensagem.split("\n")).toEqual([
     "Olá! Sou Zé & Ana e quero agendar uma tatuagem com Ana.",
     "Estilo: Aquarela",
@@ -49,11 +49,12 @@ it("RF21 a revisão devolve a mensagem com os nomes escolhidos e o link codifica
     "Preferência: 18/10/2026 às 14:30 (horário de São Paulo)",
     "Li e aceito os avisos: anamnese e termo de consentimento presenciais e declaração de maioridade.",
   ]);
-  // Acentos, "&", "/" e as quebras de linha codificados: o texto chega inteiro ao WhatsApp.
-  expect(linkWhatsApp).toBe(`https://wa.me/5511950901191?text=${encodeURIComponent(mensagem)}`);
-  expect(linkWhatsApp).toContain("Z%C3%A9%20%26%20Ana");
-  expect(linkWhatsApp).toContain("%0AEstilo%3A%20Aquarela%0A");
-  expect(new URL(linkWhatsApp).searchParams.get("text")).toBe(mensagem);
+  // Acentos, "&", "/" e as quebras de linha codificados: o texto chega inteiro ao WhatsApp. O número
+  // vem das configurações do site na revisão (PBI-39); aqui qualquer um serve.
+  const link = linkWhatsApp(mensagem, "5511950901191");
+  expect(link).toContain("Z%C3%A9%20%26%20Ana");
+  expect(link).toContain("%0AEstilo%3A%20Aquarela%0A");
+  expect(new URL(link).searchParams.get("text")).toBe(mensagem);
 });
 
 it.each([
