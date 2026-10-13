@@ -39,24 +39,31 @@ it("RF07 apresenta o Kolô, leva ao catálogo e mostra os destaques vindos do ba
 
 const ZAP = "https://wa.me/5511950901191?text=";
 
-it("RF07 a chamada de tatuagem é provisória, pelo WhatsApp com mensagem pronta (o wizard entra no PBI-33)", async () => {
+it("RF07/RF21 a chamada de tatuagem leva ao wizard; os passos terminam no WhatsApp (PBI-33)", async () => {
   destaques.mockResolvedValue([]);
   render(await Home());
-  expect(screen.getByRole("link", { name: "Agendar tatuagem" }).getAttribute("href")).toBe(
-    "#tatuagem",
-  );
   const bloco = document.getElementById("tatuagem");
   if (!bloco) throw new Error("A home não tem o bloco #tatuagem");
   expect(bloco.getAttribute("data-brand")).toBe("tattoo");
+
+  // Topo e bloco levam ao wizard completo; nada abre o WhatsApp direto para tatuagem.
+  const chamadas = screen.getAllByRole("link", { name: "Agendar tatuagem" });
+  expect(chamadas).toHaveLength(2);
+  for (const chamada of chamadas) expect(chamada.getAttribute("href")).toBe("/agendamento");
+  expect(within(bloco).getByRole("link", { name: "Agendar tatuagem" })).toBeDefined();
+  expect(bloco.querySelector('a[href^="https://wa.me"]')).toBeNull();
+
+  const passos = within(bloco)
+    .getAllByRole("listitem")
+    .map((passo) => passo.querySelector("h3")?.textContent);
+  expect(passos).toEqual([
+    "1. Escolha artista e estilo",
+    "2. Diga quando prefere",
+    "3. Finalize no WhatsApp",
+  ]);
   // RF23 a RF25: o site não marca horário; anamnese e termo acontecem no estúdio.
   expect(bloco.textContent).toMatch(/anamnese/i);
   expect(bloco.textContent).toMatch(/termo de consentimento/i);
-  const zap = within(bloco).getByRole("link", { name: "Agendar pelo WhatsApp" });
-  expect(zap.getAttribute("href")).toBe(
-    `${ZAP}${encodeURIComponent("Olá! Quero agendar uma tatuagem no Kolô.")}`,
-  );
-  expect(zap.getAttribute("target")).toBe("_blank");
-  expect(document.querySelector('a[href^="/agendamento"]')).toBeNull();
 
   const mural = screen.getByRole("link", { name: "Pedir orçamento pelo WhatsApp" });
   expect(mural.getAttribute("href")).toBe(
