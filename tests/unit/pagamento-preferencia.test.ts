@@ -74,14 +74,33 @@ it("RF13/RN07 recusa montar a preferência sem reserva ativa ou com total que n�
   expect(montarPreferencia(pedido({ reservaExpiraEm: null }), "https://kolo.com.br")).toMatchObject(
     recusa,
   );
-  // Frete ainda não vai para o Mercado Pago (PBI-42): cobrar menos que o total seria pior.
+  // PBI-42: itens + frete precisam fechar com o total; cobrar outro valor seria pior.
   expect(
     montarPreferencia(
-      pedido({ freteCentavos: 1500, totalCentavos: 306480 }),
+      pedido({ freteCentavos: 1500, totalCentavos: 304980 }),
       "https://kolo.com.br",
     ),
   ).toMatchObject(recusa);
   expect(montarPreferencia(pedido({ totalCentavos: 304979 }), "https://kolo.com.br")).toMatchObject(
     recusa,
   );
+});
+
+it("PBI-42/RN07 com entrega, o frete vai como item próprio e os itens da preferência somam o total", () => {
+  const preferencia = montarPreferencia(
+    pedido({ modalidade: "ENTREGA", freteCentavos: 3000, totalCentavos: 307980 }),
+    "https://kolo.com.br",
+  );
+
+  expect(preferencia.ok && preferencia.dados.items).toEqual([
+    {
+      id: "obra-1",
+      title: "Metrópole em chamas",
+      quantity: 1,
+      unit_price: 2850,
+      currency_id: "BRL",
+    },
+    { id: "obra-2", title: "Gravura azul", quantity: 2, unit_price: 99.9, currency_id: "BRL" },
+    { id: "frete", title: "Frete", quantity: 1, unit_price: 30, currency_id: "BRL" },
+  ]);
 });

@@ -133,3 +133,36 @@ it("PBI-43 aprovação sem unidade livre de pedido já enviado sai do filtro (n�
 
   expect(lista.ok && lista.dados.pedidos.map((p) => p.numero)).toEqual([]);
 });
+
+it("PBI-42 pagamento visto já estornado de pedido pago por outro pagamento sai do filtro", async () => {
+  const { listarPedidosAdmin } = await import("../../src/modules/orders");
+  // B (aprovado, sem motivo) pagou; A chegou já estornado, sem motivo.
+  await pedido({
+    numero: "20261010-OUTRO1",
+    situacao: "PAGO",
+    criadoEm: dia(10),
+    pagamentos: ["APROVADO", "ESTORNADO"],
+  });
+
+  const lista = await listarPedidosAdmin({ filtro: "estorno-pendente" }, admin);
+
+  expect(lista.ok && lista.dados.pedidos.map((p) => p.numero)).toEqual([]);
+});
+
+it("PBI-42 no detalhe, o pagamento visto já estornado de pedido pago sem unidade livre por outro não tem ação", async () => {
+  const { lerPedidoAdmin } = await import("../../src/modules/orders");
+  await pedido({
+    numero: "20261011-OUTSE1",
+    situacao: "PAGO",
+    criadoEm: dia(11),
+    pagamentos: ["APROVADO", "ESTORNADO"],
+  });
+  await marcar("mp-20261011-OUTSE1-1", "SEM_ESTOQUE");
+
+  const detalhe = await lerPedidoAdmin("20261011-OUTSE1", admin);
+
+  expect(detalhe.ok && detalhe.dados.pagamentos.map((p) => p.acaoEstorno)).toEqual([
+    "estornar",
+    null,
+  ]);
+});

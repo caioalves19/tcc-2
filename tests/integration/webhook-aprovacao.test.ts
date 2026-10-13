@@ -399,3 +399,38 @@ it.each(["refunded", "charged_back"])(
     );
   },
 );
+
+it("PBI-42/RN07 com entrega, a aprovação de itens + frete paga o pedido; só os itens fica para estorno", async () => {
+  const { processarNotificacao } = await import("../../src/modules/payments");
+  const comFrete = async (slug: string, numero: string) => {
+    const { obra, pedidoId } = await pedidoPendente(slug, numero, `${slug}@pbi42.test`);
+    // Pedido de 2 × R$ 4.800,00 com R$ 30,00 de frete, como o checkout grava (PBI-42).
+    await cenario.db.query(
+      `UPDATE "order" SET modalidade_entrega = 'ENTREGA', frete_centavos = 3000,
+              total_centavos = 963000 WHERE id = $1`,
+      [pedidoId],
+    );
+    return obra;
+  };
+  const paga = await comFrete("f42-total", "20261012-F42TO1");
+  const curta = await comFrete("f42-itens", "20261012-F42IT1");
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  const gateway = gatewayDeTeste({
+    "750001": pagamentoMp("750001", "20261012-F42TO1", { transaction_amount: 9630 }),
+    "750002": pagamentoMp("750002", "20261012-F42IT1", { transaction_amount: 9600 }),
+  });
+
+  for (const id of ["750001", "750002"])
+    await processarNotificacao(notificacao(id), { gateway, segredo: SEGREDO, agora: AGORA });
+
+  expect(await estado("20261012-F42TO1", paga)).toMatchObject({ situacao: "PAGO", estoque: 0 });
+  expect(await estado("20261012-F42IT1", curta)).toMatchObject({
+    situacao: "PENDENTE",
+    estoque: 2,
+  });
+  const { rows } = await cenario.db.query(
+    "SELECT estornar_motivo FROM payment WHERE id_externo = '750002'",
+  );
+  expect(rows).toEqual([{ estornar_motivo: "VALOR_DIVERGENTE" }]);
+  log.mockRestore();
+});

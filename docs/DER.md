@@ -160,6 +160,7 @@ erDiagram
         string numero UK
         uuid user_id FK
         enum situacao
+        enum modalidade_entrega "retirada entrega"
         int subtotal_centavos
         int desconto_centavos
         int frete_centavos
@@ -339,6 +340,7 @@ O wizard (RF20, RF21, RF23–RF25) **não** gera linha em `appointment`.
 | `payment` | `estornar_motivo` (PBI-43) é gravado pelo webhook quando a aprovação não paga o pedido ou o paga sem unidade livre; o admin estorna pelo filtro "Estorno pendente". Nulo é pagamento normal |
 | `webhook_event.id_evento` | Único, para o webhook do Mercado Pago ser idempotente (RNF11) |
 | `order.endereco_copia` | Endereço congelado no pedido; não é FK viva para `address` |
+| `order.modalidade_entrega` | `RETIRADA` (frete 0) ou `ENTREGA` (migração `0009`, PBI-42); `frete_centavos` guarda o frete calculado no servidor na hora do checkout, e o total é itens + frete (RN07) |
 | `order_item` | Cópia de título, preço e quantidade no momento da compra |
 | `user.excluido_em` | Exclusão LGPD anonimiza o cliente e preserva pedidos pagos (RN12) |
 | `artwork_image.url` / `portfolio_item.imagem_url` | Guardam a **chave do objeto** no R2 (`<obras\|portfolio>/<artistId>/<uuid>.<ext>`), não a URL pública; a URL e a chave da miniatura são derivadas pelo módulo `media` (`urlPublica`, `chaveMiniatura`). Só se grava uma chave que `processarImagem` devolveu com sucesso (RF27) |
