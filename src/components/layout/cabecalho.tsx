@@ -11,8 +11,7 @@ import { Marca } from "@/components/layout/marca";
 const LINKS = [
   { rotulo: "Início", href: "/" },
   { rotulo: "Obras", href: "/obras" },
-  // Bloco de tatuagem da home até o portfólio público ter rota própria.
-  { rotulo: "Tatuagem", href: "/#tatuagem" },
+  { rotulo: "Tatuagem", href: "/tatuagens" },
   { rotulo: "Agendar", href: "/agendamento" },
   { rotulo: "Contato", href: "/contato" },
 ] as const;

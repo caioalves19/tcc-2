@@ -649,9 +649,13 @@ Consome artistas/estilos (16) e upload (17). Pode avançar em paralelo ao CRUD d
 
 **Referências:** RF17 · **Prioridade:** P0 · **Deps:** PBI-35.
 
-- [ ] Exibir trabalhos cadastrados com imagens responsivas e textos alternativos
-- [ ] Filtrar por artista, estilo e região do corpo
-- [ ] Testar filtros combinados, estado vazio e acesso sem autenticação
+- [x] Exibir trabalhos cadastrados com imagens responsivas e textos alternativos
+- [x] Filtrar por artista, estilo e região do corpo
+- [x] Testar filtros combinados, estado vazio e acesso sem autenticação
+
+**Situação:** implementação local na branch `feat/pbi-36-galeria-publica`, baseada em `ff3485a` da branch de evidências do PBI-35 ainda pendente de aprovação/merge. Aceite integrado depende da resolução dessa base e de PR revisado, aprovado e integrado. Sem busca do PBI-37.
+
+**Entregas e evidências:** rota pública `/tatuagens`, API pública `listarGaleria`, imagens responsivas com texto alternativo, filtros combináveis e estados vazios. Contrato, testes e resultados dos gates em [PBI-36](features/PBI-36.md).
 
 ### PBI-37 — Busca no portfólio
 
