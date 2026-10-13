@@ -2,7 +2,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { BotaoAdicionarAoCarrinho } from "@/components/loja/botao-adicionar-carrinho";
 import { CardObra } from "@/components/loja/card-obra";
 import { GaleriaObra } from "@/components/loja/galeria-obra";
-import { CONTATO } from "@/lib/contato";
+import { linkWhatsApp } from "@/lib/contato";
 import type { CardObra as DadosCard, ObraPublica } from "@/modules/catalog";
 import { formatarPreco } from "@/modules/catalog/cliente";
 
@@ -12,6 +12,8 @@ type Props = {
   outras: DadosCard[];
   // URL pública do R2 (R2_PUBLIC_URL); sem ela, as fotos viram espaço reservado.
   baseImagens: string | null;
+  // WhatsApp das configurações do site (PBI-39), só dígitos.
+  whatsapp: string;
   // adicionarAoCarrinhoAcao (PBI-24): adiciona 1 unidade; a quantidade se ajusta no carrinho.
   adicionar: (obraId: string) => Promise<Resultado>;
 };
@@ -20,13 +22,12 @@ const CARTAO =
   "grid gap-3 rounded-card border-2 border-neutro-grafite bg-[var(--kolo-superficie)] p-5 text-[var(--kolo-superficie-texto)] shadow-adesivo-sm";
 
 // Sem API oficial do WhatsApp (ESCOPO): só o wa.me do ateliê, com a obra na mensagem.
-function linkWhatsapp(obra: ObraPublica): string {
-  const mensagem = `Olá! Tenho uma dúvida sobre a obra "${obra.titulo}", de ${obra.artista.nome}.`;
-  return `${CONTATO.whatsapp}?text=${encodeURIComponent(mensagem)}`;
+function mensagemDaObra(obra: ObraPublica): string {
+  return `Olá! Tenho uma dúvida sobre a obra "${obra.titulo}", de ${obra.artista.nome}.`;
 }
 
 // RF10/RN11: página pública da obra. Esgotada continua visível, mas sem caminho de compra.
-export function DetalheObra({ obra, outras, baseImagens, adicionar }: Props) {
+export function DetalheObra({ obra, outras, baseImagens, whatsapp, adicionar }: Props) {
   const ficha = [
     ["Artista", obra.artista.nome],
     ["Técnica", obra.tecnica],
@@ -96,7 +97,7 @@ export function DetalheObra({ obra, outras, baseImagens, adicionar }: Props) {
           </div>
 
           <a
-            href={linkWhatsapp(obra)}
+            href={linkWhatsApp(mensagemDaObra(obra), whatsapp)}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Tirar dúvidas com o ateliê pelo WhatsApp"
