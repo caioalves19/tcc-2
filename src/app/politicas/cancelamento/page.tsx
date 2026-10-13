@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 
 import { DocumentoPolitica } from "@/components/politicas/documento-politica";
+import { lerConfiguracao, PADRAO } from "@/modules/settings";
 
-import { CANCELAMENTO } from "./conteudo";
+import { cancelamento } from "./conteudo";
 
 export const metadata: Metadata = {
   title: "Política de cancelamento · Kolô",
-  description: CANCELAMENTO.resumo,
+  description: cancelamento(PADRAO.contato).resumo,
 };
 
-export default function PaginaCancelamento() {
-  return <DocumentoPolitica politica={CANCELAMENTO} />;
+export default async function PaginaCancelamento() {
+  const { contato } = await lerConfiguracao();
+  return <DocumentoPolitica politica={cancelamento(contato)} contato={contato} />;
 }

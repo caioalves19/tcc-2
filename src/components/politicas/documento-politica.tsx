@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 import { cn } from "cn";
 
 import { buttonVariants } from "@/components/ui/button";
-import { CONTATO } from "@/lib/contato";
+import { hrefWhatsApp } from "@/lib/contato";
+import type { ConfiguracaoSite } from "@/modules/settings";
 
 // Documento de política (RF08): privacidade, termos e cancelamento usam o mesmo desenho.
 // O conteúdo é dado puro (serializável em JSON) para o PBI-39 levá-lo ao site_setting.
@@ -88,7 +89,14 @@ function Bloco({ bloco }: { readonly bloco: BlocoPolitica }) {
   );
 }
 
-export function DocumentoPolitica({ politica }: { readonly politica: Politica }) {
+export function DocumentoPolitica({
+  politica,
+  contato,
+}: {
+  readonly politica: Politica;
+  // Contato das configurações do site (PBI-39), para o quadro de dúvidas.
+  readonly contato: ConfiguracaoSite["contato"];
+}) {
   return (
     <div className="mx-auto max-w-pagina px-margem py-12 md:px-margem-desktop md:py-16">
       <header className="max-w-3xl">
@@ -183,15 +191,15 @@ export function DocumentoPolitica({ politica }: { readonly politica: Politica })
           </h2>
           <p className="mt-2 text-nota">Fale com a gente pelo WhatsApp ou por e-mail.</p>
           <div className="mt-4 flex flex-col gap-3">
-            <a href={CONTATO.whatsapp} className={buttonVariants({ size: "sm" })}>
+            <a href={hrefWhatsApp(contato.whatsapp)} className={buttonVariants({ size: "sm" })}>
               Falar no WhatsApp
             </a>
             {/* E-mail em caixa alta fica difícil de ler: o botão abre mão do uppercase. */}
             <a
-              href={`mailto:${CONTATO.email}`}
+              href={`mailto:${contato.email}`}
               className={cn(buttonVariants({ size: "sm", variant: "contorno" }), "normal-case")}
             >
-              {CONTATO.email}
+              {contato.email}
             </a>
           </div>
         </aside>

@@ -3,6 +3,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
 
 import { DocumentoPolitica, type Politica } from "@/components/politicas/documento-politica";
+import { PADRAO } from "@/modules/settings";
 
 afterEach(cleanup);
 
@@ -28,14 +29,14 @@ const TERMOS: Politica = {
 };
 
 it("RF08 mostra título, resumo e a data de atualização sem trocar o dia pelo fuso", () => {
-  render(<DocumentoPolitica politica={TERMOS} />);
+  render(<DocumentoPolitica politica={TERMOS} contato={PADRAO.contato} />);
   expect(screen.getByRole("heading", { level: 1, name: "Termos de uso" })).toBeDefined();
   expect(screen.getByText("As regras para usar o site do Kolô.")).toBeDefined();
   expect(screen.getByText("05/10/2026").getAttribute("datetime")).toBe("2026-10-05");
 });
 
 it("RF08 liga as três políticas e marca a página atual", () => {
-  render(<DocumentoPolitica politica={TERMOS} />);
+  render(<DocumentoPolitica politica={TERMOS} contato={PADRAO.contato} />);
   const todas = within(screen.getByRole("navigation", { name: "Todas as políticas" }));
   const privacidade = todas.getByRole("link", { name: "Privacidade" });
   const termos = todas.getByRole("link", { name: "Termos de uso" });
@@ -49,7 +50,7 @@ it("RF08 liga as três políticas e marca a página atual", () => {
 });
 
 it("oferece WhatsApp e e-mail do Kolô para quem ficou com dúvida", () => {
-  render(<DocumentoPolitica politica={TERMOS} />);
+  render(<DocumentoPolitica politica={TERMOS} contato={PADRAO.contato} />);
   const duvidas = within(screen.getByRole("complementary", { name: "Dúvidas?" }));
   expect(duvidas.getByRole("link", { name: /WhatsApp/ }).getAttribute("href")).toBe(
     "https://wa.me/5511950901191",
@@ -74,7 +75,7 @@ it("transforma [rótulo](endereço) do texto em link, em parágrafos e listas", 
       },
     ],
   };
-  render(<DocumentoPolitica politica={politica} />);
+  render(<DocumentoPolitica politica={politica} contato={PADRAO.contato} />);
   const contato = secao("Contato");
   expect(contato.getByRole("link", { name: "Minha conta" }).getAttribute("href")).toBe("/conta");
   expect(contato.getByRole("link", { name: "o Kolô" }).getAttribute("href")).toBe(
@@ -103,7 +104,7 @@ it("só vira link endereço seguro, para quando o PBI-39 deixar o admin editar o
       },
     ],
   };
-  render(<DocumentoPolitica politica={politica} />);
+  render(<DocumentoPolitica politica={politica} contato={PADRAO.contato} />);
   const enderecos = secao("Endereços");
   expect(enderecos.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
     "https://kolo.art.br",
@@ -117,7 +118,7 @@ it("só vira link endereço seguro, para quando o PBI-39 deixar o admin editar o
 });
 
 it("RF08 divide o texto em seções com índice de âncoras", () => {
-  render(<DocumentoPolitica politica={TERMOS} />);
+  render(<DocumentoPolitica politica={TERMOS} contato={PADRAO.contato} />);
   const indice = within(screen.getByRole("navigation", { name: "Nesta página" }));
   expect(indice.getByRole("link", { name: "Sua conta" }).getAttribute("href")).toBe("#conta");
   expect(indice.getByRole("link", { name: "Compras" }).getAttribute("href")).toBe("#compras");

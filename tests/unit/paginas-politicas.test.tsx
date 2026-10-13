@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const configuracao = vi.hoisted(() => vi.fn());
+vi.mock("@/modules/settings", async (original) => ({
+  ...(await original<typeof import("@/modules/settings")>()),
+  lerConfiguracao: configuracao,
+}));
 
 import PaginaCancelamento, {
   metadata as metadataCancelamento,
@@ -9,7 +15,11 @@ import PaginaPrivacidade, {
   metadata as metadataPrivacidade,
 } from "@/app/politicas/privacidade/page";
 import PaginaTermos, { metadata as metadataTermos } from "@/app/politicas/termos/page";
+import { PADRAO } from "@/modules/settings";
 
+beforeEach(() => {
+  configuracao.mockResolvedValue(PADRAO);
+});
 afterEach(cleanup);
 
 function secao(titulo: string) {
@@ -19,16 +29,16 @@ function secao(titulo: string) {
 }
 
 describe("Política de privacidade", () => {
-  it("RF08 tem título na página e na aba do navegador", () => {
-    render(<PaginaPrivacidade />);
+  it("RF08 tem título na página e na aba do navegador", async () => {
+    render(await PaginaPrivacidade());
     expect(
       screen.getByRole("heading", { level: 1, name: "Política de privacidade" }),
     ).toBeDefined();
     expect(metadataPrivacidade.title).toBe("Política de privacidade · Kolô");
   });
 
-  it("RNF17 declara cada dado guardado no banco, com finalidade", () => {
-    render(<PaginaPrivacidade />);
+  it("RNF17 declara cada dado guardado no banco, com finalidade", async () => {
+    render(await PaginaPrivacidade());
     const dados = secao("Quais dados usamos e para quê").textContent ?? "";
     // Inventário tirado do prisma/schema.prisma: user, session, rate_limit, verification,
     // email_log, address, cart, order, payment e appointment.
@@ -48,8 +58,8 @@ describe("Política de privacidade", () => {
       expect(dados).toMatch(dado);
   });
 
-  it("PBI-44: declara o formulário de contato, a Cloudflare e o limite por IP", () => {
-    render(<PaginaPrivacidade />);
+  it("PBI-44: declara o formulário de contato, a Cloudflare e o limite por IP", async () => {
+    render(await PaginaPrivacidade());
     const dados = secao("Quais dados usamos e para quê").textContent ?? "";
     expect(dados).toMatch(/formulário de contato/i);
     expect(dados).toMatch(/nome, e-mail e a mensagem/i);
@@ -58,16 +68,16 @@ describe("Política de privacidade", () => {
     expect(secao("Por quanto tempo guardamos").textContent).toMatch(/mensagens de contato/i);
   });
 
-  it("RNF18 e RNF10 afirmam que o site não coleta dados de saúde nem do cartão", () => {
-    render(<PaginaPrivacidade />);
+  it("RNF18 e RNF10 afirmam que o site não coleta dados de saúde nem do cartão", async () => {
+    render(await PaginaPrivacidade());
     const naoColetamos = secao("O que não coletamos").textContent ?? "";
     expect(naoColetamos).toMatch(/saúde/i);
     expect(naoColetamos).toMatch(/anamnese/i);
     expect(naoColetamos).toMatch(/cartão/i);
   });
 
-  it("RN12 e LGPD explicam os direitos, a exclusão por e-mail e a ANPD", () => {
-    render(<PaginaPrivacidade />);
+  it("RN12 e LGPD explicam os direitos, a exclusão por e-mail e a ANPD", async () => {
+    render(await PaginaPrivacidade());
     const direitos = secao("Seus direitos");
     const texto = direitos.textContent ?? "";
     expect(texto).toMatch(/exclusão/i);
@@ -81,8 +91,8 @@ describe("Política de privacidade", () => {
     ).toBe("mailto:ateliekolo@gmail.com");
   });
 
-  it("explica que os cookies são só os essenciais", () => {
-    render(<PaginaPrivacidade />);
+  it("explica que os cookies são só os essenciais", async () => {
+    render(await PaginaPrivacidade());
     const cookies = secao("Cookies").textContent ?? "";
     expect(cookies).toMatch(/login/i);
     expect(cookies).toMatch(/carrinho/i);
@@ -91,14 +101,14 @@ describe("Política de privacidade", () => {
 });
 
 describe("Termos de uso", () => {
-  it("RF08 tem título na página e na aba do navegador", () => {
-    render(<PaginaTermos />);
+  it("RF08 tem título na página e na aba do navegador", async () => {
+    render(await PaginaTermos());
     expect(screen.getByRole("heading", { level: 1, name: "Termos de uso" })).toBeDefined();
     expect(metadataTermos.title).toBe("Termos de uso · Kolô");
   });
 
-  it("RN01 a RN06 e RN11 explicam conta, estoque, reserva e aprovação do pagamento", () => {
-    render(<PaginaTermos />);
+  it("RN01 a RN06 e RN11 explicam conta, estoque, reserva e aprovação do pagamento", async () => {
+    render(await PaginaTermos());
     expect(secao("Sua conta").textContent).toMatch(/para comprar/i);
     const compras = secao("Compra de obras").textContent ?? "";
     expect(compras).toMatch(/peça única/i);
@@ -108,8 +118,8 @@ describe("Termos de uso", () => {
     expect(compras).toMatch(/aprova/);
   });
 
-  it("RN01 e RF23 a RF25: o pedido de tatuagem não marca horário e traz os três avisos", () => {
-    render(<PaginaTermos />);
+  it("RN01 e RF23 a RF25: o pedido de tatuagem não marca horário e traz os três avisos", async () => {
+    render(await PaginaTermos());
     const tatuagem = secao("Pedido de tatuagem").textContent ?? "";
     expect(tatuagem).toMatch(/não marca horário/i);
     expect(tatuagem).toMatch(/WhatsApp/);
@@ -118,24 +128,24 @@ describe("Termos de uso", () => {
     expect(tatuagem).toMatch(/18 anos/);
   });
 
-  it("protege os direitos autorais e segue o Código de Defesa do Consumidor", () => {
-    render(<PaginaTermos />);
+  it("protege os direitos autorais e segue o Código de Defesa do Consumidor", async () => {
+    render(await PaginaTermos());
     expect(secao("Obras, fotos e direitos autorais").textContent).toMatch(/Lei 9\.610\/1998/);
     expect(secao("Lei aplicável").textContent).toMatch(/Código de Defesa do Consumidor/);
   });
 });
 
 describe("Política de cancelamento", () => {
-  it("RF08 tem título na página e na aba do navegador", () => {
-    render(<PaginaCancelamento />);
+  it("RF08 tem título na página e na aba do navegador", async () => {
+    render(await PaginaCancelamento());
     expect(
       screen.getByRole("heading", { level: 1, name: "Política de cancelamento" }),
     ).toBeDefined();
     expect(metadataCancelamento.title).toBe("Política de cancelamento · Kolô");
   });
 
-  it("RN03 e RN06: sem pagamento aprovado nada é cobrado e a obra volta a ficar disponível", () => {
-    render(<PaginaCancelamento />);
+  it("RN03 e RN06: sem pagamento aprovado nada é cobrado e a obra volta a ficar disponível", async () => {
+    render(await PaginaCancelamento());
     const naoPago = secao("Pedido ainda não pago").textContent ?? "";
     expect(naoPago).toMatch(/nada é cobrado/i);
     expect(naoPago).toMatch(/10 minutos/);
@@ -143,8 +153,8 @@ describe("Política de cancelamento", () => {
     expect(naoPago).toMatch(/boleto/);
   });
 
-  it("garante a desistência em 7 dias do CDC, com reembolso pelo Mercado Pago", () => {
-    render(<PaginaCancelamento />);
+  it("garante a desistência em 7 dias do CDC, com reembolso pelo Mercado Pago", async () => {
+    render(await PaginaCancelamento());
     const arrependimento = secao("Desistir da compra em até 7 dias").textContent ?? "";
     expect(arrependimento).toMatch(/art\. 49/);
     expect(arrependimento).toMatch(/7 dias/);
@@ -152,8 +162,8 @@ describe("Política de cancelamento", () => {
     expect(arrependimento).toMatch(/Mercado Pago/);
   });
 
-  it("deixa remarcação e cancelamento da sessão de tatuagem para a conversa com o artista", () => {
-    render(<PaginaCancelamento />);
+  it("deixa remarcação e cancelamento da sessão de tatuagem para a conversa com o artista", async () => {
+    render(await PaginaCancelamento());
     const tatuagem = secao("Sessões de tatuagem").textContent ?? "";
     expect(tatuagem).toMatch(/não marca horário/i);
     expect(tatuagem).toMatch(/combinad\w* diretamente com o artista/i);
@@ -167,11 +177,36 @@ describe("As três políticas", () => {
     ["cancelamento", PaginaCancelamento],
   ] as const)(
     "%s não promete o que ficou fora da v2.2 nem o que o Stitch inventou",
-    (_, Pagina) => {
-      render(<Pagina />);
+    async (_, Pagina) => {
+      render(await Pagina());
       expect(document.body.textContent).not.toMatch(
         /CPF|nota fiscal|Google Calendar|\b3D\b|certificado de autenticidade|lembrete/i,
       );
     },
   );
+});
+
+describe("RF31: contato das políticas vem das configurações do site", () => {
+  it("o e-mail e o WhatsApp citados e o quadro de dúvidas usam os valores salvos", async () => {
+    configuracao.mockResolvedValue({
+      ...PADRAO,
+      contato: { ...PADRAO.contato, email: "contato@kolo.test", whatsapp: "5511912345678" },
+    });
+    render(await PaginaPrivacidade());
+    const direitos = secao("Seus direitos");
+    expect(
+      within(direitos).getByRole("link", { name: "contato@kolo.test" }).getAttribute("href"),
+    ).toBe("mailto:contato@kolo.test");
+    expect(screen.queryByText(/ateliekolo@gmail\.com/)).toBeNull();
+    const duvidas = within(screen.getByRole("complementary", { name: "Dúvidas?" }));
+    expect(duvidas.getByRole("link", { name: "Falar no WhatsApp" }).getAttribute("href")).toBe(
+      "https://wa.me/5511912345678",
+    );
+    cleanup();
+
+    render(await PaginaTermos());
+    expect(
+      within(secao("Contato")).getByRole("link", { name: "WhatsApp" }).getAttribute("href"),
+    ).toBe("https://wa.me/5511912345678");
+  });
 });

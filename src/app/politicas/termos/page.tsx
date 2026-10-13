@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 
 import { DocumentoPolitica } from "@/components/politicas/documento-politica";
+import { lerConfiguracao, PADRAO } from "@/modules/settings";
 
-import { TERMOS } from "./conteudo";
+import { termos } from "./conteudo";
 
 export const metadata: Metadata = {
   title: "Termos de uso · Kolô",
-  description: TERMOS.resumo,
+  description: termos(PADRAO.contato).resumo,
 };
 
-export default function PaginaTermos() {
-  return <DocumentoPolitica politica={TERMOS} />;
+export default async function PaginaTermos() {
+  const { contato } = await lerConfiguracao();
+  return <DocumentoPolitica politica={termos(contato)} contato={contato} />;
 }
