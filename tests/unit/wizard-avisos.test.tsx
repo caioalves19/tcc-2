@@ -42,7 +42,8 @@ it("RF23–RF25 mostra a etapa 7 com os três avisos desmarcados", async () => {
   render(<WizardAgendamento opcoes={opcoes} revisar={vi.fn()} />);
   await irParaAvisos();
   expect(document.activeElement).toBe(screen.getByRole("heading", { name: "7. Avisos" }));
-  expect(screen.getByRole("list", { name: "Etapas do agendamento" }).children).toHaveLength(7);
+  // A barra tem 8 itens desde o PBI-33 (a etapa 8, WhatsApp, é a revisão).
+  expect(screen.getByRole("list", { name: "Etapas do agendamento" }).children).toHaveLength(8);
   for (const [, nome] of AVISOS) expect(caixa(nome).checked).toBe(false);
   expect(screen.getByText(/sem ele, o horário será cancelado/)).toBeTruthy();
 });

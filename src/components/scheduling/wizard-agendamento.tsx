@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { CircleAlert, ShieldCheck, TriangleAlert } from "lucide-react";
+import { CircleAlert, MessageCircle, ShieldCheck, TriangleAlert } from "lucide-react";
 import { unstable_rethrow } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import type {
   EntradaWizard,
   OpcoesWizard,
@@ -11,8 +11,19 @@ import type {
   ResultadoWizard,
 } from "@/modules/scheduling";
 
-const ETAPAS = ["Nome", "Artista", "Estilo", "Região", "Tamanho", "Preferência", "Avisos"];
-const ULTIMA = ETAPAS.length - 1;
+// A etapa 8 (WhatsApp, PBI-33) é a revisão: o formulário vai até os Avisos.
+const ETAPAS = [
+  "Nome",
+  "Artista",
+  "Estilo",
+  "Região",
+  "Tamanho",
+  "Preferência",
+  "Avisos",
+  "WhatsApp",
+];
+const ULTIMA = ETAPAS.length - 2;
+const FINAL = ETAPAS.length - 1;
 // RF23–RF25: avisos sobre o que acontece no estúdio; o aceite não é gravado (RNF18).
 const AVISOS = [
   {
@@ -141,17 +152,20 @@ export function WizardAgendamento({
     <div className="min-w-0">
       <ol
         aria-label="Etapas do agendamento"
-        className="mb-8 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4 lg:grid-cols-7"
+        className="mb-8 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4 lg:grid-cols-8"
       >
-        {ETAPAS.map((nome, indice) => (
-          <li
-            key={nome}
-            aria-current={!resumo && etapa === indice ? "step" : undefined}
-            className={`rounded-campo border p-2 ${etapa === indice && !resumo ? "border-[var(--kolo-acao)] font-bold" : "border-[var(--kolo-contorno)]"}`}
-          >
-            {indice + 1}. {nome}
-          </li>
-        ))}
+        {ETAPAS.map((nome, indice) => {
+          const atual = resumo ? indice === FINAL : etapa === indice;
+          return (
+            <li
+              key={nome}
+              aria-current={atual ? "step" : undefined}
+              className={`rounded-campo border p-2 ${atual ? "border-[var(--kolo-acao)] font-bold" : "border-[var(--kolo-contorno)]"}`}
+            >
+              {indice + 1}. {nome}
+            </li>
+          );
+        })}
       </ol>
       {resumo ? (
         <section aria-labelledby="wizard-titulo">
@@ -176,11 +190,31 @@ export function WizardAgendamento({
               </div>
             ))}
           </dl>
-          <p role="status" className="mb-6">
-            A confirmação e o envio ainda não estão disponíveis. Nenhuma solicitação foi enviada e
-            nenhum horário foi reservado.
+          {/* RF21 (PBI-33): a mensagem montada no servidor; quem envia é a própria pessoa. */}
+          <section aria-labelledby="wizard-previa" className="mb-6 grid gap-3">
+            <h3 id="wizard-previa" className="font-display text-xl">
+              Prévia da sua mensagem
+            </h3>
+            <p className="whitespace-pre-line break-words rounded-card bg-[var(--kolo-superficie)] p-4 text-[var(--kolo-superficie-texto)]">
+              {resumo.mensagem}
+            </p>
+          </section>
+          <p className="mb-6">
+            As fotos de referência você manda direto na conversa. O site não guarda o pedido nem
+            reserva horário: o atendimento começa quando você enviar a mensagem.
           </p>
           <div className="flex flex-wrap gap-3">
+            <a
+              href={resumo.linkWhatsApp}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonVariants({
+                className: "h-auto min-h-12 max-w-full whitespace-normal py-3",
+              })}
+            >
+              <MessageCircle aria-hidden />
+              Abrir conversa no WhatsApp
+            </a>
             <Button
               type="button"
               variant="contorno"
@@ -190,13 +224,6 @@ export function WizardAgendamento({
               }}
             >
               Editar preferências
-            </Button>
-            <Button
-              type="button"
-              disabled
-              className="h-auto min-h-12 max-w-full whitespace-normal py-3"
-            >
-              Continuar para confirmação
             </Button>
           </div>
         </section>
