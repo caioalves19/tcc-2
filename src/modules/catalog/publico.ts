@@ -1,7 +1,8 @@
 import { z } from "zod";
 import type { Prisma } from "../../../generated/prisma/client";
 import { obterPrisma } from "../../lib/prisma";
-import { OBRAS_POR_PAGINA, ORDENS_CATALOGO, palavrasDaBusca, type OrdemCatalogo } from "./regras";
+import { consultaDaBusca, palavrasDaBusca } from "../../lib/busca";
+import { OBRAS_POR_PAGINA, ORDENS_CATALOGO, type OrdemCatalogo } from "./regras";
 
 // Vitrine pública (PBI-20): o que qualquer visitante pode ver de uma obra, sem login (RN01).
 
@@ -136,7 +137,7 @@ const schemaCatalogo = z.object({
 // expressão é a mesma do índice artwork_busca_idx (migração 0006), para o Postgres usá-lo; as
 // palavras chegam limpas e vão como parâmetro.
 async function idsDaBusca(palavras: string[]): Promise<string[]> {
-  const consulta = palavras.map((palavra) => `${palavra}:*`).join(" & ");
+  const consulta = consultaDaBusca(palavras);
   const linhas = await obterPrisma().$queryRaw<{ id: string }[]>`
     SELECT id FROM artwork
      WHERE to_tsvector('kolo_busca', coalesce(titulo, '') || ' ' || coalesce(descricao, '') || ' ' || coalesce(tecnica, ''))
