@@ -274,8 +274,8 @@ O contato WhatsApp é uma solução provisória para a chamada da home. O wizard
 
 **Pendências:**
 
-- PBI-33: trocar o WhatsApp do bloco de tatuagem pelo wizard e reescrever os três passos.
-- Portfólio público: trocar o menu "Tatuagem" de `/#tatuagem` para a rota própria.
+- PBI-33: trocar o WhatsApp do bloco de tatuagem pelo wizard e reescrever os três passos. Resolvido pelo PBI-33.
+- Portfólio público: trocar o menu "Tatuagem" de `/#tatuagem` para a rota própria. Resolvido pelo PBI-36 (`/tatuagens`).
 
 ---
 
@@ -594,7 +594,7 @@ Implementação em `/agendamento`, com tamanhos de `SizeTier`. Contrato, testes 
 
 **Pendências para os próximos PBIs:**
 
-- PBI-33: ler `aceites` de `PreferenciaWizard` para a mensagem do `wa.me` e habilitar "Continuar para confirmação".
+- PBI-33: ler `aceites` de `PreferenciaWizard` para a mensagem do `wa.me` e habilitar "Continuar para confirmação". Resolvido pelo PBI-33 (etapa 8 com o link, no lugar do botão).
 
 ### PBI-33 — Conclusão pelo WhatsApp e integração da home
 
@@ -602,10 +602,34 @@ Implementação em `/agendamento`, com tamanhos de `SizeTier`. Contrato, testes 
 
 A geração da mensagem e do link pode ser preparada enquanto a home é construída; o aceite completo exige os dados do wizard (31), os checks (32) e a conexão da chamada na home (21). O número pode vir da configuração de ambiente até a integração do PBI-39.
 
-- [ ] Gerar link wa.me com nome, artista, estilo, região, tamanho, preferência de data/horário e aceites
-- [ ] Codificar a mensagem corretamente e usar número de contato configurado
-- [ ] Conectar a chamada da home ao wizard completo e testar o link sem enviar mensagem automaticamente
-- [ ] Não criar agendamento no banco ao concluir o wizard
+- [x] Gerar link wa.me com nome, artista, estilo, região, tamanho, preferência de data/horário e aceites
+- [x] Codificar a mensagem corretamente e usar número de contato configurado
+- [x] Conectar a chamada da home ao wizard completo e testar o link sem enviar mensagem automaticamente
+- [x] Não criar agendamento no banco ao concluir o wizard
+
+**Decisões (registradas em 13/10/2026):**
+
+- O servidor monta a mensagem e o link na revisão do wizard, com os nomes de artista, estilo e tamanho lidos do banco; o número é o do estúdio em `CONTATO` (o PBI-39 leva para as configurações).
+- A revisão vira a etapa 8, "WhatsApp", como no Stitch: resumo, prévia exata da mensagem, nota das fotos de referência, "Abrir conversa no WhatsApp" (nova aba, só com o clique) e "Editar preferências".
+- O topo e o bloco de tatuagem da home levam a `/agendamento`, com os passos do Stitch (escolha artista e estilo, diga quando prefere, finalize no WhatsApp).
+- Contrato completo em [PBI-33](features/PBI-33.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-33-whatsapp`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+
+**Entregas:**
+
+- `mensagemAgendamento` em `src/modules/scheduling/whatsapp.ts`; `validarDadosWizard` e `revisarPreferenciaWizard` devolvem `mensagem` e `linkWhatsApp`.
+- Etapa 8 no `WizardAgendamento`, no lugar do botão desabilitado deixado pelos PBIs 31 e 32.
+- Home: chamadas de tatuagem para `/agendamento` e passos novos.
+
+**Evidências:**
+
+- `npm run lint`, `npm run typecheck` e `npm run build` sem erros.
+- `npm run test:unit` com 472 testes e a integração com 249 testes no PostgreSQL real, em execução sequencial; a integração do wizard confere a mensagem com os nomes do banco e `appointment` vazia.
+
+**Pendências:**
+
+- PBI-39: levar o número do WhatsApp e os textos da home para as configurações do site.
 
 ### PBI-34 — Agenda manual do artista e administrador
 
