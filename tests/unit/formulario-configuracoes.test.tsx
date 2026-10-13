@@ -70,3 +70,24 @@ it("RF31 mostra o erro de validação do servidor", async () => {
   expect(screen.getByRole("alert").textContent).toContain("Informe o WhatsApp com 55");
   expect(refresh).not.toHaveBeenCalled();
 });
+
+it("RF31 depois de salvar, os campos mostram o valor como ficou gravado, e o aviso continua", async () => {
+  const usuario = userEvent.setup();
+  const salvar = vi.fn().mockResolvedValue({ ok: true, dados: PADRAO });
+  const { rerender } = render(<FormularioConfiguracoes configuracao={PADRAO} salvar={salvar} />);
+  const whatsapp = screen.getByLabelText("WhatsApp (com 55 e DDD)");
+  await usuario.clear(whatsapp);
+  await usuario.type(whatsapp, "+55 (11) 91234-5678");
+  await usuario.click(screen.getByRole("button", { name: "Salvar configurações" }));
+  // A página volta (router.refresh) com o número normalizado pelo servidor.
+  rerender(
+    <FormularioConfiguracoes
+      configuracao={{ ...PADRAO, contato: { ...PADRAO.contato, whatsapp: "5511912345678" } }}
+      salvar={salvar}
+    />,
+  );
+  expect((screen.getByLabelText("WhatsApp (com 55 e DDD)") as HTMLInputElement).value).toBe(
+    "5511912345678",
+  );
+  expect(screen.getByRole("status").textContent).toBe("Configurações salvas.");
+});
