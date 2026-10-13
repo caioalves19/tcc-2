@@ -72,7 +72,7 @@ it("RF07 todo link interno da home e do cabeçalho leva a uma página que existe
   }
 });
 
-it("RF07 o menu Tatuagem leva ao bloco de tatuagem da home até o portfólio público existir", async () => {
+it("RF17 o menu Tatuagem leva à galeria pública, mantendo o bloco da home", async () => {
   render(
     <>
       <Cabecalho />
@@ -80,6 +80,6 @@ it("RF07 o menu Tatuagem leva ao bloco de tatuagem da home até o portfólio pú
     </>,
   );
   for (const link of screen.getAllByRole("link", { name: "Tatuagem" }))
-    expect(link.getAttribute("href")).toBe("/#tatuagem");
+    expect(link.getAttribute("href")).toBe("/tatuagens");
   expect(document.getElementById("tatuagem")).not.toBeNull();
 });
