@@ -79,3 +79,62 @@ it("RF17: respeita destaque e ordem; não expõe portfólio de conta excluída",
   expect(galeria.trabalhos).toEqual([]);
   expect(galeria.artistas.map((a) => a.nome)).toEqual(["Ana"]);
 });
+
+it("RF18 busca por palavra-chave no trabalho, nos estilos e no artista, somada aos filtros", async () => {
+  const { listarGaleria } = await import("../../src/modules/portfolio");
+  // O teste anterior exclui a conta da Bia; aqui ela volta, para a busca pelo artista.
+  const contaDaBia =
+    'UPDATE "user" SET excluido_em = $2 WHERE id = (SELECT user_id FROM artist WHERE id = $1)';
+  await contas.db.query(contaDaBia, [contas.idBia, null]);
+  const blackwork = (
+    await contas.db.query(
+      "INSERT INTO tattoo_style (id, nome, slug) VALUES (gen_random_uuid(), 'Blackwork', 'blackwork') RETURNING id",
+    )
+  ).rows[0].id;
+  const mao = (
+    await contas.db.query(
+      `INSERT INTO portfolio_item (id, artist_id, titulo, descricao, imagem_url, regiao_corpo, ordem)
+       VALUES (gen_random_uuid(), $1, 'Mão de Fátima', 'Traço fino com pontilhismo', 'portfolio/mao.png', 'Antebraço', 2)
+       RETURNING id`,
+      [contas.idBia],
+    )
+  ).rows[0].id;
+  await contas.db.query("INSERT INTO portfolio_item_style VALUES ($1, $2)", [mao, blackwork]);
+
+  const titulos = async (filtros: Record<string, unknown>) =>
+    (await listarGaleria(filtros)).trabalhos.map((t) => t.titulo).sort();
+  for (const [filtros, esperado] of [
+    // Título sem acento e por começo de palavra.
+    [{ busca: "lirio" }, ["Lírio"]],
+    [{ busca: "ros" }, ["Rosa"]],
+    [{ busca: "FATIMA" }, ["Mão de Fátima"]],
+    // Descrição, região, estilo e artista.
+    [{ busca: "pontilhismo" }, ["Mão de Fátima"]],
+    [{ busca: "perna" }, ["Lírio"]],
+    [{ busca: "floral" }, ["Flor", "Lírio", "Rosa"]],
+    [{ busca: "blackw" }, ["Mão de Fátima"]],
+    [{ busca: "bia" }, ["Flor", "Mão de Fátima"]],
+    // Várias palavras exigem todas; somada aos filtros por interseção.
+    [{ busca: "floral braço" }, ["Flor", "Rosa"]],
+    [{ busca: "floral", artista: contas.idAna }, ["Lírio", "Rosa"]],
+    [{ busca: "bia", regiao: "Antebraço" }, ["Mão de Fátima"]],
+    [{ busca: "floral", estilo: blackwork }, []],
+    // Sem resultados; entradas vazias, só com símbolos ou hostis ao to_tsquery.
+    [{ busca: "dragão" }, []],
+    [{ busca: "   " }, ["Flor", "Lírio", "Lua", "Mão de Fátima", "Rosa"]],
+    [{ busca: "& | ! :* ()" }, ["Flor", "Lírio", "Lua", "Mão de Fátima", "Rosa"]],
+    [{ busca: "rosa:* | lua" }, []],
+    [{ busca: ["lua", "rosa"] }, ["Flor", "Lírio", "Lua", "Mão de Fátima", "Rosa"]],
+  ] as const)
+    expect(await titulos(filtros), JSON.stringify(filtros)).toEqual([...esperado].sort());
+
+  // A busca volta limpa, para o formulário mostrar o que valeu.
+  expect((await listarGaleria({ busca: "  floral & braço!! " })).filtros.busca).toBe(
+    "floral braço",
+  );
+  expect((await listarGaleria({})).filtros.busca).toBe("");
+
+  // RN01: conta excluída também some da busca.
+  await contas.db.query(contaDaBia, [contas.idBia, new Date()]);
+  expect(await titulos({ busca: "bia" })).toEqual([]);
+});
