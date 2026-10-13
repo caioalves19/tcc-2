@@ -20,6 +20,11 @@ vi.mock("@/modules/catalog", () => ({
   ],
 }));
 
+vi.mock("@/modules/settings", async (original) => {
+  const modulo = await original<typeof import("@/modules/settings")>();
+  return { ...modulo, lerConfiguracao: async () => modulo.PADRAO };
+});
+
 import Home from "@/app/page";
 import { Cabecalho } from "@/components/layout/cabecalho";
 

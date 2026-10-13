@@ -1,12 +1,21 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, within } from "@testing-library/react";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 const destaques = vi.hoisted(() => vi.fn());
+const configuracao = vi.hoisted(() => vi.fn());
 vi.mock("@/modules/catalog", () => ({ listarDestaques: destaques }));
+vi.mock("@/modules/settings", async (original) => ({
+  ...(await original<typeof import("@/modules/settings")>()),
+  lerConfiguracao: configuracao,
+}));
 
 import Home from "@/app/page";
+import { PADRAO } from "@/modules/settings";
 
+beforeEach(() => {
+  configuracao.mockResolvedValue(PADRAO);
+});
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -90,4 +99,29 @@ it("RF07 se o banco falhar nos destaques, a home segue no ar sem a seção (como
   expect(screen.queryByText(/banco fora/)).toBeNull();
   expect(log).toHaveBeenCalledOnce();
   log.mockRestore();
+});
+
+it("RF31 a home usa os textos e o WhatsApp das configurações do site", async () => {
+  destaques.mockResolvedValue([]);
+  configuracao.mockResolvedValue({
+    ...PADRAO,
+    contato: { ...PADRAO.contato, whatsapp: "5511912345678" },
+    textos: {
+      apresentacao: "Apresentação configurada para o teste.",
+      tatuagem: "Frase do bloco configurada.",
+      murais: "Murais configurados para o teste.",
+      rodape: PADRAO.textos.rodape,
+    },
+  });
+  render(await Home());
+  expect(screen.getByText("Apresentação configurada para o teste.")).toBeDefined();
+  const bloco = document.getElementById("tatuagem");
+  if (!bloco) throw new Error("A home não tem o bloco #tatuagem");
+  expect(within(bloco).getByText("Frase do bloco configurada.")).toBeDefined();
+  expect(screen.getByText("Murais configurados para o teste.")).toBeDefined();
+  expect(
+    screen.getByRole("link", { name: "Pedir orçamento pelo WhatsApp" }).getAttribute("href"),
+  ).toBe(
+    `https://wa.me/5511912345678?text=${encodeURIComponent("Olá! Quero pedir um orçamento de mural.")}`,
+  );
 });
