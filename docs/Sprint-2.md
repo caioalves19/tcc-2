@@ -626,6 +626,7 @@ A geração da mensagem e do link pode ser preparada enquanto a home é constru�
 
 - `npm run lint`, `npm run typecheck` e `npm run build` sem erros.
 - `npm run test:unit` com 472 testes e a integração com 249 testes no PostgreSQL real, em execução sequencial; a integração do wizard confere a mensagem com os nomes do banco e `appointment` vazia.
+- No navegador, com o Postgres local, em 1280 e 375 px: home levando ao wizard, wizard completo até a etapa 8 com o texto do link igual à prévia, nada aberto sozinho, `appointment` vazia, axe-core sem violações. A conferência achou o título focado do wizard coberto pelo cabeçalho fixo no celular (herdado do PBI-31), corrigido.
 
 **Pendências:**
 

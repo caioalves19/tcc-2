@@ -72,6 +72,20 @@ muda.
 - `npm run test:unit -- pagina-home links-internos`: as duas chamadas levam a `/agendamento`, os
   três passos novos, o aviso de anamnese e termo, nenhum `wa.me` no bloco; todo link interno tem
   página.
+- **No navegador** (13/10/2026, `next dev`, Postgres local com um estilo temporário ligado ao
+  artista do seed e removido depois, Chrome headless em 1280 e 375 px):
+  - home: as duas chamadas "Agendar tatuagem" levam a `/agendamento`, os três passos novos, nenhum
+    `wa.me` no bloco de tatuagem;
+  - wizard completo a partir do bloco da home, com nome "Zé & Ana Teste" e região "Ombro / costas":
+    etapa 8 marcada como atual, prévia com a mensagem inteira e o texto decodificado do link igual à
+    prévia; link com `target="_blank"` e `rel="noopener noreferrer"`; `window.open` nunca chamado;
+    o link não foi clicado (nenhuma mensagem enviada);
+  - "Editar preferências" volta aos Avisos com os aceites marcados;
+  - `appointment` continuou vazia; sem rolagem horizontal, axe-core (WCAG 2.1 AA) sem violações e
+    console sem erros.
+  - A conferência achou o título focado da etapa escondido embaixo do cabeçalho fixo em 375 px
+    (topo a 3 px, cabeçalho até 82 px), herdado do wizard do PBI-31; corrigido com margem de rolagem
+    (o título passou a 112 px).
 - **Revisão de código e de segurança:** mensagem montada só depois da validação, nomes do banco,
   destino fixo do link, limite de tentativas mantido, política de privacidade já coerente ("o site
   só monta a mensagem e abre a conversa no WhatsApp").
