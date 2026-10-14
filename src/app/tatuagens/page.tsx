@@ -5,7 +5,7 @@ import { GaleriaTatuagens } from "@/components/portfolio/galeria-tatuagens";
 export const metadata: Metadata = {
   title: "Galeria de tatuagens · Kolô",
   description:
-    "Trabalhos realizados pelos artistas do Kolô. Filtre por artista, estilo e região do corpo.",
+    "Trabalhos realizados pelos artistas do Kolô. Busque por palavra-chave e filtre por artista, estilo e região do corpo.",
 };
 // A vitrine reflete as alterações da gestão sem armazenar resultados em cache.
 export const dynamic = "force-dynamic";
@@ -16,11 +16,12 @@ export default async function PaginaGaleria({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { artista, estilo, regiao } = await searchParams;
+  const { artista, estilo, regiao, busca } = await searchParams;
   const galeria = await listarGaleria({
     artista: primeiro(artista),
     estilo: primeiro(estilo),
     regiao: primeiro(regiao),
+    busca: primeiro(busca),
   });
   return (
     <section className="mx-auto w-full max-w-pagina px-margem py-12 md:px-margem-desktop md:py-16">

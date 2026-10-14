@@ -686,9 +686,33 @@ Consome artistas/estilos (16) e upload (17). Pode avançar em paralelo ao CRUD d
 
 **Referências:** RF18 · **Prioridade:** P0 · **Deps:** PBI-36.
 
-- [ ] Buscar trabalhos por estilo e palavra-chave, integrada aos filtros
-- [ ] Tratar consulta vazia e ausência de resultados
-- [ ] Testar resultados e parâmetros inválidos
+- [x] Buscar trabalhos por estilo e palavra-chave, integrada aos filtros
+- [x] Tratar consulta vazia e ausência de resultados
+- [x] Testar resultados e parâmetros inválidos
+
+**Decisões (registradas em 13/10/2026):**
+
+- A palavra-chave procura no título, na descrição, na região, nos estilos e no nome do artista, com a regra do catálogo (sem acento, por começo de palavra, todas as palavras), somada aos filtros do PBI-36.
+- Com busca ou filtro ativo, a galeria mostra a contagem e "Limpar busca e filtros"; sem resultado, cita o termo.
+- Sem migração nem índice novo (portfólio pequeno). A limpeza da busca saiu do catálogo para `src/lib/busca.ts`, compartilhada.
+- Contrato completo em [PBI-37](features/PBI-37.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-37-busca-portfolio`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+
+**Entregas:**
+
+- `palavrasDaBusca` e `consultaDaBusca` em `src/lib/busca.ts`; `listarGaleria` com `busca`.
+- Campo de busca, contagem e estados vazios na `/tatuagens`.
+
+**Evidências:**
+
+- `npm run lint`, `npm run typecheck` e `npm run build` sem erros.
+- `npm run test:unit` com 471 testes e a integração com 250 testes no PostgreSQL real (1 novo, com 17 casos de busca), em execução sequencial.
+- No navegador, com trabalhos temporários: busca sem acento, por começo de palavra, pela descrição, com duas palavras, com filtro, sem resultado e só com símbolos; axe-core sem violações em 1280 e 375 px.
+
+**Pendências:**
+
+- Se o portfólio crescer: índice `kolo_busca` no lugar do `portfolio_item_search_idx` antigo (migração).
 
 ## Etapa 5 — Complementos P1 do projeto
 
