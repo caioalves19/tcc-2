@@ -73,8 +73,17 @@ it("RF20 valida a preferência sem sessão e sem gravar pedido ou reservar agend
     await revisarPreferenciaWizard(entrada, new Headers({ "x-real-ip": "pbi31-revisao" })),
   ).toEqual({
     ok: true,
-    dados: { ...entrada, preferenciaEm: "2099-10-18T17:30:00.000Z" },
+    dados: {
+      ...entrada,
+      preferenciaEm: "2099-10-18T17:30:00.000Z",
+      // RF21 (PBI-33): artista, estilo e tamanho com os nomes do banco, não os do navegador.
+      mensagem: expect.stringContaining(
+        "com Ana.\nEstilo: Aquarela\nRegião do corpo: Antebraço\nTamanho: Pequena\n",
+      ),
+      linkWhatsApp: expect.stringMatching(/^https:\/\/wa\.me\/5511950901191\?text=Ol%C3%A1!/),
+    },
   });
+  // RF21: concluir o wizard não cria agendamento nem solicitação.
   const total = await db.query("SELECT COUNT(*)::int AS total FROM appointment");
   expect(total.rows).toEqual([{ total: 0 }]);
   await db.query("DELETE FROM artist_style WHERE artist_id = $1", [artistaId]);
