@@ -77,7 +77,12 @@ it("RF20 navega pelas sete etapas, preserva dados e apresenta resumo sem conclui
   const usuario = userEvent.setup();
   const revisar = vi.fn().mockImplementation(async (dados) => ({
     ok: true,
-    dados: { ...dados, preferenciaEm: "2099-10-18T17:30:00.000Z" },
+    dados: {
+      ...dados,
+      preferenciaEm: "2099-10-18T17:30:00.000Z",
+      mensagem: "Olá! Sou Maria",
+      linkWhatsApp: "https://wa.me/5511950901191?text=Ol%C3%A1!%20Sou%20Maria",
+    },
   }));
   render(<WizardAgendamento opcoes={opcoes} revisar={revisar} />);
   await usuario.click(screen.getByRole("button", { name: "Avançar" }));
@@ -118,10 +123,10 @@ it("RF20 navega pelas sete etapas, preserva dados e apresenta resumo sem conclui
       horario: "14:30",
     }),
   );
+  // PBI-33: a conclusão é o link do WhatsApp com a mensagem da revisão; nada é agendado.
   expect(
-    screen.getByRole("button", { name: "Continuar para confirmação" }).hasAttribute("disabled"),
-  ).toBe(true);
-  expect(screen.queryByRole("link", { name: /WhatsApp/ })).toBeNull();
+    screen.getByRole("link", { name: "Abrir conversa no WhatsApp" }).getAttribute("href"),
+  ).toBe("https://wa.me/5511950901191?text=Ol%C3%A1!%20Sou%20Maria");
   await usuario.click(screen.getByRole("button", { name: "Editar preferências" }));
   await usuario.click(screen.getByRole("button", { name: "Voltar" }));
   expect((screen.getByLabelText("Data de preferência") as HTMLInputElement).value).toBe(

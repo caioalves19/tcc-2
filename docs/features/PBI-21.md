@@ -77,7 +77,8 @@ o mesmo padrão do layout com a sessão e o carrinho.
 ## Pendências para os próximos PBIs
 
 - **PBI-33:** trocar o "Agendar pelo WhatsApp" do bloco de tatuagem pelo wizard e reescrever os três
-  passos (hoje descrevem a conversa pelo WhatsApp). O menu "Agendar" do cabeçalho já leva ao wizard,
-  que ainda não conclui.
-- **Portfólio público:** quando existir a rota, trocar o menu "Tatuagem" de `/#tatuagem` para ela.
+  passos. Resolvido pelo PBI-33: topo e bloco levam a `/agendamento`, e o wizard termina no
+  WhatsApp.
+- **Portfólio público:** trocar o menu "Tatuagem" de `/#tatuagem` para a rota própria. Resolvido
+  pelo PBI-36 (`/tatuagens`).
 - **PBI-39:** levar os textos da home e o número do WhatsApp para as configurações do site.

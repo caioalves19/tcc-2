@@ -1,4 +1,4 @@
-import { ClipboardCheck, Handshake, MessageCircle } from "lucide-react";
+import { CalendarDays, MessageCircle, UserSearch } from "lucide-react";
 import { cn } from "cn";
 import { unstable_rethrow } from "next/navigation";
 
@@ -9,28 +9,26 @@ import { buttonVariants } from "@/components/ui/button";
 import { linkWhatsApp } from "@/lib/contato";
 import { listarDestaques } from "@/modules/catalog";
 
-// Chamada provisória do RF07: o PBI-33 troca o WhatsApp do bloco de tatuagem pelo wizard.
-const MENSAGEM_TATUAGEM = "Olá! Quero agendar uma tatuagem no Kolô.";
 const MENSAGEM_MURAL = "Olá! Quero pedir um orçamento de mural.";
 
-// O fluxo de hoje, sem o wizard: o site não marca horário (RN01) e anamnese e termo são
-// presenciais (RF23 a RF25).
+// RF07/RF21 (PBI-33): a chamada de tatuagem leva ao wizard, que termina no WhatsApp. O site não
+// marca horário (RN01), e anamnese e termo são presenciais (RF23 a RF25).
 const PASSOS_TATUAGEM = [
   {
+    icone: UserSearch,
+    titulo: "Escolha artista e estilo",
+    texto: "Selecione quem vai tatuar e o estilo que combina com a sua ideia.",
+  },
+  {
+    icone: CalendarDays,
+    titulo: "Diga quando prefere",
+    texto: "Indique a data e o horário que funcionam para você; o artista confirma na conversa.",
+  },
+  {
     icone: MessageCircle,
-    titulo: "Chame no WhatsApp",
-    texto: "Conte a sua ideia: o desenho, o tamanho e a região do corpo.",
-  },
-  {
-    icone: Handshake,
-    titulo: "Combine com o artista",
-    texto: "Estilo, orçamento e horário são acertados na conversa, direto com quem vai tatuar.",
-  },
-  {
-    icone: ClipboardCheck,
-    titulo: "Sessão no estúdio",
+    titulo: "Finalize no WhatsApp",
     texto:
-      "A anamnese e o termo de consentimento são preenchidos no estúdio, antes de tatuar. É preciso ter 18 anos.",
+      "O site monta a mensagem e você envia. A anamnese e o termo de consentimento são feitos no estúdio, antes de tatuar.",
   },
 ] as const;
 
@@ -70,7 +68,7 @@ export default async function Home() {
             <a href="/obras" className={buttonVariants()}>
               Ver obras
             </a>
-            <a href="#tatuagem" className={buttonVariants({ variant: "contorno" })}>
+            <a href="/agendamento" className={buttonVariants({ variant: "contorno" })}>
               Agendar tatuagem
             </a>
           </div>
@@ -119,13 +117,8 @@ export default async function Home() {
               </li>
             ))}
           </ol>
-          <a
-            href={linkWhatsApp(MENSAGEM_TATUAGEM)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={buttonVariants({ className: "mt-4" })}
-          >
-            Agendar pelo WhatsApp
+          <a href="/agendamento" className={buttonVariants({ className: "mt-4" })}>
+            Agendar tatuagem
           </a>
         </div>
       </section>

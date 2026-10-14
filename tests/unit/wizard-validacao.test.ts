@@ -23,8 +23,37 @@ const agora = new Date("2026-10-05T12:00:00Z");
 it("RF20/RF23–RF25 valida as etapas com os três aceites, normaliza o nome e interpreta a preferência em São Paulo", () => {
   expect(validarDadosWizard(dados, opcoes, agora)).toEqual({
     ok: true,
-    dados: { ...dados, nome: "Maria", preferenciaEm: "2026-10-18T17:30:00.000Z" },
+    dados: {
+      ...dados,
+      nome: "Maria",
+      preferenciaEm: "2026-10-18T17:30:00.000Z",
+      mensagem: expect.stringContaining("Sou Maria e quero agendar uma tatuagem com Ana."),
+      linkWhatsApp: expect.stringMatching(/^https:\/\/wa\.me\/5511950901191\?text=/),
+    },
   });
+});
+
+it("RF21 a revisão devolve a mensagem com os nomes escolhidos e o link codificado para o estúdio", () => {
+  const resultado = validarDadosWizard(
+    { ...dados, nome: "Zé & Ana", regiao: "Ombro / costas" },
+    opcoes,
+    agora,
+  );
+  if (!resultado.ok) throw new Error(resultado.mensagem);
+  const { mensagem, linkWhatsApp } = resultado.dados;
+  expect(mensagem.split("\n")).toEqual([
+    "Olá! Sou Zé & Ana e quero agendar uma tatuagem com Ana.",
+    "Estilo: Aquarela",
+    "Região do corpo: Ombro / costas",
+    "Tamanho: Pequena",
+    "Preferência: 18/10/2026 às 14:30 (horário de São Paulo)",
+    "Li e aceito os avisos: anamnese e termo de consentimento presenciais e declaração de maioridade.",
+  ]);
+  // Acentos, "&", "/" e as quebras de linha codificados: o texto chega inteiro ao WhatsApp.
+  expect(linkWhatsApp).toBe(`https://wa.me/5511950901191?text=${encodeURIComponent(mensagem)}`);
+  expect(linkWhatsApp).toContain("Z%C3%A9%20%26%20Ana");
+  expect(linkWhatsApp).toContain("%0AEstilo%3A%20Aquarela%0A");
+  expect(new URL(linkWhatsApp).searchParams.get("text")).toBe(mensagem);
 });
 
 it.each([
