@@ -57,3 +57,20 @@ it("RF30 lista só os clientes, por nome, e marca a conta excluída", async () =
     excluido: false,
   });
 });
+
+it("RF30 busca o cliente por parte do nome ou do e-mail, sem diferenciar maiúsculas", async () => {
+  const { listarClientesAdmin } = await import("../../src/modules/customers");
+  const nomes = async (busca: string) => {
+    const resultado = await listarClientesAdmin({ busca }, admin);
+    if (!resultado.ok) throw new Error(resultado.mensagem);
+    expect(resultado.dados.busca).toBe(busca.trim());
+    return resultado.dados.clientes.map((c) => c.nome);
+  };
+  expect(await nomes("PRADO")).toEqual(["Maria Prado"]);
+  expect(await nomes("  silv ")).toEqual(["Lucas Silveira"]);
+  expect(await nomes("Maria.Prado@PBI38")).toEqual(["Maria Prado"]);
+  expect(await nomes("pbi38.test")).toEqual(["Lucas Silveira", "Maria Prado", "Zé Antigo"]);
+  // O admin tem conta, mas não é cliente.
+  expect(await nomes("admin@pbi17")).toEqual([]);
+  expect(await nomes("ninguém")).toEqual([]);
+});

@@ -29,7 +29,15 @@ export function listarClientesAdmin(entrada: unknown, cabecalhos: Headers) {
     const { busca, pagina } = schemaListaClientes.parse(
       typeof entrada === "object" && entrada !== null ? entrada : {},
     );
-    const onde: Prisma.UserWhereInput = { role: "CLIENTE" };
+    const onde: Prisma.UserWhereInput = {
+      role: "CLIENTE",
+      ...(busca && {
+        OR: [
+          { name: { contains: busca, mode: "insensitive" } },
+          { email: { contains: busca, mode: "insensitive" } },
+        ],
+      }),
+    };
     const total = await tx.user.count({ where: onde });
     const clientes = await tx.user.findMany({
       where: onde,
