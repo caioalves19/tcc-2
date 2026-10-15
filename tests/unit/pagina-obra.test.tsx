@@ -15,6 +15,16 @@ vi.mock("@/modules/catalog", () => ({
   outrasObrasDoArtista: mocks.outras,
 }));
 vi.mock("@/app/carrinho/actions", () => ({ adicionarAoCarrinhoAcao: vi.fn() }));
+vi.mock("@/modules/settings", async (original) => {
+  const modulo = await original<typeof import("@/modules/settings")>();
+  return {
+    ...modulo,
+    lerConfiguracao: async () => ({
+      ...modulo.PADRAO,
+      contato: { ...modulo.PADRAO.contato, whatsapp: "5511912345678" },
+    }),
+  };
+});
 
 import PaginaObra, { generateMetadata } from "@/app/obras/[slug]/page";
 
@@ -53,6 +63,12 @@ it("RF10 a obra publicada abre para qualquer visitante, com as outras obras do a
   mocks.outras.mockResolvedValue([]);
   render(await PaginaObra(params("metropole-em-chamas")));
   expect(screen.getByRole("heading", { level: 1, name: "Metrópole em chamas" })).toBeDefined();
+  // RF31: o WhatsApp da obra é o das configurações do site (PBI-39).
+  expect(
+    screen
+      .getByRole("link", { name: "Tirar dúvidas com o ateliê pelo WhatsApp" })
+      .getAttribute("href"),
+  ).toMatch(/^https:\/\/wa\.me\/5511912345678\?text=/);
   expect(mocks.outras).toHaveBeenCalledWith(OBRA);
 });
 

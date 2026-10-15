@@ -1,8 +1,10 @@
 import { createHash } from "node:crypto";
 import { obterPrisma } from "../../lib/prisma";
 import { consumirTentativa } from "../../lib/rate-limit/index";
+import { linkWhatsApp } from "../../lib/contato";
 import { ipDaRequisicao } from "../../lib/requisicao";
 import { listarArtistasParaWizard } from "../artists/index";
+import { lerConfiguracao } from "../settings/index";
 import type { OpcoesWizard, ResultadoWizard } from "./tipos";
 import { validarDadosWizard, type PreferenciaWizard } from "./validacao";
 
@@ -45,7 +47,17 @@ export async function revisarPreferenciaWizard(
   try {
     if ((await limitar(cabecalhos)).bloqueado)
       return { ok: false, mensagem: "Muitas tentativas. Tente novamente em 10 minutos." };
-    return validarDadosWizard(entrada, await consultarOpcoes());
+    const validada = validarDadosWizard(entrada, await consultarOpcoes());
+    if (!validada.ok) return validada;
+    // RF21/RF31: o link vai para o WhatsApp das configurações do site (PBI-39).
+    const { contato } = await lerConfiguracao();
+    return {
+      ok: true,
+      dados: {
+        ...validada.dados,
+        linkWhatsApp: linkWhatsApp(validada.dados.mensagem, contato.whatsapp),
+      },
+    };
   } catch {
     return {
       ok: false,

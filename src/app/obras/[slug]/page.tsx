@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { DetalheObra } from "@/components/loja/detalhe-obra";
+import { lerConfiguracao } from "@/modules/settings";
 import { lerObraPublica, outrasObrasDoArtista } from "@/modules/catalog";
 import { adicionarAoCarrinhoAcao } from "@/app/carrinho/actions";
 
@@ -30,13 +31,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PaginaObra({ params }: Props) {
   const obra = await obraDoSlug((await params).slug);
   if (!obra) notFound();
-  const outras = await outrasObrasDoArtista(obra);
+  const [outras, { contato }] = await Promise.all([outrasObrasDoArtista(obra), lerConfiguracao()]);
   return (
     <section className="mx-auto w-full max-w-pagina px-margem py-12 md:px-margem-desktop md:py-16">
       <DetalheObra
         obra={obra}
         outras={outras}
         baseImagens={process.env.R2_PUBLIC_URL?.trim() || null}
+        whatsapp={contato.whatsapp}
         adicionar={adicionarAoCarrinhoAcao}
       />
     </section>

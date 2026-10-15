@@ -34,5 +34,8 @@ it("RF28 apresenta navegação das três gestões para ADMIN", async () => {
   expect(screen.getByRole("link", { name: "Tags" }).getAttribute("href")).toBe("/admin/tags");
   expect(screen.getByRole("link", { name: "Obras" }).getAttribute("href")).toBe("/admin/obras");
   expect(screen.getByRole("link", { name: "Pedidos" }).getAttribute("href")).toBe("/admin/pedidos");
+  expect(screen.getByRole("link", { name: "Configurações" }).getAttribute("href")).toBe(
+    "/admin/configuracoes",
+  );
   expect(screen.getByText("Conteúdo permitido")).toBeTruthy();
 });

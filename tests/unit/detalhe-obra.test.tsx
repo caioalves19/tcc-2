@@ -38,7 +38,15 @@ const card = (slug: string, titulo: string) => ({
 
 function montar(dados = obra(), outras: ReturnType<typeof card>[] = []) {
   const adicionar = vi.fn().mockResolvedValue({ ok: true, dados: undefined });
-  render(<DetalheObra obra={dados} outras={outras} baseImagens={BASE} adicionar={adicionar} />);
+  render(
+    <DetalheObra
+      obra={dados}
+      outras={outras}
+      baseImagens={BASE}
+      whatsapp="5511912345678"
+      adicionar={adicionar}
+    />,
+  );
   return adicionar;
 }
 
@@ -80,11 +88,11 @@ it("RN11 a esgotada aparece identificada e sem botão de compra; a ficha omite o
   ).toEqual(["Artista", "Dimensões"]);
 });
 
-it("RF10 o WhatsApp leva título e artista; a trilha volta ao início e ao catálogo", () => {
+it("RF10/RF31 o WhatsApp configurado leva título e artista; a trilha volta ao início e ao catálogo", () => {
   montar();
   const zap = screen.getByRole("link", { name: "Tirar dúvidas com o ateliê pelo WhatsApp" });
   expect(zap.getAttribute("href")).toBe(
-    `https://wa.me/5511950901191?text=${encodeURIComponent(
+    `https://wa.me/5511912345678?text=${encodeURIComponent(
       'Olá! Tenho uma dúvida sobre a obra "Metrópole em chamas", de Ana.',
     )}`,
   );

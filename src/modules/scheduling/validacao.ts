@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { linkWhatsApp } from "../../lib/contato";
 import type { OpcoesWizard, ResultadoWizard } from "./tipos";
 import { mensagemAgendamento } from "./whatsapp";
 
@@ -23,12 +22,10 @@ const schemaWizard = z
   })
   .strict();
 export type DadosWizard = z.infer<typeof schemaWizard>;
-// RF21 (PBI-33): a revisão devolve também a mensagem e o link do WhatsApp do estúdio.
-export type PreferenciaWizard = DadosWizard & {
-  preferenciaEm: string;
-  mensagem: string;
-  linkWhatsApp: string;
-};
+// RF21 (PBI-33): a validação monta a mensagem; a revisão (servico.ts) acrescenta o link com o
+// WhatsApp das configurações do site (PBI-39).
+export type PreferenciaValidada = DadosWizard & { preferenciaEm: string; mensagem: string };
+export type PreferenciaWizard = PreferenciaValidada & { linkWhatsApp: string };
 // Estado do formulário: os aceites começam desmarcados; só `true` passa na validação.
 export type EntradaWizard = Omit<DadosWizard, "aceites"> & {
   aceites: Record<keyof DadosWizard["aceites"], boolean>;
@@ -38,7 +35,7 @@ export function validarDadosWizard(
   entrada: unknown,
   opcoes: OpcoesWizard,
   agora = new Date(),
-): ResultadoWizard<PreferenciaWizard> {
+): ResultadoWizard<PreferenciaValidada> {
   const resultado = schemaWizard.safeParse(entrada);
   if (!resultado.success)
     return {
@@ -70,11 +67,6 @@ export function validarDadosWizard(
   });
   return {
     ok: true,
-    dados: {
-      ...dados,
-      preferenciaEm: preferencia.toISOString(),
-      mensagem,
-      linkWhatsApp: linkWhatsApp(mensagem),
-    },
+    dados: { ...dados, preferenciaEm: preferencia.toISOString(), mensagem },
   };
 }

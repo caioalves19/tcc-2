@@ -8,6 +8,7 @@ import { unstable_rethrow } from "next/navigation";
 import "./globals.css";
 import { Cabecalho } from "@/components/layout/cabecalho";
 import { Rodape } from "@/components/layout/rodape";
+import { lerConfiguracao } from "@/modules/settings";
 import { sessaoDaRequisicao } from "@/lib/auth";
 import { lerCarrinho } from "@/modules/orders";
 
@@ -60,9 +61,10 @@ async function itensNoCarrinhoDoLayout() {
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const [sessao, itensNoCarrinho] = await Promise.all([
+  const [sessao, itensNoCarrinho, configuracao] = await Promise.all([
     sessaoDoLayout(),
     itensNoCarrinhoDoLayout(),
+    lerConfiguracao(),
   ]);
 
   return (
@@ -76,7 +78,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           itensNoCarrinho={itensNoCarrinho}
         />
         <main className="flex-1">{children}</main>
-        <Rodape />
+        <Rodape configuracao={configuracao} />
       </body>
     </html>
   );

@@ -732,11 +732,36 @@ Consome os pedidos e os dados do cliente definidos no PBI-26. Não depende do po
 
 O formulário e a persistência de configurações podem ser preparados com a base existente. As dependências listadas são para integrar todos os consumidores previstos: home (21), políticas (22) e WhatsApp (33). Esses PBIs usam configuração de ambiente/textos locais inicialmente e não ficam bloqueados pelo PBI-39.
 
-- [ ] Permitir ao ADMIN editar contato, horários, textos institucionais e políticas
-- [ ] Integrar os valores às páginas públicas e ao número usado no WhatsApp
-- [ ] Validar entradas no servidor e testar persistência e controle de acesso
+- [ ] Permitir ao ADMIN editar contato, horários, textos institucionais e políticas (contato, horários e textos feitos; das políticas, só o contato citado nelas: aguarda o aceite da equipe, ver Decisões)
+- [x] Integrar os valores às páginas públicas e ao número usado no WhatsApp
+- [x] Validar entradas no servidor e testar persistência e controle de acesso
 
 **Herdado do PBI-42 (12/10/2026):** o valor fixo da entrega em São Paulo/SP e a tabela de frete por UF ficam em constantes no módulo `orders`; mudar um valor exige commit. Uma tela para o ADMIN editar esses valores cabe aqui, mas o RF31 não cita frete: decidir com a equipe se entra neste PBI ou fica como pendência.
+
+**Decisões (registradas em 13/10/2026):**
+
+- O ADMIN edita em `/admin/configuracoes`: contato (e-mail, WhatsApp, Instagram do ateliê e do tattoo), horários (até 4 linhas, no rodapé e no contato) e os textos institucionais (apresentação da home, frase do bloco de tatuagem, murais e rodapé). Sem nada salvo, o site usa os valores de antes; banco fora do ar também.
+- **Políticas:** o texto continua no código, revisado pela equipe e com os testes do RNF17; só o e-mail e o WhatsApp citados nelas vêm das configurações. É um desvio do card, para o ADMIN não apagar uma cláusula obrigatória: precisa do aceite do grupo.
+- **Frete:** fica fora deste PBI (o RF31 não cita frete); continua como pendência herdada do PBI-42.
+- Sem migração: usa a tabela `site_setting` da Sprint 1, uma linha por chave. Contrato completo em [PBI-39](features/PBI-39.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-39-configuracoes`, que sai da `feat/pbi-33-whatsapp` (PR #64): integrar depois dele. Para encerrar o DoD, faltam a revisão de outro integrante, a aprovação do PR e o aceite da equipe sobre as políticas.
+
+**Entregas:**
+
+- Módulo `src/modules/settings` (`lerConfiguracao`, `salvarConfiguracao`, regras e padrões); `hrefWhatsApp`, `linkWhatsApp(mensagem, numero)` e `hrefInstagram` em `src/lib/contato.ts`, sem contato fixo no código.
+- Rodapé, home, contato, página da obra, políticas e revisão do wizard lendo as configurações.
+- Página `/admin/configuracoes`, Server Action e "Configurações" no menu do admin.
+
+**Evidências:**
+
+- `npm run lint`, `npm run typecheck` e `npm run build` sem erros.
+- `npm run test:unit` com 499 testes e a integração com 254 testes no PostgreSQL real (5 novos), em execução sequencial.
+- No navegador, com o Postgres local: erro de validação sem salvar; depois de salvar, rodapé, home, contato, política e link do wizard com os valores novos; axe-core sem violações no admin em 1280 e 375 px. A conferência achou o campo do WhatsApp sem o valor gravado depois de salvar, corrigido.
+
+**Pendências:**
+
+- Equipe: aceitar (ou não) o texto das políticas no código; decidir se o frete ganha tela no admin.
 
 ### PBI-40 — Exclusão de conta e anonimização
 

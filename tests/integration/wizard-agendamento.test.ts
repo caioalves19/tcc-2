@@ -101,6 +101,33 @@ it("RF20 valida a preferência sem sessão e sem gravar pedido ou reservar agend
   ]);
 });
 
+it("RF21/RF31 o link do wizard usa o WhatsApp salvo nas configurações do site", async () => {
+  const { revisarPreferenciaWizard } = await import("../../src/modules/scheduling/index");
+  const { PADRAO } = await import("../../src/modules/settings");
+  await db.query(
+    "INSERT INTO site_setting (id, chave, valor) VALUES (gen_random_uuid(), 'contato', $1)",
+    [JSON.stringify({ ...PADRAO.contato, whatsapp: "5511912345678" })],
+  );
+  const resultado = await revisarPreferenciaWizard(
+    {
+      nome: "Maria",
+      artistaId,
+      estiloId,
+      tamanhoId,
+      regiao: "Antebraço",
+      data: "2099-10-18",
+      horario: "14:30",
+      aceites: { anamnese: true, termo: true, maioridade: true },
+    },
+    new Headers({ "x-real-ip": "pbi39-whatsapp" }),
+  );
+  await db.query("DELETE FROM site_setting");
+  if (!resultado.ok) throw new Error(resultado.mensagem);
+  expect(resultado.dados.linkWhatsApp).toBe(
+    `https://wa.me/5511912345678?text=${encodeURIComponent(resultado.dados.mensagem)}`,
+  );
+});
+
 it("RF23–RF25/RNF18 recusa a revisão sem os três aceites e não grava nada", async () => {
   const { revisarPreferenciaWizard } = await import("../../src/modules/scheduling/index");
   const cabecalhos = new Headers({ "x-real-ip": "pbi32-aceites" });

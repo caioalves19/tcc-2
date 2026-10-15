@@ -8,6 +8,7 @@ import { VitrineDestaques } from "@/components/loja/vitrine-destaques";
 import { buttonVariants } from "@/components/ui/button";
 import { linkWhatsApp } from "@/lib/contato";
 import { listarDestaques } from "@/modules/catalog";
+import { lerConfiguracao } from "@/modules/settings";
 
 const MENSAGEM_MURAL = "Olá! Quero pedir um orçamento de mural.";
 
@@ -43,10 +44,13 @@ async function destaquesDaHome() {
   }
 }
 
-// RF07: vitrine institucional do Kolô. Os destaques vêm do banco a cada visita (o layout já
-// lê a sessão, então a página não é gerada no build).
+// RF07: vitrine institucional do Kolô. Os destaques e os textos (configurações do site, PBI-39)
+// vêm do banco a cada visita (o layout já lê a sessão, então a página não é gerada no build).
 export default async function Home() {
-  const destaques = await destaquesDaHome();
+  const [destaques, { contato, textos }] = await Promise.all([
+    destaquesDaHome(),
+    lerConfiguracao(),
+  ]);
   return (
     <>
       <section className="mx-auto grid max-w-pagina items-center gap-10 px-margem py-16 md:grid-cols-[1fr_auto] md:px-margem-desktop md:py-24">
@@ -61,8 +65,7 @@ export default async function Home() {
             </span>
           </h1>
           <p className="mt-6 max-w-2xl text-corpo-lg text-[var(--kolo-texto-suave)]">
-            O Kolô reúne um ateliê de arte urbana, com telas, murais e customizações, e um estúdio
-            de tatuagem. As obras do catálogo vêm direto dos nossos artistas.
+            {textos.apresentacao}
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <a href="/obras" className={buttonVariants()}>
@@ -101,7 +104,7 @@ export default async function Home() {
             Sua tatuagem começa <span className="text-[var(--kolo-link)]">numa conversa</span>
           </h2>
           <p className="max-w-2xl text-corpo-lg text-[var(--kolo-texto-suave)]">
-            Um espaço para trocar ideia, criar e tatuar com tranquilidade.
+            {textos.tatuagem}
           </p>
           <ol className="mt-4 grid w-full gap-4 text-left md:grid-cols-3">
             {PASSOS_TATUAGEM.map(({ icone: Icone, titulo, texto }, indice) => (
@@ -136,13 +139,10 @@ export default async function Home() {
             >
               Seu espaço merece mais que uma parede branca
             </h2>
-            <p className="mt-4 max-w-2xl text-corpo-lg">
-              Murais sob encomenda para casas, empresas, restaurantes e fachadas, criados pelos
-              artistas do Kolô.
-            </p>
+            <p className="mt-4 max-w-2xl text-corpo-lg">{textos.murais}</p>
           </div>
           <a
-            href={linkWhatsApp(MENSAGEM_MURAL)}
+            href={linkWhatsApp(MENSAGEM_MURAL, contato.whatsapp)}
             target="_blank"
             rel="noopener noreferrer"
             // O rótulo é longo: no celular quebra a linha em vez de passar da borda do cartão.
