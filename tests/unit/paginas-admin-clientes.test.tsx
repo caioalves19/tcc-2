@@ -19,6 +19,7 @@ vi.mock("@/modules/customers", () => ({
 }));
 
 import PaginaClientesAdmin from "@/app/admin/clientes/page";
+import PaginaClienteAdmin from "@/app/admin/clientes/[id]/page";
 
 afterEach(() => {
   cleanup();
@@ -46,4 +47,43 @@ it("RF30 a lista repassa busca e página da URL e mostra o erro de acesso", asyn
   });
   render(await PaginaClientesAdmin(busca({})));
   expect(screen.getByRole("alert").textContent).toBe("Acesso exclusivo de administradores.");
+});
+
+it("RF30 o perfil dá 404 para cliente não encontrado e mostra o perfil encontrado", async () => {
+  const id = "0b6f1d3a-1c1e-4c33-9a43-1f1c8f6f0a01";
+  const params = Promise.resolve({ id });
+  mocks.ler.mockResolvedValueOnce({
+    ok: false,
+    erro: "nao_encontrado",
+    mensagem: "Cliente não encontrado.",
+  });
+  await expect(PaginaClienteAdmin({ params })).rejects.toThrow("notFound");
+  expect(mocks.ler).toHaveBeenCalledWith(id, mocks.headers);
+
+  mocks.ler.mockResolvedValueOnce({
+    ok: false,
+    erro: "indisponivel",
+    mensagem: "Tente novamente.",
+  });
+  render(await PaginaClienteAdmin({ params }));
+  expect(screen.getByRole("alert").textContent).toBe("Tente novamente.");
+  cleanup();
+
+  mocks.ler.mockResolvedValueOnce({
+    ok: true,
+    dados: {
+      id,
+      nome: "Lucas Silveira",
+      email: "lucas@pbi38.test",
+      telefone: null,
+      situacao: "ATIVO",
+      cadastradoEm: new Date("2026-09-20T15:00:00Z"),
+      excluido: false,
+      endereco: null,
+      pedidos: [],
+      totalGastoCentavos: 0,
+    },
+  });
+  render(await PaginaClienteAdmin({ params }));
+  expect(screen.getByRole("heading", { level: 1, name: "Lucas Silveira" })).toBeDefined();
 });
