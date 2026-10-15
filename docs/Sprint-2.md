@@ -722,9 +722,24 @@ Consome artistas/estilos (16) e upload (17). Pode avançar em paralelo ao CRUD d
 
 Consome os pedidos e os dados do cliente definidos no PBI-26. Não depende do portfólio, da agenda ou das configurações do site.
 
-- [ ] Permitir ao ADMIN consultar dados do cliente e histórico de compras
-- [ ] Restringir acesso no servidor e exibir estados sem compras
-- [ ] Testar permissões e correspondência entre cliente e pedidos
+- [x] Permitir ao ADMIN consultar dados do cliente e histórico de compras
+- [x] Restringir acesso no servidor e exibir estados sem compras
+- [x] Testar permissões e correspondência entre cliente e pedidos
+
+**Decisões (registradas em 14/10/2026):**
+
+- `/admin/clientes` com busca por nome ou e-mail e paginação; `/admin/clientes/[id]` com dados, endereço e compras; no detalhe do pedido, o nome do cliente leva ao perfil.
+- Só o papel `CLIENTE`; conta excluída aparece marcada, com os pedidos (prepara o PBI-40).
+- O histórico traz todos os pedidos, com as tentativas sem pagamento como "Não concluído"; o total gasto soma só os pagos (de Pago a Entregue).
+- Só consulta: sem editar, bloquear ou excluir cliente, sem horários da agenda e sem migração. Contrato completo em [PBI-38](features/PBI-38.md).
+
+**Situação:** implementação local validada na branch `feat/pbi-38-perfil-cliente`, com lint, format, typecheck, `npm test` (512), `npm run test:integration` e build sem erros, conferência no navegador como ADMIN e revisão independente por agente (PASS; o teste de paginação que faltava foi incluído). Faltam a revisão de outro integrante e a aprovação do PR.
+
+**Entregas:**
+
+- Módulo `src/modules/customers` (`listarClientesAdmin`, `lerClienteAdmin`, regra `totalGasto`).
+- `pedidosDoClienteAdmin` e `cliente.perfilId` no `lerPedidoAdmin`, em `src/modules/orders`, reaproveitando a linha da lista de pedidos.
+- Páginas `/admin/clientes` e `/admin/clientes/[id]`, "Clientes" no menu do admin e link no detalhe do pedido.
 
 ### PBI-39 — Configurações do site
 

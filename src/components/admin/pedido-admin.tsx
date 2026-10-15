@@ -81,7 +81,17 @@ export function PedidoAdminDetalhe({
             <h2 id="pedido-cliente" className={TITULO_SECAO}>
               Cliente
             </h2>
-            <p>{pedido.cliente.nome}</p>
+            {/* PBI-38: o nome leva ao perfil do cliente, com o histórico de compras. */}
+            {pedido.cliente.perfilId ? (
+              <a
+                href={`/admin/clientes/${pedido.cliente.perfilId}`}
+                className="break-words text-[var(--kolo-link)] underline underline-offset-4"
+              >
+                {pedido.cliente.nome}
+              </a>
+            ) : (
+              <p>{pedido.cliente.nome}</p>
+            )}
             <a
               href={`mailto:${pedido.cliente.email}`}
               className="break-all text-[var(--kolo-link)] underline underline-offset-4"
