@@ -100,6 +100,45 @@ const ONDE_DO_FILTRO: Record<FiltroPedidos, Prisma.OrderWhereInput> = {
   todos: {},
 };
 
+type PedidoComItens = Prisma.OrderGetPayload<{
+  include: { items: true; payments: { select: { status: true } } };
+}>;
+
+// Uma linha de pedido do admin, sem o cliente: a lista de pedidos e o perfil do cliente (PBI-38).
+function resumoDoPedido(
+  pedido: PedidoComItens,
+  reservados: Set<string>,
+): Omit<PedidoAdminLista, "cliente"> {
+  return {
+    numero: pedido.number,
+    criadoEm: pedido.createdAt,
+    situacao: situacaoDe(pedido, reservados) ?? "NAO_CONCLUIDO",
+    situacaoBanco: pedido.status,
+    modalidade: pedido.deliveryMethod,
+    totalCentavos: pedido.totalCents,
+    unidades: pedido.items.reduce((soma, item) => soma + item.quantity, 0),
+  };
+}
+
+export type PedidoDoClienteAdmin = Omit<PedidoAdminLista, "cliente">;
+
+// RF30 (PBI-38): todos os pedidos de um cliente para o perfil no admin, com as tentativas sem
+// pagamento ("NAO_CONCLUIDO"), dos mais recentes aos mais antigos. Roda na transação de quem
+// chama, que já passou pelo comoAdmin: esta função não confere permissão sozinha.
+export async function pedidosDoClienteAdmin(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  agora = new Date(),
+): Promise<PedidoDoClienteAdmin[]> {
+  const pedidos = await tx.order.findMany({
+    where: { userId, deletedAt: null },
+    include: { items: true, payments: { select: { status: true } } },
+    orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+  });
+  const reservados = await comReservaAtiva(pedidos, agora, tx);
+  return pedidos.map((pedido) => resumoDoPedido(pedido, reservados));
+}
+
 // "A fazer" é a fila de trabalho: os mais antigos primeiro. Os demais filtros mostram os mais
 // recentes primeiro. O id desempata, para um pedido não repetir nem sumir entre as páginas.
 export function listarPedidosAdmin(entrada: unknown, cabecalhos: Headers, agora = new Date()) {
@@ -132,14 +171,8 @@ export function listarPedidosAdmin(entrada: unknown, cabecalhos: Headers, agora 
     const reservados = await comReservaAtiva(pedidos, agora, tx);
     return {
       pedidos: pedidos.map((pedido) => ({
-        numero: pedido.number,
-        criadoEm: pedido.createdAt,
+        ...resumoDoPedido(pedido, reservados),
         cliente: { nome: pedido.user.name, email: pedido.user.email },
-        situacao: situacaoDe(pedido, reservados) ?? "NAO_CONCLUIDO",
-        situacaoBanco: pedido.status,
-        modalidade: pedido.deliveryMethod,
-        totalCentavos: pedido.totalCents,
-        unidades: pedido.items.reduce((soma, item) => soma + item.quantity, 0),
       })),
       total,
       pagina,

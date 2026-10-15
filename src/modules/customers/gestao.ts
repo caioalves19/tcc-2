@@ -1,6 +1,7 @@
 import type { Prisma, UserStatus } from "../../../generated/prisma/client";
 import { comoAdmin, ErroGestao } from "../artists/index";
 import type { DadosEndereco } from "../endereco/index";
+import { pedidosDoClienteAdmin, type PedidoDoClienteAdmin } from "../orders/index";
 import { CLIENTES_POR_PAGINA, schemaIdCliente, schemaListaClientes } from "./validacao";
 
 // RF30 (PBI-38): perfil unificado do cliente para o ADMIN. Toda leitura passa pelo comoAdmin
@@ -73,10 +74,12 @@ export type ClienteAdmin = {
   excluido: boolean;
   // O único endereço de entrega da conta (RF05), como foi gravado; null se nunca cadastrou.
   endereco: DadosEndereco | null;
+  // Todos os pedidos, inclusive as tentativas sem pagamento ("NAO_CONCLUIDO").
+  pedidos: PedidoDoClienteAdmin[];
 };
 
 // RF30: id fora do formato, inexistente ou de quem não é CLIENTE dá "nao_encontrado".
-export function lerClienteAdmin(id: unknown, cabecalhos: Headers) {
+export function lerClienteAdmin(id: unknown, cabecalhos: Headers, agora = new Date()) {
   return comoAdmin(cabecalhos, async (tx): Promise<ClienteAdmin> => {
     const valido = schemaIdCliente.safeParse(id);
     const cliente = valido.success
@@ -96,6 +99,7 @@ export function lerClienteAdmin(id: unknown, cabecalhos: Headers) {
       : null;
     if (!cliente) throw new ErroGestao("nao_encontrado", "Cliente não encontrado.");
     const { address: endereco } = cliente;
+    const pedidos = await pedidosDoClienteAdmin(tx, cliente.id, agora);
     return {
       id: cliente.id,
       nome: cliente.name,
@@ -115,6 +119,7 @@ export function lerClienteAdmin(id: unknown, cabecalhos: Headers) {
         // Gravado por salvarEndereco, que só aceita as UFs de UFS.
         uf: endereco.state as DadosEndereco["uf"],
       },
+      pedidos,
     };
   });
 }

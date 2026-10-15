@@ -1,14 +1,21 @@
 import type { Client } from "pg";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { prepararContas } from "./contas-pbi17";
-import { ENDERECO_TESTE, fabricaDePedidos, type ClienteTeste } from "./pedidos-de-teste";
+import {
+  ENDERECO_TESTE,
+  fabricaDePedidos,
+  type ClienteTeste,
+  type PedidoTeste,
+} from "./pedidos-de-teste";
 
 let db: Client;
 let admin: Headers;
 let cliente: Headers;
 let artista: Headers;
 let fabrica: ReturnType<typeof fabricaDePedidos>;
+let obra: string;
 let lucas: ClienteTeste;
+let maria: ClienteTeste;
 let excluido: ClienteTeste;
 
 beforeAll(async () => {
@@ -16,8 +23,9 @@ beforeAll(async () => {
   ({ db, admin, cliente } = contas);
   artista = contas.ana;
   fabrica = fabricaDePedidos(db, admin, contas.idAna);
+  obra = await fabrica.obraPublicada("metropole", "4.800,00", 500);
   lucas = await fabrica.novoCliente("lucas@pbi38.test", "Lucas Silveira");
-  await fabrica.novoCliente("maria.prado@pbi38.test", "Maria Prado");
+  maria = await fabrica.novoCliente("maria.prado@pbi38.test", "Maria Prado");
   excluido = await fabrica.novoCliente("ze@pbi38.test", "Zé Antigo");
   await db.query(`UPDATE "user" SET excluido_em = '2026-10-10T12:00:00Z' WHERE id = $1`, [
     excluido.userId,
@@ -127,4 +135,59 @@ it("RF30 só o admin abre o perfil; id inválido, inexistente ou de quem não é
     await idDoEmail("ana@pbi17.test"),
   ])
     expect(await lerClienteAdmin(id, admin)).toMatchObject({ ok: false, erro: "nao_encontrado" });
+});
+
+const dia = (d: number) => `2026-10-${String(d).padStart(2, "0")}T15:00:00Z`;
+const pedido = (dono: ClienteTeste, p: Omit<PedidoTeste, "obra">) =>
+  fabrica.pedidoDeTeste(dono, { ...p, obra });
+
+it("RF30 o histórico traz todos os pedidos do cliente, e só os dele, do mais recente ao mais antigo", async () => {
+  const { lerClienteAdmin } = await import("../../src/modules/customers");
+  await db.query('TRUNCATE "order" CASCADE');
+  await pedido(lucas, {
+    numero: "20261001-LUCAS1",
+    situacao: "ENTREGUE",
+    criadoEm: dia(1),
+    pagamentos: ["APROVADO"],
+  });
+  // Tentativa sem pagamento: o cliente não a vê, o admin sim, como "Não concluído".
+  await pedido(lucas, { numero: "20261003-LUCAS2", situacao: "PENDENTE", criadoEm: dia(3) });
+  await pedido(lucas, {
+    numero: "20261002-LUCAS3",
+    situacao: "CANCELADO",
+    criadoEm: dia(2),
+    pagamentos: ["RECUSADO"],
+  });
+  await pedido(lucas, {
+    numero: "20261004-LUCAS4",
+    situacao: "PAGO",
+    criadoEm: dia(4),
+    pagamentos: ["APROVADO"],
+    excluido: true,
+  });
+  await pedido(maria, {
+    numero: "20261005-MARIA1",
+    situacao: "PAGO",
+    criadoEm: dia(5),
+    pagamentos: ["APROVADO"],
+  });
+
+  const perfil = await lerClienteAdmin(lucas.userId, admin);
+  if (!perfil.ok) throw new Error(perfil.mensagem);
+  expect(perfil.dados.pedidos).toEqual([
+    {
+      numero: "20261003-LUCAS2",
+      criadoEm: new Date(dia(3)),
+      situacao: "NAO_CONCLUIDO",
+      situacaoBanco: "PENDENTE",
+      modalidade: "RETIRADA",
+      totalCentavos: 960000,
+      unidades: 2,
+    },
+    expect.objectContaining({ numero: "20261002-LUCAS3", situacao: "CANCELADO" }),
+    expect.objectContaining({ numero: "20261001-LUCAS1", situacao: "ENTREGUE" }),
+  ]);
+
+  const semCompras = await lerClienteAdmin(excluido.userId, admin);
+  expect(semCompras).toMatchObject({ ok: true, dados: { pedidos: [] } });
 });

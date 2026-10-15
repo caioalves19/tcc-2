@@ -56,8 +56,14 @@ export {
   lerPedidoAdmin,
   listarPedidosAdmin,
   mudarSituacaoPedido,
+  pedidosDoClienteAdmin,
   registrarRastreio,
 } from "./gestao";
-export type { PaginaPedidosAdmin, PedidoAdmin, PedidoAdminLista } from "./gestao";
+export type {
+  PaginaPedidosAdmin,
+  PedidoAdmin,
+  PedidoAdminLista,
+  PedidoDoClienteAdmin,
+} from "./gestao";
 export { FILTROS_PEDIDOS, PEDIDOS_POR_PAGINA } from "./validacao";
 export type { FiltroPedidos } from "./validacao";
