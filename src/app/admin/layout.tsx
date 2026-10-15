@@ -39,6 +39,9 @@ export default async function LayoutAdmin({ children }: { children: ReactNode })
         <a href="/admin/pedidos" className="underline">
           Pedidos
         </a>
+        <a href="/admin/clientes" className="underline">
+          Clientes
+        </a>
         <a href="/admin/configuracoes" className="underline">
           Configurações
         </a>
