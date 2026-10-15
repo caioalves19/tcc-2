@@ -1,7 +1,7 @@
 import type { Client } from "pg";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { prepararContas } from "./contas-pbi17";
-import { fabricaDePedidos, type ClienteTeste } from "./pedidos-de-teste";
+import { ENDERECO_TESTE, fabricaDePedidos, type ClienteTeste } from "./pedidos-de-teste";
 
 let db: Client;
 let admin: Headers;
@@ -73,4 +73,58 @@ it("RF30 busca o cliente por parte do nome ou do e-mail, sem diferenciar maiúsc
   // O admin tem conta, mas não é cliente.
   expect(await nomes("admin@pbi17")).toEqual([]);
   expect(await nomes("ninguém")).toEqual([]);
+});
+
+const idDoEmail = async (email: string): Promise<string> =>
+  (await db.query('SELECT id FROM "user" WHERE email = $1', [email])).rows[0].id;
+
+it("RF30 o perfil traz os dados e o endereço de entrega do cliente", async () => {
+  const { lerClienteAdmin } = await import("../../src/modules/customers");
+  const perfil = await lerClienteAdmin(lucas.userId, admin);
+  if (!perfil.ok) throw new Error(perfil.mensagem);
+  expect(perfil.dados).toMatchObject({
+    id: lucas.userId,
+    nome: "Lucas Silveira",
+    email: "lucas@pbi38.test",
+    telefone: "11987654321",
+    situacao: "ATIVO",
+    cadastradoEm: expect.any(Date),
+    excluido: false,
+    // Como é gravado: CEP no formato 00000-000.
+    endereco: { ...ENDERECO_TESTE, cep: "01327-000" },
+  });
+
+  // O cliente das contas nunca cadastrou endereço.
+  const semEndereco = await lerClienteAdmin(await idDoEmail("cliente@pbi17.test"), admin);
+  expect(semEndereco).toMatchObject({ ok: true, dados: { nome: "Pessoa", endereco: null } });
+
+  const antigo = await lerClienteAdmin(excluido.userId, admin);
+  expect(antigo).toMatchObject({ ok: true, dados: { nome: "Zé Antigo", excluido: true } });
+});
+
+it("RF30 só o admin abre o perfil; id inválido, inexistente ou de quem não é cliente não é encontrado", async () => {
+  const { lerClienteAdmin } = await import("../../src/modules/customers");
+  expect(await lerClienteAdmin(lucas.userId, new Headers())).toMatchObject({
+    ok: false,
+    erro: "nao_autenticado",
+  });
+  expect(await lerClienteAdmin(lucas.userId, cliente)).toMatchObject({
+    ok: false,
+    erro: "proibido",
+  });
+  expect(await lerClienteAdmin(lucas.userId, artista)).toMatchObject({
+    ok: false,
+    erro: "proibido",
+  });
+
+  for (const id of [
+    "nao-e-uuid",
+    "",
+    42,
+    null,
+    "6f1c2a8e-0000-4000-8000-000000000000",
+    await idDoEmail("admin@pbi17.test"),
+    await idDoEmail("ana@pbi17.test"),
+  ])
+    expect(await lerClienteAdmin(id, admin)).toMatchObject({ ok: false, erro: "nao_encontrado" });
 });

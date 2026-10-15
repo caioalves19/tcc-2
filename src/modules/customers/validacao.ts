@@ -4,6 +4,9 @@ import { z } from "zod";
 
 export const CLIENTES_POR_PAGINA = 20;
 
+// O id do perfil vem da URL (/admin/clientes/[id]).
+export const schemaIdCliente = z.uuid();
+
 // Vem da URL (?busca=...&pagina=...): qualquer valor fora do esperado volta ao padrão.
 export const schemaListaClientes = z.object({
   busca: z.string().trim().max(100).catch(""),

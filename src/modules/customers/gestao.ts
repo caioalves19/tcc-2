@@ -1,6 +1,7 @@
-import type { Prisma } from "../../../generated/prisma/client";
-import { comoAdmin } from "../artists/index";
-import { CLIENTES_POR_PAGINA, schemaListaClientes } from "./validacao";
+import type { Prisma, UserStatus } from "../../../generated/prisma/client";
+import { comoAdmin, ErroGestao } from "../artists/index";
+import type { DadosEndereco } from "../endereco/index";
+import { CLIENTES_POR_PAGINA, schemaIdCliente, schemaListaClientes } from "./validacao";
 
 // RF30 (PBI-38): perfil unificado do cliente para o ADMIN. Toda leitura passa pelo comoAdmin
 // (sessão e papel relidos no banco). Só consulta: nada aqui grava.
@@ -58,6 +59,62 @@ export function listarClientesAdmin(entrada: unknown, cabecalhos: Headers) {
       pagina,
       totalPaginas: Math.ceil(total / CLIENTES_POR_PAGINA),
       busca,
+    };
+  });
+}
+
+export type ClienteAdmin = {
+  id: string;
+  nome: string;
+  email: string;
+  telefone: string | null;
+  situacao: UserStatus;
+  cadastradoEm: Date;
+  excluido: boolean;
+  // O único endereço de entrega da conta (RF05), como foi gravado; null se nunca cadastrou.
+  endereco: DadosEndereco | null;
+};
+
+// RF30: id fora do formato, inexistente ou de quem não é CLIENTE dá "nao_encontrado".
+export function lerClienteAdmin(id: unknown, cabecalhos: Headers) {
+  return comoAdmin(cabecalhos, async (tx): Promise<ClienteAdmin> => {
+    const valido = schemaIdCliente.safeParse(id);
+    const cliente = valido.success
+      ? await tx.user.findFirst({
+          where: { id: valido.data, role: "CLIENTE" },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            status: true,
+            createdAt: true,
+            deletedAt: true,
+            address: true,
+          },
+        })
+      : null;
+    if (!cliente) throw new ErroGestao("nao_encontrado", "Cliente não encontrado.");
+    const { address: endereco } = cliente;
+    return {
+      id: cliente.id,
+      nome: cliente.name,
+      email: cliente.email,
+      telefone: cliente.phone,
+      situacao: cliente.status,
+      cadastradoEm: cliente.createdAt,
+      excluido: cliente.deletedAt !== null,
+      endereco: endereco && {
+        destinatario: endereco.recipient,
+        cep: endereco.postalCode,
+        logradouro: endereco.street,
+        numero: endereco.number,
+        complemento: endereco.complement,
+        bairro: endereco.neighborhood,
+        cidade: endereco.city,
+        // Gravado por salvarEndereco, que só aceita as UFs de UFS.
+        uf: endereco.state as DadosEndereco["uf"],
+      },
     };
   });
 }
