@@ -189,7 +189,8 @@ export type PedidoAdmin = {
   situacao: SituacaoCliente | "NAO_CONCLUIDO";
   situacaoBanco: SituacaoNoBanco;
   modalidade: Modalidade;
-  cliente: { nome: string; email: string; telefone: string | null };
+  // perfilId (PBI-38): leva ao perfil em /admin/clientes; null se quem comprou não é CLIENTE.
+  cliente: { nome: string; email: string; telefone: string | null; perfilId: string | null };
   itens: { titulo: string; precoCentavos: number; quantidade: number }[];
   subtotalCentavos: number;
   freteCentavos: number;
@@ -232,7 +233,7 @@ export function lerPedidoAdmin(numero: unknown, cabecalhos: Headers, agora = new
                   refundReason: true,
                 },
               },
-              user: { select: { name: true, email: true, phone: true } },
+              user: { select: { id: true, name: true, email: true, phone: true, role: true } },
             },
           })
         : null;
@@ -247,7 +248,12 @@ export function lerPedidoAdmin(numero: unknown, cabecalhos: Headers, agora = new
       situacao: situacaoDe(pedido, reservados) ?? "NAO_CONCLUIDO",
       situacaoBanco: pedido.status,
       modalidade: pedido.deliveryMethod,
-      cliente: { nome: pedido.user.name, email: pedido.user.email, telefone: pedido.user.phone },
+      cliente: {
+        nome: pedido.user.name,
+        email: pedido.user.email,
+        telefone: pedido.user.phone,
+        perfilId: pedido.user.role === "CLIENTE" ? pedido.user.id : null,
+      },
       itens: pedido.items.map((item) => ({
         titulo: item.titleSnapshot,
         precoCentavos: item.priceCents,

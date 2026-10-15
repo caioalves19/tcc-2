@@ -16,7 +16,12 @@ const PEDIDO: PedidoAdmin = {
   situacao: "ENVIADO",
   situacaoBanco: "ENVIADO",
   modalidade: "RETIRADA",
-  cliente: { nome: "Maria Prado", email: "maria@pbi30.test", telefone: "11987654321" },
+  cliente: {
+    nome: "Maria Prado",
+    email: "maria@pbi30.test",
+    telefone: "11987654321",
+    perfilId: "0b6f1d3a-1c1e-4c33-9a43-1f1c8f6f0a01",
+  },
   itens: [{ titulo: "Metrópole em chamas", precoCentavos: 480000, quantidade: 2 }],
   subtotalCentavos: 960000,
   freteCentavos: 0,
@@ -75,7 +80,10 @@ it("RF29 mostra cliente, datas, pagamentos, entrega, resumo e as ações do pedi
   expect(datas).toContain("Pronto para retirada em 03/10/2026");
 
   const cliente = screen.getByRole("region", { name: "Cliente" });
-  expect(cliente.textContent).toContain("Maria Prado");
+  // PBI-38: o nome leva ao perfil do cliente.
+  expect(within(cliente).getByRole("link", { name: "Maria Prado" }).getAttribute("href")).toBe(
+    "/admin/clientes/0b6f1d3a-1c1e-4c33-9a43-1f1c8f6f0a01",
+  );
   expect(within(cliente).getByRole("link", { name: "maria@pbi30.test" }).getAttribute("href")).toBe(
     "mailto:maria@pbi30.test",
   );
@@ -110,13 +118,17 @@ it("sem pagamento registrado e sem telefone, avisa", () => {
         pagoEm: null,
         enviadoEm: null,
         rastreio: null,
-        cliente: { ...PEDIDO.cliente, telefone: null },
+        cliente: { ...PEDIDO.cliente, telefone: null, perfilId: null },
       }}
       acoes={acoes}
     />,
   );
   expect(screen.getByText("Nenhum pagamento registrado.")).toBeDefined();
-  expect(screen.getByRole("region", { name: "Cliente" }).textContent).toContain("Sem telefone");
+  const cliente = screen.getByRole("region", { name: "Cliente" });
+  expect(cliente.textContent).toContain("Sem telefone");
+  // Quem comprou não é cliente (ADMIN ou ARTISTA): sem perfil para abrir.
+  expect(cliente.textContent).toContain("Maria Prado");
+  expect(within(cliente).queryByRole("link", { name: "Maria Prado" })).toBeNull();
   expect(screen.getByText("Não concluído", { selector: "span" })).toBeDefined();
   expect(screen.getByRole("list", { name: "Datas do pedido" }).textContent).not.toContain("Pago");
 });

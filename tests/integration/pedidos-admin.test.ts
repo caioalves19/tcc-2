@@ -185,7 +185,13 @@ it("RF29 o detalhe traz cliente, itens, valores, entrega e pagamentos, sem o pay
     situacao: "ENVIADO",
     situacaoBanco: "ENVIADO",
     modalidade: "RETIRADA",
-    cliente: { nome: "Maria Prado", email: "maria@pbi30.test", telefone: "11987654321" },
+    cliente: {
+      nome: "Maria Prado",
+      email: "maria@pbi30.test",
+      telefone: "11987654321",
+      // PBI-38: o nome leva ao perfil do cliente no admin.
+      perfilId: maria.userId,
+    },
     itens: [{ titulo: "Metrópole em chamas", precoCentavos: 480000, quantidade: 2 }],
     subtotalCentavos: 960000,
     freteCentavos: 0,
@@ -427,4 +433,21 @@ it("RF29 registra, corrige e limpa o rastreio a partir de pago, e o cliente vê 
       (await registrarRastreio({ numero: "20261008-RAST01", codigo: "BR999999999SP" }, quem)).ok,
     ).toBe(false);
   expect(await rastreioNoBanco("20261008-RAST01")).toBeNull();
+});
+
+it("RF30 o detalhe não leva ao perfil quando quem comprou não é cliente", async () => {
+  const { lerPedidoAdmin } = await import("../../src/modules/orders");
+  const { rows } = await db.query(
+    'SELECT s.id, s.user_id FROM session s JOIN "user" u ON u.id = s.user_id WHERE u.email = $1',
+    ["admin@pbi17.test"],
+  );
+  const dono = {
+    cabecalhos: admin,
+    tokenVisitante: null,
+    userId: rows[0].user_id,
+    sessaoId: rows[0].id,
+  };
+  await pedido(dono, { numero: "20261008-ADMIN1", situacao: "PENDENTE", criadoEm: dia(8) });
+  const lido = await lerPedidoAdmin("20261008-ADMIN1", admin);
+  expect(lido).toMatchObject({ ok: true, dados: { cliente: { perfilId: null } } });
 });
