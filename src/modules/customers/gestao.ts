@@ -2,6 +2,7 @@ import type { Prisma, UserStatus } from "../../../generated/prisma/client";
 import { comoAdmin, ErroGestao } from "../artists/index";
 import type { DadosEndereco } from "../endereco/index";
 import { pedidosDoClienteAdmin, type PedidoDoClienteAdmin } from "../orders/index";
+import { totalGasto } from "./regras";
 import { CLIENTES_POR_PAGINA, schemaIdCliente, schemaListaClientes } from "./validacao";
 
 // RF30 (PBI-38): perfil unificado do cliente para o ADMIN. Toda leitura passa pelo comoAdmin
@@ -76,6 +77,8 @@ export type ClienteAdmin = {
   endereco: DadosEndereco | null;
   // Todos os pedidos, inclusive as tentativas sem pagamento ("NAO_CONCLUIDO").
   pedidos: PedidoDoClienteAdmin[];
+  // Soma dos pedidos pagos (de Pago a Entregue), em centavos.
+  totalGastoCentavos: number;
 };
 
 // RF30: id fora do formato, inexistente ou de quem não é CLIENTE dá "nao_encontrado".
@@ -120,6 +123,7 @@ export function lerClienteAdmin(id: unknown, cabecalhos: Headers, agora = new Da
         uf: endereco.state as DadosEndereco["uf"],
       },
       pedidos,
+      totalGastoCentavos: totalGasto(pedidos),
     };
   });
 }

@@ -188,6 +188,9 @@ it("RF30 o histórico traz todos os pedidos do cliente, e só os dele, do mais r
     expect.objectContaining({ numero: "20261001-LUCAS1", situacao: "ENTREGUE" }),
   ]);
 
+  // Só o entregue foi pago: pendente e cancelado não contam, e o pedido excluído não aparece.
+  expect(perfil.dados.totalGastoCentavos).toBe(960000);
+
   const semCompras = await lerClienteAdmin(excluido.userId, admin);
-  expect(semCompras).toMatchObject({ ok: true, dados: { pedidos: [] } });
+  expect(semCompras).toMatchObject({ ok: true, dados: { pedidos: [], totalGastoCentavos: 0 } });
 });
