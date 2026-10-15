@@ -194,3 +194,24 @@ it("RF30 o histórico traz todos os pedidos do cliente, e só os dele, do mais r
   const semCompras = await lerClienteAdmin(excluido.userId, admin);
   expect(semCompras).toMatchObject({ ok: true, dados: { pedidos: [], totalGastoCentavos: 0 } });
 });
+
+it("RF30 pagina de 20 em 20, sem repetir cliente entre as páginas", async () => {
+  const { listarClientesAdmin } = await import("../../src/modules/customers");
+  for (let i = 1; i <= 21; i++)
+    await db.query(
+      `INSERT INTO "user" (id, papel, nome, email) VALUES (gen_random_uuid(), 'CLIENTE', $1, $2)`,
+      [`Página ${String(i).padStart(2, "0")}`, `pagina${i}@paginas.test`],
+    );
+  const primeira = await listarClientesAdmin({ busca: "@paginas.test", pagina: "1" }, admin);
+  const segunda = await listarClientesAdmin({ busca: "@paginas.test", pagina: 2 }, admin);
+  if (!primeira.ok || !segunda.ok) throw new Error("falha ao listar");
+  expect(primeira.dados).toMatchObject({ total: 21, totalPaginas: 2, pagina: 1 });
+  expect(primeira.dados.clientes).toHaveLength(20);
+  expect(segunda.dados.clientes.map((c) => c.nome)).toEqual(["Página 21"]);
+  const ids = [...primeira.dados.clientes, ...segunda.dados.clientes].map((c) => c.id);
+  expect(new Set(ids).size).toBe(21);
+  for (const pagina of ["abc", 0, -1, 1.5]) {
+    const invalida = await listarClientesAdmin({ busca: "@paginas.test", pagina }, admin);
+    expect(invalida.ok && invalida.dados.pagina, String(pagina)).toBe(1);
+  }
+});
