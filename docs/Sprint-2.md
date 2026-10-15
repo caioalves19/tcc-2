@@ -733,7 +733,7 @@ Consome os pedidos e os dados do cliente definidos no PBI-26. Não depende do po
 - O histórico traz todos os pedidos, com as tentativas sem pagamento como "Não concluído"; o total gasto soma só os pagos (de Pago a Entregue).
 - Só consulta: sem editar, bloquear ou excluir cliente, sem horários da agenda e sem migração. Contrato completo em [PBI-38](features/PBI-38.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-38-perfil-cliente`, com lint, format, typecheck, `npm test` (512), `npm run test:integration` (262) e build sem erros. Faltam a conferência no navegador, a revisão de outro integrante e a aprovação do PR.
+**Situação:** implementação local validada na branch `feat/pbi-38-perfil-cliente`, com lint, format, typecheck, `npm test` (512), `npm run test:integration` e build sem erros, conferência no navegador como ADMIN e revisão independente por agente (PASS; o teste de paginação que faltava foi incluído). Faltam a revisão de outro integrante e a aprovação do PR.
 
 **Entregas:**
 

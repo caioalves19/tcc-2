@@ -61,6 +61,12 @@ pedidos: a regra de situação e rótulo não foi duplicada.
 - **Histórico sem paginação:** o perfil traz todos os pedidos do cliente; suficiente para o volume do
   ateliê.
 - **Busca sem tolerância a acento** no nome (só maiúsculas), como a busca de pedidos do PBI-30.
+- **Ordem por nome diferencia maiúsculas e acentos:** o PostgreSQL da imagem alpine ordena byte a
+  byte, então "Teste Frete" vem antes de "teste compra". Visto na conferência no navegador.
+- **Estorno feito no Mercado Pago e ainda não concluído:** o total gasto decide pela situação do
+  pedido. Um pedido em Pago ou Em preparação cujo pagamento já foi estornado no gateway soma até o
+  admin concluir o estorno pela tela do pedido (filtro "Estorno pendente", PBI-43), que o cancela.
+  É passageiro e segue a letra do RF30; achado da revisão, aceito.
 
 ## Validação
 
@@ -72,8 +78,18 @@ pedidos: a regra de situação e rótulo não foi duplicada.
   - id inválido, inexistente, de admin ou de artista dá `nao_encontrado`;
   - histórico só com os pedidos do cliente, com o não concluído, sem o pedido excluído, do mais
     recente ao mais antigo; total gasto só dos pagos; cliente sem compras com total 0;
+  - paginação de 20 em 20 sem repetir cliente, página inválida volta a 1 (achado da revisão; o
+    teste fica vermelho com o `skip` errado);
   - `perfilId` no detalhe do pedido, e `null` quando quem comprou é o admin.
 - `npm run test:unit -- clientes-regras lista-clientes-admin perfil-cliente-admin paginas-admin-clientes pedido-admin admin-layout`.
 - Gates em 14/10/2026: `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test` (512
   testes), `npm run test:integration` (262 testes) e `npm run build` sem erros.
-- **No navegador:** pendente (ver Sprint 2).
+- **No navegador** (14/10/2026, Postgres local, logado com uma conta ADMIN local de teste):
+  - lista com os clientes do banco de desenvolvimento e "Clientes" no menu;
+  - perfil sem compras pagas (total R$ 0,00, pedido "Não concluído") e perfil com 11 pedidos, total
+    gasto R$ 450,00 (os dois pagos), conferidos contra o banco;
+  - nome do cliente no detalhe do pedido leva ao perfil; id inválido e inexistente dão 404;
+    `?pagina=abc` volta ao padrão;
+  - 375 px sem rolagem horizontal.
+- **Revisão independente** (subagente, read-only): PASS. Achados: falta de teste da paginação
+  (corrigido) e total gasto com estorno pendente (aceito, em "Limites conhecidos").
