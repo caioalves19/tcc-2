@@ -5,10 +5,16 @@ import { perfilDaRequisicao } from "@/lib/auth";
 import { enderecoDaRequisicao } from "@/lib/endereco";
 import { ENDERECO_VAZIO } from "@/modules/endereco";
 import { FormularioEndereco } from "@/components/auth/formulario-endereco";
+import { FormularioExclusaoConta } from "@/components/auth/formulario-exclusao-conta";
 import { FormularioPerfil } from "@/components/auth/formulario-perfil";
 import { FormularioTrocaSenha } from "@/components/auth/formulario-troca-senha";
 import { buttonVariants } from "@/components/ui/button";
-import { atualizarPerfilAcao, salvarEnderecoAcao, trocarSenhaAcao } from "./actions";
+import {
+  atualizarPerfilAcao,
+  excluirContaAcao,
+  salvarEnderecoAcao,
+  trocarSenhaAcao,
+} from "./actions";
 
 export const metadata: Metadata = { title: "Minha conta · Kolô" };
 
@@ -52,6 +58,26 @@ export default async function PaginaConta() {
       >
         Entrar novamente
       </a>
+      <section aria-labelledby="excluir-conta" className="mt-16 border-t-2 border-destructive pt-8">
+        <h2 id="excluir-conta" className="mb-3 font-display text-xl">
+          Excluir conta
+        </h2>
+        <p className="mb-3 text-corpo">
+          Apagamos o seu nome, e-mail, telefone, endereço e carrinho, e você sai de todos os
+          aparelhos. Os pedidos continuam no registro de vendas do ateliê, sem ligação com você.
+        </p>
+        <p className="mb-5 text-corpo">
+          Se algum pedido estiver a caminho, espere a entrega para excluir. Mais detalhes na{" "}
+          <a
+            href="/politicas/privacidade#direitos"
+            className="text-[var(--kolo-link)] underline underline-offset-4"
+          >
+            política de privacidade
+          </a>
+          .
+        </p>
+        <FormularioExclusaoConta acao={excluirContaAcao} />
+      </section>
     </section>
   );
 }
