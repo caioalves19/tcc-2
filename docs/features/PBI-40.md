@@ -30,7 +30,7 @@ antes de codar (16/10/2026):
 
 | Função | Resultado |
 |--------|-----------|
-| `excluirPropriaConta(entrada, cabecalhos)` | `{ ok: true }`; `invalido` com `campos` (senha vazia, caixa desmarcada); `nao_autenticado`; `proibido` (ARTISTA, ADMIN, conta inativa ou já excluída); `senha_incorreta`; `pedido_em_andamento`; `concorrencia` (impasse de travas no banco: tentar de novo) |
+| `excluirPropriaConta(entrada, cabecalhos)` | `{ ok: true }`; `invalido` com `campos` (senha vazia, caixa desmarcada); `nao_autenticado`; `proibido` (ARTISTA, ADMIN, conta inativa ou já excluída); `senha_incorreta`; `pedido_em_andamento`; `concorrencia` (impasse de travas, ou a transação expirou, 5 s, esperando a trava do usuário: tentar de novo) |
 | `NOME_EXCLUIDO` | `"Cliente excluído"` |
 
 O usuário vem só do cookie assinado. Na transação, a linha do usuário é travada (`FOR UPDATE`) antes
@@ -78,7 +78,7 @@ Validação em `src/modules/identity` (`validarExclusaoConta`), a mesma do formu
 
 ## Validação
 
-- `npm run test:integration -- exclusao-conta` (PostgreSQL real, 12 testes):
+- `npm run test:integration -- exclusao-conta` (PostgreSQL real, 13 testes):
   - conta anônima e pedido entregue com os mesmos totais, itens e pagamento, endereço só com cidade
     e UF;
   - sessões (inclusive a de outro navegador), senha, endereço, carrinho e verificação apagados; login
@@ -90,16 +90,28 @@ Validação em `src/modules/identity` (`validarExclusaoConta`), a mesma do formu
   - visitante, ARTISTA e ADMIN recusados;
   - `lerClienteAdmin` (PBI-38) mostra a conta excluída com as compras e o total gasto; o e-mail
     antigo cria uma conta nova;
-  - corrida: com o webhook segurando o usuário e aprovando o pedido, a exclusão espera e recusa com
-    `pedido_em_andamento` (o pedido fica pago);
+  - corrida: com o webhook segurando o usuário e aprovando o pedido, a exclusão fica presa na trava
+    do usuário (o teste confere em `pg_blocking_pids`, e falha se ela não ficar) e recusa com
+    `pedido_em_andamento`; o pedido fica pago. Sem a trava o teste fica vermelho (conferido
+    tirando a linha);
+  - trava presa além de 5 s: `concorrencia`, sem gravar nada;
   - sessão que sobrar numa conta excluída não lê nem grava perfil, senha e endereço.
 - `npm run test:unit -- formulario-exclusao-conta exclusao-conta-acao pagina-conta paginas-politicas pedido-admin`.
 - Gates em 16/10/2026: `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test` (519
-  testes) e `npm run test:integration` (275 testes) sem erros, depois das correções da revisão.
+  testes) e `npm run test:integration` (275 testes) sem erros, depois das correções da revisão. Em
+  17/10/2026, depois da correção do P2028: os mesmos gates, com `npm run test:integration` em 276.
 - **No navegador** (16/10/2026, Postgres local, conta CLIENTE local de teste criada em `/cadastro`):
   caixa desmarcada e senha errada mostram o erro sem excluir; com a senha certa, a página vai para a
   home, `/conta` passa a levar ao login e o banco mostra a conta anônima sem sessão nem senha. Console
   e log do servidor sem erros.
+- **No navegador, depois das correções** (17/10/2026, Postgres local, contas CLIENTE locais de teste
+  apagadas no fim): textos novos de `/conta` e da política (com a âncora `/conta#excluir-conta`);
+  caixa com rótulo ligado; 375 px sem rolagem horizontal; exclusão com sucesso (pedido pendente
+  cancelado, só cidade e UF, sem sessão, senha e endereço), login antigo recusado e recadastro com o
+  mesmo e-mail. Corrida real com um `psql` no lugar do webhook (trava usuário e pedido, aprova e espera
+  a exclusão ficar presa): soltando em 1 s, a tela mostra "pedido a caminho" e o pedido fica pago;
+  segurando 6 s, mostra "Tente novamente" e nada muda. Essa conferência achou o P2028 (transação
+  expirada caía no erro genérico), corrigido com teste.
 - **Revisão independente** (subagente, read-only): PASS, com três achados corrigidos:
   - o `Serializable` não enxergava o webhook e o checkout (Read Committed): a exclusão passou a travar
     o usuário primeiro, com teste da corrida;
