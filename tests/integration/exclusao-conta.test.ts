@@ -359,6 +359,8 @@ it("RN12 um pagamento aprovado durante a exclusão vence: o pedido fica pago e a
   const webhook = new Client({ connectionString: process.env.DATABASE_URL });
   await webhook.connect();
   try {
+    const { rows: pid } = await webhook.query("SELECT pg_backend_pid() AS pid");
+    const pidWebhook: number = pid[0].pid;
     await webhook.query("BEGIN");
     await webhook.query('SELECT id FROM "user" WHERE id = $1 FOR UPDATE', [cliente.userId]);
     await webhook.query('SELECT id FROM "order" WHERE id = $1 FOR UPDATE', [pedido]);
@@ -367,16 +369,21 @@ it("RN12 um pagamento aprovado durante a exclusão vence: o pedido fica pago e a
     ]);
 
     const exclusao = excluir(CONFIRMADA, cliente.cabecalhos);
-    // Espera a exclusão parar numa trava antes de o webhook terminar.
-    for (let tentativa = 0; tentativa < 100; tentativa++) {
+    // A exclusão precisa parar na trava do usuário, presa pelo webhook, antes de ele terminar. Se
+    // não parar, o teste falha em vez de passar sem ter havido corrida.
+    let presaNaTrava = false;
+    for (let tentativa = 0; tentativa < 200 && !presaNaTrava; tentativa++) {
       const { rows } = await db.query(
         `SELECT count(*)::int AS n FROM pg_stat_activity
-          WHERE datname = current_database() AND wait_event_type = 'Lock'`,
+          WHERE datname = current_database() AND $1 = ANY(pg_blocking_pids(pid))
+            AND query LIKE '%FROM "user"%FOR UPDATE%'`,
+        [pidWebhook],
       );
-      if (rows[0].n > 0) break;
-      await new Promise((pronto) => setTimeout(pronto, 50));
+      presaNaTrava = rows[0].n > 0;
+      if (!presaNaTrava) await new Promise((pronto) => setTimeout(pronto, 50));
     }
     await webhook.query("COMMIT");
+    expect(presaNaTrava).toBe(true);
 
     expect(await exclusao).toMatchObject({ ok: false, erro: "pedido_em_andamento" });
   } finally {
