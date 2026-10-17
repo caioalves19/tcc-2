@@ -309,7 +309,7 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 **Pendências registradas:**
 
 - Confirmar com o cliente razão social, CNPJ e endereço, que entram na privacidade, e as regras de remarcação da sessão de tatuagem.
-- Atualizar os textos quando entrarem o formulário de contato (PBI-44) e a exclusão de conta pelo site (PBI-40). A exclusão pelo site foi incluída pelo PBI-40, na branch `feat/pbi-40-exclusao-conta`.
+- Atualizar os textos quando entrarem o formulário de contato (PBI-44) e a exclusão de conta pelo site (PBI-40). A exclusão pelo site foi incluída pelo PBI-40 (PR #69).
 - ~~Revisar a seção de dados da privacidade se o PBI-28 guardar o payload completo do Mercado Pago~~: o PBI-28 guarda só os campos do pagamento, sem dados do pagador.
 
 ---
@@ -796,7 +796,7 @@ Consome o formato real do pedido e das cópias de dados pessoais definido no PBI
 - A política de privacidade troca o pedido por e-mail pela exclusão no site. O texto entra no mesmo aceite da equipe pendente nos PBIs 22 e 39.
 - Sem migração. Contrato completo em [PBI-40](features/PBI-40.md).
 
-**Situação:** implementação local na branch `feat/pbi-40-exclusao-conta`, sem PR. Para encerrar o DoD, faltam a revisão de outro integrante, a aprovação do PR e o aceite do texto da política.
+**Situação:** PR #69 aberto em 17/10/2026, da branch `feat/pbi-40-exclusao-conta`, com lint, format, typecheck, `npm test` (519), `npm run test:integration` (276) e build sem erros, conferência no navegador (inclusive a corrida com o webhook) e revisão independente por agente (PASS; os três achados foram corrigidos). Para encerrar o DoD, faltam a revisão de outro integrante, a aprovação do PR e o aceite do texto da política.
 
 **Entregas:**
 
