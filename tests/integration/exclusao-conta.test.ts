@@ -343,3 +343,46 @@ it("RN12 o admin vê a conta excluída com as compras e o e-mail antigo serve pa
   });
   expect(nova.ok).toBe(true);
 });
+
+it("RN12 um pagamento aprovado durante a exclusão vence: o pedido fica pago e a conta, intacta", async () => {
+  const { Client } = await import("pg");
+  const email = "corrida@pbi40.test";
+  const cliente = await fabrica.novoCliente(email, "Nina Corrida");
+  const pedido = await fabrica.pedidoDeTeste(cliente, {
+    numero: "K40-0020",
+    situacao: "PENDENTE",
+    criadoEm: "2026-10-16T12:00:00Z",
+    obra: obra(1),
+    pagamentos: ["PENDENTE"],
+  });
+  // O webhook segura o usuário e o pedido (mesma ordem de travas) e aprova o pagamento.
+  const webhook = new Client({ connectionString: process.env.DATABASE_URL });
+  await webhook.connect();
+  try {
+    await webhook.query("BEGIN");
+    await webhook.query('SELECT id FROM "user" WHERE id = $1 FOR UPDATE', [cliente.userId]);
+    await webhook.query('SELECT id FROM "order" WHERE id = $1 FOR UPDATE', [pedido]);
+    await webhook.query(`UPDATE "order" SET situacao = 'PAGO', pago_em = now() WHERE id = $1`, [
+      pedido,
+    ]);
+
+    const exclusao = excluir(CONFIRMADA, cliente.cabecalhos);
+    // Espera a exclusão parar numa trava antes de o webhook terminar.
+    for (let tentativa = 0; tentativa < 100; tentativa++) {
+      const { rows } = await db.query(
+        `SELECT count(*)::int AS n FROM pg_stat_activity
+          WHERE datname = current_database() AND wait_event_type = 'Lock'`,
+      );
+      if (rows[0].n > 0) break;
+      await new Promise((pronto) => setTimeout(pronto, 50));
+    }
+    await webhook.query("COMMIT");
+
+    expect(await exclusao).toMatchObject({ ok: false, erro: "pedido_em_andamento" });
+  } finally {
+    await webhook.end();
+  }
+  await semMudanca(cliente, email);
+  const { rows } = await db.query(`SELECT situacao FROM "order" WHERE id = $1`, [pedido]);
+  expect(rows).toEqual([{ situacao: "PAGO" }]);
+});

@@ -104,44 +104,48 @@ export async function excluirPropriaConta(
   try {
     const sessao = await sessaoDaRequisicao(cabecalhos);
     if (!sessao) throw expirada();
-    await obterPrisma().$transaction(
-      async (tx) => {
-        // A sessão e a conta são relidas na transação: o usuário vem só do cookie assinado.
-        const atual = await tx.session.findUnique({
-          where: { token: sessao.token },
-          include: { user: true },
-        });
-        if (!atual || atual.expiresAt <= new Date()) throw expirada();
-        if (
-          atual.user.role !== "CLIENTE" ||
-          atual.user.status !== "ATIVO" ||
-          atual.user.deletedAt !== null
-        )
-          throw new Recusa(
-            "proibido",
-            "Só a conta de cliente pode ser excluída pelo site. Fale com o ateliê.",
-          );
-        const credencial = await tx.account.findFirst({
-          where: { userId: atual.userId, provider: "credential" },
-        });
-        if (
-          !credencial?.passwordHash ||
-          !(await conferirSenha(credencial.passwordHash, validacao.dados.senha))
-        )
-          throw new Recusa("senha_incorreta", "Senha atual incorreta.");
-        const emAndamento = await tx.order.count({
-          where: { userId: atual.userId, deletedAt: null, status: { in: [...EM_ANDAMENTO] } },
-        });
-        if (emAndamento > 0)
-          throw new Recusa(
-            "pedido_em_andamento",
-            "Você tem um pedido a caminho. Aguarde a entrega para excluir a conta ou fale com o ateliê.",
-          );
-        await anonimizarCliente(tx, atual.userId, new Date());
-      },
-      // Um pagamento aprovado ao mesmo tempo não passa sem ser visto pela checagem acima.
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-    );
+    await obterPrisma().$transaction(async (tx) => {
+      // O usuário vem só do cookie assinado. A trava do usuário vem primeiro, na mesma ordem do
+      // checkout e do webhook (usuário → pedido → sessão): um pagamento aprovado ou um pedido
+      // criado ao mesmo tempo termina antes, e as checagens abaixo já o enxergam.
+      const dono = await tx.session.findUnique({
+        where: { token: sessao.token },
+        select: { userId: true },
+      });
+      if (!dono) throw expirada();
+      await tx.$queryRaw`SELECT id FROM "user" WHERE id = ${dono.userId}::uuid FOR UPDATE`;
+      const atual = await tx.session.findUnique({
+        where: { token: sessao.token },
+        include: { user: true },
+      });
+      if (!atual || atual.expiresAt <= new Date()) throw expirada();
+      if (
+        atual.user.role !== "CLIENTE" ||
+        atual.user.status !== "ATIVO" ||
+        atual.user.deletedAt !== null
+      )
+        throw new Recusa(
+          "proibido",
+          "Só a conta de cliente pode ser excluída pelo site. Fale com o ateliê.",
+        );
+      const credencial = await tx.account.findFirst({
+        where: { userId: atual.userId, provider: "credential" },
+      });
+      if (
+        !credencial?.passwordHash ||
+        !(await conferirSenha(credencial.passwordHash, validacao.dados.senha))
+      )
+        throw new Recusa("senha_incorreta", "Senha atual incorreta.");
+      const emAndamento = await tx.order.count({
+        where: { userId: atual.userId, deletedAt: null, status: { in: [...EM_ANDAMENTO] } },
+      });
+      if (emAndamento > 0)
+        throw new Recusa(
+          "pedido_em_andamento",
+          "Você tem um pedido a caminho. Aguarde a entrega para excluir a conta ou fale com o ateliê.",
+        );
+      await anonimizarCliente(tx, atual.userId, new Date());
+    });
     return { ok: true };
   } catch (erro) {
     if (erro instanceof Recusa) return { ok: false, erro: erro.codigo, mensagem: erro.message };
