@@ -387,14 +387,29 @@ it("RN12 um pagamento aprovado durante a exclusão vence: o pedido fica pago e a
   expect(rows).toEqual([{ situacao: "PAGO" }]);
 });
 
-it("RN12 sessão que sobrar numa conta excluída não vale mais", async () => {
-  const { perfilDaRequisicao, sessaoDaRequisicao, usuarioIdDaRequisicao } =
-    await import("../../src/lib/auth");
+it("RN12 sessão que sobrar numa conta excluída não lê nem grava perfil, senha e endereço", async () => {
+  const { atualizarPerfil, perfilDaRequisicao, trocarSenha } = await import("../../src/lib/auth");
+  const { enderecoDaRequisicao, salvarEndereco } = await import("../../src/lib/endereco");
+  const { ENDERECO_TESTE } = await import("./pedidos-de-teste");
   const cliente = await fabrica.novoCliente("sobra@pbi40.test", "Otto Sobra");
   // Um login que terminou junto com a exclusão: a conta já está marcada, a sessão nasceu depois.
   await db.query(`UPDATE "user" SET excluido_em = now() WHERE id = $1`, [cliente.userId]);
 
-  expect(await sessaoDaRequisicao(cliente.cabecalhos)).toBeNull();
   expect(await perfilDaRequisicao(cliente.cabecalhos)).toBeNull();
-  expect(await usuarioIdDaRequisicao(cliente.cabecalhos)).toBeNull();
+  expect(await enderecoDaRequisicao(cliente.cabecalhos)).toBeNull();
+  expect(
+    await atualizarPerfil({ nome: "Otto", telefone: "11912345678" }, cliente.cabecalhos),
+  ).toEqual({ ok: false, erro: "nao_autenticado" });
+  expect(
+    await trocarSenha(
+      { senhaAtual: SENHA, senha: "senha-nova-12345", confirmacao: "senha-nova-12345" },
+      cliente.cabecalhos,
+    ),
+  ).toEqual({ ok: false, erro: "nao_autenticado" });
+  expect(await salvarEndereco(ENDERECO_TESTE, cliente.cabecalhos)).toMatchObject({
+    ok: false,
+    erro: "nao_autenticado",
+  });
+  const { rows } = await db.query('SELECT telefone FROM "user" WHERE id = $1', [cliente.userId]);
+  expect(rows).toEqual([{ telefone: "11987654321" }]);
 });

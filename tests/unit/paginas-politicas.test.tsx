@@ -95,6 +95,16 @@ describe("Política de privacidade", () => {
     ).toBe("mailto:ateliekolo@gmail.com");
   });
 
+  it("RN12 diz o que some na exclusão da conta e o que fica na agenda", async () => {
+    render(await PaginaPrivacidade());
+    const guarda = secao("Por quanto tempo guardamos").textContent ?? "";
+    expect(guarda).toMatch(/exclui a conta, eles são apagados na hora/i);
+    expect(guarda).toMatch(/nome e o telefone de contato continuam no registro do horário/i);
+    const direitos = secao("Seus direitos").textContent ?? "";
+    expect(direitos).toMatch(/só a cidade e o estado/i);
+    expect(direitos).toMatch(/agenda/i);
+  });
+
   it("explica que os cookies são só os essenciais", async () => {
     render(await PaginaPrivacidade());
     const cookies = secao("Cookies").textContent ?? "";

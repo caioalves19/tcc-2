@@ -800,7 +800,7 @@ Consome o formato real do pedido e das cópias de dados pessoais definido no PBI
 
 **Entregas:**
 
-- `excluirPropriaConta` em `src/modules/customers`, numa transação serializável, com a senha conferida pelo hash do Better Auth.
+- `excluirPropriaConta` em `src/modules/customers`, numa transação só, com o usuário travado na mesma ordem do checkout e do webhook e a senha conferida pelo hash do Better Auth. Perfil, senha e endereço recusam a sessão de conta excluída.
 - Seção "Excluir conta" em `/conta`; pedido anonimizado mostra só cidade e UF no detalhe da conta e do admin.
 - Política de privacidade atualizada ("Seus direitos" e "Por quanto tempo guardamos").
 

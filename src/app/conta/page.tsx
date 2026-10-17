@@ -64,7 +64,8 @@ export default async function PaginaConta() {
         </h2>
         <p className="mb-3 text-corpo">
           Apagamos o seu nome, e-mail, telefone, endereço e carrinho, e você sai de todos os
-          aparelhos. Os pedidos continuam no registro de vendas do ateliê, sem ligação com você.
+          aparelhos. Os pedidos continuam no registro de vendas do ateliê e os horários de tatuagem
+          na agenda do estúdio, sem ligação com a sua conta.
         </p>
         <p className="mb-5 text-corpo">
           Se algum pedido estiver a caminho, espere a entrega para excluir. Mais detalhes na{" "}

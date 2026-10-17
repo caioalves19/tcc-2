@@ -30,11 +30,17 @@ antes de codar (16/10/2026):
 
 | Função | Resultado |
 |--------|-----------|
-| `excluirPropriaConta(entrada, cabecalhos)` | `{ ok: true }`; `invalido` com `campos` (senha vazia, caixa desmarcada); `nao_autenticado`; `proibido` (ARTISTA, ADMIN, conta inativa ou já excluída); `senha_incorreta`; `pedido_em_andamento`; `concorrencia` (conflito da transação serializável) |
+| `excluirPropriaConta(entrada, cabecalhos)` | `{ ok: true }`; `invalido` com `campos` (senha vazia, caixa desmarcada); `nao_autenticado`; `proibido` (ARTISTA, ADMIN, conta inativa ou já excluída); `senha_incorreta`; `pedido_em_andamento`; `concorrencia` (impasse de travas no banco: tentar de novo) |
 | `NOME_EXCLUIDO` | `"Cliente excluído"` |
 
-A sessão e a conta são relidas na transação (`Serializable`), como no `comoAdmin`: o usuário vem só do
-cookie assinado. A senha é conferida com o hash do Better Auth (`conferirSenha`, `src/lib/auth`).
+O usuário vem só do cookie assinado. Na transação, a linha do usuário é travada (`FOR UPDATE`) antes
+de reler a sessão e a conta e de checar os pedidos, na mesma ordem de travas do checkout e do webhook
+(usuário → pedido → sessão): um pagamento aprovado ou um pedido criado ao mesmo tempo termina antes e
+entra na checagem. A senha é conferida com o hash do Better Auth (`conferirSenha`, `src/lib/auth`).
+Uma sessão criada por um login que termine junto com a exclusão não lê nem grava perfil, senha e
+endereço: essas leituras de `src/lib/auth` recusam conta com `excluido_em` (`nao_autenticado`). Os
+módulos que já releem a conta no banco (gestão, carrinho, checkout, mídia, agenda) continuam
+respondendo `proibido`, como nos PBIs 16, 17, 24, 34 e 35.
 Validação em `src/modules/identity` (`validarExclusaoConta`), a mesma do formulário.
 
 ## O que a exclusão faz
@@ -64,13 +70,15 @@ Validação em `src/modules/identity` (`validarExclusaoConta`), a mesma do formu
 
 - **Sem limite de tentativas da senha na exclusão,** como na troca de senha: quem tenta já está com a
   sessão aberta.
+- **Sessão que sobrar numa conta excluída** ainda mostra o cabeçalho de quem está conectado (o
+  `layout` usa `sessaoDaRequisicao`), sem acesso a nenhum dado nem ação.
 - **Pix ou boleto em aberto não é cancelado no Mercado Pago** (o cancelamento do admin, PBI-43, faz
   isso). Se for pago, o webhook marca o estorno, e o admin o conclui pelo filtro "Estorno pendente".
 - **Texto da política:** a mudança entra no mesmo aceite da equipe pendente do PBI-22/PBI-39.
 
 ## Validação
 
-- `npm run test:integration -- exclusao-conta` (PostgreSQL real, 10 testes):
+- `npm run test:integration -- exclusao-conta` (PostgreSQL real, 12 testes):
   - conta anônima e pedido entregue com os mesmos totais, itens e pagamento, endereço só com cidade
     e UF;
   - sessões (inclusive a de outro navegador), senha, endereço, carrinho e verificação apagados; login
@@ -81,11 +89,22 @@ Validação em `src/modules/identity` (`validarExclusaoConta`), a mesma do formu
   - senha errada, caixa desmarcada, senha vazia e entrada inválida recusam sem gravar nada;
   - visitante, ARTISTA e ADMIN recusados;
   - `lerClienteAdmin` (PBI-38) mostra a conta excluída com as compras e o total gasto; o e-mail
-    antigo cria uma conta nova.
-- `npm run test:unit -- formulario-exclusao-conta exclusao-conta-acao paginas-politicas pedido-admin`.
-- Gates em 16/10/2026: `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test` (518
-  testes) e `npm run test:integration` (273 testes) sem erros.
+    antigo cria uma conta nova;
+  - corrida: com o webhook segurando o usuário e aprovando o pedido, a exclusão espera e recusa com
+    `pedido_em_andamento` (o pedido fica pago);
+  - sessão que sobrar numa conta excluída não lê nem grava perfil, senha e endereço.
+- `npm run test:unit -- formulario-exclusao-conta exclusao-conta-acao pagina-conta paginas-politicas pedido-admin`.
+- Gates em 16/10/2026: `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test` (519
+  testes) e `npm run test:integration` (275 testes) sem erros, depois das correções da revisão.
 - **No navegador** (16/10/2026, Postgres local, conta CLIENTE local de teste criada em `/cadastro`):
   caixa desmarcada e senha errada mostram o erro sem excluir; com a senha certa, a página vai para a
   home, `/conta` passa a levar ao login e o banco mostra a conta anônima sem sessão nem senha. Console
   e log do servidor sem erros.
+- **Revisão independente** (subagente, read-only): PASS, com três achados corrigidos:
+  - o `Serializable` não enxergava o webhook e o checkout (Read Committed): a exclusão passou a travar
+    o usuário primeiro, com teste da corrida;
+  - sessão criada por um login simultâneo podia gravar perfil e endereço na conta excluída: agora
+    recusada;
+  - a política e `/conta` não diziam que nome e telefone de contato ficam na agenda: texto corrigido.
+  Sugestões não aplicadas: validar a cópia antiga de endereço sem cidade/UF e mensagem própria para
+  conta inativa.

@@ -110,7 +110,7 @@ export function privacidade(contato: ConfiguracaoSite["contato"]): Politica {
               "Contagem de tentativas: vale só durante a janela de bloqueio, de 15 minutos (login e contato) a 1 hora (recuperação de senha).",
               "Mensagens de contato: pelo tempo necessário para responder e acompanhar o atendimento.",
               "Pedidos e pagamentos: pelo prazo exigido pelas leis fiscais e de defesa do consumidor, mesmo depois da exclusão da conta, sem ligação com os seus dados pessoais.",
-              "Agenda: enquanto for necessária para organizar o atendimento. Se você excluir a conta, o horário registrado pela equipe continua na agenda, sem ligação com a conta.",
+              "Agenda: enquanto for necessária para organizar o atendimento. Se você excluir a conta, o horário registrado pela equipe continua na agenda, sem ligação com a conta: o nome e o telefone de contato continuam no registro do horário.",
               "Cópias de segurança: o banco tem cópias diárias, mantidas por tempo limitado, para recuperar o site em caso de falha.",
             ],
           },
@@ -125,7 +125,7 @@ export function privacidade(contato: ConfiguracaoSite["contato"]): Politica {
             itens: [
               "confirmação de que tratamos os seus dados e acesso a eles;",
               "correção de dados incompletos ou desatualizados. Nome e telefone você muda direto em [Minha conta](/conta);",
-              "exclusão da conta, que você mesmo faz em [Excluir conta](/conta#excluir-conta), com a sua senha. Apagamos nome, e-mail, telefone, endereço e carrinho e encerramos todas as sessões. Os pedidos continuam guardados, mas anonimizados, sem ligação com você, porque precisamos manter o registro das vendas: do endereço de entrega ficam só a cidade e o estado. Se algum pedido pago ainda não foi entregue, a exclusão espera a entrega;",
+              "exclusão da conta, que você mesmo faz em [Excluir conta](/conta#excluir-conta), com a sua senha. Apagamos nome, e-mail, telefone, endereço e carrinho e encerramos todas as sessões. Os pedidos continuam guardados, mas anonimizados, sem ligação com você, porque precisamos manter o registro das vendas: do endereço de entrega ficam só a cidade e o estado. Os horários da agenda ficam, sem ligação com a conta. Se algum pedido pago ainda não foi entregue, a exclusão espera a entrega;",
               "portabilidade dos dados, informação sobre com quem os compartilhamos e oposição a um tratamento.",
             ],
           },

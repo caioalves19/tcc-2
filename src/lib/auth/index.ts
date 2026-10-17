@@ -306,32 +306,34 @@ export async function papelDaSessao(token: string): Promise<PapelFundacao | null
   if (encontrada === null) {
     return null;
   }
-  if (encontrada.session.expiresAt.getTime() <= Date.now() || contaExcluida(encontrada.user)) {
+  if (encontrada.session.expiresAt.getTime() <= Date.now()) {
     return null;
   }
   return papelConhecido(encontrada.user.role);
 }
 
-// RN12 (PBI-40): a exclusão apaga as sessões, mas um login que termine junto com ela ainda pode
-// criar uma. A sessão de conta excluída não vale em lugar nenhum.
-function contaExcluida(usuario: Record<string, unknown>): boolean {
-  return usuario.deletedAt !== null && usuario.deletedAt !== undefined;
-}
-
 // Lê a sessão pelo cookie assinado: sempre no banco (sem cache de cookie) e sem prorrogar a
 // validade, porque numa renderização o cookie não pode ser renovado.
-async function sessaoDoCookie(cabecalhos: Headers) {
-  const encontrada = await obterAuth().api.getSession({
+function lerSessao(cabecalhos: Headers) {
+  return obterAuth().api.getSession({
     headers: cabecalhos,
     query: { disableCookieCache: true, disableRefresh: true },
   });
-  return encontrada === null || contaExcluida(encontrada.user) ? null : encontrada;
+}
+
+// RN12 (PBI-40): a exclusão apaga as sessões, mas um login que termine junto com ela ainda pode
+// criar uma. Perfil, senha e endereço não releem a conta, então recusam aqui a conta excluída. Os
+// módulos que releem a conta no banco (gestão, carrinho, mídia, agenda) já a recusam como proibido.
+async function sessaoDeContaAtiva(cabecalhos: Headers) {
+  const encontrada = await lerSessao(cabecalhos);
+  const excluida = encontrada?.user.deletedAt !== null && encontrada?.user.deletedAt !== undefined;
+  return encontrada === null || excluida ? null : encontrada;
 }
 
 export async function sessaoDaRequisicao(
   cabecalhos: Headers,
 ): Promise<{ token: string; papel: PapelFundacao } | null> {
-  const encontrada = await sessaoDoCookie(cabecalhos);
+  const encontrada = await lerSessao(cabecalhos);
   if (encontrada === null) {
     return null;
   }
@@ -351,7 +353,7 @@ export async function revogarSessao(token: string): Promise<void> {
 
 // O usuário vem exclusivamente do cookie assinado, nunca de um id enviado pelo formulário.
 export async function perfilDaRequisicao(cabecalhos: Headers): Promise<DadosPerfil | null> {
-  const sessao = await sessaoDoCookie(cabecalhos);
+  const sessao = await sessaoDeContaAtiva(cabecalhos);
   return sessao === null ? null : { nome: sessao.user.name, telefone: sessao.user.phone };
 }
 
@@ -361,7 +363,7 @@ export async function atualizarPerfil(
 ): Promise<ResultadoPerfil> {
   const validacao = validarPerfil(entrada);
   if (!validacao.ok) return { ok: false, erro: "invalido", campos: validacao.campos };
-  if ((await sessaoDaRequisicao(cabecalhos)) === null)
+  if ((await sessaoDeContaAtiva(cabecalhos)) === null)
     return { ok: false, erro: "nao_autenticado" };
   try {
     await obterAuth().api.updateUser({
@@ -381,7 +383,7 @@ export async function trocarSenha(
 ): Promise<ResultadoTrocaSenha> {
   const validacao = validarTrocaSenha(entrada);
   if (!validacao.ok) return { ok: false, erro: "invalido", campos: validacao.campos };
-  if ((await sessaoDaRequisicao(cabecalhos)) === null)
+  if ((await sessaoDeContaAtiva(cabecalhos)) === null)
     return { ok: false, erro: "nao_autenticado" };
   try {
     await obterAuth().api.changePassword({
@@ -406,6 +408,6 @@ export async function conferirSenha(hash: string, senha: string): Promise<boolea
 }
 
 export async function usuarioIdDaRequisicao(cabecalhos: Headers): Promise<string | null> {
-  const sessao = await sessaoDoCookie(cabecalhos);
+  const sessao = await sessaoDeContaAtiva(cabecalhos);
   return sessao === null ? null : sessao.user.id;
 }
