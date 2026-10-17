@@ -386,3 +386,15 @@ it("RN12 um pagamento aprovado durante a exclusão vence: o pedido fica pago e a
   const { rows } = await db.query(`SELECT situacao FROM "order" WHERE id = $1`, [pedido]);
   expect(rows).toEqual([{ situacao: "PAGO" }]);
 });
+
+it("RN12 sessão que sobrar numa conta excluída não vale mais", async () => {
+  const { perfilDaRequisicao, sessaoDaRequisicao, usuarioIdDaRequisicao } =
+    await import("../../src/lib/auth");
+  const cliente = await fabrica.novoCliente("sobra@pbi40.test", "Otto Sobra");
+  // Um login que terminou junto com a exclusão: a conta já está marcada, a sessão nasceu depois.
+  await db.query(`UPDATE "user" SET excluido_em = now() WHERE id = $1`, [cliente.userId]);
+
+  expect(await sessaoDaRequisicao(cliente.cabecalhos)).toBeNull();
+  expect(await perfilDaRequisicao(cliente.cabecalhos)).toBeNull();
+  expect(await usuarioIdDaRequisicao(cliente.cabecalhos)).toBeNull();
+});

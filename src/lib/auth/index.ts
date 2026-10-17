@@ -101,6 +101,12 @@ function criarInstancia() {
           required: true,
           input: true,
         },
+        // RN12 (PBI-40): conta excluída. Só leitura, para a sessão de uma conta excluída não valer.
+        deletedAt: {
+          type: "date",
+          required: false,
+          input: false,
+        },
       },
     },
     session: {
@@ -300,21 +306,32 @@ export async function papelDaSessao(token: string): Promise<PapelFundacao | null
   if (encontrada === null) {
     return null;
   }
-  if (encontrada.session.expiresAt.getTime() <= Date.now()) {
+  if (encontrada.session.expiresAt.getTime() <= Date.now() || contaExcluida(encontrada.user)) {
     return null;
   }
   return papelConhecido(encontrada.user.role);
 }
 
-// Lê a sessão pelo cookie assinado da requisição: sempre no banco (sem cache de cookie)
-// e sem prorrogar a validade, porque numa renderização o cookie não pode ser renovado.
-export async function sessaoDaRequisicao(
-  cabecalhos: Headers,
-): Promise<{ token: string; papel: PapelFundacao } | null> {
+// RN12 (PBI-40): a exclusão apaga as sessões, mas um login que termine junto com ela ainda pode
+// criar uma. A sessão de conta excluída não vale em lugar nenhum.
+function contaExcluida(usuario: Record<string, unknown>): boolean {
+  return usuario.deletedAt !== null && usuario.deletedAt !== undefined;
+}
+
+// Lê a sessão pelo cookie assinado: sempre no banco (sem cache de cookie) e sem prorrogar a
+// validade, porque numa renderização o cookie não pode ser renovado.
+async function sessaoDoCookie(cabecalhos: Headers) {
   const encontrada = await obterAuth().api.getSession({
     headers: cabecalhos,
     query: { disableCookieCache: true, disableRefresh: true },
   });
+  return encontrada === null || contaExcluida(encontrada.user) ? null : encontrada;
+}
+
+export async function sessaoDaRequisicao(
+  cabecalhos: Headers,
+): Promise<{ token: string; papel: PapelFundacao } | null> {
+  const encontrada = await sessaoDoCookie(cabecalhos);
   if (encontrada === null) {
     return null;
   }
@@ -334,10 +351,7 @@ export async function revogarSessao(token: string): Promise<void> {
 
 // O usuário vem exclusivamente do cookie assinado, nunca de um id enviado pelo formulário.
 export async function perfilDaRequisicao(cabecalhos: Headers): Promise<DadosPerfil | null> {
-  const sessao = await obterAuth().api.getSession({
-    headers: cabecalhos,
-    query: { disableCookieCache: true, disableRefresh: true },
-  });
+  const sessao = await sessaoDoCookie(cabecalhos);
   return sessao === null ? null : { nome: sessao.user.name, telefone: sessao.user.phone };
 }
 
@@ -392,9 +406,6 @@ export async function conferirSenha(hash: string, senha: string): Promise<boolea
 }
 
 export async function usuarioIdDaRequisicao(cabecalhos: Headers): Promise<string | null> {
-  const sessao = await obterAuth().api.getSession({
-    headers: cabecalhos,
-    query: { disableCookieCache: true, disableRefresh: true },
-  });
+  const sessao = await sessaoDoCookie(cabecalhos);
   return sessao === null ? null : sessao.user.id;
 }
