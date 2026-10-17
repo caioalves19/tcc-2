@@ -344,54 +344,89 @@ it("RN12 o admin vê a conta excluída com as compras e o e-mail antigo serve pa
   expect(nova.ok).toBe(true);
 });
 
-it("RN12 um pagamento aprovado durante a exclusão vence: o pedido fica pago e a conta, intacta", async () => {
+// Outra conexão segura o usuário e o pedido, na ordem de travas do webhook, e aprova o pagamento.
+async function webhookSegurando(userId: string, pedidoId: string) {
   const { Client } = await import("pg");
-  const email = "corrida@pbi40.test";
+  const conexao = new Client({ connectionString: process.env.DATABASE_URL });
+  await conexao.connect();
+  const { rows } = await conexao.query("SELECT pg_backend_pid() AS pid");
+  const pid: number = rows[0].pid;
+  await conexao.query("BEGIN");
+  await conexao.query('SELECT id FROM "user" WHERE id = $1 FOR UPDATE', [userId]);
+  await conexao.query('SELECT id FROM "order" WHERE id = $1 FOR UPDATE', [pedidoId]);
+  await conexao.query(`UPDATE "order" SET situacao = 'PAGO', pago_em = now() WHERE id = $1`, [
+    pedidoId,
+  ]);
+  return { conexao, pid };
+}
+
+// A exclusão precisa parar na trava do usuário presa pelo webhook. Se não parar, o teste falha em
+// vez de passar sem ter havido corrida.
+async function esperarPresaNaTrava(pidWebhook: number) {
+  for (let tentativa = 0; tentativa < 200; tentativa++) {
+    const { rows } = await db.query(
+      `SELECT count(*)::int AS n FROM pg_stat_activity
+        WHERE datname = current_database() AND $1 = ANY(pg_blocking_pids(pid))
+          AND query LIKE '%FROM "user"%FOR UPDATE%'`,
+      [pidWebhook],
+    );
+    if (rows[0].n > 0) return true;
+    await new Promise((pronto) => setTimeout(pronto, 50));
+  }
+  return false;
+}
+
+async function clienteComPendente(email: string, numero: string) {
   const cliente = await fabrica.novoCliente(email, "Nina Corrida");
   const pedido = await fabrica.pedidoDeTeste(cliente, {
-    numero: "K40-0020",
+    numero,
     situacao: "PENDENTE",
     criadoEm: "2026-10-16T12:00:00Z",
     obra: obra(1),
     pagamentos: ["PENDENTE"],
   });
-  // O webhook segura o usuário e o pedido (mesma ordem de travas) e aprova o pagamento.
-  const webhook = new Client({ connectionString: process.env.DATABASE_URL });
-  await webhook.connect();
+  return { cliente, pedido };
+}
+
+it("RN12 um pagamento aprovado durante a exclusão vence: o pedido fica pago e a conta, intacta", async () => {
+  const email = "corrida@pbi40.test";
+  const { cliente, pedido } = await clienteComPendente(email, "K40-0020");
+  const webhook = await webhookSegurando(cliente.userId, pedido);
   try {
-    const { rows: pid } = await webhook.query("SELECT pg_backend_pid() AS pid");
-    const pidWebhook: number = pid[0].pid;
-    await webhook.query("BEGIN");
-    await webhook.query('SELECT id FROM "user" WHERE id = $1 FOR UPDATE', [cliente.userId]);
-    await webhook.query('SELECT id FROM "order" WHERE id = $1 FOR UPDATE', [pedido]);
-    await webhook.query(`UPDATE "order" SET situacao = 'PAGO', pago_em = now() WHERE id = $1`, [
-      pedido,
-    ]);
-
     const exclusao = excluir(CONFIRMADA, cliente.cabecalhos);
-    // A exclusão precisa parar na trava do usuário, presa pelo webhook, antes de ele terminar. Se
-    // não parar, o teste falha em vez de passar sem ter havido corrida.
-    let presaNaTrava = false;
-    for (let tentativa = 0; tentativa < 200 && !presaNaTrava; tentativa++) {
-      const { rows } = await db.query(
-        `SELECT count(*)::int AS n FROM pg_stat_activity
-          WHERE datname = current_database() AND $1 = ANY(pg_blocking_pids(pid))
-            AND query LIKE '%FROM "user"%FOR UPDATE%'`,
-        [pidWebhook],
-      );
-      presaNaTrava = rows[0].n > 0;
-      if (!presaNaTrava) await new Promise((pronto) => setTimeout(pronto, 50));
-    }
-    await webhook.query("COMMIT");
-    expect(presaNaTrava).toBe(true);
-
+    const presa = await esperarPresaNaTrava(webhook.pid);
+    await webhook.conexao.query("COMMIT");
+    expect(presa).toBe(true);
     expect(await exclusao).toMatchObject({ ok: false, erro: "pedido_em_andamento" });
   } finally {
-    await webhook.end();
+    await webhook.conexao.end();
   }
   await semMudanca(cliente, email);
   const { rows } = await db.query(`SELECT situacao FROM "order" WHERE id = $1`, [pedido]);
   expect(rows).toEqual([{ situacao: "PAGO" }]);
+});
+
+it("RN12 trava presa além do prazo da transação: pede para tentar de novo, sem gravar nada", async () => {
+  const email = "trava-longa@pbi40.test";
+  const { cliente, pedido } = await clienteComPendente(email, "K40-0021");
+  const webhook = await webhookSegurando(cliente.userId, pedido);
+  try {
+    const exclusao = excluir(CONFIRMADA, cliente.cabecalhos);
+    expect(await esperarPresaNaTrava(webhook.pid)).toBe(true);
+    // A transação interativa do Prisma expira em 5 s.
+    await new Promise((pronto) => setTimeout(pronto, 5_500));
+    await webhook.conexao.query("ROLLBACK");
+    expect(await exclusao).toEqual({
+      ok: false,
+      erro: "concorrencia",
+      mensagem: "Sua conta mudou enquanto excluíamos. Tente novamente.",
+    });
+  } finally {
+    await webhook.conexao.end();
+  }
+  await semMudanca(cliente, email);
+  const { rows } = await db.query(`SELECT situacao FROM "order" WHERE id = $1`, [pedido]);
+  expect(rows).toEqual([{ situacao: "PENDENTE" }]);
 });
 
 it("RN12 sessão que sobrar numa conta excluída não lê nem grava perfil, senha e endereço", async () => {

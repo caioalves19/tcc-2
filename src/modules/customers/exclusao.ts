@@ -149,7 +149,12 @@ export async function excluirPropriaConta(
     return { ok: true };
   } catch (erro) {
     if (erro instanceof Recusa) return { ok: false, erro: erro.codigo, mensagem: erro.message };
-    if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === "P2034")
+    // P2034: impasse de travas. P2028: a transação expirou (5 s) esperando a trava do usuário, presa
+    // por um checkout ou webhook demorado. Nos dois casos nada foi gravado e dá para tentar de novo.
+    if (
+      erro instanceof Prisma.PrismaClientKnownRequestError &&
+      (erro.code === "P2034" || erro.code === "P2028")
+    )
       return {
         ok: false,
         erro: "concorrencia",
