@@ -76,7 +76,7 @@ describe("Política de privacidade", () => {
     expect(naoColetamos).toMatch(/cartão/i);
   });
 
-  it("RN12 e LGPD explicam os direitos, a exclusão por e-mail e a ANPD", async () => {
+  it("RN12 e LGPD explicam os direitos, a exclusão pelo site e a ANPD", async () => {
     render(await PaginaPrivacidade());
     const direitos = secao("Seus direitos");
     const texto = direitos.textContent ?? "";
@@ -85,6 +85,10 @@ describe("Política de privacidade", () => {
     expect(texto).toMatch(/Autoridade Nacional de Proteção de Dados/);
     expect(within(direitos).getByRole("link", { name: "Minha conta" }).getAttribute("href")).toBe(
       "/conta",
+    );
+    // PBI-40: a exclusão é feita pelo próprio cliente, em Minha conta, e não mais por e-mail.
+    expect(within(direitos).getByRole("link", { name: "Excluir conta" }).getAttribute("href")).toBe(
+      "/conta#excluir-conta",
     );
     expect(
       within(direitos).getByRole("link", { name: "ateliekolo@gmail.com" }).getAttribute("href"),

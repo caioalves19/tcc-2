@@ -151,3 +151,26 @@ it("RF29 pagamento com saldo da conta Mercado Pago aparece com o meio certo", ()
     "Saldo Mercado Pago · Aprovado · R$ 9.600,00Mercado Pago · mp-3",
   ]);
 });
+
+it("RN12 pedido de conta excluída mostra só cidade e UF, sem os campos apagados", () => {
+  const anonimo = {
+    ...PEDIDO,
+    situacao: "ENTREGUE",
+    situacaoBanco: "ENTREGUE",
+    cliente: { ...PEDIDO.cliente, nome: "Cliente excluído", telefone: null },
+    endereco: {
+      destinatario: "",
+      cep: "",
+      logradouro: "",
+      numero: "",
+      complemento: "",
+      bairro: "",
+      cidade: "São Paulo",
+      uf: "SP",
+    },
+  } satisfies PedidoAdmin;
+  render(<PedidoAdminDetalhe pedido={anonimo} acoes={acoes} />);
+  const entrega = screen.getByRole("heading", { level: 2, name: "Entrega" }).closest("section");
+  const texto = entrega?.querySelector("address")?.textContent ?? "";
+  expect(texto).toBe("Endereço apagado com a exclusão da contaSão Paulo / SP");
+});
