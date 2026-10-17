@@ -76,7 +76,7 @@ describe("Política de privacidade", () => {
     expect(naoColetamos).toMatch(/cartão/i);
   });
 
-  it("RN12 e LGPD explicam os direitos, a exclusão por e-mail e a ANPD", async () => {
+  it("RN12 e LGPD explicam os direitos, a exclusão pelo site e a ANPD", async () => {
     render(await PaginaPrivacidade());
     const direitos = secao("Seus direitos");
     const texto = direitos.textContent ?? "";
@@ -86,9 +86,23 @@ describe("Política de privacidade", () => {
     expect(within(direitos).getByRole("link", { name: "Minha conta" }).getAttribute("href")).toBe(
       "/conta",
     );
+    // PBI-40: a exclusão é feita pelo próprio cliente, em Minha conta, e não mais por e-mail.
+    expect(within(direitos).getByRole("link", { name: "Excluir conta" }).getAttribute("href")).toBe(
+      "/conta#excluir-conta",
+    );
     expect(
       within(direitos).getByRole("link", { name: "ateliekolo@gmail.com" }).getAttribute("href"),
     ).toBe("mailto:ateliekolo@gmail.com");
+  });
+
+  it("RN12 diz o que some na exclusão da conta e o que fica na agenda", async () => {
+    render(await PaginaPrivacidade());
+    const guarda = secao("Por quanto tempo guardamos").textContent ?? "";
+    expect(guarda).toMatch(/exclui a conta, eles são apagados na hora/i);
+    expect(guarda).toMatch(/nome e o telefone de contato continuam no registro do horário/i);
+    const direitos = secao("Seus direitos").textContent ?? "";
+    expect(direitos).toMatch(/só a cidade e o estado/i);
+    expect(direitos).toMatch(/agenda/i);
   });
 
   it("explica que os cookies são só os essenciais", async () => {

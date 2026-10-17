@@ -2,8 +2,10 @@
 
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { atualizarPerfil, trocarSenha } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { atualizarPerfil, sair, trocarSenha } from "@/lib/auth";
 import { salvarEndereco } from "@/lib/endereco";
+import { excluirPropriaConta, type ResultadoExclusao } from "@/modules/customers";
 import type { EntradaEndereco, ResultadoEndereco } from "@/modules/endereco";
 import type {
   EntradaPerfil,
@@ -26,4 +28,13 @@ export async function salvarEnderecoAcao(entrada: EntradaEndereco): Promise<Resu
   const resultado = await salvarEndereco(entrada, await headers());
   if (resultado.ok) revalidatePath("/conta");
   return resultado;
+}
+
+// RN12 (PBI-40): as sessões já saíram do banco; o sair só apaga o cookie deste navegador.
+export async function excluirContaAcao(entrada: unknown): Promise<ResultadoExclusao> {
+  const cabecalhos = await headers();
+  const resultado = await excluirPropriaConta(entrada, cabecalhos);
+  if (!resultado.ok) return resultado;
+  await sair(cabecalhos);
+  redirect("/");
 }
