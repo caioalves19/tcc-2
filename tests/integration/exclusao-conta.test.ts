@@ -9,10 +9,14 @@ import { fabricaDePedidos, type ClienteTeste } from "./pedidos-de-teste";
 let db: Client;
 let fabrica: ReturnType<typeof fabricaDePedidos>;
 let obras: string[];
+let admin: Headers;
+let artista: Headers;
 
 beforeAll(async () => {
   const contas = await prepararContas("kolo_pbi40_exclusao_conta_test");
   db = contas.db;
+  admin = contas.admin;
+  artista = contas.ana;
   fabrica = fabricaDePedidos(db, contas.admin, contas.idAna);
   obras = [];
   for (const slug of ["muro", "viaduto", "praca", "beco", "ponte", "trilho"])
@@ -21,6 +25,12 @@ beforeAll(async () => {
 afterAll(async () => {
   await db?.end();
 });
+
+function obra(indice: number): string {
+  const id = obras[indice];
+  if (id === undefined) throw new Error("Obra de teste inexistente");
+  return id;
+}
 
 const CONFIRMADA = { senha: SENHA, confirmo: true };
 
@@ -44,7 +54,7 @@ it("RN12 a conta excluída fica anônima e o pedido pago continua com os mesmos 
     situacao: "ENTREGUE",
     criadoEm: "2026-09-01T12:00:00Z",
     pagoEm: "2026-09-01T12:05:00Z",
-    obra: obras[0],
+    obra: obra(0),
     pagamentos: ["APROVADO"],
   });
 
@@ -105,7 +115,7 @@ it("RN12 a exclusão revoga as sessões e apaga senha, endereço, carrinho e có
   await db.query(
     `INSERT INTO cart_item (id, cart_id, artwork_id, quantidade, adicionado_em)
      SELECT gen_random_uuid(), c.id, $2, 1, now() FROM cart c WHERE c.user_id = $1`,
-    [maria.userId, obras[1]],
+    [maria.userId, obra(1)],
   );
   await db.query(
     `INSERT INTO verification (id, identificador, valor, expira_em)
@@ -132,7 +142,7 @@ it("RN12 a exclusão revoga as sessões e apaga senha, endereço, carrinho e có
   }
   const { rows: itens } = await db.query(
     "SELECT count(*)::int AS n FROM cart_item WHERE artwork_id = $1",
-    [obras[1]],
+    [obra(1)],
   );
   expect(itens[0].n).toBe(0);
   expect(await entrar(login)).toEqual({ ok: false, erro: "credenciais_invalidas" });
@@ -144,7 +154,7 @@ it("RN12 o pedido aguardando pagamento é cancelado e solta a reserva; os outros
     numero: "K40-0003",
     situacao: "PENDENTE",
     criadoEm: "2026-10-16T12:00:00Z",
-    obra: obras[2],
+    obra: obra(2),
     pagamentos: ["PENDENTE"],
     reservaAte: "2099-01-01T00:00:00Z",
   });
@@ -152,7 +162,7 @@ it("RN12 o pedido aguardando pagamento é cancelado e solta a reserva; os outros
     numero: "K40-0004",
     situacao: "CANCELADO",
     criadoEm: "2026-10-01T12:00:00Z",
-    obra: obras[3],
+    obra: obra(3),
     pagamentos: ["ESTORNADO"],
   });
 
@@ -169,7 +179,7 @@ it("RN12 o pedido aguardando pagamento é cancelado e solta a reserva; os outros
   ]);
   const { rows: reservas } = await db.query(
     "SELECT count(*)::int AS n FROM artwork_reservation WHERE artwork_id = $1",
-    [obras[2]],
+    [obra(2)],
   );
   expect(reservas[0].n).toBe(0);
 });
@@ -205,4 +215,131 @@ it("RN12 a agenda perde o vínculo com a conta e o registro de e-mail perde o de
   expect(emails).toEqual([
     { destinatario: `excluido-${bruna.userId}@kolo.invalid`, template: "recuperacao" },
   ]);
+});
+
+async function semMudanca(cliente: ClienteTeste, email: string) {
+  const { sessaoDaRequisicao } = await import("../../src/lib/auth");
+  expect(await contaDe(cliente)).toMatchObject({ email, excluido_em: null });
+  expect(await sessaoDaRequisicao(cliente.cabecalhos)).not.toBeNull();
+  const { rows } = await db.query("SELECT count(*)::int AS n FROM address WHERE user_id = $1", [
+    cliente.userId,
+  ]);
+  expect(rows[0].n).toBe(1);
+}
+
+it.each(["PAGO", "PROCESSANDO", "ENVIADO"] as const)(
+  "RN12 com pedido %s ainda não entregue a conta não é excluída",
+  async (situacao) => {
+    const email = `andamento-${situacao.toLowerCase()}@pbi40.test`;
+    const cliente = await fabrica.novoCliente(email, "Rita Andamento");
+    await fabrica.pedidoDeTeste(cliente, {
+      numero: `K40-${situacao}`,
+      situacao,
+      criadoEm: "2026-10-15T12:00:00Z",
+      pagoEm: "2026-10-15T12:05:00Z",
+      obra: obra(4),
+      pagamentos: ["APROVADO"],
+    });
+    const pendente = await fabrica.pedidoDeTeste(cliente, {
+      numero: `K40-${situacao}-P`,
+      situacao: "PENDENTE",
+      criadoEm: "2026-10-16T12:00:00Z",
+      obra: obra(5),
+    });
+
+    expect(await excluir(CONFIRMADA, cliente.cabecalhos)).toEqual({
+      ok: false,
+      erro: "pedido_em_andamento",
+      mensagem:
+        "Você tem um pedido a caminho. Aguarde a entrega para excluir a conta ou fale com o ateliê.",
+    });
+
+    await semMudanca(cliente, email);
+    const { rows } = await db.query(
+      `SELECT situacao, endereco_copia->>'destinatario' AS destinatario FROM "order" WHERE id = $1`,
+      [pendente],
+    );
+    expect(rows).toEqual([{ situacao: "PENDENTE", destinatario: "Lucas Silveira" }]);
+  },
+);
+
+it("RN12 sem a senha certa ou sem a confirmação a conta não é excluída", async () => {
+  const email = "confirma@pbi40.test";
+  const cliente = await fabrica.novoCliente(email, "Davi Confirma");
+
+  expect(await excluir({ senha: "senha-errada-999", confirmo: true }, cliente.cabecalhos)).toEqual({
+    ok: false,
+    erro: "senha_incorreta",
+    mensagem: "Senha atual incorreta.",
+  });
+  expect(await excluir({ senha: SENHA, confirmo: false }, cliente.cabecalhos)).toEqual({
+    ok: false,
+    erro: "invalido",
+    campos: { confirmo: "Confirme que entende que a exclusão não pode ser desfeita." },
+  });
+  expect(await excluir({ senha: "", confirmo: true }, cliente.cabecalhos)).toEqual({
+    ok: false,
+    erro: "invalido",
+    campos: { senha: "Informe sua senha atual." },
+  });
+  expect(await excluir(null, cliente.cabecalhos)).toMatchObject({ ok: false, erro: "invalido" });
+
+  await semMudanca(cliente, email);
+});
+
+it("RN12 só o próprio cliente, conectado, exclui a conta; artista e admin não", async () => {
+  expect(await excluir(CONFIRMADA, new Headers())).toEqual({
+    ok: false,
+    erro: "nao_autenticado",
+    mensagem: "Sua sessão expirou. Entre novamente.",
+  });
+  for (const [cabecalhos, email] of [
+    [artista, "ana@pbi17.test"],
+    [admin, "admin@pbi17.test"],
+  ] as const) {
+    expect(await excluir(CONFIRMADA, cabecalhos)).toEqual({
+      ok: false,
+      erro: "proibido",
+      mensagem: "Só a conta de cliente pode ser excluída pelo site. Fale com o ateliê.",
+    });
+    const { rows } = await db.query('SELECT excluido_em FROM "user" WHERE email = $1', [email]);
+    expect(rows).toEqual([{ excluido_em: null }]);
+  }
+});
+
+it("RN12 o admin vê a conta excluída com as compras e o e-mail antigo serve para uma conta nova", async () => {
+  const { cadastrarCliente } = await import("../../src/lib/auth");
+  const { lerClienteAdmin } = await import("../../src/modules/customers");
+  const email = "helena@pbi40.test";
+  const helena = await fabrica.novoCliente(email, "Helena Duarte");
+  await fabrica.pedidoDeTeste(helena, {
+    numero: "K40-0010",
+    situacao: "ENTREGUE",
+    criadoEm: "2026-09-10T12:00:00Z",
+    pagoEm: "2026-09-10T12:05:00Z",
+    obra: obra(0),
+    pagamentos: ["APROVADO"],
+  });
+
+  expect(await excluir(CONFIRMADA, helena.cabecalhos)).toEqual({ ok: true });
+
+  const perfil = await lerClienteAdmin(helena.userId, admin);
+  if (!perfil.ok) throw new Error(perfil.mensagem);
+  expect(perfil.dados).toMatchObject({
+    nome: "Cliente excluído",
+    email: `excluido-${helena.userId}@kolo.invalid`,
+    telefone: null,
+    excluido: true,
+    endereco: null,
+    totalGastoCentavos: 960000,
+  });
+  expect(perfil.dados.pedidos.map((p) => p.numero)).toEqual(["K40-0010"]);
+
+  const nova = await cadastrarCliente({
+    nome: "Helena Duarte",
+    email,
+    telefone: "11987654321",
+    senha: SENHA,
+  });
+  expect(nova.ok).toBe(true);
 });

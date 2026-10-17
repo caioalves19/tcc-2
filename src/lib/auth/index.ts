@@ -385,6 +385,12 @@ export async function trocarSenha(
   }
 }
 
+// Confere a senha com o mesmo hash do Better Auth (PBI-40: a exclusão da conta pede a senha).
+export async function conferirSenha(hash: string, senha: string): Promise<boolean> {
+  const contexto = await obterAuth().$context;
+  return contexto.password.verify({ hash, password: senha });
+}
+
 export async function usuarioIdDaRequisicao(cabecalhos: Headers): Promise<string | null> {
   const sessao = await obterAuth().api.getSession({
     headers: cabecalhos,

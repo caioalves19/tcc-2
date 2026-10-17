@@ -1,13 +1,36 @@
 import { Prisma } from "../../../generated/prisma/client";
-import { sessaoDaRequisicao } from "../../lib/auth";
+import { conferirSenha, sessaoDaRequisicao } from "../../lib/auth";
 import { obterPrisma } from "../../lib/prisma";
 import type { DadosEndereco } from "../endereco/index";
+import { validarExclusaoConta, type DadosExclusaoConta, type ErrosDe } from "../identity/index";
 import { cancelarPedidoPendente } from "../orders/index";
 
 // RN12/RNF19 (PBI-40): o cliente exclui a própria conta. Os dados pessoais são anonimizados e os
 // pedidos ficam, com os mesmos valores, para o registro da venda.
 
-export type ResultadoExclusao = { ok: true };
+export type ErroExclusao =
+  "nao_autenticado" | "proibido" | "senha_incorreta" | "pedido_em_andamento" | "concorrencia";
+
+export type ResultadoExclusao =
+  | { ok: true }
+  | { ok: false; erro: "invalido"; campos: ErrosDe<DadosExclusaoConta> }
+  | { ok: false; erro: ErroExclusao; mensagem: string };
+
+class Recusa extends Error {
+  constructor(
+    readonly codigo: ErroExclusao,
+    mensagem: string,
+  ) {
+    super(mensagem);
+  }
+}
+
+function expirada() {
+  return new Recusa("nao_autenticado", "Sua sessão expirou. Entre novamente.");
+}
+
+// Pago e ainda não entregue: o ateliê precisa do endereço para concluir a entrega.
+const EM_ANDAMENTO = ["PAGO", "PROCESSANDO", "ENVIADO"] as const;
 
 export const NOME_EXCLUIDO = "Cliente excluído";
 
@@ -76,12 +99,58 @@ export async function excluirPropriaConta(
   entrada: unknown,
   cabecalhos: Headers,
 ): Promise<ResultadoExclusao> {
-  void entrada;
-  const sessao = await sessaoDaRequisicao(cabecalhos);
-  if (!sessao) throw new Error("sem sessão");
-  await obterPrisma().$transaction(async (tx) => {
-    const atual = await tx.session.findUniqueOrThrow({ where: { token: sessao.token } });
-    await anonimizarCliente(tx, atual.userId, new Date());
-  });
-  return { ok: true };
+  const validacao = validarExclusaoConta(entrada);
+  if (!validacao.ok) return { ok: false, erro: "invalido", campos: validacao.campos };
+  try {
+    const sessao = await sessaoDaRequisicao(cabecalhos);
+    if (!sessao) throw expirada();
+    await obterPrisma().$transaction(
+      async (tx) => {
+        // A sessão e a conta são relidas na transação: o usuário vem só do cookie assinado.
+        const atual = await tx.session.findUnique({
+          where: { token: sessao.token },
+          include: { user: true },
+        });
+        if (!atual || atual.expiresAt <= new Date()) throw expirada();
+        if (
+          atual.user.role !== "CLIENTE" ||
+          atual.user.status !== "ATIVO" ||
+          atual.user.deletedAt !== null
+        )
+          throw new Recusa(
+            "proibido",
+            "Só a conta de cliente pode ser excluída pelo site. Fale com o ateliê.",
+          );
+        const credencial = await tx.account.findFirst({
+          where: { userId: atual.userId, provider: "credential" },
+        });
+        if (
+          !credencial?.passwordHash ||
+          !(await conferirSenha(credencial.passwordHash, validacao.dados.senha))
+        )
+          throw new Recusa("senha_incorreta", "Senha atual incorreta.");
+        const emAndamento = await tx.order.count({
+          where: { userId: atual.userId, deletedAt: null, status: { in: [...EM_ANDAMENTO] } },
+        });
+        if (emAndamento > 0)
+          throw new Recusa(
+            "pedido_em_andamento",
+            "Você tem um pedido a caminho. Aguarde a entrega para excluir a conta ou fale com o ateliê.",
+          );
+        await anonimizarCliente(tx, atual.userId, new Date());
+      },
+      // Um pagamento aprovado ao mesmo tempo não passa sem ser visto pela checagem acima.
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
+    return { ok: true };
+  } catch (erro) {
+    if (erro instanceof Recusa) return { ok: false, erro: erro.codigo, mensagem: erro.message };
+    if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === "P2034")
+      return {
+        ok: false,
+        erro: "concorrencia",
+        mensagem: "Sua conta mudou enquanto excluíamos. Tente novamente.",
+      };
+    throw erro;
+  }
 }
