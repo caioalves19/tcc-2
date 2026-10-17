@@ -309,7 +309,7 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 **Pendências registradas:**
 
 - Confirmar com o cliente razão social, CNPJ e endereço, que entram na privacidade, e as regras de remarcação da sessão de tatuagem.
-- Atualizar os textos quando entrarem o formulário de contato (PBI-44) e a exclusão de conta pelo site (PBI-40).
+- Atualizar os textos quando entrarem o formulário de contato (PBI-44) e a exclusão de conta pelo site (PBI-40). A exclusão pelo site foi incluída pelo PBI-40, na branch `feat/pbi-40-exclusao-conta`.
 - ~~Revisar a seção de dados da privacidade se o PBI-28 guardar o payload completo do Mercado Pago~~: o PBI-28 guarda só os campos do pagamento, sem dados do pagador.
 
 ---
@@ -784,9 +784,25 @@ O formulário e a persistência de configurações podem ser preparados com a ba
 
 Consome o formato real do pedido e das cópias de dados pessoais definido no PBI-26 para anonimizar também esse conteúdo. Pode usar pedidos pagos de teste e não precisa esperar o webhook (28) ou as configurações (39); a integração global confirma a preservação de compras reais.
 
-- [ ] Permitir exclusão da própria conta com confirmação explícita na interface
-- [ ] Anonimizar dados pessoais preservando pedidos pagos e integridade contábil
-- [ ] Revogar sessões e testar anonimização e preservação dos pedidos no PostgreSQL real
+- [x] Permitir exclusão da própria conta com confirmação explícita na interface
+- [x] Anonimizar dados pessoais preservando pedidos pagos e integridade contábil
+- [x] Revogar sessões e testar anonimização e preservação dos pedidos no PostgreSQL real
+
+**Decisões (registradas em 16/10/2026):**
+
+- A exclusão fica em `/conta` e pede a senha atual e a caixa "Entendo que a exclusão não pode ser desfeita". Só o papel `CLIENTE`.
+- Com pedido Pago, Em preparação ou Enviado, a exclusão espera a entrega. Pedido aguardando pagamento é cancelado e solta a reserva; nenhum pedido é apagado.
+- A conta fica com nome "Cliente excluído" e e-mail `excluido-<id>@kolo.invalid`; sessões, senha, endereço, carrinho e códigos de recuperação são apagados. No pedido, a cópia do endereço guarda só cidade e UF. A agenda perde o vínculo com a conta e o registro de e-mails perde o destinatário.
+- A política de privacidade troca o pedido por e-mail pela exclusão no site. O texto entra no mesmo aceite da equipe pendente nos PBIs 22 e 39.
+- Sem migração. Contrato completo em [PBI-40](features/PBI-40.md).
+
+**Situação:** implementação local na branch `feat/pbi-40-exclusao-conta`, sem PR. Para encerrar o DoD, faltam a revisão de outro integrante, a aprovação do PR e o aceite do texto da política.
+
+**Entregas:**
+
+- `excluirPropriaConta` em `src/modules/customers`, numa transação serializável, com a senha conferida pelo hash do Better Auth.
+- Seção "Excluir conta" em `/conta`; pedido anonimizado mostra só cidade e UF no detalhe da conta e do admin.
+- Política de privacidade atualizada ("Seus direitos" e "Por quanto tempo guardamos").
 
 ### PBI-41 — Busca textual no catálogo
 
