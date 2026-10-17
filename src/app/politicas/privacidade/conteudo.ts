@@ -2,8 +2,8 @@ import type { Politica } from "@/components/politicas/documento-politica";
 import type { ConfiguracaoSite } from "@/modules/settings";
 
 // RNF17: cada item de "Quais dados usamos" vem de uma tabela do prisma/schema.prisma.
-// Escopo P0 da v2.2 mais o contato (PBI-44, integrado em 07/10). Excluir a conta pelo site
-// (PBI-40) só entra aqui quando for integrado; até lá, a exclusão é pedida por e-mail.
+// Escopo P0 da v2.2 mais o contato (PBI-44, integrado em 07/10) e a exclusão da conta pelo site
+// (PBI-40), que anonimiza a conta e mantém os pedidos.
 // O e-mail e o WhatsApp citados vêm das configurações do site (PBI-39); o texto é revisado pela
 // equipe e fica no código (RNF17).
 export function privacidade(contato: ConfiguracaoSite["contato"]): Politica {
@@ -13,7 +13,7 @@ export function privacidade(contato: ConfiguracaoSite["contato"]): Politica {
     titulo: "Política de privacidade",
     resumo:
       "Quais dados o site do Kolô usa, para quê e como você controla os seus. A regra é pedir só o necessário.",
-    atualizadaEm: "2026-10-08",
+    atualizadaEm: "2026-10-16",
     secoes: [
       {
         id: "quem-cuida",
@@ -104,13 +104,13 @@ export function privacidade(contato: ConfiguracaoSite["contato"]): Politica {
         blocos: [
           {
             itens: [
-              "Conta e endereço: enquanto a conta existir.",
+              "Conta e endereço: enquanto a conta existir. Quando você exclui a conta, eles são apagados na hora.",
               "Sessões: até você sair ou a sessão expirar.",
               "Código de recuperação de senha: vale por 1 hora e para um único uso.",
               "Contagem de tentativas: vale só durante a janela de bloqueio, de 15 minutos (login e contato) a 1 hora (recuperação de senha).",
               "Mensagens de contato: pelo tempo necessário para responder e acompanhar o atendimento.",
               "Pedidos e pagamentos: pelo prazo exigido pelas leis fiscais e de defesa do consumidor, mesmo depois da exclusão da conta, sem ligação com os seus dados pessoais.",
-              "Agenda: enquanto for necessária para organizar o atendimento.",
+              "Agenda: enquanto for necessária para organizar o atendimento. Se você excluir a conta, o horário registrado pela equipe continua na agenda, sem ligação com a conta: o nome e o telefone de contato continuam no registro do horário.",
               "Cópias de segurança: o banco tem cópias diárias, mantidas por tempo limitado, para recuperar o site em caso de falha.",
             ],
           },
@@ -125,7 +125,7 @@ export function privacidade(contato: ConfiguracaoSite["contato"]): Politica {
             itens: [
               "confirmação de que tratamos os seus dados e acesso a eles;",
               "correção de dados incompletos ou desatualizados. Nome e telefone você muda direto em [Minha conta](/conta);",
-              "exclusão da conta. Os pedidos pagos continuam guardados, mas anonimizados, sem ligação com você, porque precisamos manter o registro das vendas;",
+              "exclusão da conta, que você mesmo faz em [Excluir conta](/conta#excluir-conta), com a sua senha. Apagamos nome, e-mail, telefone, endereço e carrinho e encerramos todas as sessões. Os pedidos continuam guardados, mas anonimizados, sem ligação com você, porque precisamos manter o registro das vendas: do endereço de entrega ficam só a cidade e o estado. Os horários da agenda ficam, sem ligação com a conta. Se algum pedido pago ainda não foi entregue, a exclusão espera a entrega;",
               "portabilidade dos dados, informação sobre com quem os compartilhamos e oposição a um tratamento.",
             ],
           },

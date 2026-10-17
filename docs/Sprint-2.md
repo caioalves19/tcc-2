@@ -309,7 +309,7 @@ Os textos serão mantidos no projeto nesta sprint; a edição administrativa de 
 **Pendências registradas:**
 
 - Confirmar com o cliente razão social, CNPJ e endereço, que entram na privacidade, e as regras de remarcação da sessão de tatuagem.
-- Atualizar os textos quando entrarem o formulário de contato (PBI-44) e a exclusão de conta pelo site (PBI-40).
+- Atualizar os textos quando entrarem o formulário de contato (PBI-44) e a exclusão de conta pelo site (PBI-40). A exclusão pelo site foi incluída pelo PBI-40 (PR #69).
 - ~~Revisar a seção de dados da privacidade se o PBI-28 guardar o payload completo do Mercado Pago~~: o PBI-28 guarda só os campos do pagamento, sem dados do pagador.
 
 ---
@@ -575,6 +575,8 @@ Consome artistas e estilos do PBI-16. Não depende da loja, da agenda manual (34
 
 Implementação em `/agendamento`, com tamanhos de `SizeTier`. Contrato, testes e limites registrados em [PBI-31](features/PBI-31.md). Revisão independente de código: PASS. Integrado à `main` pelo PR #30 em 06/10/2026, aprovado por dois integrantes. Conferência visual nas larguras previstas e aceite humano continuam pendentes para encerramento.
 
+**Situação:** integrado à `main` pelo PR #30 em 06/10/2026, aprovado por dois integrantes. A conclusão do wizard entrou com os PBIs 32 e 33.
+
 ### PBI-32 — Checks obrigatórios de conformidade
 
 **Referências:** RF23–RF25; RNF18 · **Prioridade:** P0 · **Deps:** PBI-31.
@@ -614,7 +616,7 @@ A geração da mensagem e do link pode ser preparada enquanto a home é constru�
 - O topo e o bloco de tatuagem da home levam a `/agendamento`, com os passos do Stitch (escolha artista e estilo, diga quando prefere, finalize no WhatsApp).
 - Contrato completo em [PBI-33](features/PBI-33.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-33-whatsapp`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+**Situação:** integrado à `main` pelo PR #64 em 14/10/2026, aprovado por outro integrante.
 
 **Entregas:**
 
@@ -678,7 +680,7 @@ Consome artistas/estilos (16) e upload (17). Pode avançar em paralelo ao CRUD d
 - [x] Filtrar por artista, estilo e região do corpo
 - [x] Testar filtros combinados, estado vazio e acesso sem autenticação
 
-**Situação:** implementação local na branch `feat/pbi-36-galeria-publica`, baseada em `ff3485a` da branch de evidências do PBI-35 ainda pendente de aprovação/merge. Aceite integrado depende da resolução dessa base e de PR revisado, aprovado e integrado. Sem busca do PBI-37.
+**Situação:** integrado à `main` em 13/10/2026 dentro do PR #62 (evidências do PBI-35), aprovado por outro integrante. O PR próprio do PBI-36 (#63) foi mesclado na branch do #62, sem revisão própria nem `verify`; a validação no navegador foi feita depois, junto com a do PBI-37. A busca entrou pelo PBI-37.
 
 **Entregas e evidências:** rota pública `/tatuagens`, API pública `listarGaleria`, imagens responsivas com texto alternativo, filtros combináveis e estados vazios. Contrato, testes e resultados dos gates em [PBI-36](features/PBI-36.md).
 
@@ -697,7 +699,7 @@ Consome artistas/estilos (16) e upload (17). Pode avançar em paralelo ao CRUD d
 - Sem migração nem índice novo (portfólio pequeno). A limpeza da busca saiu do catálogo para `src/lib/busca.ts`, compartilhada.
 - Contrato completo em [PBI-37](features/PBI-37.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-37-busca-portfolio`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+**Situação:** integrado à `main` pelo PR #66 em 14/10/2026, aprovado por outro integrante.
 
 **Entregas:**
 
@@ -733,7 +735,7 @@ Consome os pedidos e os dados do cliente definidos no PBI-26. Não depende do po
 - O histórico traz todos os pedidos, com as tentativas sem pagamento como "Não concluído"; o total gasto soma só os pagos (de Pago a Entregue).
 - Só consulta: sem editar, bloquear ou excluir cliente, sem horários da agenda e sem migração. Contrato completo em [PBI-38](features/PBI-38.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-38-perfil-cliente`, com lint, format, typecheck, `npm test` (512), `npm run test:integration` e build sem erros, conferência no navegador como ADMIN e revisão independente por agente (PASS; o teste de paginação que faltava foi incluído). Faltam a revisão de outro integrante e a aprovação do PR.
+**Situação:** integrado à `main` pelo PR #67 em 15/10/2026, aprovado por outro integrante. Antes do PR: lint, format, typecheck, `npm test` (512), `npm run test:integration` e build sem erros, conferência no navegador como ADMIN e revisão independente por agente (PASS; o teste de paginação que faltava foi incluído).
 
 **Entregas:**
 
@@ -760,7 +762,7 @@ O formulário e a persistência de configurações podem ser preparados com a ba
 - **Frete:** fica fora deste PBI (o RF31 não cita frete); continua como pendência herdada do PBI-42.
 - Sem migração: usa a tabela `site_setting` da Sprint 1, uma linha por chave. Contrato completo em [PBI-39](features/PBI-39.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-39-configuracoes`, que sai da `feat/pbi-33-whatsapp` (PR #64): integrar depois dele. Para encerrar o DoD, faltam a revisão de outro integrante, a aprovação do PR e o aceite da equipe sobre as políticas.
+**Situação:** integrado à `main` pelo PR #65 em 15/10/2026, depois do PR #64, aprovado por outro integrante. Falta o aceite da equipe sobre as políticas (texto no código): o primeiro item continua desmarcado até lá.
 
 **Entregas:**
 
@@ -784,9 +786,25 @@ O formulário e a persistência de configurações podem ser preparados com a ba
 
 Consome o formato real do pedido e das cópias de dados pessoais definido no PBI-26 para anonimizar também esse conteúdo. Pode usar pedidos pagos de teste e não precisa esperar o webhook (28) ou as configurações (39); a integração global confirma a preservação de compras reais.
 
-- [ ] Permitir exclusão da própria conta com confirmação explícita na interface
-- [ ] Anonimizar dados pessoais preservando pedidos pagos e integridade contábil
-- [ ] Revogar sessões e testar anonimização e preservação dos pedidos no PostgreSQL real
+- [x] Permitir exclusão da própria conta com confirmação explícita na interface
+- [x] Anonimizar dados pessoais preservando pedidos pagos e integridade contábil
+- [x] Revogar sessões e testar anonimização e preservação dos pedidos no PostgreSQL real
+
+**Decisões (registradas em 16/10/2026):**
+
+- A exclusão fica em `/conta` e pede a senha atual e a caixa "Entendo que a exclusão não pode ser desfeita". Só o papel `CLIENTE`.
+- Com pedido Pago, Em preparação ou Enviado, a exclusão espera a entrega. Pedido aguardando pagamento é cancelado e solta a reserva; nenhum pedido é apagado.
+- A conta fica com nome "Cliente excluído" e e-mail `excluido-<id>@kolo.invalid`; sessões, senha, endereço, carrinho e códigos de recuperação são apagados. No pedido, a cópia do endereço guarda só cidade e UF. A agenda perde o vínculo com a conta e o registro de e-mails perde o destinatário.
+- A política de privacidade troca o pedido por e-mail pela exclusão no site. O texto entra no mesmo aceite da equipe pendente nos PBIs 22 e 39.
+- Sem migração. Contrato completo em [PBI-40](features/PBI-40.md).
+
+**Situação:** PR #69 aberto em 17/10/2026, da branch `feat/pbi-40-exclusao-conta`, com lint, format, typecheck, `npm test` (519), `npm run test:integration` (276) e build sem erros, conferência no navegador (inclusive a corrida com o webhook) e revisão independente por agente (PASS; os três achados foram corrigidos). Para encerrar o DoD, faltam a revisão de outro integrante, a aprovação do PR e o aceite do texto da política.
+
+**Entregas:**
+
+- `excluirPropriaConta` em `src/modules/customers`, numa transação só, com o usuário travado na mesma ordem do checkout e do webhook e a senha conferida pelo hash do Better Auth. Perfil, senha e endereço recusam a sessão de conta excluída.
+- Seção "Excluir conta" em `/conta`; pedido anonimizado mostra só cidade e UF no detalhe da conta e do admin.
+- Política de privacidade atualizada ("Seus direitos" e "Por quanto tempo guardamos").
 
 ### PBI-41 — Busca textual no catálogo
 
@@ -821,7 +839,7 @@ Consome o cálculo e o contrato de frete/total do checkout (26). Pode avançar j
 - O frete vai ao Mercado Pago como item "Frete" da preferência, e não em `shipments.cost`: o valor aprovado inclui o frete e a conferência do webhook não muda.
 - Contrato completo em [PBI-42](features/PBI-42.md).
 
-**Situação:** implementação local validada na branch `feat/pbi-42-frete`. Para encerrar o DoD, faltam a revisão de outro integrante e a aprovação do PR.
+**Situação:** integrado à `main` pelo PR #60 em 12/10/2026, aprovado por outro integrante.
 
 **Entregas:**
 

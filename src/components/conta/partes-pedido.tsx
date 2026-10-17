@@ -19,17 +19,33 @@ export function EntregaPedido({
         Entrega
       </h2>
       <p>{ROTULO_MODALIDADE[pedido.modalidade]}</p>
-      <address className="grid gap-1 not-italic">
-        <strong>{endereco.destinatario}</strong>
-        <span>
-          {endereco.logradouro}, {endereco.numero}
-          {endereco.complemento && ` — ${endereco.complemento}`}
-        </span>
-        <span>
-          {endereco.bairro}, {endereco.cidade} / {endereco.uf} · CEP {endereco.cep}
-        </span>
-      </address>
+      {/* RN12 (PBI-40): a conta excluída deixa na cópia só cidade e UF; o CEP vazio marca isso. */}
+      {endereco.cep === "" ? (
+        <address className="grid gap-1 not-italic">
+          <span>Endereço apagado com a exclusão da conta</span>
+          <span>
+            {endereco.cidade} / {endereco.uf}
+          </span>
+        </address>
+      ) : (
+        <EnderecoCompleto endereco={endereco} />
+      )}
     </section>
+  );
+}
+
+function EnderecoCompleto({ endereco }: { endereco: PedidoDetalhado["endereco"] }) {
+  return (
+    <address className="grid gap-1 not-italic">
+      <strong>{endereco.destinatario}</strong>
+      <span>
+        {endereco.logradouro}, {endereco.numero}
+        {endereco.complemento && ` — ${endereco.complemento}`}
+      </span>
+      <span>
+        {endereco.bairro}, {endereco.cidade} / {endereco.uf} · CEP {endereco.cep}
+      </span>
+    </address>
   );
 }
 

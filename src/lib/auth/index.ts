@@ -101,6 +101,12 @@ function criarInstancia() {
           required: true,
           input: true,
         },
+        // RN12 (PBI-40): conta excluída. Só leitura, para a sessão de uma conta excluída não valer.
+        deletedAt: {
+          type: "date",
+          required: false,
+          input: false,
+        },
       },
     },
     session: {
@@ -306,15 +312,28 @@ export async function papelDaSessao(token: string): Promise<PapelFundacao | null
   return papelConhecido(encontrada.user.role);
 }
 
-// Lê a sessão pelo cookie assinado da requisição: sempre no banco (sem cache de cookie)
-// e sem prorrogar a validade, porque numa renderização o cookie não pode ser renovado.
-export async function sessaoDaRequisicao(
-  cabecalhos: Headers,
-): Promise<{ token: string; papel: PapelFundacao } | null> {
-  const encontrada = await obterAuth().api.getSession({
+// Lê a sessão pelo cookie assinado: sempre no banco (sem cache de cookie) e sem prorrogar a
+// validade, porque numa renderização o cookie não pode ser renovado.
+function lerSessao(cabecalhos: Headers) {
+  return obterAuth().api.getSession({
     headers: cabecalhos,
     query: { disableCookieCache: true, disableRefresh: true },
   });
+}
+
+// RN12 (PBI-40): a exclusão apaga as sessões, mas um login que termine junto com ela ainda pode
+// criar uma. Perfil, senha e endereço não releem a conta, então recusam aqui a conta excluída. Os
+// módulos que releem a conta no banco (gestão, carrinho, mídia, agenda) já a recusam como proibido.
+async function sessaoDeContaAtiva(cabecalhos: Headers) {
+  const encontrada = await lerSessao(cabecalhos);
+  const excluida = encontrada?.user.deletedAt !== null && encontrada?.user.deletedAt !== undefined;
+  return encontrada === null || excluida ? null : encontrada;
+}
+
+export async function sessaoDaRequisicao(
+  cabecalhos: Headers,
+): Promise<{ token: string; papel: PapelFundacao } | null> {
+  const encontrada = await lerSessao(cabecalhos);
   if (encontrada === null) {
     return null;
   }
@@ -334,10 +353,7 @@ export async function revogarSessao(token: string): Promise<void> {
 
 // O usuário vem exclusivamente do cookie assinado, nunca de um id enviado pelo formulário.
 export async function perfilDaRequisicao(cabecalhos: Headers): Promise<DadosPerfil | null> {
-  const sessao = await obterAuth().api.getSession({
-    headers: cabecalhos,
-    query: { disableCookieCache: true, disableRefresh: true },
-  });
+  const sessao = await sessaoDeContaAtiva(cabecalhos);
   return sessao === null ? null : { nome: sessao.user.name, telefone: sessao.user.phone };
 }
 
@@ -347,7 +363,7 @@ export async function atualizarPerfil(
 ): Promise<ResultadoPerfil> {
   const validacao = validarPerfil(entrada);
   if (!validacao.ok) return { ok: false, erro: "invalido", campos: validacao.campos };
-  if ((await sessaoDaRequisicao(cabecalhos)) === null)
+  if ((await sessaoDeContaAtiva(cabecalhos)) === null)
     return { ok: false, erro: "nao_autenticado" };
   try {
     await obterAuth().api.updateUser({
@@ -367,7 +383,7 @@ export async function trocarSenha(
 ): Promise<ResultadoTrocaSenha> {
   const validacao = validarTrocaSenha(entrada);
   if (!validacao.ok) return { ok: false, erro: "invalido", campos: validacao.campos };
-  if ((await sessaoDaRequisicao(cabecalhos)) === null)
+  if ((await sessaoDeContaAtiva(cabecalhos)) === null)
     return { ok: false, erro: "nao_autenticado" };
   try {
     await obterAuth().api.changePassword({
@@ -385,10 +401,13 @@ export async function trocarSenha(
   }
 }
 
+// Confere a senha com o mesmo hash do Better Auth (PBI-40: a exclusão da conta pede a senha).
+export async function conferirSenha(hash: string, senha: string): Promise<boolean> {
+  const contexto = await obterAuth().$context;
+  return contexto.password.verify({ hash, password: senha });
+}
+
 export async function usuarioIdDaRequisicao(cabecalhos: Headers): Promise<string | null> {
-  const sessao = await obterAuth().api.getSession({
-    headers: cabecalhos,
-    query: { disableCookieCache: true, disableRefresh: true },
-  });
+  const sessao = await sessaoDeContaAtiva(cabecalhos);
   return sessao === null ? null : sessao.user.id;
 }

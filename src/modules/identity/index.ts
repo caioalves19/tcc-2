@@ -132,3 +132,9 @@ export {
   type DadosTrocaSenha,
   type ResultadoTrocaSenha,
 } from "./perfil";
+
+export {
+  validarExclusaoConta,
+  type EntradaExclusaoConta,
+  type DadosExclusaoConta,
+} from "./exclusao";
