@@ -103,7 +103,9 @@ for (const tela of TELAS) {
       .map(([regra, onde]) => `${regra} → ${onde}`);
     const obsoletas = [...previstas].filter((regra) => !encontradas.has(regra));
 
-    expect(novas, "violações novas (corrija a tela ou registre em excecoes-a11y.ts)").toEqual([]);
+    expect
+      .soft(novas, "violações novas (corrija a tela ou registre em excecoes-a11y.ts)")
+      .toEqual([]);
     expect(obsoletas, "exceções que não acontecem mais (ajuste excecoes-a11y.ts)").toEqual([]);
   });
 }
