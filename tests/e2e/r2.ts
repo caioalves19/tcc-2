@@ -17,20 +17,18 @@ function pastaDoR2(): string {
 export async function simularR2(page: Page): Promise<void> {
   await page.route(`https://${R2_CONTA_E2E}.r2.cloudflarestorage.com/**`, async (rota) => {
     const requisicao = rota.request();
-    const cors = {
-      "access-control-allow-origin": "*",
-      "access-control-allow-methods": "PUT",
-      "access-control-allow-headers": "content-type",
-    };
-    if (requisicao.method() !== "PUT") return rota.fulfill({ status: 204, headers: cors });
+    // O preflight (OPTIONS) o próprio Playwright responde; o app só faz PUT.
+    if (requisicao.method() !== "PUT") return rota.abort();
+    const corpo = requisicao.postDataBuffer();
+    if (!corpo) throw new Error("PUT ao R2 sem corpo no E2E.");
     const chave = decodeURIComponent(new URL(requisicao.url()).pathname).replace(
       `/${R2_BUCKET_E2E}/`,
       "",
     );
     const arquivo = join(pastaDoR2(), chave);
     mkdirSync(dirname(arquivo), { recursive: true });
-    writeFileSync(arquivo, requisicao.postDataBuffer() ?? Buffer.alloc(0));
-    await rota.fulfill({ status: 200, headers: { ...cors, etag: '"e2e"' } });
+    writeFileSync(arquivo, corpo);
+    await rota.fulfill({ status: 200, headers: { "access-control-allow-origin": "*" } });
   });
 }
 

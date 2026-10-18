@@ -48,6 +48,7 @@ if (pasta) {
       rmSync(arquivo, { force: true });
       return {};
     }
-    return enviarReal.call(this, comando);
+    // O E2E é fechado: nenhum comando com chave vai ao R2 de verdade.
+    throw new Error("Comando do S3 não simulado no E2E.");
   };
 }

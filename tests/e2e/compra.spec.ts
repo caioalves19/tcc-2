@@ -1,8 +1,7 @@
-import { randomBytes } from "node:crypto";
-
 import { expect, test } from "@playwright/test";
 
 import { ID_PAGAMENTO_E2E, OBRA } from "./dados";
+import { cadastrarCliente } from "./sessao";
 import { avisoDePagamento } from "./webhook";
 
 // O playwright.config.ts sorteia o segredo da rodada e o worker o herda pelo process.env.
@@ -25,15 +24,11 @@ test("RF14 o cliente compra uma obra e o pedido só fica pago pelo webhook, com 
   );
 
   // RF01: cadastro pela tela; o cadastro já entra na conta.
-  await page.goto("/cadastro");
-  await page.getByLabel("Nome", { exact: true }).fill("Ana Compradora");
-  await page.getByLabel("E-mail").fill("e2e-cliente@kolo.test");
-  await page.getByLabel("Telefone").fill("11987654321");
-  await page
-    .getByLabel("Senha", { exact: true })
-    .fill(`E2e-${randomBytes(9).toString("base64url")}`);
-  await page.getByRole("button", { name: "Criar conta" }).click();
-  await expect(page).toHaveURL("/");
+  await cadastrarCliente(page, {
+    nome: "Ana Compradora",
+    email: "e2e-cliente@kolo.test",
+    telefone: "11987654321",
+  });
 
   // RF09/RF10/RF11: catálogo → ficha → carrinho.
   await page.goto("/obras");

@@ -47,7 +47,6 @@ export default defineConfig({
     env: {
       // Dublês do Mercado Pago e do R2 no processo do servidor (tests/e2e/*-falso.ts).
       NODE_OPTIONS: "--import ./tests/e2e/mercado-pago-falso.ts --import ./tests/e2e/r2-falso.ts",
-      E2E_R2_DIR: process.env.E2E_R2_DIR,
       DATABASE_URL: `postgresql://kolo_user:kolo_password@localhost:5432/${BANCO_E2E}`,
       BETTER_AUTH_SECRET: segredoDaRodada("E2E_BETTER_AUTH_SECRET"),
       BETTER_AUTH_URL: URL_E2E,

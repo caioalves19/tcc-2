@@ -1,6 +1,7 @@
 // Recria o banco kolo_e2e (migrações + dados fixos de tests/e2e/dados.ts) antes do servidor do
 // E2E subir. Roda dentro do comando do webServer, então termina antes do `next start`.
 import { mkdirSync, rmSync } from "node:fs";
+import { basename } from "node:path";
 
 import { hashPassword } from "better-auth/crypto";
 import type { Client } from "pg";
@@ -43,6 +44,9 @@ async function preparar(): Promise<void> {
   // RF27: o "bucket" do E2E começa vazio a cada rodada.
   const pastaR2 = process.env.E2E_R2_DIR;
   if (!pastaR2) throw new Error("E2E_R2_DIR ausente: rode pelo npm run test:e2e.");
+  // A pasta é apagada inteira: só aceita a do E2E, nunca outra que venha do ambiente.
+  if (basename(pastaR2) !== "kolo-e2e-r2")
+    throw new Error(`E2E_R2_DIR precisa terminar em kolo-e2e-r2: ${pastaR2}`);
   rmSync(pastaR2, { recursive: true, force: true });
   mkdirSync(pastaR2, { recursive: true });
   const db = await prepararBancoDeTeste(BANCO_E2E);

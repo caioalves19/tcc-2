@@ -1,21 +1,15 @@
-import { randomBytes } from "node:crypto";
-
 import { expect, test } from "@playwright/test";
 
 import { ARTISTA, OUTRO_ARTISTA } from "./dados";
-import { entrar } from "./sessao";
+import { cadastrarCliente, entrar } from "./sessao";
 
 // RF06: a checagem de papel roda no servidor; a tela mostra o motivo e nenhum formulário.
 test("RF06 o cliente não entra no admin nem na agenda", async ({ page }) => {
-  await page.goto("/cadastro");
-  await page.getByLabel("Nome", { exact: true }).fill("Cliente Curioso");
-  await page.getByLabel("E-mail", { exact: true }).fill("e2e-curioso@kolo.test");
-  await page.getByLabel("Telefone", { exact: true }).fill("11912345678");
-  await page
-    .getByLabel("Senha", { exact: true })
-    .fill(`E2e-${randomBytes(9).toString("base64url")}`);
-  await page.getByRole("button", { name: "Criar conta" }).click();
-  await expect(page).toHaveURL("/");
+  await cadastrarCliente(page, {
+    nome: "Cliente Curioso",
+    email: "e2e-curioso@kolo.test",
+    telefone: "11912345678",
+  });
 
   await page.goto("/admin");
   await expect(page.getByRole("alert").filter({ hasText: "administradores" })).toBeVisible();
@@ -27,8 +21,9 @@ test("RF06 o cliente não entra no admin nem na agenda", async ({ page }) => {
   ).toBeVisible();
 });
 
-// RF06/RN10: o artista não entra no admin e só gerencia o próprio portfólio: pedir o de outro
-// artista pela URL devolve o dele mesmo.
+// RF06/RN10: o artista não entra no admin e só gerencia o próprio portfólio. Pedir o de outro
+// artista pela URL não dá acesso a ele: o servidor ignora o ?artista= e devolve o portfólio da
+// própria artista, com o formulário dela e sem o trabalho do outro.
 test("RN10 o artista não entra no admin e não gerencia o portfólio de outro artista", async ({
   page,
 }) => {
@@ -39,6 +34,10 @@ test("RN10 o artista não entra no admin e não gerencia o portfólio de outro a
   await expect(page.getByRole("navigation", { name: "Administração" })).toHaveCount(0);
 
   await page.goto(`/portfolio/gestao?artista=${OUTRO_ARTISTA.id}`);
-  await expect(page.getByRole("heading", { name: /portfólio/i }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Cadastrar trabalho" })).toBeVisible();
+  // Nenhuma das recusas do portfólio (o Next também tem um role=alert, o anunciador de rotas).
+  await expect(
+    page.getByRole("alert").filter({ hasText: /seu próprio portfólio|gerenciado pela equipe/ }),
+  ).toHaveCount(0);
   await expect(page.getByText(OUTRO_ARTISTA.trabalho.titulo)).toHaveCount(0);
 });

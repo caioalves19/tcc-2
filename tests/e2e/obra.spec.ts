@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { ADMIN, ARTISTA } from "./dados";
+import { ADMIN, ARTISTA, OBRA } from "./dados";
 import { fotoJpeg, simularR2 } from "./r2";
 import { entrar } from "./sessao";
 
@@ -11,6 +11,7 @@ const SLUG = "viaduto-ao-entardecer";
 // vai do navegador ao R2 e é reprocessada no servidor; publicada, aparece no catálogo.
 test("RF26 o admin cadastra uma obra, envia a imagem, publica e ela aparece no catálogo", async ({
   page,
+  browser,
 }) => {
   await simularR2(page);
   await entrar(page, ADMIN.email);
@@ -25,9 +26,12 @@ test("RF26 o admin cadastra uma obra, envia a imagem, publica e ela aparece no c
     page.getByText("Obra cadastrada como rascunho. Agora adicione as imagens."),
   ).toBeVisible();
 
-  // RN11: rascunho não aparece na vitrine.
-  const vitrine = await page.context().newPage();
+  // RN11: rascunho não aparece na vitrine, vista por um visitante sem sessão. A obra da fixture
+  // aparece, para a ausência não passar com um catálogo vazio por erro.
+  const visitante = await browser.newContext();
+  const vitrine = await visitante.newPage();
   await vitrine.goto("/obras");
+  await expect(vitrine.getByRole("link", { name: OBRA.titulo }).first()).toBeVisible();
   await expect(vitrine.getByRole("link", { name: TITULO })).toHaveCount(0);
 
   // RF27/RNF21: o envio só libera depois do texto alternativo.
@@ -39,7 +43,7 @@ test("RF26 o admin cadastra uma obra, envia a imagem, publica e ela aparece no c
     mimeType: "image/jpeg",
     buffer: await fotoJpeg(),
   });
-  await expect(page.getByText("Imagem adicionada.", { exact: false })).toBeVisible();
+  await expect(page.getByText("Imagem adicionada.")).toBeVisible();
 
   await page.getByLabel("Situação", { exact: true }).selectOption({ label: "Publicada" });
   await page.getByRole("button", { name: "Salvar obra" }).click();
@@ -51,4 +55,5 @@ test("RF26 o admin cadastra uma obra, envia a imagem, publica e ela aparece no c
   await expect(vitrine.getByRole("heading", { name: TITULO })).toBeVisible();
   await expect(vitrine.getByText("R$ 2.500,00").first()).toBeVisible();
   await expect(vitrine.getByRole("button", { name: "Adicionar ao carrinho" })).toBeVisible();
+  await visitante.close();
 });
