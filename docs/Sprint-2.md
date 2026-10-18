@@ -56,7 +56,8 @@ Todos os PBIs herdam a base da Sprint 1, já concluída. “Sprint 1” na últi
 | 44  | Contato com proteção antibot                 | Fase 1, item 14; RNF08                          | P1            | Sprint 1 (concluída)                                          |
 | 45  | Qualidade integrada e segurança              | RNF02–RNF14, RNF17–RNF23, conforme aplicável    | Entrega final | Sprint 1 para preparar; PBIs 16–37 e P1 incluídos para fechar |
 | 46  | Deploy, operação e restauração               | RNF01, RNF07, RNF12, RNF15, RNF16, RNF23, RNF24 | Entrega final | Sprint 1 para preparar; PBI-45 para publicar a versão final   |
-| 47  | Validação com cliente e preparação da defesa | Fase 6; aceite global                           | Entrega final | PBI-45, PBI-46                                                |
+| 47  | Validação com cliente e preparação da defesa | Fase 6; aceite global                           | Entrega final | PBI-45, PBI-46, PBI-48                                        |
+| 48  | Painel de indicadores e relatório de vendas  | RF32; critério 8 da banca                       | P0            | PBI-30, PBI-34, PBI-43                                        |
 
 ## Quais PBIs podem avançar em paralelo
 
@@ -71,6 +72,7 @@ Este quadro mostra a primeira liberação possível por dependências, não data
 | Camada 4         | PBI-27, PBI-29, PBI-30, PBI-33, PBI-38, PBI-40, PBI-42 |
 | Camada 5         | PBI-28, PBI-39                                         |
 | Camada 6         | PBI-43                                                 |
+| Camada 7         | PBI-48 (incluído em 18/10/2026)                        |
 
 Além desses grupos, a preparação do PBI-45 e da infraestrutura do PBI-46 pode acompanhar todas as camadas. Esses dois PBIs só recebem aceite final nos gates indicados na tabela principal.
 
@@ -798,7 +800,7 @@ Consome o formato real do pedido e das cópias de dados pessoais definido no PBI
 - A política de privacidade troca o pedido por e-mail pela exclusão no site. O texto entra no mesmo aceite da equipe pendente nos PBIs 22 e 39.
 - Sem migração. Contrato completo em [PBI-40](features/PBI-40.md).
 
-**Situação:** PR #69 aberto em 17/10/2026, da branch `feat/pbi-40-exclusao-conta`, com lint, format, typecheck, `npm test` (519), `npm run test:integration` (276) e build sem erros, conferência no navegador (inclusive a corrida com o webhook) e revisão independente por agente (PASS; os três achados foram corrigidos). Para encerrar o DoD, faltam a revisão de outro integrante, a aprovação do PR e o aceite do texto da política.
+**Situação:** integrado à `main` pelo PR #69 em 17/10/2026, da branch `feat/pbi-40-exclusao-conta`, com lint, format, typecheck, `npm test` (519), `npm run test:integration` (276) e build sem erros, conferência no navegador (inclusive a corrida com o webhook) e revisão independente por agente (PASS; os três achados foram corrigidos), aprovado por outro integrante. Falta o aceite do texto da política, no mesmo aceite pendente dos PBIs 22 e 39.
 
 **Entregas:**
 
@@ -912,6 +914,33 @@ Usa autenticação/validação, banco e rate limit da base existente, além de c
 - [x] Testar rejeição de token inválido e entradas inválidas; sem novos e-mails transacionais
 
 **Situação:** integrado à `main` pelo PR #34 em 07/10/2026, aprovado por outro integrante.
+
+## Inclusão de 18/10 — Relatórios para a banca
+
+### PBI-48 — Painel de indicadores e relatório de vendas
+
+**Referências:** RF32; critério 8 da banca ("Relatórios e consultas") · **Prioridade:** P0 (defesa) · **Deps:** PBI-30, PBI-34, PBI-43.
+
+O escopo v2.2 adiou o "dashboard de faturamento" (§14). A banca de 24/11, porém, avalia relatórios e indicadores gerados pelo sistema, e o admin hoje só tem filtros e buscas ([PREPARACAO-BANCA](PREPARACAO-BANCA.md), critério 8). Este PBI traz de volta só a leitura: nenhuma tabela nova e nenhuma ação sobre pedidos. Consome a situação dos pedidos e o estorno (30 e 43), a situação das obras (18) e a agenda (34), todos já integrados. Não depende do deploy (46); os números mostrados na banca saem dos dados de demonstração (47).
+
+- [ ] Trocar a página inicial do `/admin` por um painel: faturamento, pedidos pagos e ticket médio do período; pedidos por situação, cada um com link para a lista filtrada; obras por situação; horários agendados nos próximos 7 dias
+- [ ] Relatório de vendas por período (este mês, últimos 30 dias ou intervalo escolhido): total, obras mais vendidas e faturamento por artista
+- [ ] Calcular no servidor, só para ADMIN, com a regra de pedido pago já usada no total gasto do cliente (PBI-38); testar as somas e os limites do período no PostgreSQL real
+- [ ] Versão do relatório para impressão (CSS de impressão), sem exportação CSV
+
+**Proposta de decisões (confirmar com a equipe antes de codar):**
+
+- **Pedido pago:** situação de Pago a Entregue, a mesma regra do `totalGasto` do PBI-38. Estorno que cancela o pedido o tira da conta; estorno que não cancela (pagamento em duplicidade) não muda o total do pedido.
+- **Período:** pelo `pago_em`, no fuso de São Paulo, dias inteiros nos dois extremos. Padrão: mês corrente.
+- **Valores:** o faturamento soma `total_centavos` (com frete). Por obra e por artista, soma `preco_centavos_copia × quantidade` dos itens, sem frete; a tela avisa que os dois totais não precisam bater.
+- **Situação atual, não do período:** pedidos por situação e obras por situação (Rascunho, Disponível, Esgotada). Os links usam os filtros que já existem em `/admin/pedidos` (`a-fazer`, `pendentes`, `enviados`, `entregues`, `cancelados`, `estorno-pendente`).
+- **Agenda:** horários `AGENDADO` com início nos próximos 7 dias, de todos os artistas, com link para `/agenda`.
+- **Apresentação:** números e tabelas; um gráfico simples de vendas por dia é opcional. Aproveitar para trocar o menu do admin (hoje links sublinhados) por uma navegação com o visual do site.
+- **Fora:** exportação CSV (§14, fora de escopo), painel para o ARTISTA, comparação entre períodos e migração. O módulo (`orders` ou um `reports` novo) fica para o `feature-slice`.
+
+**Pendências:**
+
+- Equipe: aprovar a mudança de escopo (RF32 incluído e "dashboard de faturamento" retirado dos adiados no `ESCOPO-E-STACK.md`) na revisão do PR que criou este PBI.
 
 ## Etapa 6 — Qualidade, operação e entrega
 
@@ -1067,7 +1096,7 @@ O roteiro da banca, os dados de demonstração e o agendamento da validação po
 
 - [ ] Executar roteiro assistido com o cliente e registrar feedback e correções
 - [ ] Preparar dados de demonstração, roteiro da banca e evidências dos fluxos completos
-- [ ] Conferir cobertura RF01–RF31 e RN/RNF, distinguindo concluídos e eventuais P1 adiados
+- [ ] Conferir cobertura RF01–RF32 e RN/RNF, distinguindo concluídos e eventuais P1 adiados
 - [ ] Registrar resultado final em 18/10 e listar qualquer pendência sem declarar conclusão integral enquanto houver itens abertos
 
 ## Marcos até 18/10
@@ -1098,6 +1127,7 @@ Um atraso bloqueia os dependentes técnicos daquele PBI; as frentes independente
 | Administração de pedidos — RF29                              | PBIs 30 e 43                               |
 | Clientes e configurações — RF30–RF31                         | PBIs 38–39                                 |
 | Anonimização — RN12/RNF19                                    | PBI-40                                     |
+| Painel de indicadores e relatório de vendas — RF32           | PBI-48                                     |
 | Busca no catálogo e contato — P1 do roteiro                  | PBIs 41 e 44                               |
 | Qualidade, requisitos não funcionais, produção e defesa      | Critérios de cada PBI e PBIs 45–47         |
 
