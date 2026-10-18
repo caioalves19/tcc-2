@@ -939,7 +939,7 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 - Todas as páginas já eram dinâmicas (o layout raiz lê `headers()`), então todas recebem o nonce.
 - E2E em Chromium: o `upgrade-insecure-requests` quebraria o WebKit com `next start` servido por http. Em produção, com HTTPS, não há efeito.
 
-**Situação:** fatia 1 no PR #72 e fatia 2 no PR #73, abertos em 18/10/2026; aguardam a revisão de outro integrante. A fatia 2 parte da 1 (o E2E roda com a CSP de produção) e é rebaseada quando o #72 entrar na `main`. Fatias 3 a 6 pendentes.
+**Situação:** fatia 1 no PR #72, fatia 2 no PR #73 e fatia 3 no PR da branch `feat/pbi-45-e2e-compra`, abertos em 18/10/2026; aguardam a revisão de outro integrante. Cada fatia parte da anterior e é rebaseada quando a anterior entrar na `main`. Fatias 4 a 6 pendentes.
 
 **Entregas da fatia 1:**
 
@@ -976,6 +976,25 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 - `npm run test:e2e` passou em duas rodadas seguidas (cerca de 11 s cada); com o número esperado sabotado, falhou mostrando o `href` esperado e o recebido.
 - `npm run lint`, `format:check`, `typecheck`, `npm test` (531) e `npm run test:integration` (276) sem erros.
 - Revisão independente por agente: PASS; os ajustes sugeridos (ambiente isolado do `.env` local e nome do banco centralizado) foram incluídos.
+
+**Decisões da fatia 3 (registradas em 18/10/2026):**
+
+- O E2E da compra segue o §13 do escopo e começa pelo cadastro na tela (RF01), passando por catálogo, ficha, carrinho, endereço (RF05), checkout e pagamento.
+- O Mercado Pago é simulado só no processo do servidor do E2E: `tests/e2e/mercado-pago-falso.ts` é carregado por `NODE_OPTIONS=--import` e desvia apenas as chamadas a `api.mercadopago.com` (criar preferência e consultar o pagamento aprovado da última preferência). O SDK usa o `fetch` global com o endereço da API fixo; nenhuma linha do app muda.
+- O navegador nunca acessa o site real do Mercado Pago: a ida ao checkout é atendida pelo `page.route`, e o teste confere a URL.
+- A confirmação entra pela rota HTTP do webhook, com `x-signature` no formato documentado e o segredo aleatório da rodada. Voltar do Mercado Pago não paga o pedido (RN05).
+- A conclusão confere o pedido Pago em `/conta/pedidos` e a obra de uma unidade Esgotada, visível e sem compra (RF14, RN11).
+- A compra real no sandbox continua como evidência manual depois do deploy (PBI-46).
+
+**Entregas da fatia 3:**
+
+- `tests/e2e/compra.spec.ts`, `tests/e2e/mercado-pago-falso.ts` e `tests/e2e/webhook.ts`; a fixture ganha uma obra Disponível com estoque 1.
+
+**Evidências da fatia 3:**
+
+- `npm run test:e2e`: 2 testes (wizard e compra) passaram em duas rodadas seguidas (cerca de 17 a 19 s cada).
+- Sabotagens detectadas: com a assinatura feita com um segredo errado, o webhook respondeu 401 e o teste falhou; com o pagamento falso R$ 1,00 acima do total, o pedido continuou "Aguardando pagamento" (RN07) e o teste falhou.
+- `npm run lint`, `format:check`, `typecheck` e `npm test` (531) sem erros.
 
 ### PBI-46 — Deploy, operação e restauração
 
