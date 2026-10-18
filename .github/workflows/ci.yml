@@ -67,8 +67,9 @@ jobs:
       - name: E2E tests
         run: npm run test:e2e
 
+      # §13/RNF20: o relatório leva as capturas das telas nas 4 larguras; fica sempre, como evidência.
       - name: Upload Playwright report
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
