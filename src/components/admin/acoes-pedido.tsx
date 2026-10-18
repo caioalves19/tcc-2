@@ -89,7 +89,7 @@ export function AcoesPedido({ numero, situacao, modalidade, rastreio, acoes }: P
                 disabled={pendente}
                 onClick={() => setEscolhida(para)}
                 // RNF20: "Marcar como pronto para retirada" não cabe numa linha em 320 px.
-                className="h-auto min-h-9 max-w-full whitespace-normal py-2 text-left"
+                className="h-auto min-h-12 max-w-full whitespace-normal py-3 text-left"
               >
                 Marcar como {rotuloDoAndamento(para, modalidade)}
               </Button>
