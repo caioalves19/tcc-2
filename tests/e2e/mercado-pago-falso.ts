@@ -6,6 +6,9 @@
 //   devolve um init_point no domínio do Mercado Pago, como o Checkout Pro.
 // - GET /v1/payments/{id}: pagamento aprovado da última preferência, no formato que
 //   src/modules/payments/leitura.ts lê. O webhook do teste é que manda consultar.
+//
+// Carregado pelo strip de tipos do Node, fora do bundler: sem imports de "@/..." nem caminhos
+// sem extensão.
 
 const API = "https://api.mercadopago.com";
 
@@ -29,10 +32,13 @@ globalThis.fetch = async (entrada: string | URL | Request, init?: RequestInit) =
 
   // O SDK chama "/checkout/preferences/", com barra no fim.
   const pathname = new URL(url).pathname.replace(/\/+$/, "");
-  const metodo = (init?.method ?? "GET").toUpperCase();
+  // O SDK chama fetch(url, init); um Request também é aceito, por via das dúvidas.
+  const requisicao = entrada instanceof Request ? entrada : null;
+  const metodo = (init?.method ?? requisicao?.method ?? "GET").toUpperCase();
 
   if (metodo === "POST" && pathname === "/checkout/preferences") {
-    const corpo = JSON.parse(String(init?.body)) as {
+    const texto = init?.body !== undefined ? String(init.body) : await requisicao?.text();
+    const corpo = JSON.parse(texto ?? "{}") as {
       external_reference: string;
       items: ItemPreferencia[];
     };
