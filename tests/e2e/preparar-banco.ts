@@ -62,10 +62,10 @@ async function dadosDaVarredura(db: Client, senhaHash: string): Promise<void> {
   await conta(db, CLIENTE, "CLIENTE", senhaHash);
   const endereco = {
     destinatario: CLIENTE.nome,
-    cep: "01310100",
+    cep: "01310-100",
     logradouro: "Avenida Paulista",
     numero: "1000",
-    complemento: "",
+    complemento: null,
     bairro: "Bela Vista",
     cidade: "São Paulo",
     uf: "SP",
@@ -119,21 +119,11 @@ async function dadosDaVarredura(db: Client, senhaHash: string): Promise<void> {
     [PEDIDO_PAGO.id, OBRA_VENDIDA.precoCentavos],
   );
 
-  // Amanhã às 14h em São Paulo (17h UTC), três horas.
-  const amanha = new Date();
-  amanha.setUTCDate(amanha.getUTCDate() + 1);
-  amanha.setUTCHours(17, 0, 0, 0);
   await db.query(
     `INSERT INTO appointment (id, codigo, nome_contato, telefone_contato, artist_id, inicia_em,
        termina_em, regiao_corpo)
-     VALUES ($1, $2, 'Lucas Silveira', '11987654321', $3, $4, $5, 'Antebraço')`,
-    [
-      HORARIO.id,
-      HORARIO.codigo,
-      ARTISTA.id,
-      amanha.toISOString(),
-      new Date(amanha.getTime() + 3 * 60 * 60 * 1000).toISOString(),
-    ],
+     VALUES ($1, $2, $3, '11987654321', $4, $5, $6, 'Antebraço')`,
+    [HORARIO.id, HORARIO.codigo, HORARIO.contato, ARTISTA.id, HORARIO.iniciaEm, HORARIO.terminaEm],
   );
 }
 

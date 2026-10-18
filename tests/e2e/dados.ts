@@ -87,9 +87,15 @@ export const PEDIDO_PAGO = {
   numero: "20261001-AB23CD",
 };
 
+// Quarta-feira, 04/11/2026, das 14h às 17h em São Paulo (UTC-3). Data fixa: a varredura abre a
+// agenda nessa semana (?semana=), qualquer que seja o dia em que o E2E rode.
 export const HORARIO = {
   id: "00000000-0000-4000-9000-000000000081",
   codigo: "AG-20261001-EF45GH",
+  contato: "Lucas Silveira",
+  iniciaEm: "2026-11-04T17:00:00.000Z",
+  terminaEm: "2026-11-04T20:00:00.000Z",
+  semana: "2026-11-04",
 };
 
 // Um trabalho da Bia no portfólio desde o início (ver preparar-banco.ts).
