@@ -13,11 +13,13 @@ import { dirname, join } from "node:path";
 
 type Comando = { input: { Key?: string; Body?: unknown } };
 type ClienteS3 = { send: (comando: Comando) => Promise<unknown> };
+// Só para o instanceof: o tipo da instância não importa aqui.
+type Construtor = new (...args: never[]) => object;
 type ModuloS3 = {
   S3Client: { prototype: ClienteS3 };
-  GetObjectCommand: new (...args: never[]) => Comando;
-  PutObjectCommand: new (...args: never[]) => Comando;
-  DeleteObjectCommand: new (...args: never[]) => Comando;
+  GetObjectCommand: Construtor;
+  PutObjectCommand: Construtor;
+  DeleteObjectCommand: Construtor;
 };
 
 const pasta = process.env.E2E_R2_DIR;
