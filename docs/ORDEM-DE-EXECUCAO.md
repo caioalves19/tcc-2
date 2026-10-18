@@ -2,7 +2,7 @@
 
 Checklist de construção. Cada item depende do que está acima. **P0** = defesa · **P1** = se der tempo.
 
-Fonte: `ESCOPO-E-STACK.md` v2.2 · RF01–RF31 · 8 semanas.
+Fonte: `ESCOPO-E-STACK.md` v2.2 · RF01–RF32 · 8 semanas.
 
 ---
 
@@ -114,12 +114,13 @@ Wizard público → WhatsApp. O tatuador cadastra o horário depois. Sem motor d
 
 ## Fase 5 — Fechamento (semanas 6–7)
 
-Sem dashboard. Semana extra aproveitada para qualidade da defesa.
+Semana extra aproveitada para qualidade da defesa. O painel de indicadores (RF32) entrou em 18/10/2026 pelo critério 8 da banca.
 
 | # | ID | Feature | P |
 |---|----|---------|---|
 | 33 | RF30 | Perfil unificado do cliente no admin | P1 |
 | 34 | RN12 | LGPD: exclusão da própria conta com anonimização | P1 |
+| 35 | RF32 | Painel de indicadores e relatório de vendas (PBI-48) | P0 |
 
 Em paralelo (não são RF, mas fecham a defesa): endurecer segurança, testes E2E (compra sandbox + wizard até `wa.me`), acessibilidade, Lighthouse.
 

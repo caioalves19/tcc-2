@@ -98,7 +98,7 @@ Mostrar decisões técnicas, não manual de uso. Código longo vai para o apênd
 
 | Item obrigatório                                                | De onde tirar no repo                                                         |
 | --------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Requisitos funcionais e não funcionais                          | `ESCOPO-E-STACK.md` §4 (RF01–RF31), §5 (RNF01–RNF24), §6 (RN01–RN12)          |
+| Requisitos funcionais e não funcionais                          | `ESCOPO-E-STACK.md` §4 (RF01–RF32), §5 (RNF01–RNF24), §6 (RN01–RN12)          |
 | Tecnologias justificadas: linguagem, framework, banco, IDE, servidor, bibliotecas | `ESCOPO-E-STACK.md` §8; `BRIEFING.md`; `package.json`                         |
 | Arquitetura e justificativa                                     | `ESCOPO-E-STACK.md` §9 (diagrama mermaid e organização por módulos)           |
 | DER, MER, casos de uso, classes, sequência                      | `DER.md`; papéis em `ESCOPO-E-STACK.md` §7; webhook em §11                     |

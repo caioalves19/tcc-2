@@ -1,6 +1,7 @@
 # Kolô — Escopo e Stack (TCC 2)
 
 > **Versão:** 2.2 · **Data:** setembro de 2026 · **Fase:** TCC 2 — implementação
+> **Atualização de 18/10/2026:** RF32 (painel de indicadores e relatório de vendas) incluído pelo critério 8 da banca; o “dashboard de faturamento” sai da lista de adiados (PBI-48).
 > **Equipe:** Caio Scorsoni, Caio Vinicius, Guilherme Salustiano, Gustavo Magalhães, Robert Estevan
 
 Enxuga a v2.1 para caber no prazo: agendamento vira wizard → WhatsApp; o tatuador cadastra o horário depois. Itens adiados estão na [seção 14](#14-fora-de-escopo) e podem voltar depois. A numeração de RF, RN e RNF é contínua (sem buracos).
@@ -146,6 +147,7 @@ O sistema não coleta ficha de saúde. Anamnese, termo de consentimento informad
 | RF29 | Gestão de pedidos: alterar status, registrar rastreio e ver dados de pagamento | P0 |
 | RF30 | Gestão de clientes: perfil unificado com compras | P1 |
 | RF31 | Configurações do site: dados de contato, horários, textos institucionais e políticas | P1 |
+| RF32 | Painel de indicadores (faturamento, pedidos e obras por situação, agenda da semana) e relatório de vendas por período, com obras mais vendidas e faturamento por artista | P0 |
 
 ---
 
@@ -423,4 +425,4 @@ Cada requisito funcional P0 deve ter ao menos um teste automatizado associado.
 
 Itens já fora na v2.1: aplicativo móvel nativo · marketplace com contas de vendedor e divisão automática de pagamento · sala virtual navegável · tour virtual 360° · chatbot com IA conversacional · emissão de nota fiscal e integração contábil · integração com Correios em tempo real ou etiqueta de envio · controle de estoque de insumos do estúdio · múltiplos idiomas e moedas · funcionamento offline como PWA · integração com maquininha ou ponto de venda físico · assinatura ou clube de membros · ficha de anamnese digital e armazenamento de dados de saúde · termo de consentimento com valor jurídico no sistema · cupons de desconto · recomendações personalizadas · lista de desejos / favoritos · exportação de dados em CSV · verificação de e-mail no cadastro · cobrança de sinal para agendamento · remarcação e cancelamento pelo cliente · registro de comparecimento · estimativa automática de duração e valor · uso de imagem no portfólio · log de auditoria · múltiplas salas/exposições temáticas · curadoria de paredes/salas pelo administrador.
 
-Adiado na v2.2 (pode voltar depois): login social com Google · listagem e página pública do artista · filtros do catálogo · visualizador 3D na ficha da obra, WebGL e fallback 2D · e-mail transacional de pedido e demais e-mails além da recuperação de senha · upload de referências no wizard · motor de horários livres, disponibilidade semanal e bloqueios · fluxo de aprovação da solicitação · Google Calendar · lembrete automático por e-mail · dashboard de faturamento · múltiplos endereços de entrega · “meus agendamentos” na área do cliente · persistência da solicitação do wizard · conferência presencial de anamnese/termo/identidade registrada no sistema · política de cancelamento aplicada pelo software.
+Adiado na v2.2 (pode voltar depois): login social com Google · listagem e página pública do artista · filtros do catálogo · visualizador 3D na ficha da obra, WebGL e fallback 2D · e-mail transacional de pedido e demais e-mails além da recuperação de senha · upload de referências no wizard · motor de horários livres, disponibilidade semanal e bloqueios · fluxo de aprovação da solicitação · Google Calendar · lembrete automático por e-mail · múltiplos endereços de entrega · “meus agendamentos” na área do cliente · persistência da solicitação do wizard · conferência presencial de anamnese/termo/identidade registrada no sistema · política de cancelamento aplicada pelo software.
