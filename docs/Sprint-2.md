@@ -1004,7 +1004,7 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 - Contas da equipe (ADMIN e dois artistas) criadas na fixture com credencial do Better Auth e senha sorteada a cada rodada (`E2E_SENHA_EQUIPE`); o login é pela tela. O cliente se cadastra pela tela.
 - Dublê do R2: no navegador, o `page.route` recebe o PUT da URL assinada e grava o arquivo numa pasta temporária (`E2E_R2_DIR`); no servidor, `tests/e2e/r2-falso.ts`, carregado por `NODE_OPTIONS=--import`, troca o `S3Client.prototype.send` do `@aws-sdk/client-s3` (que o Next deixa fora do bundle) e atende `GetObject`, `PutObject` e `DeleteObject` nessa pasta. O `sharp` processa o arquivo enviado de verdade; a foto de teste é gerada na hora.
 - As asserções conferem texto (título, preço, mensagens), não a imagem renderizada: o `R2_PUBLIC_URL` é fictício e o servidor registra `ENOTFOUND` ao otimizar as fotos, sem efeito no teste (o Next 16 resolve o DNS antes de baixar a imagem).
-- RN10 pela tela: para a artista, o servidor ignora o `?artista=` de outro artista e mostra o próprio portfólio; o teste confere que o trabalho do outro não aparece.
+- RN10 pela tela: para a artista, o servidor ignora o `?artista=` de outro artista e devolve o próprio portfólio, com o formulário dela e sem recusa. Por isso o teste confere o formulário "Cadastrar trabalho" e a ausência do trabalho do outro, em vez de uma mensagem de acesso negado (o pedido previa a mensagem; o comportamento do app também protege e foi mantido).
 
 **Entregas da fatia 4:**
 
@@ -1016,6 +1016,7 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 - Na pasta do dublê ficaram o JPEG enviado pelo navegador e a miniatura `_thumb.webp` gerada pelo `sharp` no servidor.
 - Sabotagens detectadas: com o dublê respondendo "objeto inexistente", a obra não recebeu a imagem e o teste falhou; com a restrição conferida como ADMIN, a expectativa de acesso negado falhou.
 - `npm run lint`, `format:check`, `typecheck` e `npm test` (531) sem erros.
+- Revisão independente por agente: PASS; os ajustes sugeridos (RN10 conferindo o portfólio da própria artista, vitrine vista sem sessão e com controle positivo, dublês fechados a comandos não simulados, helper de cadastro) foram incluídos.
 
 ### PBI-46 — Deploy, operação e restauração
 
