@@ -939,7 +939,7 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 - Todas as páginas já eram dinâmicas (o layout raiz lê `headers()`), então todas recebem o nonce.
 - E2E em Chromium: o `upgrade-insecure-requests` quebraria o WebKit com `next start` servido por http. Em produção, com HTTPS, não há efeito.
 
-**Situação:** fatia 1 no PR #72, aberto em 18/10/2026; aguarda a CI e a revisão de outro integrante. Fatias 2 a 6 pendentes.
+**Situação:** fatia 1 no PR #72 e fatia 2 no PR #73, abertos em 18/10/2026; aguardam a revisão de outro integrante. A fatia 2 parte da 1 (o E2E roda com a CSP de produção) e é rebaseada quando o #72 entrar na `main`. Fatias 3 a 6 pendentes.
 
 **Entregas da fatia 1:**
 
@@ -958,6 +958,24 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 
 - Conferir o envio completo ao R2 (envio, miniatura e exibição) com `http://localhost:3100` no CORS do bucket de teste ou na porta 3000; previsto junto da fatia 4.
 - A nota A no securityheaders.com só pode ser medida no domínio, no PBI-46.
+
+**Decisões da fatia 2 (registradas em 18/10/2026):**
+
+- `npm run test:e2e` roda o Playwright, só Chromium, contra o `next start` do build já feito (localmente, `npm run build` antes; na CI, o passo de Build logo acima).
+- Banco descartável `kolo_e2e`, recriado a cada rodada dentro do comando do `webServer` (migrações e dados fixos de `tests/e2e/dados.ts`), antes de o servidor subir. Sem usar o `kolo_db` nem o `prisma/seed.ts`.
+- O `webServer.env` fixa valores fictícios para tudo que o app lê de fora (auth, `APP_URL`, Mercado Pago, Resend, R2): o Playwright mescla com o ambiente do processo e o Next completaria com o `.env` local.
+- Na CI, passos no job `verify` depois do Build (sem segundo job), com o relatório do Playwright como artefato por 7 dias quando falhar.
+
+**Entregas da fatia 2:**
+
+- `playwright.config.ts`, `tests/e2e/dados.ts`, `tests/e2e/preparar-banco.ts` e `tests/e2e/wizard.spec.ts`; `@playwright/test` como devDependency; `playwright.config.ts` no `tsconfig`.
+- E2E do wizard (RF20–RF25, RF21): da home às 8 etapas; sem os três avisos a revisão não sai e o link não aparece; com eles, o link vai ao WhatsApp das configurações com a mensagem do RF21, conferida literalmente.
+
+**Evidências da fatia 2:**
+
+- `npm run test:e2e` passou em duas rodadas seguidas (cerca de 11 s cada); com o número esperado sabotado, falhou mostrando o `href` esperado e o recebido.
+- `npm run lint`, `format:check`, `typecheck`, `npm test` (531) e `npm run test:integration` (276) sem erros.
+- Revisão independente por agente: PASS; os ajustes sugeridos (ambiente isolado do `.env` local e nome do banco centralizado) foram incluídos.
 
 ### PBI-46 — Deploy, operação e restauração
 

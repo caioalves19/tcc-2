@@ -75,7 +75,7 @@
 - [ ] Rodar axe-core e conferir 320, 768, 1440 e 1920 px nas telas que ainda não têm registro (PBI-45)
 - [ ] Rodar o Lighthouse no catálogo e na ficha da obra (meta: ≥ 90 e LCP < 2,5 s, RNF13)
 - [ ] Pedir a 2 ou 3 pessoas de fora do grupo que façam a compra e o agendamento sem ajuda e anotar onde travaram. Serve também para o Capítulo 5 da monografia
-- [ ] Opcional: E2E com Playwright para compra e wizard (o `npm run test:e2e` hoje é placeholder)
+- [ ] E2E com Playwright para compra e wizard: o `npm run test:e2e` roda o wizard contra o build de produção desde a fatia 2 do PBI-45; a compra entra na fatia 3
 
 ### 7. Autenticação e perfis de usuário
 
