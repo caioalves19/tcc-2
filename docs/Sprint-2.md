@@ -939,7 +939,7 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 - Todas as páginas já eram dinâmicas (o layout raiz lê `headers()`), então todas recebem o nonce.
 - E2E em Chromium: o `upgrade-insecure-requests` quebraria o WebKit com `next start` servido por http. Em produção, com HTTPS, não há efeito.
 
-**Situação:** fatia 1 no PR #72, fatia 2 no PR #73, fatia 3 no PR #74 e fatia 4 no PR #75, abertos em 18/10/2026; aguardam a revisão de outro integrante. Cada fatia parte da anterior e é rebaseada quando a anterior entrar na `main`. Fatias 5 e 6 pendentes.
+**Situação:** fatia 1 no PR #72, fatia 2 no PR #73, fatia 3 no PR #74, fatia 4 no PR #75 e fatia 5 no PR da branch `feat/pbi-45-a11y`, abertos em 18/10/2026; aguardam a revisão de outro integrante. Cada fatia parte da anterior e é rebaseada quando a anterior entrar na `main`. Fatia 6 pendente.
 
 **Entregas da fatia 1:**
 
@@ -1017,6 +1017,33 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 - Sabotagens detectadas: com o dublê respondendo "objeto inexistente", a obra não recebeu a imagem e o teste falhou; com a restrição conferida como ADMIN, a expectativa de acesso negado falhou.
 - `npm run lint`, `format:check`, `typecheck` e `npm test` (531) sem erros.
 - Revisão independente por agente: PASS; os ajustes sugeridos (RN10 conferindo o portfólio da própria artista, vitrine vista sem sessão e com controle positivo, dublês fechados a comandos não simulados, helper de cadastro) foram incluídos.
+
+**Decisões da fatia 5 (registradas em 18/10/2026):**
+
+- Varredura de todas as telas (35: visitante, cliente, admin e artista), uma por teste, a partir de `tests/e2e/telas.ts`.
+- RNF20: em 320, 768, 1440 e 1920 px cada tela carrega sem rolagem horizontal; quando há, a mensagem aponta os elementos que passam da borda. Cada largura gera uma captura JPEG anexada ao relatório do Playwright, que a CI guarda sempre por 7 dias (as capturas não são versionadas).
+- RNF21: axe-core com as regras WCAG 2.1 A e AA, em 320 e 1440 px; impacto crítico e sério reprovam (o contraste AA o axe classifica como sério). Teclado e foco não entram nesta fatia.
+- Problemas já existentes não são corrigidos nesta fatia: ficam em `tests/e2e/excecoes-a11y.ts`, por tela e regra, com o motivo. Violação fora da lista reprova, exceção que deixou de acontecer também, e toda exceção precisa apontar uma tela da tabela.
+- A fixture ganha o que as telas do cliente e da equipe precisam: uma cliente com endereço, uma obra no carrinho, um pedido pago com item e pagamento, um horário na agenda e um trabalho da artista no portfólio (este para a varredura não depender da ordem dos testes).
+
+**Exceções registradas (corrigir em outro PR):**
+
+| Tela | Regra | Impacto | Motivo |
+| --- | --- | --- | --- |
+| Admin, detalhe do pedido | rolagem horizontal | — | Em 320 px os títulos `#admin-pedido-situacao` e `#admin-pedido-rastreio` (fonte de exibição, `text-titulo-lg`) e um botão passam da largura: 47 px de rolagem. |
+| Gestão do portfólio (admin) | `label-content-name-mismatch` | sério | WCAG 2.5.3: os botões "Mover para cima" e "Mover para baixo" têm `aria-label` "Mover {título} para cima/baixo", que não contém o texto visível. Ex.: "Mover para cima: {título}". |
+| Gestão do portfólio (artista) | `label-content-name-mismatch` | sério | Os mesmos botões, na tela da artista. |
+
+**Entregas da fatia 5:**
+
+- `tests/e2e/telas.ts`, `tests/e2e/varredura.spec.ts` e `tests/e2e/excecoes-a11y.ts`; `@axe-core/playwright` como devDependency; a fixture ampliada em `tests/e2e/preparar-banco.ts`; o relatório do Playwright guardado sempre na CI.
+
+**Evidências da fatia 5:**
+
+- `npm run test:e2e`: 41 testes passaram em duas rodadas seguidas (cerca de 1,9 min cada); a varredura sozinha também passou (35), sem depender da ordem. Com o teste de que toda exceção aponta uma tela, 42.
+- Das 35 telas, 32 já passavam sem exceção; as três exceções acima são o que a varredura achou.
+- Sabotagens detectadas: sem a exceção do detalhe do pedido, a tela falhou mostrando a rolagem e os elementos; com uma exceção inventada na home, o teste falhou pedindo para apagá-la; com a exceção apontando uma tela inexistente, o teste novo falhou.
+- `npm run lint`, `format:check`, `typecheck` e `npm test` (531) sem erros.
 
 ### PBI-46 — Deploy, operação e restauração
 
