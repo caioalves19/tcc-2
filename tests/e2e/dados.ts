@@ -53,3 +53,8 @@ export const OUTRO_ARTISTA = {
   slug: "caio-linha",
   trabalho: { id: "00000000-0000-4000-9000-000000000053", titulo: "Fechamento do Caio" },
 };
+
+// RF27: R2 fictício do E2E. O navegador envia para a URL assinada desse endpoint (o page.route a
+// atende) e o servidor lê e grava pelo dublê; os dois usam a pasta E2E_R2_DIR.
+export const R2_CONTA_E2E = "conta-ficticia-e2e";
+export const R2_BUCKET_E2E = "kolo-e2e";
