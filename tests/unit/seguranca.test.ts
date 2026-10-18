@@ -74,6 +74,17 @@ it("RNF05 o style-src aceita as folhas do site e os estilos inline com o nonce d
   expect(diretiva(csp, "style-src")).toEqual(["'self'", "'nonce-abc123'"]);
 });
 
+// O next/image escreve style="color:transparent" no <img>, e atributo não aceita nonce. Só os
+// atributos ficam livres; as tags <style> continuam exigindo o nonce.
+it("RNF05 atributos style são aceitos sem liberar tags <style> sem nonce", () => {
+  const csp = cabecalhosDeSeguranca("abc123", { NODE_ENV: "production" })[
+    "Content-Security-Policy"
+  ];
+
+  expect(diretiva(csp, "style-src-attr")).toEqual(["'unsafe-inline'"]);
+  expect(diretiva(csp, "style-src")).not.toContain("'unsafe-inline'");
+});
+
 it("RNF07 toda resposta leva nosniff, Referrer-Policy e X-Frame-Options", () => {
   const cabecalhos = cabecalhosDeSeguranca("abc123", { NODE_ENV: "development" });
 

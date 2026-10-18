@@ -37,6 +37,9 @@ export function cabecalhosDeSeguranca(nonce: string, ambiente: Ambiente): Cabeca
     "default-src 'self'",
     diretiva("script-src", "'self'", `'nonce-${nonce}'`, "'strict-dynamic'", evalEmDev),
     diretiva("style-src", "'self'", `'nonce-${nonce}'`),
+    // O next/image escreve style="..." no <img>, e atributo não aceita nonce: só os atributos
+    // ficam livres; as tags <style> continuam exigindo o nonce.
+    "style-src-attr 'unsafe-inline'",
     diretiva("img-src", "'self'", "data:", r2Publico),
     diretiva("connect-src", "'self'", r2Envio),
     // RNF08 (PBI-44): o desafio do Turnstile abre num iframe da Cloudflare.
