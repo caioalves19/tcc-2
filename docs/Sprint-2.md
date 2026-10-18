@@ -941,6 +941,16 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 
 **Situação:** fatia 1 no PR #72, fatia 2 no PR #73, fatia 3 no PR #74, fatia 4 no PR #75, fatia 5 no PR #76 e fatia 6 (fechamento) no PR #77, abertos em 18/10/2026; aguardam a revisão de outro integrante. Cada fatia parte da anterior e é rebaseada quando a anterior entrar na `main`. Fica em aberto só a verificação de teclado e foco (ver o checklist).
 
+**Pendências em aberto do PBI-45 (para quem pegar depois):**
+
+| Pendência | Por que ficou | Onde está o detalhe | Depende de |
+| --- | --- | --- | --- |
+| Verificar navegação por teclado e foco visível nos fluxos principais (compra, wizard, login, admin) | Ficou fora da fatia 5 por decisão da equipe; o axe-core não verifica isso, e o RNF21 pede | Checklist acima (item em aberto) e `PREPARACAO-BANCA.md`, critério 6 | Ninguém de fora: pode virar um E2E só com o teclado |
+| Conferir o envio real de imagem ao R2 (envio, miniatura e exibição) | O E2E usa o dublê do R2; no teste manual da fatia 1 o CORS do bucket `kolo-imagens-teste` recusou a origem `http://localhost:3100` | Pendências da fatia 1 | Dono da conta Cloudflare (incluir a origem no CORS) ou testar na porta 3000 |
+| Compra real no sandbox até a confirmação, pelo endereço público | O E2E confirma com o Mercado Pago simulado; o webhook real precisa de URL pública | Checklist do PBI-46 | Deploy (PBI-46) e a URL do webhook no painel do Mercado Pago |
+| Nota A no securityheaders.com | Só pode ser medida no domínio | Pendências da fatia 1; item "Validar HTTPS, cabeçalhos" do PBI-46 | Deploy (PBI-46) |
+| (Opcional) `heading-order` no catálogo: títulos dos cards em `h3` direto abaixo do `h1` | Regra de boas práticas, fora das tags WCAG A/AA da varredura; custa 2 pontos de acessibilidade no Lighthouse | Observações do Lighthouse, fatia 6 | Ninguém de fora |
+
 **Entregas da fatia 1:**
 
 - `cabecalhosDeSeguranca(nonce, ambiente)` em `src/lib/seguranca.ts` e o proxy em `src/proxy.ts`.
@@ -956,7 +966,7 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 
 **Pendências:**
 
-- Conferir o envio completo ao R2 (envio, miniatura e exibição) com `http://localhost:3100` no CORS do bucket de teste ou na porta 3000; previsto junto da fatia 4.
+- Conferir o envio completo ao R2 (envio, miniatura e exibição) com `http://localhost:3100` no CORS do bucket de teste ou na porta 3000. Ainda em aberto: a fatia 4 testou o envio com o dublê do R2, não com o bucket (ver as pendências em aberto abaixo da situação).
 - A nota A no securityheaders.com só pode ser medida no domínio, no PBI-46.
 
 **Decisões da fatia 2 (registradas em 18/10/2026):**
