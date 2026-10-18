@@ -155,7 +155,10 @@ it("RF09 com uma obra só, o resumo fica no singular", () => {
   expect(screen.getByText("Mostrando 1 a 1 de 1 obra")).toBeDefined();
 });
 
-it("RNF13 só as imagens da primeira linha da grade carregam com prioridade (LCP)", () => {
+// O React 19 gera um <link rel="preload"> para cada imagem eager: com a primeira linha inteira
+// eager, as 4 fotos entravam na fila antes do LCP e, no 4G simulado do Lighthouse, o LCP do
+// catálogo ficava em ~3,7 s (PBI-45). Só a primeira foto é eager; as outras entram por lazy.
+it("RNF13 só a primeira imagem do catálogo carrega sem lazy (LCP)", () => {
   render(
     <CatalogoObras
       obras={Array.from({ length: 8 }, (_, i) => ({
@@ -175,12 +178,36 @@ it("RNF13 só as imagens da primeira linha da grade carregam com prioridade (LCP
     .map((img) => [img.getAttribute("alt"), img.getAttribute("loading")]);
   expect(carregamento).toEqual([
     ["Foto 0", "eager"],
-    ["Foto 1", "eager"],
-    ["Foto 2", "eager"],
-    ["Foto 3", "eager"],
+    ["Foto 1", "lazy"],
+    ["Foto 2", "lazy"],
+    ["Foto 3", "lazy"],
     ["Foto 4", "lazy"],
     ["Foto 5", "lazy"],
     ["Foto 6", "lazy"],
     ["Foto 7", "lazy"],
   ]);
+});
+
+// No celular só o primeiro card aparece: as 4 fotos da primeira linha com prioridade alta
+// dividiam a banda do 4G e atrasavam o LCP (Lighthouse, PBI-45). Só a primeira pede pressa.
+it("RNF13 só a primeira imagem do catálogo pede prioridade alta de rede (LCP)", () => {
+  render(
+    <CatalogoObras
+      obras={Array.from({ length: 8 }, (_, i) => ({
+        ...card(i),
+        imagem: { chave: `obras/a/${i}.jpg`, textoAlternativo: `Foto ${i}` },
+      }))}
+      total={8}
+      pagina={1}
+      totalPaginas={1}
+      ordem="recentes"
+      busca=""
+      baseImagens="https://imagens.kolo.test"
+    />,
+  );
+  const altas = screen
+    .getAllByRole("img")
+    .filter((img) => img.getAttribute("fetchpriority") === "high")
+    .map((img) => img.getAttribute("alt"));
+  expect(altas).toEqual(["Foto 0"]);
 });

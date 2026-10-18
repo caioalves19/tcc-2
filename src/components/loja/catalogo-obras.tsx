@@ -4,8 +4,9 @@ import { SeletorOrdem } from "@/components/loja/seletor-ordem";
 import type { PaginaCatalogo } from "@/modules/catalog";
 import { hrefCatalogo, OBRAS_POR_PAGINA } from "@/modules/catalog/cliente";
 
-// RNF13: a primeira linha da grade (4 colunas no desktop) aparece sem rolar a página.
-const CARDS_ACIMA_DA_DOBRA = 4;
+// RNF13: só a primeira foto da grade carrega sem lazy e com prioridade alta. O React 19 gera um
+// <link rel="preload"> para cada imagem eager; com a primeira linha inteira eager, as 4 fotos
+// disputavam a banda do celular e o LCP do catálogo passava de 2,5 s no 4G simulado (PBI-45).
 
 type Props = PaginaCatalogo & {
   // URL pública do R2 (R2_PUBLIC_URL); sem ela, as fotos viram espaço reservado.
@@ -95,7 +96,7 @@ export function CatalogoObras({
                 key={obra.slug}
                 obra={obra}
                 baseImagens={baseImagens}
-                prioridade={i < CARDS_ACIMA_DA_DOBRA}
+                prioridade={i === 0}
               />
             ))}
           </div>
