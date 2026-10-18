@@ -33,7 +33,7 @@ function montar(extra: Partial<Parameters<typeof FormularioHorario>[0]> = {}) {
 }
 
 it("RF22 o artista preenche contato, horário em São Paulo e opcionais, sem escolher artista", async () => {
-  const usuario = userEvent.setup();
+  const usuario = userEvent.setup({ delay: null });
   const { enviar, aoSalvar } = montar();
   expect(screen.queryByLabelText("Artista")).toBeNull();
 
@@ -67,7 +67,7 @@ it("RF22 o artista preenche contato, horário em São Paulo e opcionais, sem esc
 });
 
 it("RN10 o admin escolhe o artista; na edição, o formulário vem preenchido e manda o id", async () => {
-  const usuario = userEvent.setup();
+  const usuario = userEvent.setup({ delay: null });
   const { enviar } = montar({
     artistas: ARTISTAS,
     inicial: {
@@ -103,7 +103,7 @@ it("RN10 o admin escolhe o artista; na edição, o formulário vem preenchido e 
 });
 
 it("RF22/RN08 mostra o erro no campo e a recusa de sobreposição, sem fechar o formulário", async () => {
-  const usuario = userEvent.setup();
+  const usuario = userEvent.setup({ delay: null });
   const enviar = vi
     .fn()
     .mockResolvedValueOnce({
