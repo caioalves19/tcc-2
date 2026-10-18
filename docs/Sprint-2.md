@@ -1021,18 +1021,19 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 **Decisões da fatia 5 (registradas em 18/10/2026):**
 
 - Varredura de todas as telas (35: visitante, cliente, admin e artista), uma por teste, a partir de `tests/e2e/telas.ts`.
-- RNF20: em 320, 768, 1440 e 1920 px cada tela carrega sem rolagem horizontal; quando há, a mensagem aponta os elementos que passam da borda. Cada largura gera uma captura JPEG anexada ao relatório do Playwright, que a CI guarda sempre por 7 dias (as capturas não são versionadas).
-- RNF21: axe-core com as regras WCAG 2.1 A e AA, em 320 e 1440 px; impacto crítico e sério reprovam (o contraste AA o axe classifica como sério). Teclado e foco não entram nesta fatia.
-- Problemas já existentes não são corrigidos nesta fatia: ficam em `tests/e2e/excecoes-a11y.ts`, por tela e regra, com o motivo. Violação fora da lista reprova, exceção que deixou de acontecer também, e toda exceção precisa apontar uma tela da tabela.
-- A fixture ganha o que as telas do cliente e da equipe precisam: uma cliente com endereço, uma obra no carrinho, um pedido pago com item e pagamento, um horário na agenda e um trabalho da artista no portfólio (este para a varredura não depender da ordem dos testes).
+- Cada tela confere a URL final e um marco de conteúdo dentro do `<main>`: um redirecionamento para o login ou uma tela de erro não passa como a tela varrida.
+- RNF20: em 320, 768, 1440 e 1920 px cada tela carrega sem rolagem horizontal (medida com as fontes carregadas, pela largura útil); quando há, a mensagem aponta os elementos que passam da borda. Cada largura gera uma captura JPEG anexada ao relatório do Playwright, que a CI guarda por 30 dias (as capturas não são versionadas: baixar do artefato as que forem para a monografia).
+- RNF21: axe-core com as regras WCAG 2.1 A e AA, em 320 e 1440 px; impacto crítico e sério reprovam (o contraste AA o axe classifica como sério). Ficam de fora os resultados "incompletos" do axe (ex.: contraste sobre imagem) e o iframe do Turnstile, que é da Cloudflare. Teclado e foco não entram nesta fatia.
+- Problemas já existentes não são corrigidos nesta fatia: ficam em `tests/e2e/excecoes-a11y.ts`, por tela, regra e larguras, com o motivo. Violação fora da lista reprova (inclusive a mesma regra em outra largura), exceção que deixou de acontecer também, e toda exceção precisa apontar uma tela da tabela. Limite conhecido: a chave não distingue o elemento.
+- A fixture ganha o que as telas do cliente e da equipe precisam: uma cliente com endereço, uma obra no carrinho, um pedido pago com item e pagamento, um horário na agenda (com data fixa, e a agenda aberta nessa semana) e um trabalho da artista no portfólio (para a varredura não depender da ordem dos testes).
 
 **Exceções registradas (corrigir em outro PR):**
 
 | Tela | Regra | Impacto | Motivo |
 | --- | --- | --- | --- |
-| Admin, detalhe do pedido | rolagem horizontal | — | Em 320 px os títulos `#admin-pedido-situacao` e `#admin-pedido-rastreio` (fonte de exibição, `text-titulo-lg`) e um botão passam da largura: 47 px de rolagem. |
-| Gestão do portfólio (admin) | `label-content-name-mismatch` | sério | WCAG 2.5.3: os botões "Mover para cima" e "Mover para baixo" têm `aria-label` "Mover {título} para cima/baixo", que não contém o texto visível. Ex.: "Mover para cima: {título}". |
-| Gestão do portfólio (artista) | `label-content-name-mismatch` | sério | Os mesmos botões, na tela da artista. |
+| Admin, detalhe do pedido (320 px) | rolagem horizontal | — | Em 320 px os títulos `#admin-pedido-situacao` e `#admin-pedido-rastreio` (fonte de exibição, `text-titulo-lg`) e um botão passam da largura: 47 px de rolagem. |
+| Gestão do portfólio (admin; 320 e 1440 px) | `label-content-name-mismatch` | sério | WCAG 2.5.3: os botões "Mover para cima" e "Mover para baixo" têm `aria-label` "Mover {título} para cima/baixo", que não contém o texto visível. Ex.: "Mover para cima: {título}". |
+| Gestão do portfólio (artista; 320 e 1440 px) | `label-content-name-mismatch` | sério | Os mesmos botões, na tela da artista. |
 
 **Entregas da fatia 5:**
 
@@ -1044,6 +1045,7 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 - Das 35 telas, 32 já passavam sem exceção; as três exceções acima são o que a varredura achou.
 - Sabotagens detectadas: sem a exceção do detalhe do pedido, a tela falhou mostrando a rolagem e os elementos; com uma exceção inventada na home, o teste falhou pedindo para apagá-la; com a exceção apontando uma tela inexistente, o teste novo falhou.
 - `npm run lint`, `format:check`, `typecheck` e `npm test` (531) sem erros.
+- Revisão independente por agente: FAIL na primeira passada (tela redirecionada ou de erro passava como varrida; agenda vazia aos domingos; exceção sem largura). Corrigido: URL final e marco por tela, horário com data fixa, largura nas exceções e os ajustes menores. Sabotagens da correção detectadas: "minha conta" como visitante falhou na URL final (`/login`); sem o item no carrinho, o checkout falhou na URL final (`/carrinho`); com a exceção do detalhe do pedido em 768 px, a tela falhou como nova em 320 px e obsoleta em 768 px. Depois disso, 42 testes passaram em duas rodadas seguidas.
 
 ### PBI-46 — Deploy, operação e restauração
 
