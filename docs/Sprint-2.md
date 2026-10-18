@@ -939,7 +939,7 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 - Todas as páginas já eram dinâmicas (o layout raiz lê `headers()`), então todas recebem o nonce.
 - E2E em Chromium: o `upgrade-insecure-requests` quebraria o WebKit com `next start` servido por http. Em produção, com HTTPS, não há efeito.
 
-**Situação:** fatia 1 no PR #72, fatia 2 no PR #73, fatia 3 no PR #74, fatia 4 no PR #75 e fatia 5 no PR da branch `feat/pbi-45-a11y`, abertos em 18/10/2026; aguardam a revisão de outro integrante. Cada fatia parte da anterior e é rebaseada quando a anterior entrar na `main`. Fatia 6 pendente.
+**Situação:** fatia 1 no PR #72, fatia 2 no PR #73, fatia 3 no PR #74, fatia 4 no PR #75 e fatia 5 no PR #76, abertos em 18/10/2026; aguardam a revisão de outro integrante. Cada fatia parte da anterior e é rebaseada quando a anterior entrar na `main`. Fatia 6 pendente.
 
 **Entregas da fatia 1:**
 
