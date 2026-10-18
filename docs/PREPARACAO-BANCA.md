@@ -33,7 +33,7 @@
 
 ### 1. Levantamento de requisitos
 
-- [ ] Gerar um PDF "Documento de Requisitos" a partir de `ESCOPO-E-STACK.md` v2.2: identificação do cliente e da equipe, contexto, escopo, RF01–RF31, RNF01–RNF24, RN01–RN12, papéis e permissões, fora de escopo
+- [ ] Gerar um PDF "Documento de Requisitos" a partir de `ESCOPO-E-STACK.md` v2.2: identificação do cliente e da equipe, contexto, escopo, RF01–RF32, RNF01–RNF24, RN01–RN12, papéis e permissões, fora de escopo
 - [ ] Campo final de aceite: nome, cargo, data e assinatura do responsável pelo Kolô. Uma assinatura digital (gov.br) também serve
 - [ ] Imprimir uma cópia assinada para levar no dia
 - [ ] Saber explicar na banca por que 3D, Google Calendar e motor de horários foram adiados (`ESCOPO-E-STACK.md` §§2 e 14)
@@ -51,8 +51,8 @@
   - [ ] webhook com assinatura e idempotência: `src/modules/payments/webhook.ts` e `assinatura.ts`
   - [ ] validação por esquema (Zod): qualquer `validacao.ts` de `src/modules/`
 - [ ] Mostrar a CI no GitHub Actions (lint, tipos, testes, build) e o número de testes
-- [ ] Integrar o PBI-40 (exclusão de conta): a branch `feat/pbi-40-exclusao-conta` tem 10 commits só locais, sem push e sem PR
-- [ ] Integrar o PR 68 (atualização de situação no `Sprint-2.md`)
+- [x] Integrar o PBI-40 (exclusão de conta): PR #69, integrado em 17/10
+- [x] Integrar o PR 68 (atualização de situação no `Sprint-2.md`), integrado em 15/10
 - [ ] Estabilizar `tests/unit/formulario-horario.test.tsx`: falhou uma vez na suíte completa e passa sozinho, provavelmente por tempo limite
 
 ### 4. Implementação do front-end
@@ -100,7 +100,7 @@
   - [ ] obras disponíveis, esgotadas e em rascunho
   - [ ] agendamentos dos próximos 7 dias
 - [ ] Relatório de vendas por período (este mês, últimos 30 dias, intervalo escolhido) com obras mais vendidas e faturamento por artista
-- [ ] Registrar a decisão num PBI novo, justificada pelo critério da banca
+- [x] Registrar a decisão num PBI novo, justificada pelo critério da banca: PBI-48 (RF32), em 18/10
 - [ ] No dia, mostrar também as consultas que já existem: filtros e busca de pedidos e clientes, busca no catálogo tolerante a acento, filtros e busca no portfólio, perfil do cliente com total gasto, agenda semanal
 - [ ] Opcional: exportar o relatório (CSV ou impressão em PDF). A seção 14 do escopo deixou CSV de fora; decidir em grupo
 
