@@ -9,9 +9,17 @@ function diretiva(nome: string, ...fontes: (string | undefined)[]): string {
   return [nome, ...fontes.filter(Boolean)].join(" ");
 }
 
+export type CabecalhosDeSeguranca = {
+  "Content-Security-Policy": string;
+  "X-Content-Type-Options": string;
+  "Referrer-Policy": string;
+  "X-Frame-Options": string;
+  "Strict-Transport-Security"?: string;
+};
+
 // RNF05: CSP estrita por nonce. O proxy gera um nonce novo a cada requisição e o Next o aplica
 // aos próprios scripts; 'strict-dynamic' libera o que esses scripts carregarem (ex.: Turnstile).
-export function cabecalhosDeSeguranca(nonce: string, ambiente: Ambiente): Record<string, string> {
+export function cabecalhosDeSeguranca(nonce: string, ambiente: Ambiente): CabecalhosDeSeguranca {
   // O React usa eval no next dev para reconstruir as pilhas de erro; em produção, não.
   const evalEmDev = ambiente.NODE_ENV === "development" ? "'unsafe-eval'" : undefined;
   // RNF01: só produção roda atrás do HTTPS; em localhost por http, o HSTS e o
