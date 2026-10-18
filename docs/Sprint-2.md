@@ -1077,7 +1077,7 @@ Observações: a folga do LCP do catálogo é pequena (70 ms); os 98 de acessibi
 | Item | RNF | Como | Resultado |
 | --- | --- | --- | --- |
 | XSS | RNF05 | `<img onerror>` no nome do cadastro e `<svg onload>` no título de uma obra; `<script>` nas configurações | Os dois primeiros aparecem como texto (`&lt;img …` no HTML) e nada executa; as configurações recusam no servidor ("não use < nem >"). A CSP por nonce (fatia 1) é a segunda barreira. |
-| Permissões | RN10, RF06 | Server Action de salvar as configurações, capturada do admin, repetida com a sessão de um cliente | Responde "proibido"; o rodapé do site não muda. A tela já é coberta pelo E2E de restrições (fatia 4). |
+| Permissões | RF06 | Server Action de salvar as configurações, capturada do admin, repetida com a sessão de um cliente | Responde "proibido"; o rodapé do site não muda. A tela já é coberta pelo E2E de restrições (fatia 4). |
 | CSRF | RNF06 | A mesma Server Action com a sessão do admin e `Origin` de outro site | O Next recusa ("Invalid Server Actions request", HTTP 500); nada muda. |
 | Validação no servidor | RNF09 | A Server Action com WhatsApp fora do formato, enviada direto | Recusada pelo esquema; os módulos validam com Zod (`validacao.ts`). |
 | Cookies | RNF06 | Cookie de sessão depois do login, em produção | `__Secure-better-auth.session_token`, `HttpOnly`, `SameSite=Lax`, `Secure`. |
@@ -1085,12 +1085,13 @@ Observações: a folga do LCP do catálogo é pequena (70 ms); os 98 de acessibi
 | SQL injection | RNF04 | Busca no código | Nenhum `$queryRawUnsafe`/`$executeRawUnsafe`; os 12 usos de SQL bruto são template parametrizado do Prisma. |
 | Webhook | RNF11 | Aviso sem `x-signature` | HTTP 401; o E2E da compra (fatia 3) mostra a recusa de assinatura errada. |
 | Segredos | RNF12 | GitGuardian nos PRs e busca no repositório | Nada versionado; só o `.env.example` está no git. |
-| Integridade transacional | RN04, RN06, RN08, RNF11 | Testes de integração no Postgres real | "Reservas concorrentes de uma peça única: só uma leva"; "cadastros simultâneos no mesmo intervalo: só um passa"; "dois avisos ao mesmo tempo baixam o estoque uma vez"; 276 testes de integração verdes. |
+| Integridade transacional | RN04, RN08, RNF11 | Testes de integração no Postgres real | "Reservas concorrentes de uma peça única: só uma leva"; "cadastros simultâneos no mesmo intervalo: só um passa"; "dois avisos ao mesmo tempo baixam o estoque uma vez"; 276 testes de integração verdes. |
 
 **Evidências da fatia 6:**
 
 - `tests/unit/gestao-portfolio.test.tsx` e `tests/unit/catalogo-obras.test.tsx` falharam antes das correções e passaram depois; o detalhe do pedido falhou na varredura sem a exceção e passou depois da correção.
-- `npm run build`, `npm run test:e2e` (42, duas rodadas seguidas), `npm test` (532), `npm run test:integration` (276), `lint`, `format:check` e `typecheck` sem erros; `npm audit --audit-level=high` com código 0 (0 vulnerabilidades).
+- Revisão independente por agente: FAIL na primeira passada, porque a quebra de linha dos botões "Marcar como …" os deixava com 44 px, abaixo do alvo de toque de 48 px (`docs/IDENTIDADE-VISUAL.md`). Corrigido com o padrão do repositório (`min-h-12`, `py-3`), também no botão de estorno, e com o E2E `tests/e2e/alvo-de-toque.spec.ts` (altura ≥ 48 px e nada além da borda em 320 px), que falhou antes (44 px) e passou depois. Também: aviso completo da licença MIT no CSS copiado e as referências da tabela de segurança.
+- `npm run build`, `npm run test:e2e` (43 com o teste do alvo de toque, duas rodadas seguidas), `npm test` (532), `npm run test:integration` (276), `lint`, `format:check` e `typecheck` sem erros; `npm audit --audit-level=high` com código 0 (0 vulnerabilidades).
 
 ### PBI-46 — Deploy, operação e restauração
 
@@ -1103,6 +1104,7 @@ Compose, CI, configuração da VPS, observabilidade e backups podem ser preparad
 - [ ] Configurar segredos, reinício automático, logs estruturados e captura de exceções
 - [ ] Configurar backup diário com retenção mínima de 7 dias e comprovar restauração
 - [ ] Validar HTTPS, cabeçalhos e aplicação implantada; publicação/push somente com autorização humana exigida pelo repositório
+- [ ] Fazer uma compra real no sandbox até a confirmação, pelo endereço público, e registrar como evidência (o E2E do PBI-45 confirma com o Mercado Pago simulado)
 
 ### PBI-47 — Validação com cliente e preparação da defesa
 

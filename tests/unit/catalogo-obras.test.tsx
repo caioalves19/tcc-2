@@ -157,7 +157,7 @@ it("RF09 com uma obra só, o resumo fica no singular", () => {
 
 // O React 19 gera um <link rel="preload"> para cada imagem eager: com a primeira linha inteira
 // eager, as 4 fotos entravam na fila antes do LCP e, no 4G simulado do Lighthouse, o LCP do
-// catálogo ficava em ~3,7 s (PBI-45). Só a primeira foto é eager; as outras entram por lazy.
+// catálogo ficava em 3,9 s (PBI-45). Só a primeira foto é eager; as outras entram por lazy.
 it("RNF13 só a primeira imagem do catálogo carrega sem lazy (LCP)", () => {
   render(
     <CatalogoObras
