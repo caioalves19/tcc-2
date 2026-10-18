@@ -939,7 +939,7 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 - Todas as páginas já eram dinâmicas (o layout raiz lê `headers()`), então todas recebem o nonce.
 - E2E em Chromium: o `upgrade-insecure-requests` quebraria o WebKit com `next start` servido por http. Em produção, com HTTPS, não há efeito.
 
-**Situação:** fatia 1 no PR #72, fatia 2 no PR #73 e fatia 3 no PR #74, abertos em 18/10/2026; aguardam a revisão de outro integrante. Cada fatia parte da anterior e é rebaseada quando a anterior entrar na `main`. Fatias 4 a 6 pendentes.
+**Situação:** fatia 1 no PR #72, fatia 2 no PR #73, fatia 3 no PR #74 e fatia 4 no PR da branch `feat/pbi-45-e2e-gestao`, abertos em 18/10/2026; aguardam a revisão de outro integrante. Cada fatia parte da anterior e é rebaseada quando a anterior entrar na `main`. Fatias 5 e 6 pendentes.
 
 **Entregas da fatia 1:**
 
@@ -997,6 +997,25 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 - `npm run lint`, `format:check`, `typecheck` e `npm test` (531) sem erros.
 - A volta do Mercado Pago, aberta com `status=approved` e `payment_id` na URL, mostra "Estamos confirmando seu pagamento" e o pedido continua aguardando (RN05).
 - Revisão independente por agente: PASS; os ajustes sugeridos (volta do Mercado Pago no RN05, seletores exatos, erro explícito sem o segredo) foram incluídos.
+
+**Decisões da fatia 4 (registradas em 18/10/2026):**
+
+- Três frentes de gestão: admin publica uma obra com imagem (RF26, RF27, RN11), artista inclui um trabalho no próprio portfólio (RF19, RF17) e restrições de papel (RF06, RN10).
+- Contas da equipe (ADMIN e dois artistas) criadas na fixture com credencial do Better Auth e senha sorteada a cada rodada (`E2E_SENHA_EQUIPE`); o login é pela tela. O cliente se cadastra pela tela.
+- Dublê do R2: no navegador, o `page.route` recebe o PUT da URL assinada e grava o arquivo numa pasta temporária (`E2E_R2_DIR`); no servidor, `tests/e2e/r2-falso.ts`, carregado por `NODE_OPTIONS=--import`, troca o `S3Client.prototype.send` do `@aws-sdk/client-s3` (que o Next deixa fora do bundle) e atende `GetObject`, `PutObject` e `DeleteObject` nessa pasta. O `sharp` processa o arquivo enviado de verdade; a foto de teste é gerada na hora.
+- As asserções conferem texto (título, preço, mensagens), não a imagem renderizada: o `R2_PUBLIC_URL` é fictício e o servidor registra `ENOTFOUND` ao otimizar as fotos, sem efeito no teste (o Next 16 resolve o DNS antes de baixar a imagem).
+- RN10 pela tela: para a artista, o servidor ignora o `?artista=` de outro artista e mostra o próprio portfólio; o teste confere que o trabalho do outro não aparece.
+
+**Entregas da fatia 4:**
+
+- `tests/e2e/restricoes.spec.ts`, `tests/e2e/obra.spec.ts`, `tests/e2e/portfolio.spec.ts`, `tests/e2e/sessao.ts`, `tests/e2e/r2.ts` e `tests/e2e/r2-falso.ts`; a fixture ganha as contas da equipe e um segundo artista com um trabalho no portfólio.
+
+**Evidências da fatia 4:**
+
+- `npm run test:e2e`: 6 testes (wizard, compra, duas restrições, obra e portfólio) passaram em duas rodadas seguidas (cerca de 23 a 25 s cada).
+- Na pasta do dublê ficaram o JPEG enviado pelo navegador e a miniatura `_thumb.webp` gerada pelo `sharp` no servidor.
+- Sabotagens detectadas: com o dublê respondendo "objeto inexistente", a obra não recebeu a imagem e o teste falhou; com a restrição conferida como ADMIN, a expectativa de acesso negado falhou.
+- `npm run lint`, `format:check`, `typecheck` e `npm test` (531) sem erros.
 
 ### PBI-46 — Deploy, operação e restauração
 
