@@ -116,7 +116,7 @@ export function GestaoPortfolio({
                     size="sm"
                     variant="contorno"
                     disabled={gestao.pendente || indice === 0}
-                    aria-label={`Mover ${t.titulo} para cima`}
+                    aria-label={`Mover para cima: ${t.titulo}`}
                     onClick={() =>
                       void gestao.executar(
                         () => mover({ id: t.id, direcao: "antes" }),
@@ -132,7 +132,7 @@ export function GestaoPortfolio({
                     size="sm"
                     variant="contorno"
                     disabled={gestao.pendente || indice === trabalhos.length - 1}
-                    aria-label={`Mover ${t.titulo} para baixo`}
+                    aria-label={`Mover para baixo: ${t.titulo}`}
                     onClick={() =>
                       void gestao.executar(
                         () => mover({ id: t.id, direcao: "depois" }),
