@@ -13,6 +13,12 @@ const LARGURAS_AXE = new Set([320, 1440]);
 const TAGS_WCAG = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 const IMPACTOS = new Set(["critical", "serious"]);
 
+// Uma exceção com o nome de uma tela que não está na tabela nunca seria conferida.
+test("RNF20/RNF21 toda exceção aponta uma tela da varredura", () => {
+  const nomes = new Set(TELAS.map((tela) => tela.nome));
+  expect(EXCECOES.filter((e) => !nomes.has(e.tela)).map((e) => e.tela)).toEqual([]);
+});
+
 for (const tela of TELAS) {
   test(`RNF20/RNF21 ${tela.nome} (${tela.papel})`, async ({ page }, testInfo) => {
     test.setTimeout(90_000);
