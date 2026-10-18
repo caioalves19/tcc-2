@@ -46,6 +46,8 @@ export default defineConfig({
       BETTER_AUTH_URL: URL_E2E,
       APP_URL: "https://kolo-e2e.test",
       MP_WEBHOOK_SECRET: segredoDaRodada("E2E_MP_WEBHOOK_SECRET"),
+      // Senha das contas da equipe na fixture (tests/e2e/preparar-banco.ts) e do login no teste.
+      E2E_SENHA_EQUIPE: segredoDaRodada("E2E_SENHA_EQUIPE"),
       RESEND_API_KEY: `re_${segredoDaRodada("E2E_RESEND_API_KEY")}`,
       MP_ACCESS_TOKEN: `TEST-${segredoDaRodada("E2E_MP_ACCESS_TOKEN")}`,
       R2_ACCOUNT_ID: "conta-ficticia-e2e",

@@ -35,3 +35,21 @@ export const OBRA = {
 
 // Pagamento que o Mercado Pago falso devolve aprovado para a última preferência criada.
 export const ID_PAGAMENTO_E2E = "9000001";
+
+// RF06: contas da equipe. A senha é a mesma para todas e sorteada a cada rodada
+// (E2E_SENHA_EQUIPE, gerada no playwright.config.ts); nunca fica no código.
+export const ADMIN = {
+  userId: "00000000-0000-4000-9000-000000000041",
+  nome: "Admin E2E",
+  email: "e2e-admin@kolo.test",
+};
+
+// RN10: um segundo artista, com um trabalho no portfólio que a Bia não pode gerenciar.
+export const OUTRO_ARTISTA = {
+  userId: "00000000-0000-4000-9000-000000000051",
+  id: "00000000-0000-4000-9000-000000000052",
+  nome: "Caio Linha",
+  email: "e2e-outro-artista@kolo.test",
+  slug: "caio-linha",
+  trabalho: { id: "00000000-0000-4000-9000-000000000053", titulo: "Fechamento do Caio" },
+};
