@@ -35,3 +35,15 @@ it("RNF05 o proxy roda nas páginas e fica fora do webhook e dos arquivos estát
   expect(roda("/_next/image?url=%2Fx.webp&w=640&q=75")).toBe(false);
   expect(roda("/marca/atelie-selo.svg")).toBe(false);
 });
+
+// O prefetch do next/link não renderiza a página para o navegador: fica fora, como na doc do Next.
+it("RNF05 o proxy não roda nos prefetches do next/link", () => {
+  expect(
+    unstable_doesMiddlewareMatch({
+      config,
+      nextConfig,
+      url: "/obras",
+      headers: { "next-router-prefetch": "1" },
+    }),
+  ).toBe(false);
+});

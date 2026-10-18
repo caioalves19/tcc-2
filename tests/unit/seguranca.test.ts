@@ -85,7 +85,7 @@ it("RNF05 atributos style são aceitos sem liberar tags <style> sem nonce", () =
   expect(diretiva(csp, "style-src")).not.toContain("'unsafe-inline'");
 });
 
-it("RNF07 toda resposta leva nosniff, Referrer-Policy e X-Frame-Options", () => {
+it("RNF07 toda página leva nosniff, Referrer-Policy e X-Frame-Options", () => {
   const cabecalhos = cabecalhosDeSeguranca("abc123", { NODE_ENV: "development" });
 
   expect(cabecalhos).toMatchObject({
