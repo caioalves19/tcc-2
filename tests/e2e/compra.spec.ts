@@ -85,6 +85,7 @@ test("RF14 o cliente compra uma obra e o pedido só fica pago pelo webhook, com 
 
   // RF14/RN11: a única unidade foi baixada; a obra continua visível, sem compra.
   await page.goto(`/obras/${OBRA.slug}`);
-  await expect(page.getByText("Esgotada", { exact: true })).toBeVisible();
+  // O selo da própria obra (outras obras esgotadas podem aparecer mais abaixo na página).
+  await expect(page.getByText("Esta obra não está mais disponível para compra.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Adicionar ao carrinho" })).toHaveCount(0);
 });

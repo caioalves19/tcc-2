@@ -58,3 +58,42 @@ export const OUTRO_ARTISTA = {
 // atende) e o servidor lê e grava pelo dublê; os dois usam a pasta E2E_R2_DIR.
 export const R2_CONTA_E2E = "conta-ficticia-e2e";
 export const R2_BUCKET_E2E = "kolo-e2e";
+
+// RNF20/RNF21: dados para a varredura alcançar todas as telas do cliente e da equipe.
+export const CLIENTE = {
+  userId: "00000000-0000-4000-9000-000000000061",
+  nome: "Clara Cliente",
+  email: "e2e-clara@kolo.test",
+};
+
+// Obra no carrinho da Clara: própria, para o checkout não depender da compra do outro teste.
+export const OBRA_CARRINHO = {
+  id: "00000000-0000-4000-9000-000000000032",
+  titulo: "Lambe Lambe Amarelo",
+  slug: "lambe-lambe-amarelo",
+  precoCentavos: 9000,
+};
+
+// Obra já vendida no pedido pago da Clara.
+export const OBRA_VENDIDA = {
+  id: "00000000-0000-4000-9000-000000000033",
+  titulo: "Fachada Antiga",
+  slug: "fachada-antiga",
+  precoCentavos: 32000,
+};
+
+export const PEDIDO_PAGO = {
+  id: "00000000-0000-4000-9000-000000000071",
+  numero: "20261001-AB23CD",
+};
+
+export const HORARIO = {
+  id: "00000000-0000-4000-9000-000000000081",
+  codigo: "AG-20261001-EF45GH",
+};
+
+// Um trabalho da Bia no portfólio desde o início (ver preparar-banco.ts).
+export const TRABALHO_DA_ARTISTA = {
+  id: "00000000-0000-4000-9000-000000000054",
+  titulo: "Primeiro Traço da Bia",
+};
