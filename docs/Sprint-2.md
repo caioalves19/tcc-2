@@ -995,6 +995,8 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 - `npm run test:e2e`: 2 testes (wizard e compra) passaram em duas rodadas seguidas (cerca de 17 a 19 s cada).
 - Sabotagens detectadas: com a assinatura feita com um segredo errado, o webhook respondeu 401 e o teste falhou; com o pagamento falso R$ 1,00 acima do total, o pedido continuou "Aguardando pagamento" (RN07) e o teste falhou.
 - `npm run lint`, `format:check`, `typecheck` e `npm test` (531) sem erros.
+- A volta do Mercado Pago, aberta com `status=approved` e `payment_id` na URL, mostra "Estamos confirmando seu pagamento" e o pedido continua aguardando (RN05).
+- Revisão independente por agente: PASS; os ajustes sugeridos (volta do Mercado Pago no RN05, seletores exatos, erro explícito sem o segredo) foram incluídos.
 
 ### PBI-46 — Deploy, operação e restauração
 
