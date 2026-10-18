@@ -39,6 +39,8 @@ export default defineConfig({
     // R2 também ficam fixos: o Playwright mescla este env com o do processo e o Next completa com o
     // .env local, que tem credenciais reais de sandbox e do bucket de teste. Nenhum é real.
     env: {
+      // Dublê da API do Mercado Pago no processo do servidor (tests/e2e/mercado-pago-falso.ts).
+      NODE_OPTIONS: "--import ./tests/e2e/mercado-pago-falso.ts",
       DATABASE_URL: `postgresql://kolo_user:kolo_password@localhost:5432/${BANCO_E2E}`,
       BETTER_AUTH_SECRET: segredoDaRodada("E2E_BETTER_AUTH_SECRET"),
       BETTER_AUTH_URL: URL_E2E,

@@ -1,7 +1,7 @@
 // Recria o banco kolo_e2e (migrações + dados fixos de tests/e2e/dados.ts) antes do servidor do
 // E2E subir. Roda dentro do comando do webServer, então termina antes do `next start`.
 import { prepararBancoDeTeste } from "../integration/banco-de-teste";
-import { ARTISTA, BANCO_E2E, ESTILOS, TAMANHOS, WHATSAPP_E2E } from "./dados";
+import { ARTISTA, BANCO_E2E, ESTILOS, OBRA, TAMANHOS, WHATSAPP_E2E } from "./dados";
 
 async function preparar(): Promise<void> {
   const db = await prepararBancoDeTeste(BANCO_E2E);
@@ -34,6 +34,12 @@ async function preparar(): Promise<void> {
         tamanho.ordem,
       ]);
     }
+    // RF26/RN02: a obra que o E2E da compra leva, Disponível e com uma unidade.
+    await db.query(
+      `INSERT INTO artwork (id, artist_id, titulo, slug, preco_centavos, quantidade_estoque, situacao)
+       VALUES ($1, $2, $3, $4, $5, 1, 'DISPONIVEL')`,
+      [OBRA.id, ARTISTA.id, OBRA.titulo, OBRA.slug, OBRA.precoCentavos],
+    );
     // RF31: o WhatsApp que o wizard usa vem das configurações do site.
     await db.query(
       `INSERT INTO site_setting (id, chave, valor) VALUES (gen_random_uuid(), $1, $2)`,
