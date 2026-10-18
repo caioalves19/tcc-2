@@ -928,6 +928,37 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 - [ ] Medir catálogo e ficha: Lighthouse ≥ 90 e LCP abaixo de 2,5 s em 4G simulado; corrigir falhas
 - [ ] Executar gates, revisar dependências sem vulnerabilidades altas/críticas e registrar evidências
 
+**Fatias (decididas em 18/10/2026):** um PR por fatia, nesta ordem: (1) cabeçalhos de segurança, CSP e teste instável; (2) base do Playwright com job na CI e E2E do wizard; (3) E2E da compra, com a confirmação por webhook simulado e assinado (a CI não recebe webhook real; a compra no sandbox fica como evidência manual depois do deploy); (4) E2E de gestão; (5) larguras de tela e axe-core; (6) Lighthouse, `npm audit`, roteiro manual de segurança e evidências.
+
+**Decisões da fatia 1 (registradas em 18/10/2026):**
+
+- CSP por nonce gerado a cada requisição em `src/proxy.ts` (o antigo middleware no Next 16), sem `unsafe-inline` nem `unsafe-eval` em `script-src` em produção; `'strict-dynamic'` libera o que os scripts do Next carregam (Turnstile). O `unsafe-eval` só entra no `next dev`, que o React exige.
+- `style-src` com nonce e `style-src-attr 'unsafe-inline'`: o `next/image` escreve `style="color:transparent"` no `<img>`, e atributo não aceita nonce. As tags `<style>` continuam exigindo o nonce.
+- R2 em `img-src` (endereço público) e `connect-src` (endpoint da conta, envio pela URL assinada); `frame-src` só para o Turnstile; `form-action 'self'` e `frame-ancestors 'none'`.
+- HSTS e `upgrade-insecure-requests` só em produção. O proxy fica fora das rotas de API (webhook do Mercado Pago), dos arquivos do build e de `public/` e dos prefetches; não lê sessão nem redireciona.
+- Todas as páginas já eram dinâmicas (o layout raiz lê `headers()`), então todas recebem o nonce.
+- E2E em Chromium: o `upgrade-insecure-requests` quebraria o WebKit com `next start` servido por http. Em produção, com HTTPS, não há efeito.
+
+**Situação:** fatia 1 no PR #72, aberto em 18/10/2026; aguarda a CI e a revisão de outro integrante. Fatias 2 a 6 pendentes.
+
+**Entregas da fatia 1:**
+
+- `cabecalhosDeSeguranca(nonce, ambiente)` em `src/lib/seguranca.ts` e o proxy em `src/proxy.ts`.
+- `tests/unit/formulario-horario.test.tsx` estabilizado: digitava cerca de 100 caracteres tecla por tecla (2,2 s sozinho, perto do limite de 5 s com a suíte inteira); com `delay: null`, 0,3 s, com as mesmas asserções. A troca foi medida nos outros 30 arquivos com `userEvent` sem ganho (a lentidão deles vem de render e importação, cerca de 1,8 s sozinhos) e ficou só neste.
+
+**Evidências da fatia 1:**
+
+- `npm run lint`, `format:check`, `typecheck`, `npm test` (531, três vezes seguidas), `npm run test:integration` (276) e `npm run build` sem erros.
+- `next start` local: `curl -sI` mostrou os cinco cabeçalhos e um nonce diferente a cada requisição; o webhook responde sem CSP.
+- Navegador, sem violação de CSP: home, `/obras`, ficha da obra, `/tatuagens`, `/agendamento`, `/contato` (Turnstile resolvido) e checkout até o redirecionamento ao Checkout Pro.
+- Envio ao R2 em `/portfolio/gestao`, com conta local promovida a ADMIN: a CSP liberou a requisição; o CORS do bucket `kolo-imagens-teste` recusou a origem `http://localhost:3100` usada no teste.
+- Revisão independente por agente: PASS; os dois ajustes sugeridos nos testes foram incluídos.
+
+**Pendências:**
+
+- Conferir o envio completo ao R2 (envio, miniatura e exibição) com `http://localhost:3100` no CORS do bucket de teste ou na porta 3000; previsto junto da fatia 4.
+- A nota A no securityheaders.com só pode ser medida no domínio, no PBI-46.
+
 ### PBI-46 — Deploy, operação e restauração
 
 **Referências:** RNF01, RNF07, RNF12, RNF15, RNF16, RNF23, RNF24 · **Prioridade:** Entrega final · **Deps:** Sprint 1 para preparar; PBI-45 para publicar a versão final.
