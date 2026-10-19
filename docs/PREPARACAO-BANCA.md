@@ -72,10 +72,11 @@
 
 ### 6. Usabilidade e experiência do usuário
 
-- [ ] Rodar axe-core e conferir 320, 768, 1440 e 1920 px nas telas que ainda não têm registro (PBI-45)
-- [ ] Rodar o Lighthouse no catálogo e na ficha da obra (meta: ≥ 90 e LCP < 2,5 s, RNF13)
+- [x] Rodar axe-core e conferir 320, 768, 1440 e 1920 px nas telas que ainda não têm registro (PBI-45): as 35 telas passam sem exceção; as capturas ficam no artefato da CI
+- [x] Rodar o Lighthouse no catálogo e na ficha da obra (meta: ≥ 90 e LCP < 2,5 s, RNF13): catálogo 97 e 2,43 s, ficha 98 e 2,25 s (Sprint-2, PBI-45)
+- [ ] Conferir navegação por teclado e foco visível nos fluxos principais (compra, wizard, login): o axe-core da varredura não verifica isso, e o item ficou em aberto no PBI-45
 - [ ] Pedir a 2 ou 3 pessoas de fora do grupo que façam a compra e o agendamento sem ajuda e anotar onde travaram. Serve também para o Capítulo 5 da monografia
-- [ ] E2E com Playwright para compra e wizard: o `npm run test:e2e` roda o wizard contra o build de produção desde a fatia 2 do PBI-45; a compra entra na fatia 3
+- [x] E2E com Playwright para compra e wizard: `npm run test:e2e` cobre wizard, compra com webhook assinado, gestão e restrições de papel, e a varredura das telas (PBI-45)
 
 ### 7. Autenticação e perfis de usuário
 

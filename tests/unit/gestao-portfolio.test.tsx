@@ -98,12 +98,12 @@ it("RF19: lista, edita, move e confirma remoção; erro preserva o formulário",
   );
   expect(screen.getByRole("img", { name: "Rosa" })).toBeDefined();
   expect(
-    (screen.getByRole("button", { name: "Mover Rosa para cima" }) as HTMLButtonElement).disabled,
+    (screen.getByRole("button", { name: "Mover para cima: Rosa" }) as HTMLButtonElement).disabled,
   ).toBe(true);
   expect(
-    (screen.getByRole("button", { name: "Mover Lírio para baixo" }) as HTMLButtonElement).disabled,
+    (screen.getByRole("button", { name: "Mover para baixo: Lírio" }) as HTMLButtonElement).disabled,
   ).toBe(true);
-  await user.click(screen.getByRole("button", { name: "Mover Lírio para cima" }));
+  await user.click(screen.getByRole("button", { name: "Mover para cima: Lírio" }));
   expect(funcs.mover).toHaveBeenCalledWith({ id: "b", direcao: "antes" });
   await user.click(screen.getByRole("button", { name: "Editar Rosa" }));
   expect((screen.getByLabelText("Título") as HTMLInputElement).value).toBe("Rosa");

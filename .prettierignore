@@ -4,3 +4,5 @@ coverage
 dist
 package-lock.json
 *.md
+# Cópia literal de shadcn/dist/tailwind.css (ver o cabeçalho do arquivo).
+src/app/shadcn-tailwind.css
