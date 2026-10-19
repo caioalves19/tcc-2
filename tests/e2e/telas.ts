@@ -115,7 +115,15 @@ export const TELAS: Tela[] = [
     marco: PEDIDO_PAGO.numero,
   },
   // Admin
-  { nome: "admin", caminho: "/admin", papel: "admin", marco: "Gestão do acervo" },
+  // PBI-48: a página inicial do admin é o painel de indicadores.
+  { nome: "admin painel", caminho: "/admin", papel: "admin", marco: "Pedidos agora" },
+  // O pedido pago da fixture tem pago_em = now(): está sempre nos últimos 30 dias.
+  {
+    nome: "admin relatório de vendas",
+    caminho: "/admin/relatorio?periodo=30-dias",
+    papel: "admin",
+    marco: OBRA_VENDIDA.titulo,
+  },
   { nome: "admin obras", caminho: "/admin/obras", papel: "admin", marco: OBRA.titulo },
   { nome: "admin artistas", caminho: "/admin/artistas", papel: "admin", marco: ARTISTA.nome },
   { nome: "admin estilos", caminho: "/admin/estilos", papel: "admin", marco: "Fineline" },
