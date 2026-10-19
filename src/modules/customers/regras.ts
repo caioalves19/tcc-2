@@ -1,19 +1,12 @@
-import type { PedidoDoClienteAdmin } from "../orders/index";
+import { pedidoPago, type PedidoDoClienteAdmin } from "../orders/index";
 
-// RF30: o que o cliente efetivamente pagou. Pendente (tentativa sem pagamento ou aguardando) e
-// cancelado (inclusive o estornado, PBI-43) não contam.
-const PAGOS: ReadonlySet<PedidoDoClienteAdmin["situacaoBanco"]> = new Set([
-  "PAGO",
-  "PROCESSANDO",
-  "ENVIADO",
-  "ENTREGUE",
-]);
-
+// RF30: o que o cliente efetivamente pagou, com a regra de pedido pago do módulo de pedidos (a
+// mesma do relatório de vendas, PBI-48).
 export function totalGasto(
   pedidos: Pick<PedidoDoClienteAdmin, "situacaoBanco" | "totalCentavos">[],
 ): number {
   return pedidos.reduce(
-    (soma, pedido) => (PAGOS.has(pedido.situacaoBanco) ? soma + pedido.totalCentavos : soma),
+    (soma, pedido) => (pedidoPago(pedido.situacaoBanco) ? soma + pedido.totalCentavos : soma),
     0,
   );
 }

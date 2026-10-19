@@ -139,6 +139,14 @@ export function aceitaRastreio(situacao: SituacaoNoBanco): boolean {
   return ordem.includes(situacao);
 }
 
+// Pedido pago: de Pago a Entregue, no total gasto do cliente (RF30, PBI-38) e no relatório de
+// vendas (RF32, PBI-48). Pendente (tentativa ou aguardando) e cancelado (inclusive o estornado,
+// PBI-43) não contam.
+export function pedidoPago(situacao: SituacaoNoBanco): boolean {
+  const ordem: readonly SituacaoNoBanco[] = ANDAMENTO;
+  return ordem.includes(situacao);
+}
+
 // PBI-43: por que o webhook marcou o pagamento para estorno (null: pagamento normal).
 export type MotivoEstorno = "PEDIDO_NAO_PENDENTE" | "VALOR_DIVERGENTE" | "SEM_ESTOQUE";
 type MetodoPagamento = "PIX" | "CARTAO" | "BOLETO" | "SALDO_MERCADO_PAGO";
