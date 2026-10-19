@@ -9,6 +9,7 @@ vi.mock("next/navigation", () => ({
   redirect: (url: string) => {
     throw new Error(`redirect:${url}`);
   },
+  usePathname: () => "/admin",
 }));
 vi.mock("@/modules/artists", () => ({ verificarAcessoAdmin: acesso }));
 afterEach(cleanup);
@@ -27,6 +28,11 @@ it("RF06/RF28 não renderiza conteúdo administrativo para visitante ou usuário
 it("RF28 apresenta navegação das três gestões para ADMIN", async () => {
   acesso.mockResolvedValue({ ok: true });
   render(await LayoutAdmin({ children: <p>Conteúdo permitido</p> }));
+  // RF32 (PBI-48): o painel é a página inicial, e o relatório tem item próprio.
+  expect(screen.getByRole("link", { name: "Painel" }).getAttribute("href")).toBe("/admin");
+  expect(screen.getByRole("link", { name: "Relatório" }).getAttribute("href")).toBe(
+    "/admin/relatorio",
+  );
   expect(screen.getByRole("link", { name: "Artistas" }).getAttribute("href")).toBe(
     "/admin/artistas",
   );

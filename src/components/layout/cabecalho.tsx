@@ -90,7 +90,8 @@ export function Cabecalho({
   const [menuAberto, setMenuAberto] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b-2 border-neutro-grafite bg-[var(--kolo-fundo)]">
+    // Fora da impressão: o relatório de vendas (PBI-48) sai só com o conteúdo.
+    <header className="sticky top-0 z-50 border-b-2 border-neutro-grafite bg-[var(--kolo-fundo)] print:hidden">
       <div className="mx-auto flex h-20 max-w-pagina items-center justify-between gap-4 px-margem md:px-margem-desktop">
         <a
           href="/"
