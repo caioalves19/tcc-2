@@ -2,8 +2,9 @@ import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { Prisma } from "../../../generated/prisma/client";
 import { sessaoDaRequisicao } from "../../lib/auth";
+import { deSaoPauloParaUtc } from "../../lib/fuso";
 import { obterPrisma } from "../../lib/prisma";
-import { codigoDoHorario, deSaoPauloParaUtc } from "./agenda-regras";
+import { codigoDoHorario } from "./agenda-regras";
 
 // Agenda manual (PBI-34, RF22): o artista ou o admin cadastra o horário combinado no WhatsApp.
 // Sem fila de pendentes e sem motor de horários livres.

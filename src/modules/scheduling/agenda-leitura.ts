@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { deSaoPauloParaUtc, paraHorarioSaoPaulo, somarDias } from "../../lib/fuso";
 import { obterPrisma } from "../../lib/prisma";
 import { equipeDaRequisicao, executar } from "./agenda";
-import { deSaoPauloParaUtc, inicioDaSemana, paraHorarioSaoPaulo, somarDias } from "./agenda-regras";
+import { inicioDaSemana } from "./agenda-regras";
 
 type Situacao = "AGENDADO" | "CANCELADO" | "CONCLUIDO";
 
