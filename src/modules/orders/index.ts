@@ -66,5 +66,7 @@ export type {
   PedidoAdminLista,
   PedidoDoClienteAdmin,
 } from "./gestao";
+export { vendasDoPeriodo } from "./vendas";
+export type { VendaDoPeriodo } from "./vendas";
 export { FILTROS_PEDIDOS, PEDIDOS_POR_PAGINA } from "./validacao";
 export type { FiltroPedidos } from "./validacao";

@@ -34,6 +34,9 @@ export type PedidoTeste = {
   pagoEm?: string;
   enviadoEm?: string;
   excluido?: boolean;
+  // PBI-48: itens e frete do pedido. Sem eles, dois itens da obra a R$ 4.800,00, sem frete.
+  itens?: { obra: string; precoCentavos: number; quantidade: number }[];
+  freteCentavos?: number;
 };
 
 export function fabricaDePedidos(db: Client, admin: Headers, artistaId: string) {
@@ -66,19 +69,25 @@ export function fabricaDePedidos(db: Client, admin: Headers, artistaId: string) 
     return { cabecalhos, tokenVisitante: null, userId: rows[0].user_id, sessaoId: rows[0].id };
   }
 
-  // Dois itens da mesma obra: 2 × R$ 4.800,00.
+  // Sem itens: dois itens da mesma obra, 2 × R$ 4.800,00.
   async function pedidoDeTeste(cliente: ClienteTeste, p: PedidoTeste) {
+    const itens = p.itens ?? [{ obra: p.obra, precoCentavos: 480000, quantidade: 2 }];
+    const subtotal = itens.reduce((soma, item) => soma + item.precoCentavos * item.quantidade, 0);
+    const frete = p.freteCentavos ?? 0;
     const { rows } = await db.query(
       `INSERT INTO "order" (id, numero, user_id, session_id, modalidade_entrega, situacao,
          subtotal_centavos, frete_centavos, total_centavos, endereco_copia, codigo_rastreio,
          criado_em, pago_em, enviado_em, excluido_em)
-       VALUES (gen_random_uuid(), $1, $2, $3, 'RETIRADA', $4, 960000, 0, 960000, $5, $6, $7, $8, $9, $10)
+       VALUES (gen_random_uuid(), $1, $2, $3, 'RETIRADA', $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING id`,
       [
         p.numero,
         cliente.userId,
         cliente.sessaoId,
         p.situacao,
+        subtotal,
+        frete,
+        subtotal + frete,
         JSON.stringify(ENDERECO_TESTE),
         p.rastreio ?? null,
         p.criadoEm,
@@ -88,11 +97,12 @@ export function fabricaDePedidos(db: Client, admin: Headers, artistaId: string) 
       ],
     );
     const pedidoId: string = rows[0].id;
-    await db.query(
-      `INSERT INTO order_item (id, order_id, artwork_id, titulo_copia, preco_centavos_copia, quantidade)
-       VALUES (gen_random_uuid(), $1, $2, 'Metrópole em chamas', 480000, 2)`,
-      [pedidoId, p.obra],
-    );
+    for (const item of itens)
+      await db.query(
+        `INSERT INTO order_item (id, order_id, artwork_id, titulo_copia, preco_centavos_copia, quantidade)
+         VALUES (gen_random_uuid(), $1, $2, 'Metrópole em chamas', $3, $4)`,
+        [pedidoId, item.obra, item.precoCentavos, item.quantidade],
+      );
     for (const [indice, situacao] of (p.pagamentos ?? []).entries())
       await db.query(
         `INSERT INTO payment (id, order_id, provedor, id_externo, metodo, situacao, valor_centavos, payload)
