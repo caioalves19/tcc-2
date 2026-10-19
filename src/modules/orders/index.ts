@@ -54,6 +54,7 @@ export type { PedidoResumo, SituacaoPedido } from "./pedido";
 export { lerMeuPedido, listarMeusPedidos } from "./acompanhamento";
 export type { PedidoDaLista, PedidoDetalhado } from "./acompanhamento";
 export {
+  contarPedidosPorFiltro,
   lerPedidoAdmin,
   listarPedidosAdmin,
   mudarSituacaoPedido,
@@ -61,6 +62,7 @@ export {
   registrarRastreio,
 } from "./gestao";
 export type {
+  ContagemPedidos,
   PaginaPedidosAdmin,
   PedidoAdmin,
   PedidoAdminLista,

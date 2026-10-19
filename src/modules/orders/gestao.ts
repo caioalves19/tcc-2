@@ -100,6 +100,41 @@ const ONDE_DO_FILTRO: Record<FiltroPedidos, Prisma.OrderWhereInput> = {
   todos: {},
 };
 
+// A lista do admin e as contagens do painel (PBI-48) usam o mesmo filtro, para os números baterem.
+function ondeDaLista(filtro: FiltroPedidos, busca = ""): Prisma.OrderWhereInput {
+  return {
+    deletedAt: null,
+    AND: [ONDE_DO_FILTRO[filtro]],
+    ...(busca && {
+      OR: [
+        { number: { contains: busca, mode: "insensitive" } },
+        { user: { email: { contains: busca, mode: "insensitive" } } },
+      ],
+    }),
+  };
+}
+
+export type ContagemPedidos = Record<Exclude<FiltroPedidos, "todos">, number>;
+
+// RF32 (PBI-48): quantos pedidos cada filtro da lista mostra agora, sem busca ("Todos" fica de
+// fora). Roda na transação de quem chama, que já passou pelo comoAdmin: esta função não confere
+// permissão sozinha.
+export async function contarPedidosPorFiltro(
+  tx: Prisma.TransactionClient,
+): Promise<ContagemPedidos> {
+  const contagem: ContagemPedidos = {
+    "a-fazer": 0,
+    pendentes: 0,
+    enviados: 0,
+    entregues: 0,
+    cancelados: 0,
+    "estorno-pendente": 0,
+  };
+  for (const filtro of Object.keys(contagem) as (keyof ContagemPedidos)[])
+    contagem[filtro] = await tx.order.count({ where: ondeDaLista(filtro) });
+  return contagem;
+}
+
 type PedidoComItens = Prisma.OrderGetPayload<{
   include: { items: true; payments: { select: { status: true } } };
 }>;
@@ -146,16 +181,7 @@ export function listarPedidosAdmin(entrada: unknown, cabecalhos: Headers, agora 
     const { filtro, busca, pagina } = schemaListaAdmin.parse(
       typeof entrada === "object" && entrada !== null ? entrada : {},
     );
-    const onde: Prisma.OrderWhereInput = {
-      deletedAt: null,
-      AND: [ONDE_DO_FILTRO[filtro]],
-      ...(busca && {
-        OR: [
-          { number: { contains: busca, mode: "insensitive" } },
-          { user: { email: { contains: busca, mode: "insensitive" } } },
-        ],
-      }),
-    };
+    const onde = ondeDaLista(filtro, busca);
     const total = await tx.order.count({ where: onde });
     const pedidos = await tx.order.findMany({
       where: onde,

@@ -151,3 +151,20 @@ export function listarObras(cabecalhos: Headers) {
     }));
   });
 }
+
+export type ObrasPorSituacao = Record<"RASCUNHO" | "DISPONIVEL" | "ESGOTADA", number>;
+
+// RF32 (PBI-48): obras do acervo por situação, sem as arquivadas (as mesmas de /admin/obras). Roda
+// na transação de quem chama, que já passou pelo comoAdmin: esta função não confere permissão.
+export async function contarObrasPorSituacao(
+  tx: Prisma.TransactionClient,
+): Promise<ObrasPorSituacao> {
+  const grupos = await tx.artwork.groupBy({
+    by: ["status"],
+    where: { deletedAt: null },
+    _count: { _all: true },
+  });
+  const contagem: ObrasPorSituacao = { RASCUNHO: 0, DISPONIVEL: 0, ESGOTADA: 0 };
+  for (const grupo of grupos) contagem[grupo.status] = grupo._count._all;
+  return contagem;
+}
