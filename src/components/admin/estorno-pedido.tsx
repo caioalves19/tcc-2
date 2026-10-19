@@ -132,6 +132,8 @@ export function EstornoPedido({ numero, cancelavel, pagamentos, acoes }: Props) 
                   variant="contorno"
                   disabled={pendente}
                   onClick={() => setEscolha({ tipo: "estornar", pagamento })}
+                  // RNF20: "Estornar pagamento {id}" não cabe numa linha em 320 px.
+                  className="h-auto min-h-12 max-w-full whitespace-normal py-3 text-left"
                 >
                   {pagamento.acaoEstorno === "concluir" ? "Concluir estorno" : "Estornar pagamento"}{" "}
                   {pagamento.idExterno}

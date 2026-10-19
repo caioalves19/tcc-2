@@ -950,12 +950,12 @@ O escopo v2.2 adiou o "dashboard de faturamento" (§14). A banca de 24/11, poré
 
 Preparação de Playwright, axe-core, verificações de segurança e testes dos fluxos já disponíveis pode começar imediatamente e acompanhar as demais frentes. O aceite final exige todos os P0 dos PBIs 16–37 integrados e os P1 efetivamente incluídos testados; P1 formalmente adiados não bloqueiam o fechamento P0 e devem constar nas pendências.
 
-- [ ] Configurar Playwright real e axe-core; o script E2E atual é apenas placeholder
-- [ ] Automatizar compra sandbox até confirmação, wizard até wa.me, cadastro de obra e gestão/consulta do portfólio
-- [ ] Executar regressão de autenticação, permissões, validações, CSRF, XSS, rate limit e integridade transacional
-- [ ] Validar 320, 768, 1440 e 1920 px, teclado, foco, contraste e textos alternativos; axe-core sem violações críticas
-- [ ] Medir catálogo e ficha: Lighthouse ≥ 90 e LCP abaixo de 2,5 s em 4G simulado; corrigir falhas
-- [ ] Executar gates, revisar dependências sem vulnerabilidades altas/críticas e registrar evidências
+- [x] Configurar Playwright real e axe-core; o script E2E atual é apenas placeholder
+- [x] Automatizar compra sandbox até confirmação, wizard até wa.me, cadastro de obra e gestão/consulta do portfólio (a compra confirma por webhook assinado com o Mercado Pago simulado; a compra real no sandbox fica como evidência manual depois do deploy, PBI-46)
+- [x] Executar regressão de autenticação, permissões, validações, CSRF, XSS, rate limit e integridade transacional
+- [ ] Validar 320, 768, 1440 e 1920 px, teclado, foco, contraste e textos alternativos; axe-core sem violações críticas (larguras, contraste, textos alternativos e axe-core sem violação crítica nem séria: feitos, nas 35 telas; teclado e foco: não verificados, ficaram fora da fatia 5 por decisão da equipe)
+- [x] Medir catálogo e ficha: Lighthouse ≥ 90 e LCP abaixo de 2,5 s em 4G simulado; corrigir falhas
+- [x] Executar gates, revisar dependências sem vulnerabilidades altas/críticas e registrar evidências
 
 **Fatias (decididas em 18/10/2026):** um PR por fatia, nesta ordem: (1) cabeçalhos de segurança, CSP e teste instável; (2) base do Playwright com job na CI e E2E do wizard; (3) E2E da compra, com a confirmação por webhook simulado e assinado (a CI não recebe webhook real; a compra no sandbox fica como evidência manual depois do deploy); (4) E2E de gestão; (5) larguras de tela e axe-core; (6) Lighthouse, `npm audit`, roteiro manual de segurança e evidências.
 
@@ -968,7 +968,17 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 - Todas as páginas já eram dinâmicas (o layout raiz lê `headers()`), então todas recebem o nonce.
 - E2E em Chromium: o `upgrade-insecure-requests` quebraria o WebKit com `next start` servido por http. Em produção, com HTTPS, não há efeito.
 
-**Situação:** fatia 1 no PR #72, aberto em 18/10/2026; aguarda a CI e a revisão de outro integrante. Fatias 2 a 6 pendentes.
+**Situação:** fatia 1 no PR #72, fatia 2 no PR #73, fatia 3 no PR #74, fatia 4 no PR #75, fatia 5 no PR #76 e fatia 6 (fechamento) no PR #77, abertos em 18/10/2026; aguardam a revisão de outro integrante. Cada fatia parte da anterior e é rebaseada quando a anterior entrar na `main`. Fica em aberto só a verificação de teclado e foco (ver o checklist).
+
+**Pendências em aberto do PBI-45 (para quem pegar depois):**
+
+| Pendência | Por que ficou | Onde está o detalhe | Depende de |
+| --- | --- | --- | --- |
+| Verificar navegação por teclado e foco visível nos fluxos principais (compra, wizard, login, admin) | Ficou fora da fatia 5 por decisão da equipe; o axe-core não verifica isso, e o RNF21 pede | Checklist acima (item em aberto) e `PREPARACAO-BANCA.md`, critério 6 | Ninguém de fora: pode virar um E2E só com o teclado |
+| Conferir o envio real de imagem ao R2 (envio, miniatura e exibição) | O E2E usa o dublê do R2; no teste manual da fatia 1 o CORS do bucket `kolo-imagens-teste` recusou a origem `http://localhost:3100` | Pendências da fatia 1 | Dono da conta Cloudflare (incluir a origem no CORS) ou testar na porta 3000 |
+| Compra real no sandbox até a confirmação, pelo endereço público | O E2E confirma com o Mercado Pago simulado; o webhook real precisa de URL pública | Checklist do PBI-46 | Deploy (PBI-46) e a URL do webhook no painel do Mercado Pago |
+| Nota A no securityheaders.com | Só pode ser medida no domínio | Pendências da fatia 1; item "Validar HTTPS, cabeçalhos" do PBI-46 | Deploy (PBI-46) |
+| (Opcional) `heading-order` no catálogo: títulos dos cards em `h3` direto abaixo do `h1` | Regra de boas práticas, fora das tags WCAG A/AA da varredura; custa 2 pontos de acessibilidade no Lighthouse | Observações do Lighthouse, fatia 6 | Ninguém de fora |
 
 **Entregas da fatia 1:**
 
@@ -985,8 +995,142 @@ Preparação de Playwright, axe-core, verificações de segurança e testes dos 
 
 **Pendências:**
 
-- Conferir o envio completo ao R2 (envio, miniatura e exibição) com `http://localhost:3100` no CORS do bucket de teste ou na porta 3000; previsto junto da fatia 4.
+- Conferir o envio completo ao R2 (envio, miniatura e exibição) com `http://localhost:3100` no CORS do bucket de teste ou na porta 3000. Ainda em aberto: a fatia 4 testou o envio com o dublê do R2, não com o bucket (ver as pendências em aberto abaixo da situação).
 - A nota A no securityheaders.com só pode ser medida no domínio, no PBI-46.
+
+**Decisões da fatia 2 (registradas em 18/10/2026):**
+
+- `npm run test:e2e` roda o Playwright, só Chromium, contra o `next start` do build já feito (localmente, `npm run build` antes; na CI, o passo de Build logo acima).
+- Banco descartável `kolo_e2e`, recriado a cada rodada dentro do comando do `webServer` (migrações e dados fixos de `tests/e2e/dados.ts`), antes de o servidor subir. Sem usar o `kolo_db` nem o `prisma/seed.ts`.
+- O `webServer.env` fixa valores fictícios para tudo que o app lê de fora (auth, `APP_URL`, Mercado Pago, Resend, R2): o Playwright mescla com o ambiente do processo e o Next completaria com o `.env` local.
+- Na CI, passos no job `verify` depois do Build (sem segundo job), com o relatório do Playwright como artefato por 7 dias quando falhar.
+
+**Entregas da fatia 2:**
+
+- `playwright.config.ts`, `tests/e2e/dados.ts`, `tests/e2e/preparar-banco.ts` e `tests/e2e/wizard.spec.ts`; `@playwright/test` como devDependency; `playwright.config.ts` no `tsconfig`.
+- E2E do wizard (RF20–RF25, RF21): da home às 8 etapas; sem os três avisos a revisão não sai e o link não aparece; com eles, o link vai ao WhatsApp das configurações com a mensagem do RF21, conferida literalmente.
+
+**Evidências da fatia 2:**
+
+- `npm run test:e2e` passou em duas rodadas seguidas (cerca de 11 s cada); com o número esperado sabotado, falhou mostrando o `href` esperado e o recebido.
+- `npm run lint`, `format:check`, `typecheck`, `npm test` (531) e `npm run test:integration` (276) sem erros.
+- Revisão independente por agente: PASS; os ajustes sugeridos (ambiente isolado do `.env` local e nome do banco centralizado) foram incluídos.
+
+**Decisões da fatia 3 (registradas em 18/10/2026):**
+
+- O E2E da compra segue o §13 do escopo e começa pelo cadastro na tela (RF01), passando por catálogo, ficha, carrinho, endereço (RF05), checkout e pagamento.
+- O Mercado Pago é simulado só no processo do servidor do E2E: `tests/e2e/mercado-pago-falso.ts` é carregado por `NODE_OPTIONS=--import` e desvia apenas as chamadas a `api.mercadopago.com` (criar preferência e consultar o pagamento aprovado da última preferência). O SDK usa o `fetch` global com o endereço da API fixo; nenhuma linha do app muda.
+- O navegador nunca acessa o site real do Mercado Pago: a ida ao checkout é atendida pelo `page.route`, e o teste confere a URL.
+- A confirmação entra pela rota HTTP do webhook, com `x-signature` no formato documentado e o segredo aleatório da rodada. Voltar do Mercado Pago não paga o pedido (RN05).
+- A conclusão confere o pedido Pago em `/conta/pedidos` e a obra de uma unidade Esgotada, visível e sem compra (RF14, RN11).
+- A compra real no sandbox continua como evidência manual depois do deploy (PBI-46).
+
+**Entregas da fatia 3:**
+
+- `tests/e2e/compra.spec.ts`, `tests/e2e/mercado-pago-falso.ts` e `tests/e2e/webhook.ts`; a fixture ganha uma obra Disponível com estoque 1.
+
+**Evidências da fatia 3:**
+
+- `npm run test:e2e`: 2 testes (wizard e compra) passaram em duas rodadas seguidas (cerca de 17 a 19 s cada).
+- Sabotagens detectadas: com a assinatura feita com um segredo errado, o webhook respondeu 401 e o teste falhou; com o pagamento falso R$ 1,00 acima do total, o pedido continuou "Aguardando pagamento" (RN07) e o teste falhou.
+- `npm run lint`, `format:check`, `typecheck` e `npm test` (531) sem erros.
+- A volta do Mercado Pago, aberta com `status=approved` e `payment_id` na URL, mostra "Estamos confirmando seu pagamento" e o pedido continua aguardando (RN05).
+- Revisão independente por agente: PASS; os ajustes sugeridos (volta do Mercado Pago no RN05, seletores exatos, erro explícito sem o segredo) foram incluídos.
+
+**Decisões da fatia 4 (registradas em 18/10/2026):**
+
+- Três frentes de gestão: admin publica uma obra com imagem (RF26, RF27, RN11), artista inclui um trabalho no próprio portfólio (RF19, RF17) e restrições de papel (RF06, RN10).
+- Contas da equipe (ADMIN e dois artistas) criadas na fixture com credencial do Better Auth e senha sorteada a cada rodada (`E2E_SENHA_EQUIPE`); o login é pela tela. O cliente se cadastra pela tela.
+- Dublê do R2: no navegador, o `page.route` recebe o PUT da URL assinada e grava o arquivo numa pasta temporária (`E2E_R2_DIR`); no servidor, `tests/e2e/r2-falso.ts`, carregado por `NODE_OPTIONS=--import`, troca o `S3Client.prototype.send` do `@aws-sdk/client-s3` (que o Next deixa fora do bundle) e atende `GetObject`, `PutObject` e `DeleteObject` nessa pasta. O `sharp` processa o arquivo enviado de verdade; a foto de teste é gerada na hora.
+- As asserções conferem texto (título, preço, mensagens), não a imagem renderizada: o `R2_PUBLIC_URL` é fictício e o servidor registra `ENOTFOUND` ao otimizar as fotos, sem efeito no teste (o Next 16 resolve o DNS antes de baixar a imagem).
+- RN10 pela tela: para a artista, o servidor ignora o `?artista=` de outro artista e devolve o próprio portfólio, com o formulário dela e sem recusa. Por isso o teste confere o formulário "Cadastrar trabalho" e a ausência do trabalho do outro, em vez de uma mensagem de acesso negado (o pedido previa a mensagem; o comportamento do app também protege e foi mantido).
+
+**Entregas da fatia 4:**
+
+- `tests/e2e/restricoes.spec.ts`, `tests/e2e/obra.spec.ts`, `tests/e2e/portfolio.spec.ts`, `tests/e2e/sessao.ts`, `tests/e2e/r2.ts` e `tests/e2e/r2-falso.ts`; a fixture ganha as contas da equipe e um segundo artista com um trabalho no portfólio.
+
+**Evidências da fatia 4:**
+
+- `npm run test:e2e`: 6 testes (wizard, compra, duas restrições, obra e portfólio) passaram em duas rodadas seguidas (cerca de 23 a 25 s cada).
+- Na pasta do dublê ficaram o JPEG enviado pelo navegador e a miniatura `_thumb.webp` gerada pelo `sharp` no servidor.
+- Sabotagens detectadas: com o dublê respondendo "objeto inexistente", a obra não recebeu a imagem e o teste falhou; com a restrição conferida como ADMIN, a expectativa de acesso negado falhou.
+- `npm run lint`, `format:check`, `typecheck` e `npm test` (531) sem erros.
+- Revisão independente por agente: PASS; os ajustes sugeridos (RN10 conferindo o portfólio da própria artista, vitrine vista sem sessão e com controle positivo, dublês fechados a comandos não simulados, helper de cadastro) foram incluídos.
+
+**Decisões da fatia 5 (registradas em 18/10/2026):**
+
+- Varredura de todas as telas (35: visitante, cliente, admin e artista), uma por teste, a partir de `tests/e2e/telas.ts`.
+- Cada tela confere a URL final e um marco de conteúdo dentro do `<main>`: um redirecionamento para o login ou uma tela de erro não passa como a tela varrida.
+- RNF20: em 320, 768, 1440 e 1920 px cada tela carrega sem rolagem horizontal (medida com as fontes carregadas, pela largura útil); quando há, a mensagem aponta os elementos que passam da borda. Cada largura gera uma captura JPEG anexada ao relatório do Playwright, que a CI guarda por 30 dias (as capturas não são versionadas: baixar do artefato as que forem para a monografia).
+- RNF21: axe-core com as regras WCAG 2.1 A e AA, em 320 e 1440 px; impacto crítico e sério reprovam (o contraste AA o axe classifica como sério). Ficam de fora os resultados "incompletos" do axe (ex.: contraste sobre imagem) e o iframe do Turnstile, que é da Cloudflare. Teclado e foco não entram nesta fatia.
+- Problemas já existentes não são corrigidos nesta fatia: ficam em `tests/e2e/excecoes-a11y.ts`, por tela, regra e larguras, com o motivo. Violação fora da lista reprova (inclusive a mesma regra em outra largura), exceção que deixou de acontecer também, e toda exceção precisa apontar uma tela da tabela. Limite conhecido: a chave não distingue o elemento.
+- A fixture ganha o que as telas do cliente e da equipe precisam: uma cliente com endereço, uma obra no carrinho, um pedido pago com item e pagamento, um horário na agenda (com data fixa, e a agenda aberta nessa semana) e um trabalho da artista no portfólio (para a varredura não depender da ordem dos testes).
+
+**Exceções registradas (corrigidas na fatia 6; a lista ficou vazia):**
+
+| Tela | Regra | Impacto | Motivo |
+| --- | --- | --- | --- |
+| Admin, detalhe do pedido (320 px) | rolagem horizontal | — | Em 320 px os títulos `#admin-pedido-situacao` e `#admin-pedido-rastreio` (fonte de exibição, `text-titulo-lg`) e um botão passam da largura: 47 px de rolagem. |
+| Gestão do portfólio (admin; 320 e 1440 px) | `label-content-name-mismatch` | sério | WCAG 2.5.3: os botões "Mover para cima" e "Mover para baixo" têm `aria-label` "Mover {título} para cima/baixo", que não contém o texto visível. Ex.: "Mover para cima: {título}". |
+| Gestão do portfólio (artista; 320 e 1440 px) | `label-content-name-mismatch` | sério | Os mesmos botões, na tela da artista. |
+
+**Entregas da fatia 5:**
+
+- `tests/e2e/telas.ts`, `tests/e2e/varredura.spec.ts` e `tests/e2e/excecoes-a11y.ts`; `@axe-core/playwright` como devDependency; a fixture ampliada em `tests/e2e/preparar-banco.ts`; o relatório do Playwright guardado sempre na CI.
+
+**Evidências da fatia 5:**
+
+- `npm run test:e2e`: 41 testes passaram em duas rodadas seguidas (cerca de 1,9 min cada); a varredura sozinha também passou (35), sem depender da ordem. Com o teste de que toda exceção aponta uma tela, 42.
+- Das 35 telas, 32 já passavam sem exceção; as três exceções acima são o que a varredura achou.
+- Sabotagens detectadas: sem a exceção do detalhe do pedido, a tela falhou mostrando a rolagem e os elementos; com uma exceção inventada na home, o teste falhou pedindo para apagá-la; com a exceção apontando uma tela inexistente, o teste novo falhou.
+- `npm run lint`, `format:check`, `typecheck` e `npm test` (531) sem erros.
+- Revisão independente por agente: FAIL na primeira passada (tela redirecionada ou de erro passava como varrida; agenda vazia aos domingos; exceção sem largura). Corrigido: URL final e marco por tela, horário com data fixa, largura nas exceções e os ajustes menores. Sabotagens da correção detectadas: "minha conta" como visitante falhou na URL final (`/login`); sem o item no carrinho, o checkout falhou na URL final (`/carrinho`); com a exceção do detalhe do pedido em 768 px, a tela falhou como nova em 320 px e obsoleta em 768 px. Depois disso, 42 testes passaram em duas rodadas seguidas.
+
+**Decisões da fatia 6 (fechamento, registradas em 18/10/2026):**
+
+- As três exceções da fatia 5 foram corrigidas no app: os botões "Mover para cima/baixo" do portfólio passaram a ter o nome acessível "Mover para cima: {título}" (WCAG 2.5.3), e os botões de próxima situação do pedido no admin quebram linha (a rolagem horizontal em 320 px vinha de "Marcar como pronto para retirada" em caixa alta e sem quebra). A varredura passa com a lista de exceções vazia.
+- `npm audit`: `npm audit fix` sem `--force`; o vitest foi do 3 para o 4.1.12 (o npm sugeria o 5; o 4.1.12 já resolve, sem mudar testes); e o pacote `shadcn` saiu das dependências, porque o app só usava o `shadcn/tailwind.css` e o CLI dele trazia `braces <= 3.0.3`, sem versão corrigida. O CSS foi copiado literalmente para `src/app/shadcn-tailwind.css` (MIT, origem no cabeçalho, fora do Prettier); o CSS compilado ficou idêntico byte a byte. Para novos componentes: `npx shadcn@latest add`.
+- Lighthouse 12.8.2 (mobile, 4G simulado) rodado localmente contra o `next start` com o banco de desenvolvimento e as fotos reais do bucket de teste, 3 vezes por página (mediana). O catálogo não atingia a meta: o React 19 gera um `<link rel="preload">` para cada imagem eager, e a primeira linha inteira era eager, então as 4 fotos disputavam a banda antes do LCP. Agora só a primeira foto é eager e com prioridade alta (muda a decisão do PR #54).
+- O roteiro de segurança foi executado contra o `next start` do E2E (banco `kolo_e2e`, segredos sorteados, dublês), para não gravar payloads no banco de desenvolvimento.
+
+**Dependências (`npm audit`):**
+
+| Antes | Ação | Depois |
+| --- | --- | --- |
+| 16 (2 críticas, 13 altas, 1 moderada) | `npm audit fix`: prisma/@prisma/config, mysql2, js-yaml, source-map-js, brace-expansion, deepmerge-ts | 10 |
+| tinypool (2 críticas) e vitest (moderada) | vitest 3 → 4.1.12 | 7 |
+| shadcn CLI: ts-morph, fast-glob, micromatch, braces (7 altas, sem versão corrigida de braces) | pacote removido; CSS copiado para o repositório | **0** |
+
+**Lighthouse (mediana de 3 rodadas, mobile, 4G simulado):**
+
+| Página | Desempenho | LCP | FCP | TBT | CLS | Acessibilidade | Boas práticas | SEO |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Catálogo, antes | 88 | 3,92 s | 0,77 s | 116 ms | 0 | 98 | 100 | 100 |
+| Catálogo, depois | **97** (98/94/97) | **2,43 s** | 0,78 s | 73 ms | 0 | 98 | 100 | 100 |
+| Ficha da obra | **98** (98/98/92) | **2,25 s** | 0,78 s | 83 ms | 0 | 100 | 100 | 100 |
+
+Observações: a folga do LCP do catálogo é pequena (70 ms); os 98 de acessibilidade do catálogo vêm de `heading-order` (títulos dos cards em `h3` direto abaixo do `h1`), regra de boas práticas fora das tags WCAG A/AA que a varredura usa.
+
+**Roteiro de segurança (executado em 18/10/2026):**
+
+| Item | RNF | Como | Resultado |
+| --- | --- | --- | --- |
+| XSS | RNF05 | `<img onerror>` no nome do cadastro e `<svg onload>` no título de uma obra; `<script>` nas configurações | Os dois primeiros aparecem como texto (`&lt;img …` no HTML) e nada executa; as configurações recusam no servidor ("não use < nem >"). A CSP por nonce (fatia 1) é a segunda barreira. |
+| Permissões | RF06 | Server Action de salvar as configurações, capturada do admin, repetida com a sessão de um cliente | Responde "proibido"; o rodapé do site não muda. A tela já é coberta pelo E2E de restrições (fatia 4). |
+| CSRF | RNF06 | A mesma Server Action com a sessão do admin e `Origin` de outro site | O Next recusa ("Invalid Server Actions request", HTTP 500); nada muda. |
+| Validação no servidor | RNF09 | A Server Action com WhatsApp fora do formato, enviada direto | Recusada pelo esquema; os módulos validam com Zod (`validacao.ts`). |
+| Cookies | RNF06 | Cookie de sessão depois do login, em produção | `__Secure-better-auth.session_token`, `HttpOnly`, `SameSite=Lax`, `Secure`. |
+| Rate limit | RNF08 | 5 senhas erradas e depois a certa | A certa recebe "Muitas tentativas. Tente de novo em 15 min." (limite: 5 em 15 min; recuperação: 3 por hora; contato: 3 em 15 min; wizard: 60 em 10 min). |
+| SQL injection | RNF04 | Busca no código | Nenhum `$queryRawUnsafe`/`$executeRawUnsafe`; os 12 usos de SQL bruto são template parametrizado do Prisma. |
+| Webhook | RNF11 | Aviso sem `x-signature` | HTTP 401; o E2E da compra (fatia 3) mostra a recusa de assinatura errada. |
+| Segredos | RNF12 | GitGuardian nos PRs e busca no repositório | Nada versionado; só o `.env.example` está no git. |
+| Integridade transacional | RN04, RN08, RNF11 | Testes de integração no Postgres real | "Reservas concorrentes de uma peça única: só uma leva"; "cadastros simultâneos no mesmo intervalo: só um passa"; "dois avisos ao mesmo tempo baixam o estoque uma vez"; 276 testes de integração verdes. |
+
+**Evidências da fatia 6:**
+
+- `tests/unit/gestao-portfolio.test.tsx` e `tests/unit/catalogo-obras.test.tsx` falharam antes das correções e passaram depois; o detalhe do pedido falhou na varredura sem a exceção e passou depois da correção.
+- Revisão independente por agente: FAIL na primeira passada, porque a quebra de linha dos botões "Marcar como …" os deixava com 44 px, abaixo do alvo de toque de 48 px (`docs/IDENTIDADE-VISUAL.md`). Corrigido com o padrão do repositório (`min-h-12`, `py-3`), também no botão de estorno, e com o E2E `tests/e2e/alvo-de-toque.spec.ts` (altura ≥ 48 px e nada além da borda em 320 px), que falhou antes (44 px) e passou depois. Também: aviso completo da licença MIT no CSS copiado e as referências da tabela de segurança.
+- `npm run build`, `npm run test:e2e` (43 com o teste do alvo de toque, duas rodadas seguidas), `npm test` (532), `npm run test:integration` (276), `lint`, `format:check` e `typecheck` sem erros; `npm audit --audit-level=high` com código 0 (0 vulnerabilidades).
 
 ### PBI-46 — Deploy, operação e restauração
 
@@ -999,6 +1143,7 @@ Compose, CI, configuração da VPS, observabilidade e backups podem ser preparad
 - [ ] Configurar segredos, reinício automático, logs estruturados e captura de exceções
 - [ ] Configurar backup diário com retenção mínima de 7 dias e comprovar restauração
 - [ ] Validar HTTPS, cabeçalhos e aplicação implantada; publicação/push somente com autorização humana exigida pelo repositório
+- [ ] Fazer uma compra real no sandbox até a confirmação, pelo endereço público, e registrar como evidência (o E2E do PBI-45 confirma com o Mercado Pago simulado)
 
 ### PBI-47 — Validação com cliente e preparação da defesa
 
