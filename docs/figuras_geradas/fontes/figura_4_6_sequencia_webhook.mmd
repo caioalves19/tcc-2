@@ -1,0 +1,32 @@
+sequenceDiagram
+  autonumber
+  participant MP as Mercado Pago
+  participant W as /api/webhooks/mercadopago
+  participant DB as PostgreSQL
+  MP->>W: POST notificação (x-signature, x-request-id)
+  W->>W: Valida a assinatura HMAC-SHA256 (SDK, tempo constante)
+  alt Assinatura inválida
+    W-->>MP: HTTP 401
+  else Assinatura válida
+    W->>MP: Consulta o pagamento pela API (RN05)
+    MP-->>W: Situação e valor do pagamento
+    W->>DB: BEGIN e insere o evento (identificador único)
+    alt Evento já registrado
+      W-->>MP: HTTP 200 (notificação repetida, sem efeitos)
+    else Evento novo
+      W->>DB: Trava usuário e pedido (FOR UPDATE)
+      W->>DB: Registra ou atualiza o pagamento (a situação não regride)
+      alt Pagamento aprovado
+        W->>DB: Marca o pedido como PAGO, baixa o estoque e consome a reserva
+        opt Pedido não pendente, valor divergente ou sem unidade
+          W->>DB: Marca estornar_motivo (fila Estorno pendente)
+        end
+      else Pagamento pendente (Pix ou boleto)
+        W->>DB: Prorroga a reserva até o vencimento (RN06)
+      else Pagamento recusado
+        W->>DB: Encerra a tentativa de pagamento
+      end
+      W->>DB: COMMIT
+      W-->>MP: HTTP 200
+    end
+  end

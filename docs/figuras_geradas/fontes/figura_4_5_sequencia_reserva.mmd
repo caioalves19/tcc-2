@@ -1,0 +1,25 @@
+sequenceDiagram
+  autonumber
+  actor C as Cliente
+  participant N as Next.js (Server Action)
+  participant DB as PostgreSQL
+  participant MP as Mercado Pago
+  participant Q as pg-boss
+  C->>N: Finalizar compra (itens do carrinho)
+  N->>DB: BEGIN
+  N->>DB: SELECT ... FROM artwork WHERE id IN (...) ORDER BY id FOR UPDATE
+  DB-->>N: Linhas travadas
+  N->>DB: Calcula unidades livres (estoque menos reservas ativas de outras sessões)
+  alt Todas as unidades livres
+    N->>DB: Grava reservas (expira em agora + 10 min) e pedido PENDENTE
+    N->>DB: COMMIT
+    N->>MP: Cria preferência de pagamento (Checkout Pro)
+    MP-->>N: Endereço do checkout hospedado
+    N-->>C: Redireciona ao Mercado Pago, com contador de reserva
+  else Alguma unidade indisponível
+    N->>DB: ROLLBACK
+    N-->>C: Lista das obras indisponíveis
+  end
+  loop A cada 60 s
+    Q->>DB: Remove reservas com expira_em vencido
+  end
