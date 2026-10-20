@@ -1,10 +1,13 @@
-export default function PaginaAdmin() {
-  return (
-    <>
-      <h1 className="font-display text-2xl">Gestão do acervo</h1>
-      <p className="mt-4">
-        Use o menu para cadastrar e gerenciar artistas, estilos de tatuagem, tags, obras e pedidos.
-      </p>
-    </>
-  );
+import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { PainelAdmin } from "@/components/admin/painel-admin";
+import { lerPainel } from "@/modules/reports";
+
+export const metadata: Metadata = { title: "Painel · Administração · Kolô" };
+
+// RF32 (PBI-48): a página inicial do admin é o painel de indicadores, calculado no servidor.
+export default async function PaginaAdmin() {
+  const resultado = await lerPainel(await headers());
+  if (!resultado.ok) return <p role="alert">{resultado.mensagem}</p>;
+  return <PainelAdmin painel={resultado.dados} />;
 }

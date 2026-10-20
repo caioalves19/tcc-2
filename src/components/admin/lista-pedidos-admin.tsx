@@ -5,7 +5,8 @@ import type { PaginaPedidosAdmin } from "@/modules/orders";
 import { FILTROS_PEDIDOS, type FiltroPedidos } from "@/modules/orders/cliente";
 import { classeCampo } from "./formulario";
 
-const ROTULO_FILTRO: Record<FiltroPedidos, string> = {
+// Também no painel (PBI-48), que leva a cada filtro com a contagem.
+export const ROTULO_FILTRO: Record<FiltroPedidos, string> = {
   "a-fazer": "A fazer",
   pendentes: "Pendentes",
   enviados: "Prontos ou enviados",
@@ -16,7 +17,7 @@ const ROTULO_FILTRO: Record<FiltroPedidos, string> = {
 };
 
 // A URL guarda filtro, busca e página; os valores padrão ficam de fora.
-function hrefPedidos(filtro: FiltroPedidos, busca: string, pagina = 1): string {
+export function hrefPedidos(filtro: FiltroPedidos, busca: string, pagina = 1): string {
   const parametros = new URLSearchParams();
   if (filtro !== "a-fazer") parametros.set("filtro", filtro);
   if (busca) parametros.set("busca", busca);

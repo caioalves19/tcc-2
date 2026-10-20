@@ -7,6 +7,7 @@ export {
   estornoDevolveEstoque,
   numeroDoPedido,
   pagouOPedido,
+  pedidoPago,
   podeCancelarPedido,
   proximasSituacoes,
   quantidadeValida,
@@ -53,6 +54,7 @@ export type { PedidoResumo, SituacaoPedido } from "./pedido";
 export { lerMeuPedido, listarMeusPedidos } from "./acompanhamento";
 export type { PedidoDaLista, PedidoDetalhado } from "./acompanhamento";
 export {
+  contarPedidosPorFiltro,
   lerPedidoAdmin,
   listarPedidosAdmin,
   mudarSituacaoPedido,
@@ -60,10 +62,13 @@ export {
   registrarRastreio,
 } from "./gestao";
 export type {
+  ContagemPedidos,
   PaginaPedidosAdmin,
   PedidoAdmin,
   PedidoAdminLista,
   PedidoDoClienteAdmin,
 } from "./gestao";
+export { vendasDoPeriodo } from "./vendas";
+export type { VendaDoPeriodo } from "./vendas";
 export { FILTROS_PEDIDOS, PEDIDOS_POR_PAGINA } from "./validacao";
 export type { FiltroPedidos } from "./validacao";

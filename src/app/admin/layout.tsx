@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { MenuAdmin } from "@/components/admin/menu-admin";
 import { verificarAcessoAdmin } from "@/modules/artists";
 
 export default async function LayoutAdmin({ children }: { children: ReactNode }) {
@@ -20,32 +21,7 @@ export default async function LayoutAdmin({ children }: { children: ReactNode })
     );
   return (
     <section className="mx-auto max-w-pagina px-margem py-12 md:px-margem-desktop">
-      <nav aria-label="Administração" className="mb-8 flex flex-wrap gap-4">
-        <a href="/admin" className="underline">
-          Administração
-        </a>
-        <a href="/admin/artistas" className="underline">
-          Artistas
-        </a>
-        <a href="/admin/estilos" className="underline">
-          Estilos
-        </a>
-        <a href="/admin/tags" className="underline">
-          Tags
-        </a>
-        <a href="/admin/obras" className="underline">
-          Obras
-        </a>
-        <a href="/admin/pedidos" className="underline">
-          Pedidos
-        </a>
-        <a href="/admin/clientes" className="underline">
-          Clientes
-        </a>
-        <a href="/admin/configuracoes" className="underline">
-          Configurações
-        </a>
-      </nav>
+      <MenuAdmin />
       {children}
     </section>
   );

@@ -1,7 +1,9 @@
 import { z } from "zod";
+import type { Prisma } from "../../../generated/prisma/client";
+import { deSaoPauloParaUtc, paraHorarioSaoPaulo, somarDias } from "../../lib/fuso";
 import { obterPrisma } from "../../lib/prisma";
 import { equipeDaRequisicao, executar } from "./agenda";
-import { deSaoPauloParaUtc, inicioDaSemana, paraHorarioSaoPaulo, somarDias } from "./agenda-regras";
+import { inicioDaSemana } from "./agenda-regras";
 
 type Situacao = "AGENDADO" | "CANCELADO" | "CONCLUIDO";
 
@@ -129,4 +131,40 @@ export function lerAgenda(cabecalhos: Headers, filtro: { semana?: unknown; artis
       },
     };
   });
+}
+
+export type HorarioProximo = {
+  codigo: string;
+  // "AAAA-MM-DDTHH:MM" em São Paulo (RN09).
+  inicio: string;
+  fim: string;
+  artista: string;
+  contato: string;
+};
+
+const SETE_DIAS_MS = 7 * 24 * 60 * 60 * 1000;
+
+// RF32 (PBI-48): horários AGENDADO que começam de agora até 7 dias depois, de todos os artistas,
+// para o painel do admin. Roda na transação de quem chama, que já passou pelo comoAdmin: esta
+// função não confere permissão sozinha.
+export async function proximosHorarios(
+  tx: Prisma.TransactionClient,
+  agora: Date,
+): Promise<HorarioProximo[]> {
+  const horarios = await tx.appointment.findMany({
+    where: {
+      deletedAt: null,
+      status: "AGENDADO",
+      startsAt: { gte: agora, lt: new Date(agora.getTime() + SETE_DIAS_MS) },
+    },
+    include: { artist: { include: { user: true } } },
+    orderBy: [{ startsAt: "asc" }, { id: "asc" }],
+  });
+  return horarios.map((h) => ({
+    codigo: h.code,
+    inicio: paraHorarioSaoPaulo(h.startsAt),
+    fim: paraHorarioSaoPaulo(h.endsAt),
+    artista: h.artist.user.name,
+    contato: h.contactName,
+  }));
 }

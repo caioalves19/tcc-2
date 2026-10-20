@@ -1,4 +1,5 @@
-export { criarObra, editarObra, excluirObra, listarObras } from "./obras";
+export { contarObrasPorSituacao, criarObra, editarObra, excluirObra, listarObras } from "./obras";
+export type { ObrasPorSituacao } from "./obras";
 export {
   adicionarImagem,
   definirImagemPrincipal,

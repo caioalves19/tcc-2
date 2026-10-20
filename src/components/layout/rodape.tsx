@@ -21,7 +21,7 @@ export function Rodape({ configuracao }: { configuracao: ConfiguracaoSite }) {
     { rotulo: `@${contato.instagramTattoo}`, href: hrefInstagram(contato.instagramTattoo) },
   ];
   return (
-    <footer className="bg-neutro-grafite text-neutro-branco">
+    <footer className="bg-neutro-grafite text-neutro-branco print:hidden">
       <div className="mx-auto flex max-w-pagina flex-col gap-10 px-margem py-12 md:flex-row md:justify-between md:px-margem-desktop">
         <div className="flex flex-col gap-3">
           <Marca variante="lettering" className="w-32" />
