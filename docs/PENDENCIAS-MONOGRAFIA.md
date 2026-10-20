@@ -3,6 +3,13 @@
 > Versão em edição: `docs/TCC2_Grupo_19_Monografia.md`. O `.docx` só é regenerado quando o `.md` estiver fechado.
 > Entrega: 20/10/2026, pelo Teams, com o número do grupo no nome do arquivo.
 
+## Qual arquivo editar
+
+- **Oficial, em edição:** `docs/TCC2_Grupo_19_Monografia.md`. Todos editam este.
+- Rascunhos anteriores, só de consulta (não editar): `docs/MONOGRAFIA-TCC2-FINAL.md`, `docs/CAPITULO-1` a `6-*.md` e `docs/TCC.txt` (agora com o texto do rascunho, não mais o do TCC 1; o original está no histórico do Git).
+- `.docx` (`TCC2_Grupo_19_Monografia.docx`, `MONOGRAFIA-TCC2-FINAL.docx`): desatualizados; só serão regenerados quando o `.md` fechar.
+- `docs/figuras_geradas/`: Fig. 4.1 a 4.6 válidas; `figura_4_7_*` a `figura_4_12_*` vêm do protótipo de design e **não devem ser usadas** (ver abaixo).
+
 ## Figuras (mínimo exigido: 5, numeradas e citadas no texto)
 
 Hoje há 12 figuras no `.md`: 6 diagramas (as Fig. 4.1 e 4.2 em Mermaid dentro do texto; as Fig. 4.3 a 4.6 como PNG em `docs/figuras_geradas/`, com os fontes em `figuras_geradas/fontes/`) e 6 esquemas ASCII de telas (Fig. 4.7 a 4.12), com legenda "esquema ilustrativo".
