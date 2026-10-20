@@ -57,7 +57,7 @@
 
 ### 4. Implementação do front-end
 
-- [ ] Melhorar o visual do admin: o menu são links sublinhados e a página inicial do `/admin` tem uma frase só. Resolvido junto com o critério 8
+- [x] Melhorar o visual do admin: o menu são links sublinhados e a página inicial do `/admin` tem uma frase só. Resolvido junto com o critério 8: menu com o visual do site e o painel no `/admin` (PBI-48)
 - [ ] Conferir todas as telas nos dados de demonstração (sem imagem quebrada nem texto de teste)
 - [ ] Revisar os textos das políticas com a equipe (pendente no PBI-22)
 
@@ -93,16 +93,16 @@
 
 **É o critério mais fácil de subir.** O escopo decidiu "sem dashboard", mas a banca pede "relatórios, indicadores".
 
-- [ ] Trocar a página inicial do `/admin` por um painel de indicadores:
-  - [ ] faturamento pago no período
-  - [ ] número de pedidos pagos e ticket médio
-  - [ ] pedidos por situação, com link para `/admin/pedidos?filtro=...`
-  - [ ] obras disponíveis, esgotadas e em rascunho
-  - [ ] agendamentos dos próximos 7 dias
-- [ ] Relatório de vendas por período (este mês, últimos 30 dias, intervalo escolhido) com obras mais vendidas e faturamento por artista
+- [x] Trocar a página inicial do `/admin` por um painel de indicadores (PBI-48):
+  - [x] faturamento pago no período
+  - [x] número de pedidos pagos e ticket médio
+  - [x] pedidos por situação, com link para `/admin/pedidos?filtro=...`
+  - [x] obras disponíveis, esgotadas e em rascunho
+  - [x] agendamentos dos próximos 7 dias
+- [x] Relatório de vendas por período (este mês, últimos 30 dias, intervalo escolhido) com obras mais vendidas e faturamento por artista: `/admin/relatorio` (PBI-48)
 - [x] Registrar a decisão num PBI novo, justificada pelo critério da banca: PBI-48 (RF32), em 18/10
 - [ ] No dia, mostrar também as consultas que já existem: filtros e busca de pedidos e clientes, busca no catálogo tolerante a acento, filtros e busca no portfólio, perfil do cliente com total gasto, agenda semanal
-- [ ] Opcional: exportar o relatório (CSV ou impressão em PDF). A seção 14 do escopo deixou CSV de fora; decidir em grupo
+- [x] Opcional: exportar o relatório (CSV ou impressão em PDF). Decidido no PBI-48: versão para impressão (o navegador salva em PDF); CSV continua fora (§14 do escopo)
 
 ### 9. Disponibilidade e acesso ao sistema
 
