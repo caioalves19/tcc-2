@@ -31,7 +31,7 @@ Enxuga a v2.1 para caber no prazo: agendamento vira wizard → WhatsApp; o tatua
 
 O Kolô é um ateliê e estúdio de tatuagem que integra artistas plásticos, tatuadores residentes e a comunidade artística. A operação é manual: vendas controladas fora de sistema, ausência de catálogo consultável, agendamentos negociados em conversas e nenhum histórico estruturado de clientes.
 
-O Kolô não tem mais espaço físico em Pinheiros. A plataforma web passa a ser o canal principal de exposição e venda; o agendamento começa no site e fecha no WhatsApp.
+O Kolô mantém o espaço físico em Pinheiros, que segue como ponto de atendimento presencial (sessões de tatuagem, anamnese e termo assinados no local) e de retirada de obras. A plataforma web passa a ser o canal principal de exposição e venda online; o agendamento começa no site e fecha no WhatsApp.
 
 ---
 

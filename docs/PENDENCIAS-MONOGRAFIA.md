@@ -1,0 +1,65 @@
+# Kolô — Pendências da monografia (Grupo 19)
+
+> Versão em edição: `docs/TCC2_Grupo_19_Monografia.md`. O `.docx` só é regenerado quando o `.md` estiver fechado.
+> Entrega: 20/10/2026, pelo Teams, com o número do grupo no nome do arquivo.
+
+## Figuras (mínimo exigido: 5, numeradas e citadas no texto)
+
+Hoje há 12 figuras no `.md`: 6 diagramas (as Fig. 4.1 e 4.2 em Mermaid dentro do texto; as Fig. 4.3 a 4.6 como PNG em `docs/figuras_geradas/`, com os fontes em `figuras_geradas/fontes/`) e 6 esquemas ASCII de telas (Fig. 4.7 a 4.12), com legenda "esquema ilustrativo".
+
+- [ ] **Fig. 4.1 e 4.2** (arquitetura e DER): exportar como PNG e inserir; conferir `figura_4_1_arquitetura.png` e `figura_4_2_der.png` contra o texto atual (Base UI, sem Caddy, sem `ESTORNO_PENDENTE` como situação).
+- [ ] **Fig. 4.7 a 4.12 (tirar prints do sistema rodando, com dados de teste).** Os esquemas atuais são ilustrativos e não condizem com o projeto, e os PNG de `docs/telas/` são protótipos de design (rodapé com Bixiga, artistas fictícios), que não devem ser usados:
+  - [ ] Fig. 4.7: `/obras` (catálogo, desktop)
+  - [ ] Fig. 4.8: `/obras/[slug]` (ficha de uma obra)
+  - [ ] Fig. 4.9: `/checkout` com reserva ativa (contador visível)
+  - [ ] Fig. 4.10: `/agendamento`, passo 7 (avisos de conformidade)
+  - [ ] Fig. 4.11: `/tatuagens` (portfólio com filtros)
+  - [ ] Fig. 4.12: `/admin/pedidos` (lista e detalhe de um pedido pago)
+  - [ ] Ao inserir cada print, trocar a legenda "esquema ilustrativo" pela fonte "Elaborado pelos autores (2026)" e apagar o `TODO` e o bloco ASCII.
+- [x] **Fig. 4.3** casos de uso, **4.4** classes, **4.5** sequência da reserva, **4.6** sequência do webhook (geradas e inseridas no `.md`).
+- [ ] Conferir se as Fig. 4.3 a 4.6 (PNG) ficam legíveis na largura útil da página no Word.
+- [ ] Citar cada figura no texto **antes** de ela aparecer; título acima, fonte abaixo (as legendas do `.md` já seguem isso).
+- [x] Lista de Figuras atualizada até a 4.12.
+- [ ] (Opcional) Gráfico do Lighthouse no Capítulo 5.
+
+## Modelagem (Estrutura da Monografia, Capítulo 4)
+
+- [x] DER e modelo físico (Fig. 4.2, dicionário de dados em 4.3.2), com frase sobre MER e modelo lógico.
+- [x] Casos de uso (Fig. 4.3), classes (Fig. 4.4) e sequência (Fig. 4.5 e 4.6), na Seção 4.3.3 e nas Seções 4.4.1 e 4.4.2.
+
+## Referências e citações
+
+- [ ] **Artigos científicos**: em separação pelo grupo. Hoje a lista só tem livros, normas e documentação.
+- [ ] Conferir que cada citação do texto está na lista e vice-versa, depois de entrarem os artigos.
+- [x] Tabela 2.1 reescrita só com o que as páginas citadas informam (o resto está como "não identificado").
+- [x] Frases sobre "taxas de intermediação" (§1.6 e §6.3.1) reescritas de forma neutra, sem afirmar fato verificável.
+- [ ] (Opcional) Procurar fontes específicas sobre dados de saúde em Booksy e sobre reserva de estoque no checkout do Shopify, para reforçar a Tabela 2.1. (Nuvemshop foi removida da tabela por falta de informação verificada.)
+- [ ] Endereço do ateliê: os protótipos em `docs/telas/` mostram o rodapé com "Galeria Bixiga"; o texto e o ESCOPO dizem Pinheiros. Confirmar com a Melanie e alinhar protótipos e site.
+- [x] Referências de sites com título da página, "[S. l.]" e acesso em 19/10/2026.
+
+## Validação com o cliente
+
+- [ ] (Recomendado, não exigido pela disciplina) Guardar um registro simples da sessão de 10/10/2026 com a Melanie Schwark (mensagem, foto ou anotação), para o caso de a banca perguntar.
+- [ ] Registrar a sessão no PBI-47 do `Sprint-2.md`.
+- [ ] Nome da Melanie na monografia: a disciplina não exige autorização, mas convém avisá-la (mensagem basta). Alternativa sem risco: citá-la só pela função ("a administradora e tatuadora do ateliê"). Se a UNIP exigir termo de consentimento para participantes, confirmar com a Profa. Elisa.
+
+## Metodologia
+
+- [x] §3.3 descreve a adaptação do Scrum: reuniões semanais às segundas-feiras; sem planejamento formal, diárias e retrospectiva sistemáticos.
+- [x] Sprint 1 descrita como planejada para uma semana e executada de 08/09 a 03/10/2026; divergência discutida na §5.6.2.
+- [ ] Combinar com o grupo uma explicação curta, para a banca, de por que o trabalho se concentrou perto das entregas (o histórico de commits do GitHub mostra isso).
+
+## Acabamento (depois do texto fechado)
+
+- [ ] **Sumário com páginas** (gerado no Word).
+- [ ] **Lista de siglas**: completar só quando a versão final estiver fechada (SAQ-A, PBI, RF/RNF, entre outras que o texto usar).
+- [ ] Numeração de páginas e de seções, margens, fonte e espaçamento ABNT.
+- [ ] Contar as 40 páginas de texto no Word.
+- [ ] Revisão de ortografia por quem não escreveu o capítulo.
+- [ ] Regenerar o `.docx` a partir do `.md` final.
+- [ ] Nome do arquivo com o número do grupo (`TCC2_Grupo_19_...`); envio por um integrante, pelo Teams.
+
+## Projeto (depois da entrega; o texto já os trata como "projetado")
+
+- [ ] PBI-46: VPS, Dockerfile, Compose de produção com Caddy e TLS, backup e restauração, compra real no sandbox.
+- [ ] Pendências do PBI-45: navegação por teclado, envio real ao R2 (CORS), `heading-order` do catálogo.

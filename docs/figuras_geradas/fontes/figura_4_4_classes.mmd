@@ -1,0 +1,78 @@
+classDiagram
+  direction LR
+  class User {
+    +id
+    +papel : CLIENTE, ARTISTA, ADMIN
+    +nome
+    +email
+    +telefone
+    +excluidoEm
+  }
+  class Session {
+    +id
+    +token
+    +expiraEm
+  }
+  class Artist {
+    +id
+    +slug
+    +bio
+  }
+  class Artwork {
+    +id
+    +titulo
+    +precoCentavos
+    +quantidadeEstoque
+    +situacao : RASCUNHO, DISPONIVEL, ESGOTADA
+  }
+  class ArtworkReservation {
+    +quantidade
+    +expiraEm
+  }
+  class Order {
+    +numero
+    +situacao : PENDENTE, PAGO, PROCESSANDO, ENVIADO, ENTREGUE, CANCELADO
+    +modalidadeEntrega
+    +totalCentavos
+    +enderecoCopia : JSONB
+    +codigoRastreio
+  }
+  class OrderItem {
+    +tituloCopia
+    +precoCentavosCopia
+    +quantidade
+  }
+  class Payment {
+    +provedor
+    +idExterno
+    +metodo : PIX, CARTAO, BOLETO
+    +situacao : PENDENTE, APROVADO, RECUSADO, ESTORNADO
+    +estornarMotivo
+  }
+  class WebhookEvent {
+    +idEvento
+    +origem
+  }
+  class PortfolioItem {
+    +titulo
+    +imagem
+    +regiaoCorpo
+  }
+  class Appointment {
+    +codigo
+    +iniciaEm
+    +terminaEm
+    +situacao : AGENDADO, CANCELADO, CONCLUIDO
+  }
+  User "1" --> "0..*" Session
+  User "1" --> "0..1" Artist : perfil
+  User "1" --> "0..*" Order : realiza
+  Artist "1" --> "0..*" Artwork : autoria
+  Artist "1" --> "0..*" PortfolioItem : publica
+  Artist "1" --> "0..*" Appointment : atende
+  Artwork "1" --> "0..*" ArtworkReservation : bloqueada em
+  Session "1" --> "0..*" ArtworkReservation : reserva
+  Order "1" *-- "1..*" OrderItem : composto por
+  Artwork "1" --> "0..*" OrderItem : vendida em
+  Order "1" --> "0..*" Payment : liquidado por
+  Payment ..> WebhookEvent : confirmado por

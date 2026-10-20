@@ -1,0 +1,37 @@
+flowchart LR
+  V(["Visitante"])
+  C(["Cliente"])
+  A(["Artista"])
+  AD(["Administrador"])
+  MP(["Mercado Pago"])
+  C -- "herda de" --> V
+  A -- "herda de" --> C
+  AD -- "herda de" --> C
+  subgraph S["Sistema Kolô"]
+    direction TB
+    U1(["Consultar catálogo e ficha da obra<br/>RF09, RF10"])
+    U2(["Consultar portfólio de tatuagens<br/>RF17, RF18"])
+    U3(["Preencher o assistente e abrir o WhatsApp<br/>RF20 a RF25"])
+    U4(["Cadastrar-se, entrar e recuperar a senha<br/>RF01 a RF03"])
+    U5(["Comprar obra: carrinho, reserva e pagamento<br/>RF11 a RF15"])
+    U6(["Acompanhar pedidos<br/>RF16"])
+    U7(["Editar perfil e endereço; excluir a conta<br/>RF04, RF05, RN12"])
+    U8(["Gerenciar o próprio portfólio<br/>RF19"])
+    U9(["Cadastrar horário na agenda<br/>RF22"])
+    U10(["Gerenciar obras, imagens e artistas<br/>RF26 a RF28"])
+    U11(["Gerenciar pedidos, envios e estornos<br/>RF29"])
+    U12(["Consultar clientes e configurar o site<br/>RF30, RF31"])
+  end
+  V --- U1
+  V --- U2
+  V --- U3
+  V --- U4
+  C --- U5
+  C --- U6
+  C --- U7
+  A --- U8
+  A --- U9
+  AD --- U10
+  AD --- U11
+  AD --- U12
+  MP -. "confirma o pagamento (webhook)" .- U5
