@@ -57,7 +57,7 @@ A Aula 1 pede que a introdução reflita o TCC2, não o projeto.
 - [ ] **Reescrever a hipótese.** "Aumenta as vendas assíncronas" não tem como ser medido sem uso em produção. Sugestão: "a centralização de catálogo, pedidos e agenda em uma plataforma única elimina os controles manuais de venda e de agendamento identificados no diagnóstico". Assim o Capítulo 5 consegue mostrar evidência
 - [ ] Tirar dos objetivos e da hipótese: Google Calendar, e-mail transacional, recomendações personalizadas, visualização 3D
 - [ ] Escrever os objetivos específicos de modo verificável, para a Conclusão marcar realizado, parcial ou não realizado. "Objetivo ≠ funcionalidade" (Aula 2)
-- [ ] Atualizar o contexto: o Kolô não tem mais espaço físico em Pinheiros (`ESCOPO-E-STACK.md` §1)
+- [x] Contexto: o Kolô mantém o espaço físico em Pinheiros (retirada de obras e sessões presenciais), conforme `ESCOPO-E-STACK.md` §1
 - [ ] 1.7: descrever os seis capítulos novos
 
 ## 3. Fundamentação Teórica (Capítulo 2)
