@@ -74,7 +74,7 @@ Aos colegas de curso e a todos que, direta ou indiretamente, contribuíram para 
 
 ## RESUMO
 
-O presente Trabalho de Conclusão de Curso (TCC) aborda a modernização dos processos operacionais do Kolô Ateliê & Estúdio, empreendimento localizado em Pinheiros, São Paulo, que integra a comercialização de obras físicas de arte autoral e a prestação de serviços personalizados de tatuagem. O diagnóstico dos processos revelou controle manual de acervo por mensagens descentralizadas e sobrecarga no atendimento inicial para triagem de sessões de tatuagem. Diante desse cenário, este trabalho projeta, desenvolve e avalia uma plataforma web integrada sob arquitetura de monólito modular, utilizando Next.js 16 com TypeScript, Tailwind CSS e PostgreSQL 17 em contêineres Docker. A hipótese investigada estabelece que a centralização do catálogo com processamento de pagamentos sob reserva temporária de estoque e um assistente determinístico em etapas direcionado ao WhatsApp elimina os controles manuais, previne vendas duplicadas de peças exclusivas e qualifica o atendimento inicial. O sistema incorpora um algoritmo de concorrência com bloqueio pessimista ordenado (SELECT ... FOR UPDATE) garantindo reserva atômica de dez minutos, processamento idempotente de webhooks autenticados via HMAC-SHA256 (Mercado Pago), uploads com URLs pré-assinadas (Cloudflare R2) e rotina transacional de anonimização cadastral em conformidade com a LGPD (Lei 13.709/2018), resguardando o ateliê ao evitar o armazenamento digital de dados sensíveis de saúde. A validação técnica alcançou aprovação em 532 testes unitários, 276 testes de integração com PostgreSQL real e 43 testes ponta a ponta (E2E Playwright), experimentos de concorrência no banco evidenciando ausência de overselling, auditoria Google Lighthouse com LCP de 2,43 s no catálogo e 2,25 s na ficha da obra (Scores 97 e 98/100) e conformidade de acessibilidade digital WCAG 2.1 nível AA via axe-core. A sessão de validação assistida realizada em 10/10/2026 com a administradora e tatuadora do ateliê, Melanie Schwark, em versão anterior às correções finais do PBI-43 (estornos) e do PBI-45 (qualidade integrada), realizadas entre 12 e 18/10/2026, registrou avaliação positiva quanto à identidade visual e à fluidez de navegação, com acolhimento de sugestões textuais. Os componentes de implantação em produção (proxy reverso com TLS, rotina de backup e monitoramento) foram projetados e permanecem como etapa subsequente à entrega desta monografia (PBI-46). Os resultados obtidos sustentam parcialmente a hipótese formulada.
+O presente Trabalho de Conclusão de Curso (TCC) aborda a modernização dos processos operacionais do Kolô Ateliê & Estúdio, empreendimento localizado em Pinheiros, São Paulo, que integra a comercialização de obras físicas de arte autoral e a prestação de serviços personalizados de tatuagem. O diagnóstico dos processos revelou controle manual de acervo por mensagens descentralizadas e sobrecarga no atendimento inicial para triagem de sessões de tatuagem. Diante desse cenário, este trabalho projeta, desenvolve e avalia uma plataforma web integrada sob arquitetura de monólito modular, utilizando Next.js 16 com TypeScript, Tailwind CSS e PostgreSQL 17 em contêineres Docker. A hipótese investigada estabelece que a centralização do catálogo com processamento de pagamentos sob reserva temporária de estoque e um assistente determinístico em etapas direcionado ao WhatsApp elimina os controles manuais, previne vendas duplicadas de peças exclusivas e qualifica o atendimento inicial. O sistema incorpora um algoritmo de concorrência com bloqueio pessimista ordenado (SELECT ... FOR UPDATE) garantindo reserva atômica de dez minutos, processamento idempotente de webhooks autenticados via HMAC-SHA256 (Mercado Pago), uploads com URLs pré-assinadas (Cloudflare R2) e rotina transacional de anonimização cadastral em conformidade com a LGPD (Lei 13.709/2018), resguardando o ateliê ao evitar o armazenamento digital de dados sensíveis de saúde. A validação técnica alcançou aprovação em 562 testes unitários, 276 testes de integração com PostgreSQL real e 43 testes ponta a ponta (E2E Playwright), experimentos de concorrência no banco evidenciando ausência de overselling, auditoria Google Lighthouse com LCP de 2,43 s no catálogo e 2,25 s na ficha da obra (Scores 97 e 98/100) e conformidade de acessibilidade digital WCAG 2.1 nível AA via axe-core. A sessão de validação assistida realizada em 10/10/2026 com a administradora e tatuadora do ateliê, Melanie Schwark, em versão anterior às correções finais do PBI-43 (estornos) e do PBI-45 (qualidade integrada), realizadas entre 12 e 18/10/2026, registrou avaliação positiva quanto à identidade visual e à fluidez de navegação, com acolhimento de sugestões textuais. Os componentes de implantação em produção (proxy reverso com TLS, rotina de backup e monitoramento) foram projetados e permanecem como etapa subsequente à entrega desta monografia (PBI-46). Os resultados obtidos sustentam parcialmente a hipótese formulada.
 
 **Palavras-chave:** Engenharia de Software. Comércio Eletrônico. Monólito Modular. Controle de Concorrência. Next.js. PostgreSQL. LGPD. Economia Criativa.
 
@@ -82,7 +82,7 @@ O presente Trabalho de Conclusão de Curso (TCC) aborda a modernização dos pro
 
 ## ABSTRACT
 
-This Final Course Project (TCC) addresses the modernization of operational processes at Kolô Ateliê & Estúdio, an enterprise located in Pinheiros, São Paulo, which integrates the commercialization of physical authorial artworks and personalized tattoo services. Process diagnosis revealed manual inventory control through decentralized messaging and overload in preliminary service for tattoo appointments. Given this scenario, this work designs, develops, and evaluates an integrated web platform following a modular monolithic architecture, utilizing Next.js 16 with TypeScript, Tailwind CSS, and PostgreSQL 17 in Docker containers. The investigated hypothesis establishes that catalog centralization with payment processing under temporary inventory reservation and a deterministic multi-step assistant routed to WhatsApp eliminates manual controls, prevents duplicate sales of single-edition pieces, and qualifies initial service. The system incorporates a concurrency algorithm with ordered pessimistic locking (SELECT ... FOR UPDATE) ensuring atomic ten-minute reservations, idempotent webhook processing authenticated via HMAC-SHA256 (Mercado Pago), pre-signed URL uploads (Cloudflare R2), and transactional user anonymization in compliance with the LGPD (Law 13,709/2018), safeguarding the studio by avoiding digital storage of sensitive health records. Technical validation achieved passing marks across 532 unit tests, 276 integration tests with real PostgreSQL, and 43 end-to-end (E2E) tests in Playwright, concurrency experiments in the database evidencing no overselling, Google Lighthouse audit with 2.43 s LCP on the catalog and 2.25 s on the artwork page (Scores 97 and 98/100), and digital accessibility compliance WCAG 2.1 level AA via axe-core. An assisted validation session conducted on 10/10/2026 with Melanie Schwark, administrator and tattoo artist at the studio, on a version prior to the final corrections of PBI-43 (refunds) and PBI-45 (integrated quality) made between 10/12 and 10/18/2026, recorded positive feedback regarding visual identity and navigational smoothness, incorporating textual refinements. The production deployment components (reverse proxy with TLS, backup routine and monitoring) were designed and remain as a stage following the delivery of this monograph (PBI-46). The obtained results partially sustain the formulated hypothesis.
+This Final Course Project (TCC) addresses the modernization of operational processes at Kolô Ateliê & Estúdio, an enterprise located in Pinheiros, São Paulo, which integrates the commercialization of physical authorial artworks and personalized tattoo services. Process diagnosis revealed manual inventory control through decentralized messaging and overload in preliminary service for tattoo appointments. Given this scenario, this work designs, develops, and evaluates an integrated web platform following a modular monolithic architecture, utilizing Next.js 16 with TypeScript, Tailwind CSS, and PostgreSQL 17 in Docker containers. The investigated hypothesis establishes that catalog centralization with payment processing under temporary inventory reservation and a deterministic multi-step assistant routed to WhatsApp eliminates manual controls, prevents duplicate sales of single-edition pieces, and qualifies initial service. The system incorporates a concurrency algorithm with ordered pessimistic locking (SELECT ... FOR UPDATE) ensuring atomic ten-minute reservations, idempotent webhook processing authenticated via HMAC-SHA256 (Mercado Pago), pre-signed URL uploads (Cloudflare R2), and transactional user anonymization in compliance with the LGPD (Law 13,709/2018), safeguarding the studio by avoiding digital storage of sensitive health records. Technical validation achieved passing marks across 562 unit tests, 276 integration tests with real PostgreSQL, and 43 end-to-end (E2E) tests in Playwright, concurrency experiments in the database evidencing no overselling, Google Lighthouse audit with 2.43 s LCP on the catalog and 2.25 s on the artwork page (Scores 97 and 98/100), and digital accessibility compliance WCAG 2.1 level AA via axe-core. An assisted validation session conducted on 10/10/2026 with Melanie Schwark, administrator and tattoo artist at the studio, on a version prior to the final corrections of PBI-43 (refunds) and PBI-45 (integrated quality) made between 10/12 and 10/18/2026, recorded positive feedback regarding visual identity and navigational smoothness, incorporating textual refinements. The production deployment components (reverse proxy with TLS, backup routine and monitoring) were designed and remain as a stage following the delivery of this monograph (PBI-46). The obtained results partially sustain the formulated hypothesis.
 
 **Keywords:** Software Engineering. E-commerce. Modular Monolith. Concurrency Control. Next.js. PostgreSQL. LGPD. Creative Economy.
 
@@ -109,7 +109,7 @@ This Final Course Project (TCC) addresses the modernization of operational proce
 
 - **Tabela 2.1** — Análise Comparativa entre Soluções de Mercado e a Plataforma Kolô
 - **Tabela 3.1** — Matriz Justificada de Mudança de Escopo entre TCC 1 e TCC 2
-- **Tabela 4.1** — Requisitos Funcionais do Sistema Kolô (RF01 a RF31)
+- **Tabela 4.1** — Requisitos Funcionais do Sistema Kolô (RF01 a RF32)
 - **Tabela 4.2** — Requisitos Não Funcionais do Sistema Kolô (RNF01 a RNF24)
 - **Tabela 4.3** — Estrutura de Módulos de Domínio da Aplicação (src/modules/)
 - **Tabela 5.1** — Matriz de Rastreabilidade e Cobertura de Requisitos Funcionais
@@ -256,7 +256,7 @@ O objetivo geral desta pesquisa consiste em **projetar, desenvolver e testar um 
 
 Para a consecução do objetivo geral, definiram-se os seguintes objetivos específicos:
 
-1. **Levantar e refinar os requisitos de engenharia de software:** Conduzir entrevistas técnicas com a administradora e os artistas residentes do ateliê para formalizar os requisitos funcionais (RF01 a RF31), não funcionais (RNF01 a RNF24) e regras de negócio (RN01 a RN12) da versão final da aplicação (v2.2);
+1. **Levantar e refinar os requisitos de engenharia de software:** Conduzir entrevistas técnicas com a administradora e os artistas residentes do ateliê para formalizar os requisitos funcionais (RF01 a RF32), não funcionais (RNF01 a RNF24) e regras de negócio (RN01 a RN12) da versão final da aplicação (v2.2);
 2. **Projetar a arquitetura e a modelagem relacional:** Estruturar a aplicação segundo o padrão monolítico modular cliente-servidor em contêineres Docker (Next.js 16 e PostgreSQL 17), modelando o Diagrama Entidade-Relacionamento em 3ª Forma Normal com restrições temporais de exclusão (extensão `btree_gist`), projetando a camada de proxy reverso e TLS para a fase de implantação em produção;
 3. **Desenvolver o módulo de comércio eletrônico assíncrono:** Implementar a vitrine de obras com carregamento otimizado de imagens (Next.js Image / WebP), carrinho persistente, checkout com opções de retirada presencial no ateliê em Pinheiros ou entrega postal com frete, integrando o processamento de pagamentos ao Mercado Pago Checkout Pro;
 4. **Implementar o algoritmo transacional de controle de concorrência:** Projetar o mecanismo de bloqueio pessimista ordenado (`SELECT ... FOR UPDATE`) com reserva temporária de estoque por dez minutos e worker de expiração (`pg-boss`), prevenindo a venda duplicada (*overselling*) de obras exclusivas;
@@ -499,7 +499,7 @@ O desenvolvimento do software estruturou-se sob os princípios do **Scrum** (SCH
 
 A adaptação do Scrum limitou-se aos artefatos e práticas descritos a seguir: backlog do produto organizado em PBIs com prioridade (P0 e P1), definição de pronto comum aos itens, sprints com meta, revisão de código por pares e integração contínua. O acompanhamento ocorreu em reuniões semanais, às segundas-feiras, para discutir o andamento das entregas. Os demais eventos do Scrum (planejamento formal, reuniões diárias e retrospectiva) não foram conduzidos de forma sistemática, de modo que o método foi seguido de maneira flexível, e não rigorosa.
 
-A execução do projeto organizou-se em duas sprints. A Sprint 1 foi planejada para uma semana de fundação (PBIs 01 a 15, conforme o planejamento em `docs/SPRINT-1.md`), mas, na execução, estendeu-se de 08/09 a 03/10/2026; nesse intervalo também se consolidou a revisão do escopo para a versão 2.2 (21/09). A Sprint 2, planejada para o período de 05 a 18/10/2026, reuniu os demais PBIs (16 a 47). A divergência entre o prazo planejado e o executado na Sprint 1 é discutida na Seção 5.6.2.
+A execução do projeto organizou-se em duas sprints. A Sprint 1 foi planejada para uma semana de fundação (PBIs 01 a 15, conforme o planejamento em `docs/SPRINT-1.md`), mas, na execução, estendeu-se de 08/09 a 03/10/2026; nesse intervalo também se consolidou a revisão do escopo para a versão 2.2 (21/09). A Sprint 2, planejada para o período de 05 a 18/10/2026 e concluída em 19/10 com a integração do PBI-48, reuniu os demais PBIs (16 a 48). A divergência entre o prazo planejado e o executado na Sprint 1 é discutida na Seção 5.6.2.
 
 ### 3.3.1 Sprint 1 — Fundação, Autenticação e Identidade Visual (08/09 a 03/10/2026)
 
@@ -511,13 +511,13 @@ A Sprint 1 dedicou-se à estruturação dos alicerces técnicos do sistema (PBIs
 - Autenticação com senhas derivadas em scrypt e sessões persistidas no banco via Better Auth, com controle de acesso por papéis — Cliente, Artista e Administrador (PBI-11, RF06);
 - Cadastro, login e logout com sessão revogável, recuperação de senha e edição de perfil (PBIs 12 a 15, RF01 a RF04).
 
-### 3.3.2 Sprint 2 — E-commerce, Reservas, Wizard e Fechamento de Qualidade (05/10 a 18/10/2026)
+### 3.3.2 Sprint 2 — E-commerce, Reservas, Wizard e Fechamento de Qualidade (05/10 a 19/10/2026)
 
 A Sprint 2 implementou os fluxos transacionais e de valor da plataforma:
 - **Acervo e Vitrine (PBIs 16 a 21):** Gestão de artistas, estilos e tags (PBI-16, RF28), upload de mídias com geração de URLs pré-assinadas e miniaturas (PBI-17), CRUD de obras de arte (PBI-18), catálogo em grade 2D com ordenação e paginação (PBI-19), ficha detalhada da obra (PBI-20) e página inicial institucional (PBI-21);
 - **Comércio e Checkout (PBIs 24 a 29 e PBI-42):** Carrinho persistente (PBI-24), algoritmo de reserva temporária de 10 minutos com bloqueio pessimista (PBI-25), checkout com opções de retirada presencial em Pinheiros ou entrega postal (PBI-26 e 42), integração com Mercado Pago Checkout Pro (PBI-27), confirmação de pagamentos via webhook idempotente com validação de assinatura (PBI-28) e painel de pedidos do cliente (PBI-29);
 - **Tatuagem e Agendamento (PBIs 31 a 37):** Assistente público em 8 etapas com validação declarativa (PBI-31), caixas de conformidade presencial obrigatória (PBI-32), gerador de link estruturado para o WhatsApp (PBI-33), agenda interna de horários com restrição de não sobreposição (PBI-34) e galeria de portfólio com filtros (PBIs 35 a 37);
-- **Conformidade e Retaguarda (PBIs 38 a 40):** Perfil administrativo de clientes (PBI-38), parametrização de configurações institucionais do estúdio (PBI-39) e rotina transacional de exclusão e anonimização de dados conforme a LGPD (PBI-40);
+- **Conformidade e Retaguarda (PBIs 38 a 40 e PBI-48):** Perfil administrativo de clientes (PBI-38), parametrização de configurações institucionais do estúdio (PBI-39) rotina transacional de exclusão e anonimização de dados conforme a LGPD (PBI-40) e painel de indicadores com relatório de vendas por período (PBI-48, RF32);
 - **Fechamento de Qualidade (PBI-45):** Execução de testes automatizados, auditoria de acessibilidade via axe-core e medições do Google Lighthouse.
 
 ### 3.3.3 Práticas de Engenharia e Controle Colaborativo
@@ -548,6 +548,7 @@ A Tabela 3.1 detalha as alterações estruturais deliberadas e seus fundamentos 
 | **Integração com Google Calendar** | Sincronização automatizada bidirecional via API Google | Agenda interna manual na plataforma + direcionamento WhatsApp | A sincronização direta via API exigiria processos adicionais de homologação de autorizações institucionais OAuth e acesso a calendários pessoais dos tatuadores. Ademais, cada sessão de tatuagem exige alinhamento prévio de ideias e referências anatômicas, tornando o contato direto via WhatsApp mais adequado à rotina do estúdio. |
 | **E-mails Transacionais Contínuos** | Disparo de e-mails em cada transição de pedido e agendamento | E-mail restrito à recuperação de senhas; pedidos acompanhados no painel | O estúdio estabeleceu como diretriz operacional a comunicação direta via WhatsApp para tratativas imediatas com clientes. O acompanhamento formal de pedidos foi centralizado no painel da conta do cliente (`Meus Pedidos`), evitando sobrecarga com serviços externos de mensageria. |
 | **Modelo de Atendimento e Entrega** | Foco restrito a vendas e agendamentos presenciais | Modelo integrado: e-commerce com retirada no ateliê em Pinheiros ou entrega postal, e triagem de agendamentos | O Kolô manteve seu espaço físico em Pinheiros para atendimento e produção artística, incorporando a plataforma web como canal assíncrono oficial de vendas e triagem de agendamentos. |
+| **Painel de Indicadores e Relatório de Vendas** | Adiado na versão 2.2 | Incluído em 18/10/2026 (RF32, PBI-48): painel de indicadores no `/admin` e relatório de vendas por período | Necessidade gerencial de acompanhar faturamento, pedidos e agenda em uma única tela, sem planilhas externas. Por ser somente leitura, não exigiu novas tabelas nem dependências. |
 
 ---
 
@@ -585,7 +586,7 @@ Conforme preconizado por Pressman e Maxim (2021), a engenharia de requisitos est
 
 ### 4.1.1 Requisitos Funcionais
 
-Os requisitos funcionais determinam as operações, serviços e transformações de estado que a aplicação fornece aos seus respectivos atores: Visitante, Cliente, Artista e Administrador. A Tabela 4.1 detalha a especificação de RF01 a RF31, distribuídos por módulos de domínio.
+Os requisitos funcionais determinam as operações, serviços e transformações de estado que a aplicação fornece aos seus respectivos atores: Visitante, Cliente, Artista e Administrador. A Tabela 4.1 detalha a especificação de RF01 a RF32, distribuídos por módulos de domínio.
 
 **Tabela 4.1 — Requisitos Funcionais do Sistema Kolô.**
 *Fonte: Elaborado pelos autores (2026).*
@@ -623,6 +624,7 @@ Os requisitos funcionais determinam as operações, serviços e transformações
 | **RF29** | Back-office | Prover painel administrativo de pedidos com filtros de status, vinculação de código de rastreio postal e gestão de estornos financeiros manuais. | P0 |
 | **RF30** | Back-office | Disponibilizar visualização consolidada de clientes cadastrados, com histórico de compras realizadas e sinalização de contas com anonimização solicitada. | P1 |
 | **RF31** | Back-office | Permitir a parametrização de configurações do estabelecimento, incluindo canais de contato, horários de atendimento e textos institucionais. | P1 |
+| **RF32** | Back-office | Prover painel de indicadores (faturamento, pedidos e obras por situação, horários dos próximos 7 dias) e relatório de vendas por período, com obras mais vendidas, faturamento por artista e versão para impressão. | P0 |
 
 ### 4.1.2 Requisitos Não Funcionais
 
@@ -756,6 +758,7 @@ A arquitetura do projeto organiza-se por módulos de domínio no diretório `src
 | **`orders`** | Checkout, reserva transacional de estoque, despacho postal e ciclo de pedidos. | Prisma, `payments`, `pg-boss` |
 | **`payments`** | Integração com Mercado Pago, cálculo de assinatura HMAC e webhooks. | Prisma, Mercado Pago SDK |
 | **`portfolio`** | Gestão de trabalhos de tatuagem realizados, ordenação e vinculação de estilos. | Prisma, `media` |
+| **`reports`** | Painel de indicadores e relatório de vendas por período (somente leitura), restritos ao administrador. | Prisma, `orders`, `catalog`, `scheduling` |
 | **`scheduling`** | Agenda de horários dos artistas residentes com bloqueio de sobreposição GiST. | Prisma |
 | **`settings`** | Parametrização institucional do ateliê, canais de contato e horários. | Prisma |
 
@@ -1212,16 +1215,16 @@ A estratégia contemplou três níveis complementares de verificação:
 3. **Testes de Ponta a Ponta (E2E) e Inspeção Contínua (CI):** Executados com Playwright cobrindo os fluxos críticos de navegação, checkout, preenchimento do wizard e restrições de controle de acesso (RBAC), integrados ao GitHub Actions para validação a cada solicitação de integração (*Pull Request*).
 
 A suíte completa de testes automatizados do projeto registrou:
-- **532 testes unitários** aprovados, distribuídos em 114 arquivos de teste;
-- **276 testes de integração** com PostgreSQL real aprovados sem falhas;
-- **43 testes de ponta a ponta (E2E)** no Playwright aprovados cobrindo os fluxos do sistema;
+- **562 testes unitários** aprovados, distribuídos em 122 arquivos de teste;
+- **276 testes de integração** com PostgreSQL real aprovados sem falhas e **43 testes de ponta a ponta (E2E)** no Playwright aprovados, ambos na rodada de fechamento de 18/10/2026, anterior ao PBI-48;
+<!-- TODO(testes): reexecutar test:integration e test:e2e na main com o PBI-48 (catalogados hoje: 286 de integracao e 44 E2E) e atualizar 276 e 43 no resumo, 5.1, 6.1 e 6.3.2 -->
 - Esteira de CI com `lint`, `format:check`, `typecheck` e `npm audit` (zero vulnerabilidades de nível alto ou crítico) com código de saída 0.
 
 ---
 
 ## 5.2 Rastreabilidade e Cobertura de Requisitos
 
-A Tabela 5.1 estabelece a matriz de rastreabilidade do projeto Kolô, correlacionando cada um dos trinta e um Requisitos Funcionais (RF01 a RF31) ao Item do Backlog do Produto (PBI) correspondente, às suítes de testes automatizados responsáveis pela sua homologação e à situação final de atendimento.
+A Tabela 5.1 estabelece a matriz de rastreabilidade do projeto Kolô, correlacionando cada um dos trinta e dois Requisitos Funcionais (RF01 a RF32) ao Item do Backlog do Produto (PBI) correspondente, às suítes de testes automatizados responsáveis pela sua homologação e à situação final de atendimento.
 
 **Tabela 5.1 — Matriz de Rastreabilidade e Cobertura de Requisitos Funcionais.**
 *Fonte: Elaborado pelos autores (2026).*
@@ -1259,8 +1262,9 @@ A Tabela 5.1 estabelece a matriz de rastreabilidade do projeto Kolô, correlacio
 | **RF29** — Painel de despacho e gestão de pedidos | PBI-30 | `pedido-admin.test.tsx`, `pedidos-admin.test.ts` | Concluído |
 | **RF30** — Visualização administrativa de clientes | PBI-38 | `lista-clientes-admin.test.tsx`, `perfil-cliente.test.ts` | Concluído |
 | **RF31** — Configuração institucional do site | PBI-39 | `configuracao-site.test.ts`, `configuracao-site.test.ts` | Concluído |
+| **RF32** — Painel de indicadores e relatório de vendas | PBI-48 | `painel-admin.test.tsx`, `relatorio-vendas.test.tsx`, `painel-admin.test.ts` (integração), `relatorio-vendas.test.ts` (integração) | Concluído |
 
-A totalidade dos 31 requisitos foi satisfeita por testes automatizados, demonstrando cobertura formal dos fluxos funcionais.
+A totalidade dos 32 requisitos foi satisfeita por testes automatizados, demonstrando cobertura formal dos fluxos funcionais.
 
 ---
 
@@ -1410,13 +1414,13 @@ O objetivo geral do trabalho — projetar, desenvolver e testar um sistema web i
 
 A avaliação do atendimento dos objetivos específicos formulados no Capítulo 1 classifica-se da seguinte forma:
 
-1. **Levantamento e Refinamento de Requisitos (Realizado):** A condução de entrevistas técnicas com a administradora e os artistas residentes do Kolô permitiu a definição formal de trinta e um requisitos funcionais (RF01 a RF31), vinte e quatro requisitos não funcionais (RNF01 a RNF24) e doze regras de negócio (RN01 a RN12). Esse mapeamento estabeleceu as bases lógicas para o ciclo de desenvolvimento;
+1. **Levantamento e Refinamento de Requisitos (Realizado):** A condução de entrevistas técnicas com a administradora e os artistas residentes do Kolô permitiu a definição formal de trinta e dois requisitos funcionais (RF01 a RF32), vinte e quatro requisitos não funcionais (RNF01 a RNF24) e doze regras de negócio (RN01 a RN12). Esse mapeamento estabeleceu as bases lógicas para o ciclo de desenvolvimento;
 2. **Arquitetura e Modelagem Relacional (Parcialmente Realizado):** A aplicação foi estruturada segundo o padrão monolítico modular sobre Docker, integrando Next.js 16 e PostgreSQL 17 com normalização em 3ª Forma Normal, tipos de alcance temporal GiST e campos JSONB para snapshots contábeis. A configuração de proxy reverso com Caddy e emissão de TLS na VPS foi projetada formalmente, permanecendo como entrega da etapa de implantação em produção (PBI-46);
 3. **Desenvolvimento do Comércio Eletrônico Assíncrono (Realizado):** A vitrine de obras foi desenvolvida com componentes de servidor (RSC), paginação, carrinho de compras persistente, checkout com opções de retirada presencial no ateliê em Pinheiros ou entrega postal com frete, integrando o processamento de pagamentos ao Mercado Pago Checkout Pro;
 4. **Algoritmo Transacional de Concorrência de Estoque (Realizado):** Implementou-se o algoritmo de reserva temporária de dez minutos baseado em bloqueio pessimista ordenado (`SELECT ... FOR UPDATE`), garantindo consistência em nível de transação ACID. Os experimentos de concorrência com 8 sessões paralelas em 10 rodadas consecutivas evidenciaram a ausência de vendas duplicadas (*overselling*);
 5. **Assistente Determinístico de Agendamento e Conformidade (Realizado):** Desenvolveu-se o formulário interativo de agendamento em oito etapas no cliente, exigindo aceites obrigatórios de anamnese presencial e consentimento informado antes de gerar o redirecionamento ao WhatsApp do estúdio (`wa.me`), preservando a empresa quanto à não retenção de dados sensíveis de saúde da LGPD (Artigo 11 da Lei 13.709/2018);
-6. **Módulos de Retaguarda e Anonimização LGPD (Realizado):** Construíram-se as interfaces administrativas para controle de estoque, despacho postal com código de rastreamento, gestão de fotos do portfólio e a rotina transacional de exclusão de usuário com anonimização cadastral e preservação de registros contábeis (Artigos 16 e 18 da LGPD);
-7. **Verificação e Homologação Computacional (Parcialmente Realizado):** O sistema foi submetido a baterias de testes automatizados (532 testes unitários, 276 testes de integração com PostgreSQL real e 43 testes ponta a ponta no Playwright), auditorias do Google Lighthouse (LCP de 2,43 s no catálogo e 2,25 s na obra) e acessibilidade com axe-core (WCAG 2.1 AA), realizando sessão de validação assistida com a administradora e tatuadora Melanie Schwark em 10/10/2026, em versão anterior às correções finais de 12 a 18/10/2026. A homologação definitiva sobre ambiente de produção público e com cartões comerciais reais integra a fase preparatória para a banca examinadora.
+6. **Módulos de Retaguarda e Anonimização LGPD (Realizado):** Construíram-se as interfaces administrativas para controle de estoque, despacho postal com código de rastreamento, gestão de fotos do portfólio e o painel de indicadores com relatório de vendas por período, e a rotina transacional de exclusão de usuário com anonimização cadastral e preservação de registros contábeis (Artigos 16 e 18 da LGPD);
+7. **Verificação e Homologação Computacional (Parcialmente Realizado):** O sistema foi submetido a baterias de testes automatizados (562 testes unitários, 276 testes de integração com PostgreSQL real e 43 testes ponta a ponta no Playwright), auditorias do Google Lighthouse (LCP de 2,43 s no catálogo e 2,25 s na obra) e acessibilidade com axe-core (WCAG 2.1 AA), realizando sessão de validação assistida com a administradora e tatuadora Melanie Schwark em 10/10/2026, em versão anterior às correções finais de 12 a 18/10/2026. A homologação definitiva sobre ambiente de produção público e com cartões comerciais reais integra a fase preparatória para a banca examinadora.
 
 ---
 
@@ -1449,7 +1453,7 @@ No âmbito da Engenharia de Software, o projeto demonstra:
 - A viabilidade da arquitetura de **Monólito Modular** sobre Next.js 16 e Node.js 24 LTS, evidenciando tipagem estática compartilhada de ponta a ponta e transações ACID locais em um ambiente de manutenção acessível para pequenos negócios;
 - A aplicação prática de **bloqueios pessimistas ordenados** para controle de estoque unitário ($Q=1$) em peças de arte física;
 - A aplicação do conceito de **Privacy by Design**, evidenciando como a engenharia de requisitos pode evitar a coleta de dados de saúde mediante fluxos de triagem determinísticos direcionados a canais diretos;
-- A consolidação de uma esteira de qualidade com expressiva cobertura de testes automatizados (532 unitários, 276 de integração com banco relacional real e 43 E2E).
+- A consolidação de uma esteira de qualidade com expressiva cobertura de testes automatizados (562 unitários, 276 de integração com banco relacional real e 43 E2E).
 
 ---
 
@@ -1469,7 +1473,7 @@ Como desdobramento da plataforma desenvolvida, propõem-se as seguintes frentes 
 1. **Visualizador 3D Interativo para Esculturas:** Reintrodução da renderização 3D via Three.js / WebGL na ficha de produtos exclusivamente para obras tridimensionais (esculturas e cerâmicas), com modelos poligonais otimizados para não impactar o tempo de carregamento;
 2. **Motor Algorítmico de Gestão de Slots de Agendamento:** Evolução da agenda interna com parametrização de intervalos de preparação entre sessões e sincronização opcional com calendários pessoais dos artistas via protocolos iCalendar / CalDAV;
 3. **Módulo de Notificações Ativas via WhatsApp:** Avaliação da API Oficial da Meta (WhatsApp Business Cloud API) para disparo de lembretes prévios de sessão e código de rastreamento postal diretamente no aplicativo de mensagens;
-4. **Painel de Indicadores e Relatórios:** Desenvolvimento de módulo analítico com gráficos consolidados de vendas por artista, pedidos por status e ticket médio para suporte à gestão financeira do ateliê;
+4. **Evolução do Painel de Indicadores:** Ampliação do painel e do relatório de vendas implementados (RF32) com gráficos, comparação entre períodos, exportação em CSV e visão restrita para cada artista;
 5. **Autenticação Social Federada:** Inclusão de provedores de identidade externos (Google e Apple) integrados ao Better Auth para simplificação de cadastro.
 
 

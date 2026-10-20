@@ -37,6 +37,17 @@ Hoje há 12 figuras no `.md`: 6 diagramas (as Fig. 4.1 e 4.2 em Mermaid dentro d
 - [ ] Endereço do ateliê: os protótipos em `docs/telas/` mostram o rodapé com "Galeria Bixiga"; o texto e o ESCOPO dizem Pinheiros. Confirmar com a Melanie e alinhar protótipos e site.
 - [x] Referências de sites com título da página, "[S. l.]" e acesso em 19/10/2026.
 
+## Testes e números (main com o PBI-48)
+
+- [x] Testes unitários remedidos em 19/10/2026 na `main`: 562 testes em 122 arquivos, todos aprovados.
+- [ ] Reexecutar `npm run test:integration` (precisa do Docker/Postgres) e `npm run test:e2e` na `main` e atualizar os números no resumo, abstract, §5.1, §6.1 e §6.3.2. O texto traz 276 e 43, da rodada de 18/10; hoje há 286 casos de integração e 44 E2E catalogados.
+- [ ] Reexecutar o Lighthouse se o cabeçalho público mudou desde a medição.
+
+## Escopo novo na `main`
+
+- [x] RF32 / PBI-48 (painel de indicadores e relatório de vendas) incluído na monografia: Tabelas 3.1, 4.1, 4.3 e 5.1, módulo `reports`, §3.3.2, §6.1 e §6.5, e diagrama de casos de uso (Fig. 4.3).
+- [ ] Conferir com o grupo se a justificativa do RF32 na Tabela 3.1 reflete a decisão do grupo.
+
 ## Validação com o cliente
 
 - [ ] (Recomendado, não exigido pela disciplina) Guardar um registro simples da sessão de 10/10/2026 com a Melanie Schwark (mensagem, foto ou anotação), para o caso de a banca perguntar.
