@@ -1,37 +1,30 @@
-flowchart LR
-  V(["Visitante"])
-  C(["Cliente"])
-  A(["Artista"])
-  AD(["Administrador"])
-  MP(["Mercado Pago"])
-  C -- "herda de" --> V
-  A -- "herda de" --> C
-  AD -- "herda de" --> C
-  subgraph S["Sistema Kolô"]
-    direction TB
-    U1(["Consultar catálogo e ficha da obra<br/>RF09, RF10"])
-    U2(["Consultar portfólio de tatuagens<br/>RF17, RF18"])
-    U3(["Preencher o assistente e abrir o WhatsApp<br/>RF20 a RF25"])
-    U4(["Cadastrar-se, entrar e recuperar a senha<br/>RF01 a RF03"])
-    U5(["Comprar obra: carrinho, reserva e pagamento<br/>RF11 a RF15"])
-    U6(["Acompanhar pedidos<br/>RF16"])
-    U7(["Editar perfil e endereço; excluir a conta<br/>RF04, RF05, RN12"])
-    U8(["Gerenciar o próprio portfólio<br/>RF19"])
-    U9(["Cadastrar horário na agenda<br/>RF22"])
-    U10(["Gerenciar obras, imagens e artistas<br/>RF26 a RF28"])
-    U11(["Gerenciar pedidos, envios e estornos<br/>RF29"])
-    U12(["Consultar clientes, painel e relatório de vendas; configurar o site<br/>RF30 a RF32"])
+flowchart TB
+  V["Visitante"]
+  C["Cliente"]
+  A["Artista"]
+  AD["Administrador"]
+  U["Usuário autenticado<br/>Cliente, Artista ou Administrador"]
+  MP["Mercado Pago"]
+  C --> U
+  A --> U
+  AD --> U
+  subgraph S["Sistema Kolô — casos de uso principais"]
+    PUB(["Consultar catálogo, obra e portfólio;<br/>preencher wizard e abrir WhatsApp<br/>RF09, RF10, RF17, RF18, RF20–RF25"])
+    AUTH(["Cadastrar cliente, entrar e recuperar senha<br/>RF01–RF03"])
+    BUY(["Comprar e acompanhar os próprios pedidos;<br/>editar perfil e endereço<br/>RF04, RF05, RF11–RF16"])
+    DEL(["Excluir a própria conta<br/>RN12 — somente CLIENTE"])
+    OWN(["Gerenciar o próprio portfólio e agenda<br/>RF19, RF22"])
+    ALL(["Gerenciar portfólio e agenda de artistas<br/>RF19, RF22"])
+    ADM(["Gerenciar obras, imagens, artistas e pedidos;<br/>consultar clientes e configurar o site<br/>RF26–RF31"])
+    REP(["Consultar painel e relatório de vendas<br/>RF32"])
   end
-  V --- U1
-  V --- U2
-  V --- U3
-  V --- U4
-  C --- U5
-  C --- U6
-  C --- U7
-  A --- U8
-  A --- U9
-  AD --- U10
-  AD --- U11
-  AD --- U12
-  MP -. "confirma o pagamento (webhook)" .- U5
+  V --- PUB
+  V --- AUTH
+  U --- PUB
+  U --- BUY
+  C --- DEL
+  A --- OWN
+  AD --- ALL
+  AD --- ADM
+  AD --- REP
+  MP -. "notifica pagamento" .-> BUY

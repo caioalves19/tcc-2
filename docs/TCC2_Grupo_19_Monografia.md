@@ -96,12 +96,13 @@ This Final Course Project (TCC) addresses the modernization of operational proce
 - **Figura 4.4** — Diagrama de Classes do Domínio
 - **Figura 4.5** — Diagrama de Sequência da Reserva Temporária de Estoque (RF15)
 - **Figura 4.6** — Diagrama de Sequência do Processamento do Webhook de Pagamento (RF14)
-- **Figura 4.7** — Interface do Catálogo de Obras (RF09)
-- **Figura 4.8** — Ficha Detalhada da Obra de Arte com Ficha Técnica (RF10)
-- **Figura 4.9** — Interface de Checkout com Indicação do Tempo de Reserva (RF12, RF15)
-- **Figura 4.10** — Etapa de Conformidade do Wizard de Agendamento (RF20, RF23, RF24, RF25)
-- **Figura 4.11** — Interface da Galeria de Portfólio de Tatuagens (RF17, RF18)
-- **Figura 4.12** — Painel de Gestão e Despacho de Pedidos no Back-office (RF29)
+- **Figura 4.7** — Catálogo de Obras de Arte (RF09)
+- **Figura 4.8** — Ficha Detalhada de uma Obra Disponível (RF10)
+- **Figura 4.9** — Pedido com Reserva Ativa e Ação de Pagamento (RF12, RF13, RF15)
+- **Figura 4.10** — Avisos Obrigatórios do Assistente de Agendamento (RF20, RF23, RF24, RF25)
+- **Figura 4.11** — Galeria de Tatuagens com Filtros (RF17, RF18)
+- **Figura 4.12** — Detalhe Administrativo de um Pedido para Entrega (RF29)
+- **Figura 4.13** — Relatório Administrativo de Vendas por Período (RF32)
 
 ---
 
@@ -722,7 +723,7 @@ graph TB
             NextApp["Servidor Next.js 16 (App Router)<br/>React Server Components (RSC) · Server Actions · Route Handlers"]
             Boss["Fila em Background (pg-boss)<br/>Worker de Expiração e Desbloqueio de Reservas"]
         end
-        
+
         Postgres[("Banco de Dados Relacional em Docker<br/>PostgreSQL 17 + Prisma 7 ORM<br/>Extensão btree_gist (Exclusion Constraints)")]
     end
 
@@ -790,7 +791,7 @@ O modelo de dados do Kolô foi normalizado na 3ª Forma Normal (3FN), garantindo
 
 ### 4.3.1 Diagrama Entidade-Relacionamento (DER)
 
-A Figura 4.2 apresenta o Diagrama Entidade-Relacionamento detalhando as principais tabelas, chaves primárias, relacionamentos de cardinalidade e chaves estrangeiras. A figura reúne, em uma única representação, o modelo conceitual (MER, com entidades e cardinalidades) e o modelo lógico (atributos, chaves e tipos); o modelo físico é detalhado na Seção 4.3.2.
+A Figura 4.2 apresenta o Diagrama Entidade-Relacionamento detalhando as principais tabelas, chaves primárias, relacionamentos de cardinalidade e chaves estrangeiras. O diagrama apresenta um recorte do modelo lógico com entidades, cardinalidades e atributos selecionados; não reproduz todas as colunas do banco. As obras relacionam-se aos pedidos por meio de order_item. Os vínculos opcionais com sessão, cliente, estilo e porte são indicados pelas cardinalidades; a unicidade do pagamento combina provedor e identificador externo. O modelo físico é detalhado na Seção 4.3.2 e no esquema Prisma.
 
 **Figura 4.2 — Modelo Entidade-Relacionamento do Banco de Dados Relacional.**
 
@@ -821,12 +822,13 @@ erDiagram
     cart ||--o{ cart_item : "contem"
     order ||--o{ order_item : "composto por"
     order ||--o{ payment : "liquidado por"
+    session |o--o{ order : "origem opcional"
     session ||--o{ artwork_reservation : "bloqueia unidades"
 
     portfolio_item ||--o{ portfolio_item_style : "estilos aplicados"
     tattoo_style ||--o{ portfolio_item_style : "classifica"
-    tattoo_style ||--o{ appointment : "estilo pretendido"
-    size_tier ||--o{ appointment : "porte"
+    tattoo_style |o--o{ appointment : "estilo pretendido"
+    size_tier |o--o{ appointment : "porte"
 
     user {
         uuid id PK
@@ -847,6 +849,21 @@ erDiagram
         timestamptz expira_em
         string ip
         string user_agent
+    }
+
+    artist {
+        uuid id PK
+        uuid user_id FK, UK
+        string slug UK
+    }
+
+    order_item {
+        uuid id PK
+        uuid order_id FK
+        uuid artwork_id FK
+        string titulo_copia
+        int preco_centavos_copia
+        int quantidade
     }
 
     artwork {
@@ -894,7 +911,7 @@ erDiagram
         uuid id PK
         uuid order_id FK
         string provedor "MERCADO_PAGO"
-        string id_externo UK
+        string id_externo "unico junto ao provedor"
         string metodo "PIX, CARTAO, BOLETO, SALDO_MERCADO_PAGO"
         string situacao "PENDENTE, APROVADO, RECUSADO, ESTORNADO"
         int valor_centavos
@@ -929,11 +946,42 @@ O modelo físico implementado no PostgreSQL incorpora decisões voltadas à inte
 
 ### 4.3.3 Casos de Uso e Classes do Domínio
 
-A Figura 4.3 apresenta o diagrama de casos de uso, que relaciona os atores — Visitante, Cliente, Artista e Administrador — às funcionalidades do sistema e aos requisitos que as originam. Os perfis seguem uma relação de herança: o Cliente herda as permissões do Visitante, e o Artista e o Administrador herdam as do Cliente, de modo que também podem comprar obras, conforme a matriz de papéis definida na especificação do projeto. O Mercado Pago figura como ator externo, pois é a origem da confirmação de pagamento.
+A Figura 4.3 apresenta o diagrama de casos de uso, que relaciona os atores — Visitante, Cliente, Artista e Administrador — às funcionalidades do sistema e aos requisitos que as originam. O esquema agrupa as operações comuns aos usuários autenticados, sem pressupor herança integral de permissões: Cliente, Artista e Administrador podem comprar e acompanhar os próprios pedidos, mas a exclusão da própria conta pelo site é restrita ao papel CLIENTE. O artista gerencia o próprio portfólio e agenda; o administrador também pode gerenciar esses dados de outros artistas. As associações representam acesso funcional, e não uma hierarquia de papéis. O Mercado Pago figura como ator externo, pois é a origem da confirmação de pagamento.
 
 **Figura 4.3 — Diagrama de Casos de Uso do Sistema Kolô.**
 
-![Diagrama de casos de uso do sistema Kolô](figuras_geradas/figura_4_3_casos_de_uso.png)
+```mermaid
+flowchart TB
+  V["Visitante"]
+  C["Cliente"]
+  A["Artista"]
+  AD["Administrador"]
+  U["Usuário autenticado<br/>Cliente, Artista ou Administrador"]
+  MP["Mercado Pago"]
+  C --> U
+  A --> U
+  AD --> U
+  subgraph S["Sistema Kolô — casos de uso principais"]
+    PUB(["Consultar catálogo, obra e portfólio;<br/>preencher wizard e abrir WhatsApp<br/>RF09, RF10, RF17, RF18, RF20–RF25"])
+    AUTH(["Cadastrar cliente, entrar e recuperar senha<br/>RF01–RF03"])
+    BUY(["Comprar e acompanhar os próprios pedidos;<br/>editar perfil e endereço<br/>RF04, RF05, RF11–RF16"])
+    DEL(["Excluir a própria conta<br/>RN12 — somente CLIENTE"])
+    OWN(["Gerenciar o próprio portfólio e agenda<br/>RF19, RF22"])
+    ALL(["Gerenciar portfólio e agenda de artistas<br/>RF19, RF22"])
+    ADM(["Gerenciar obras, imagens, artistas e pedidos;<br/>consultar clientes e configurar o site<br/>RF26–RF31"])
+    REP(["Consultar painel e relatório de vendas<br/>RF32"])
+  end
+  V --- PUB
+  V --- AUTH
+  U --- PUB
+  U --- BUY
+  C --- DEL
+  A --- OWN
+  AD --- ALL
+  AD --- ADM
+  AD --- REP
+  MP -. "notifica pagamento" .-> BUY
+```
 
 *Fonte: Elaborado pelos autores (2026).*
 
@@ -941,7 +989,86 @@ A Figura 4.4 apresenta o diagrama de classes do domínio, restrito às entidades
 
 **Figura 4.4 — Diagrama de Classes do Domínio.**
 
-![Diagrama de classes do domínio do sistema Kolô](figuras_geradas/figura_4_4_classes.png)
+```mermaid
+classDiagram
+  direction TB
+  class User {
+    +id
+    +papel : CLIENTE, ARTISTA, ADMIN
+    +nome
+    +email
+    +telefone
+    +excluidoEm
+  }
+  class Session {
+    +id
+    +token
+    +expiraEm
+  }
+  class Artist {
+    +id
+    +slug
+    +bio
+  }
+  class Artwork {
+    +id
+    +titulo
+    +precoCentavos
+    +quantidadeEstoque
+    +situacao : RASCUNHO, DISPONIVEL, ESGOTADA
+  }
+  class ArtworkReservation {
+    +quantidade
+    +expiraEm
+  }
+  class Order {
+    +numero
+    +situacao : PENDENTE, PAGO, PROCESSANDO, ENVIADO, ENTREGUE, CANCELADO
+    +modalidadeEntrega
+    +totalCentavos
+    +enderecoCopia : JSONB
+    +codigoRastreio
+  }
+  class OrderItem {
+    +tituloCopia
+    +precoCentavosCopia
+    +quantidade
+  }
+  class Payment {
+    +provedor
+    +idExterno
+    +metodo : PIX, CARTAO, BOLETO, SALDO_MERCADO_PAGO
+    +situacao : PENDENTE, APROVADO, RECUSADO, ESTORNADO
+    +estornarMotivo
+  }
+  class WebhookEvent {
+    +idEvento
+    +origem
+  }
+  class PortfolioItem {
+    +titulo
+    +imagemUrl
+    +regiaoCorpo
+  }
+  class Appointment {
+    +codigo
+    +iniciaEm
+    +terminaEm
+    +situacao : AGENDADO, CANCELADO, CONCLUIDO
+  }
+  User "1" --> "0..*" Session
+  User "1" --> "0..1" Artist : perfil
+  User "1" --> "0..*" Order : realiza
+  Artist "1" --> "0..*" Artwork : autoria
+  Artist "1" --> "0..*" PortfolioItem : publica
+  Artist "1" --> "0..*" Appointment : atende
+  Artwork "1" --> "0..*" ArtworkReservation : bloqueada em
+  Session "1" --> "0..*" ArtworkReservation : reserva
+  Order "1" *-- "1..*" OrderItem : composto por
+  Artwork "1" --> "0..*" OrderItem : vendida em
+  Order "1" --> "0..*" Payment : liquidado por
+  Payment ..> WebhookEvent : confirmado por
+```
 
 *Fonte: Elaborado pelos autores (2026), com base no esquema do banco de dados (`prisma/schema.prisma`).*
 
@@ -970,7 +1097,42 @@ A Figura 4.5 detalha a sequência de interações do fluxo de reserva, desde o e
 
 **Figura 4.5 — Diagrama de Sequência da Reserva Temporária de Estoque.**
 
-![Diagrama de sequência da reserva temporária de estoque](figuras_geradas/figura_4_5_sequencia_reserva.png)
+```mermaid
+sequenceDiagram
+  autonumber
+  actor C as Comprador autenticado
+  participant N as Aplicação Kolô
+  participant DB as PostgreSQL
+  participant MP as Mercado Pago
+  participant Q as pg-boss
+  C->>N: Finalizar compra em /checkout (modalidade)
+  N->>N: Valida sessão, carrinho, endereço e frete
+  N->>DB: BEGIN; trava usuário e sessão
+  N->>DB: Trava obras em ordem de id (FOR UPDATE)
+  N->>DB: Calcula estoque menos reservas ativas de outras sessões
+  alt Unidades disponíveis e sem pagamento pendente impeditivo
+    N->>DB: Grava reserva de 10 min e pedido PENDENTE com cópias dos itens e endereço
+    N->>DB: COMMIT
+    N-->>C: Redireciona para /checkout/numero
+    Note over C,N: Página do Kolô exibe pedido e contador
+    C->>N: Aciona pagar pedido
+    N->>DB: Confere dono, situação, reserva e pagamentos em aberto
+    alt Pedido apto a iniciar pagamento
+      N->>MP: Cria preferência do Checkout Pro
+      MP-->>N: URL do checkout hospedado
+      N-->>C: Redireciona para o Mercado Pago
+    else Pagamento não pode ser iniciado
+      N-->>C: Informa o motivo na página do pedido
+    end
+  else Reserva recusada
+    N->>DB: ROLLBACK
+    N-->>C: Informa indisponibilidade ou retorna ao pedido pendente
+  end
+  loop A cada minuto
+    Q->>DB: Remove reservas vencidas
+  end
+  Note over N,DB: Disponibilidade já ignora reservas vencidas antes da limpeza
+```
 
 *Fonte: Elaborado pelos autores (2026), com base na função `reservarItens` (`src/modules/orders/reserva.ts`).*
 
@@ -988,7 +1150,57 @@ A Figura 4.6 resume a sequência de tratamento de uma notificação: validação
 
 **Figura 4.6 — Diagrama de Sequência do Processamento do Webhook de Pagamento.**
 
-![Diagrama de sequência do processamento do webhook do Mercado Pago](figuras_geradas/figura_4_6_sequencia_webhook.png)
+```mermaid
+sequenceDiagram
+  autonumber
+  participant MP as Mercado Pago
+  participant W as Webhook do Kolô
+  participant DB as PostgreSQL
+  MP->>W: POST com assinatura e identificador do pagamento
+  W->>W: Valida HMAC pelo SDK
+  alt Assinatura inválida
+    W-->>MP: HTTP 401
+  else Assinatura válida
+    W->>MP: Consulta pagamento pela API
+    MP-->>W: Situação, valor, moeda e referência do pedido
+    Note over W,DB: Fluxo abaixo: pagamento reconhecido e pedido localizado
+    W->>DB: BEGIN; insere evento único
+    alt Evento repetido
+      W->>DB: Encerra transação sem novos efeitos
+    else Evento novo
+      W->>DB: Trava usuário e pedido
+      alt Situação de pagamento repetida ou anterior à registrada
+        W->>DB: Preserva pagamento e pedido
+      else Nova situação de pagamento
+        W->>DB: Registra ou atualiza pagamento
+        alt APROVADO
+          alt Pedido não está PENDENTE
+            W->>DB: Marca PEDIDO_NAO_PENDENTE; preserva pedido e estoque
+          else Valor ou moeda divergente
+            W->>DB: Marca VALOR_DIVERGENTE; preserva pedido e estoque
+          else Pedido pendente e valor correto
+            W->>DB: Confirma PAGO e tenta baixa com trava das obras
+            alt Há estoque livre
+              W->>DB: Baixa estoque, atualiza obra e consome reserva
+            else Sem estoque livre
+              W->>DB: Mantém PAGO e marca SEM_ESTOQUE; não baixa estoque
+            end
+          end
+        else PENDENTE (Pix ou boleto)
+          W->>DB: Tenta prorrogar reserva ainda ativa até o vencimento
+        else RECUSADO
+          W->>DB: Para Pix ou boleto, avalia outros pagamentos e prazo antes de cancelar
+          Note over W,DB: Cartão recusado não cancela automaticamente o pedido
+        else ESTORNADO
+          Note over W,DB: Registra pagamento; pedido já pago exige revisão administrativa
+        end
+      end
+      W->>DB: COMMIT
+    end
+    W-->>MP: HTTP 200
+  end
+  Note over W,DB: Falhas de processamento desfazem a transação e retornam HTTP 500
+```
 
 *Fonte: Elaborado pelos autores (2026), com base no tratamento de notificações (`src/modules/payments/webhook.ts`).*
 
@@ -1029,194 +1241,95 @@ Dessa forma, remove-se o vínculo pessoal do titular com o sistema, preservando-
 
 ## 4.5 Apresentação das Interfaces do Sistema
 
-A interface do Kolô foi desenvolvida com base no design system estabelecido para o ateliê, utilizando cores sóbrias e tipografia legível. Nesta versão do documento, as Figuras 4.7 a 4.12 são esquemas ilustrativos dos fluxos e não capturas da interface implementada. Sua substituição por capturas do sistema em execução permanece pendente.
+As Figuras 4.7 a 4.13 destinam-se a apresentar sete capturas essenciais do sistema implementado: descoberta de obras, decisão de compra, reserva para pagamento, avisos do assistente, portfólio, gestão de pedidos e relatório de vendas. Os marcadores abaixo devem ser substituídos por capturas reais nos locais indicados. Os protótipos do Stitch e os antigos PNGs de telas não constituem evidência da implementação.
+
+<!-- ORIENTAÇÃO EDITORIAL: capturar em ambiente de teste, com dados fictícios e imagens carregadas. Recortar a região necessária para leitura, sem incluir abas, ferramentas de desenvolvimento ou dados pessoais reais. Manter título acima e fonte abaixo; retirar o marcador e esta orientação após inserir a captura. A fonte indicada em cada figura se aplica à captura que será produzida. Não é necessário adicionar telas isoladas de login, cadastro ou carrinho para repetir funcionalidades já explicadas. -->
 
 ### 4.5.1 Catálogo de Obras de Arte
 
-A tela do Catálogo (Figura 4.7) disponibiliza a exibição responsiva do acervo do ateliê.
+A Figura 4.7 deve evidenciar a apresentação do acervo ao visitante, com busca, ordenação e identificação das obras disponíveis. O catálogo utiliza paginação e parâmetros na URL, com imagens renderizadas pelo componente de otimização do Next.js.
 
-<!-- TODO(figura 4.7): TIRAR PRINT do sistema implementado em /obras (catálogo, desktop), com dados de teste; docs/telas/ e prototipo de design (nao usar). Ate la a legenda diz 'ilustrativo' -->
-**Figura 4.7 — Esquema Estrutural da Interface do Catálogo de Obras (RF09).**
+**Figura 4.7 — Catálogo de Obras de Arte (RF09).**
 
-```
-+-----------------------------------------------------------------------------------+
-|  [ K O L Ô ]        Ateliê    Tattoo    Artistas    Sobre          [Carrinho (2)] |
-+-----------------------------------------------------------------------------------+
-|  CATÁLOGO DE OBRAS                                                                |
-|  Acervo exclusivo produzido pelos artistas residentes em técnicas autorais        |
-|                                                                                   |
-|  Ordenar por: [ Mais recentes v ]                 Exibindo 12 de 34 obras         |
-|  -------------------------------------------------------------------------------- |
-|  +---------------------+   +---------------------+   +---------------------+      |
-|  | [ Foto da Obra 01 ] |   | [ Foto da Obra 02 ] |   | [ Foto da Obra 03 ] |      |
-|  |                     |   |                     |   |                     |      |
-|  | "Dualidade Urbana"  |   | "Reflexos da Noite" |   | "Terra Viva"        |      |
-|  | Artista Residente   |   | Artista Residente   |   | Artista Residente   |      |
-|  | Óleo sobre tela     |   | Escultura cerâmica  |   | Gravura em metal    |      |
-|  | R$ 1.850,00         |   | R$ 920,00           |   | R$ 640,00           |      |
-|  | [Ver Detalhes]      |   | [Ver Detalhes]      |   | [Ver Detalhes]      |      |
-|  +---------------------+   +---------------------+   +---------------------+      |
-+-----------------------------------------------------------------------------------+
-```
-*Fonte: Elaborado pelos autores (2026). Esquema ilustrativo, com dados fictícios.*
+[PLACEHOLDER DE IMAGEM: CAPTURA DO CATÁLOGO DE OBRAS]
 
-A tela implementa renderização via *React Server Components* com suporte a paginação e parâmetros na URL. As imagens são carregadas através de componentes `<Image>` com largura adaptável, gerando versões redimensionadas para otimização de banda.
+<!-- CAPTURA 4.7: abrir /obras como visitante em desktop; mostrar título, busca, ordenação e uma ou duas linhas de obras com fotos, preços e disponibilidade. Recortar o rodapé longo. Inserir aqui, imediatamente após o título da figura. -->
+
+Fonte: elaborada pelos autores (2026).
 
 ### 4.5.2 Ficha Detalhada da Obra
 
-Ao selecionar uma peça, o usuário é direcionado para a Ficha da Obra (Figura 4.8), que concentra informações técnicas para a tomada de decisão.
+A Figura 4.8 deve mostrar as informações usadas na decisão de compra: imagem principal, miniaturas, título, preço, disponibilidade e ficha técnica. A tela permite selecionar fotografias e adicionar uma obra disponível ao carrinho.
 
-<!-- TODO(figura 4.8): TIRAR PRINT do sistema implementado em /obras/[slug] (ficha de uma obra), com dados de teste; docs/telas/ e prototipo de design (nao usar). Ate la a legenda diz 'ilustrativo' -->
-**Figura 4.8 — Ficha Detalhada da Obra de Arte com Ficha Técnica (RF10).**
+**Figura 4.8 — Ficha Detalhada de uma Obra Disponível (RF10).**
 
-```
-+-----------------------------------------------------------------------------------+
-|  < Voltar ao Catálogo                                                             |
-+-----------------------------------------------------------------------------------+
-|  +-------------------------------+   DUALIDADE URBANA (2026)                      |
-|  |                               |   Artista Residente                            |
-|  |                               |   -------------------------------------------- |
-|  |    [ Fotografia Principal     |   R$ 1.850,00                                  |
-|  |      em Alta Resolução ]      |   Em até 3x sem juros ou via Pix               |
-|  |                               |                                                |
-|  |                               |   [ ADICIONAR AO CARRINHO ]                    |
-|  +-------------------------------+                                                |
-|  [thumb 1] [thumb 2] [thumb 3]       FICHA TÉCNICA DA OBRA                        |
-|                                      - Técnica: Óleo sobre tela                   |
-|                                      - Dimensões: 80 x 60 cm                      |
-|                                      - Tiragem: Peça única autoral                |
-|                                      - Certificado: Assinado pelo artista         |
-|                                                                                   |
-|                                      DESCRIÇÃO                                    |
-|                                      Estudo visual com pigmentos naturais...      |
-+-----------------------------------------------------------------------------------+
-```
-*Fonte: Elaborado pelos autores (2026). Esquema ilustrativo, com dados fictícios.*
+[PLACEHOLDER DE IMAGEM: CAPTURA DA FICHA DA OBRA]
 
-A interface integra galeria interativa de miniaturas com troca instantânea de foto principal sem recarregamento de página. O botão de inclusão no carrinho verifica a disponibilidade de estoque no servidor e exibe feedback acessível através de alertas `aria-live`.
+<!-- CAPTURA 4.8: abrir /obras/[slug] de uma obra disponível com imagens cadastradas; incluir galeria, preço, botão de adicionar ao carrinho e os dados técnicos visíveis. Usar uma captura legível da área principal, sem montar controles que não aparecem juntos na interface. Inserir aqui. -->
 
-### 4.5.3 Carrinho e Checkout com Contador de Reserva
+Fonte: elaborada pelos autores (2026).
 
-O fluxo de fechamento de compra (Figura 4.9) reúne o carrinho, a seleção da modalidade de entrega e a sinalização do tempo de reserva garantido.
+### 4.5.3 Pedido com Reserva e Início do Pagamento
 
-<!-- TODO(figura 4.9): TIRAR PRINT do sistema implementado em /checkout com reserva ativa (contador visível), com dados de teste; docs/telas/ e prototipo de design (nao usar). Ate la a legenda diz 'ilustrativo' -->
-**Figura 4.9 — Interface de Checkout com Indicação do Tempo de Reserva (RF12, RF15).**
+O comprador revisa os itens e escolhe a modalidade de entrega em /checkout. Ao finalizar, o sistema cria o pedido e a reserva na mesma transação e direciona para /checkout/[numero]. A Figura 4.9 deve mostrar essa segunda tela, com o resumo do pedido, o contador e a ação de pagar. O redirecionamento ao Checkout Pro ocorre somente ao acionar o pagamento; a confirmação posterior depende do webhook.
 
-```
-+-----------------------------------------------------------------------------------+
-|  FINALIZAÇÃO DO PEDIDO (CHECKOUT)                                                 |
-+-----------------------------------------------------------------------------------+
-|  +-----------------------------------------------------------------------------+  |
-|  | [!] Suas obras estão reservadas por: 08:42 minutos                          |  |
-|  +-----------------------------------------------------------------------------+  |
-|                                                                                   |
-|  ENDEREÇO DE ENTREGA                    RESUMO DO PEDIDO                          |
-|  Cliente Teste                          ----------------------------------------- |
-|  Rua das Flores, 120 - Pinheiros, SP    1x "Dualidade Urbana"        R$ 1.850,00  |
-|  CEP 05419-000                          Subtotal                     R$ 1.850,00  |
-|  [Alterar Endereço]                     Frete (Entrega Postal)          R$ 30,00  |
-|                                         ----------------------------------------- |
-|  MODALIDADE DE ENTREGA                  TOTAL                        R$ 1.880,00  |
-|  ( ) Retirada no Ateliê em Pinheiros (R$ 0,00)                                    |
-|  (X) Entrega Postal (+R$ 30,00)         [ IR PARA O PAGAMENTO (MERCADO PAGO) ]    |
-|                                         Ambiente Criptografado e Seguro           |
-+-----------------------------------------------------------------------------------+
-```
-*Fonte: Elaborado pelos autores (2026). Esquema ilustrativo, com dados fictícios.*
+**Figura 4.9 — Pedido com Reserva Ativa e Ação de Pagamento (RF12, RF13, RF15).**
 
-Conforme exigido pelo requisito **RF15** e regra **RN03**, o checkout calcula o tempo restante de reserva (`expira_em`) retornado pela função `reservarItens`. Um cronômetro reativo informa o tempo em minutos e segundos; faltando menos de dois minutos, o usuário é alertado para concluir a operação antes da devolução automática das unidades ao estoque público. O comprador pode optar pela retirada presencial sem custo no ateliê em Pinheiros ou pela entrega com frete.
+[PLACEHOLDER DE IMAGEM: CAPTURA DO PEDIDO COM RESERVA ATIVA]
 
-### 4.5.4 Assistente de Agendamento (Wizard de Tatuagem)
+<!-- CAPTURA 4.9: entrar como comprador de teste, finalizar uma compra e capturar /checkout/[numero] antes de iniciar o pagamento. Mostrar número do pedido, itens, total, modalidade, contador ativo e botão de pagamento. Não usar /checkout para demonstrar o contador, nem uma captura do checkout externo do Mercado Pago. Inserir aqui. -->
 
-A Figura 4.10 demonstra a etapa de confirmação de conformidade do assistente determinístico de tatuagem.
+Fonte: elaborada pelos autores (2026).
 
-<!-- TODO(figura 4.10): TIRAR PRINT do sistema implementado em /agendamento, passo 7 (avisos de conformidade), com dados de teste; docs/telas/ e prototipo de design (nao usar). Ate la a legenda diz 'ilustrativo' -->
-**Figura 4.10 — Etapa de Conformidade do Wizard de Agendamento (RF20, RF23, RF24, RF25).**
+A reserva inicial tem duração de dez minutos, conforme RN03. O contador informa o prazo disponível para iniciar o pagamento; pagamentos pendentes por Pix ou boleto têm tratamento específico de prorrogação pelo webhook, descrito na Seção 4.4.2. A captura do pedido concentra a evidência do fluxo de compra, dispensando uma figura adicional apenas do carrinho.
 
-```
-+-----------------------------------------------------------------------------------+
-|  ASSISTENTE DE AGENDAMENTO DE TATUAGEM                          Etapa 7 de 8      |
-+-----------------------------------------------------------------------------------+
-|  AVISOS E CONFORMIDADE OBRIGATÓRIA                                                |
-|  Antes de direcionar sua conversa ao tatuador, confirme os termos abaixo:        |
-|                                                                                   |
-|  [X] DECLARAÇÃO DE SAÚDE E ANAMNESE (RF23)                                        |
-|      Declaro estar ciente de que a ficha clínica completa será preenchida         |
-|      presencialmente no estúdio em Pinheiros antes do início da sessão.           |
-|                                                                                   |
-|  [X] TERMO DE CONSENTIMENTO E AUTORIZAÇÃO (RF24)                                  |
-|      Compreendo que a realização do procedimento exige a assinatura física        |
-|      do termo de autorização livre e esclarecido na recepção do estúdio.          |
-|                                                                                   |
-|  [X] DECLARAÇÃO DE MAIORIDADE (RF25)                                              |
-|      Declaro, sob as penas da lei, possuir 18 (dezoito) anos completos ou mais.   |
-|                                                                                   |
-|  -------------------------------------------------------------------------------- |
-|  [ < Voltar: Escolher Data ]                   [ Avançar: Gerar WhatsApp > ]      |
-+-----------------------------------------------------------------------------------+
-```
-*Fonte: Elaborado pelos autores (2026). Esquema ilustrativo, com dados fictícios.*
+### 4.5.4 Assistente de Agendamento de Tatuagem
 
-O botão de avanço permanece desabilitado enquanto os três *checkboxes* não estiverem selecionados. O assistente valida a integridade do formulário e, no passo seguinte, formata a mensagem pré-definida com a compilação das escolhas do visitante, acionando o redirecionamento para o WhatsApp do estúdio.
+A Figura 4.10 deve mostrar a etapa dos três avisos obrigatórios: preenchimento presencial da anamnese, assinatura presencial do termo e declaração de maioridade. Essa etapa evidencia os requisitos RF23 a RF25 sem coleta de dados clínicos. Após a revisão, o assistente disponibiliza o link para o WhatsApp do estúdio, sem criar automaticamente um agendamento.
 
-### 4.5.5 Portfólio de Tatuagens e Filtros de Estilo
+**Figura 4.10 — Avisos Obrigatórios do Assistente de Agendamento (RF20, RF23, RF24, RF25).**
 
-A galeria de portfólio (Figura 4.11) permite aos clientes examinar trabalhos realizados pelos artistas residentes.
+[PLACEHOLDER DE IMAGEM: CAPTURA DOS AVISOS DO WIZARD DE AGENDAMENTO]
 
-<!-- TODO(figura 4.11): TIRAR PRINT do sistema implementado em /tatuagens (portfólio com filtros), com dados de teste; docs/telas/ e prototipo de design (nao usar). Ate la a legenda diz 'ilustrativo' -->
-**Figura 4.11 — Interface da Galeria de Portfólio de Tatuagens (RF17, RF18).**
+<!-- CAPTURA 4.10: abrir /agendamento e avançar com dados fictícios até o passo 7 de 8. Mostrar a indicação da etapa, os três avisos completos, caixas de seleção e botão de avanço. Manter ao menos um aceite desmarcado para evidenciar o bloqueio de avanço. Não enviar mensagem ao WhatsApp para produzir esta captura. Inserir aqui. -->
 
-```
-+-----------------------------------------------------------------------------------+
-|  PORTFÓLIO DE TATUAGENS                                                           |
-|  Conheça os trabalhos autorais desenvolvidos pela equipe residente do Kolô        |
-|                                                                                   |
-|  Filtrar por:                                                                     |
-|  Artista: [ Todos v ]  Estilo: [ Blackwork v ]  Região: [ Braço v ]  [Buscar Q]   |
-|  -------------------------------------------------------------------------------- |
-|  +---------------------+   +---------------------+   +---------------------+      |
-|  | [ Foto Tatuagem 01] |   | [ Foto Tatuagem 02] |   | [ Foto Tatuagem 03] |      |
-|  |                     |   |                     |   |                     |      |
-|  | Geometria Floral    |   | Serpente Botânica   |   | Mandala             |      |
-|  | Artista Residente   |   | Artista Residente   |   | Artista Residente   |      |
-|  | Estilo: Blackwork   |   | Estilo: Fine Line   |   | Estilo: Pontilhismo |      |
-|  | Região: Antebraço   |   | Região: Costelas    |   | Região: Costas      |      |
-|  +---------------------+   +---------------------+   +---------------------+      |
-+-----------------------------------------------------------------------------------+
-```
-*Fonte: Elaborado pelos autores (2026). Esquema ilustrativo, com dados fictícios.*
+Fonte: elaborada pelos autores (2026).
 
-A interface combina filtros compostos que atualizam os parâmetros de busca instantaneamente sem causar saltos de rolagem (*layout shift*), garantindo visualização ágil das fotografias armazenadas no Cloudflare R2.
+### 4.5.5 Portfólio de Tatuagens
 
-### 4.5.6 Painel de Gestão Administrativa de Pedidos
+A Figura 4.11 deve demonstrar a consulta dos trabalhos dos artistas, com filtros e resultados da galeria. O portfólio complementa a seleção do profissional antes do contato pelo assistente.
 
-A retaguarda administrativa (Figura 4.12) fornece aos gestores controle do ciclo de vida dos pedidos efetuados.
+**Figura 4.11 — Galeria de Tatuagens com Filtros (RF17, RF18).**
 
-<!-- TODO(figura 4.12): TIRAR PRINT do sistema implementado em /admin/pedidos (lista e detalhe de um pedido pago), com dados de teste; docs/telas/ e prototipo de design (nao usar). Ate la a legenda diz 'ilustrativo' -->
-**Figura 4.12 — Painel de Gestão e Despacho de Pedidos no Back-office (RF29).**
+[PLACEHOLDER DE IMAGEM: CAPTURA DO PORTFÓLIO DE TATUAGENS]
 
-```
-+-----------------------------------------------------------------------------------+
-|  PAINEL ADMINISTRATIVO — GESTÃO DE PEDIDOS (BACK-OFFICE)                          |
-+-----------------------------------------------------------------------------------+
-|  Filtros: [ Todos ] [ Pendentes ] [ Pagos ] [ Enviados ] [ Requer Estorno (1) ]   |
-|                                                                                   |
-|  Pedido    Data       Cliente         Valor Total   Pagamento     Situação  Ações |
-|  -------------------------------------------------------------------------------- |
-|  #KOLO-104 10/10/26   Cliente Teste   R$ 1.880,00   Cartão (MP)   PAGO      [Ver] |
-|  #KOLO-103 09/10/26   Cliente Teste   R$   920,00   Pix (MP)      PAGO      [Ver] |
-|  #KOLO-102 08/10/26   Cliente Teste   R$   640,00   Pix           ESTORNO   [Ação]|
-|                                                                                   |
-|  DETALHES DO PEDIDO #KOLO-104                                                     |
-|  - Situação: PAGO em 10/10/2026 às 14:32 (Mercado Pago ID: 9482710492)           |
-|  - Rastreamento Postal: [ BR109482019SP ] [ Salvar Código ]                       |
-|  - Atualizar Situação:  ( ) Processando  (X) Enviado aos Correios  ( ) Entregue   |
-+-----------------------------------------------------------------------------------+
-```
-*Fonte: Elaborado pelos autores (2026). Esquema ilustrativo, com dados fictícios.*
+<!-- CAPTURA 4.11: abrir /tatuagens como visitante; mostrar busca, filtros e uma linha de resultados com fotos carregadas. Aplicar um filtro que retorne trabalhos para evidenciar seu uso. Recortar a área relevante, sem capturar toda a página. Inserir aqui. -->
 
-O painel permite a inserção de códigos de rastreamento postal (disparando a atualização visível na área pessoal do comprador) e disponibiliza a fila de resolução de estornos com filtros dedicados, assegurando a rastreabilidade financeira exigida na gestão do ateliê.
+Fonte: elaborada pelos autores (2026).
 
+### 4.5.6 Gestão Administrativa de Pedidos
+
+A Figura 4.12 deve apresentar o detalhe administrativo de um pedido, evidenciando sua situação, os itens e as ações de acompanhamento do envio. A lista administrativa também permite filtrar pedidos e localizar pagamentos que requerem estorno. O acompanhamento visível ao comprador pertence a outra interface e não substitui esta evidência de gestão.
+
+**Figura 4.12 — Detalhe Administrativo de um Pedido para Entrega (RF29).**
+
+[PLACEHOLDER DE IMAGEM: CAPTURA DA GESTÃO ADMINISTRATIVA DE UM PEDIDO]
+
+<!-- CAPTURA 4.12: entrar como ADMIN, acessar /admin/pedidos e abrir /admin/pedidos/[numero] de um pedido de teste em PROCESSANDO, com modalidade ENTREGA. Mostrar situação, resumo e controles disponíveis de despacho/rastreio. Usar dados fictícios. Não usar /conta/pedidos, que é a área do comprador. Inserir aqui. -->
+
+Fonte: elaborada pelos autores (2026).
+
+### 4.5.7 Relatório de Vendas
+
+A Figura 4.13 deve mostrar o relatório por período, que consolida os resultados de vendas e complementa o painel administrativo do RF32. A captura documenta a consulta gerencial e evita a necessidade de outra figura apenas da página inicial do administrador.
+
+**Figura 4.13 — Relatório Administrativo de Vendas por Período (RF32).**
+
+[PLACEHOLDER DE IMAGEM: CAPTURA DO RELATÓRIO DE VENDAS]
+
+<!-- CAPTURA 4.13: entrar como ADMIN e abrir /admin/relatorio com um período que contenha pedidos pagos de teste. Mostrar período selecionado, totais e a tabela de obras mais vendidas ou de faturamento por artista. Priorizar legibilidade; não reduzir uma página longa até tornar números ilegíveis. Inserir aqui. -->
+
+Fonte: elaborada pelos autores (2026).
 
 ---
 

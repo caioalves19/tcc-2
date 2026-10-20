@@ -1,0 +1,31 @@
+graph TB
+    subgraph Cliente["Camada de Apresentação (Navegador)"]
+        UI["Interface Web Reativa<br/>Next.js 16 Client Components · Tailwind CSS 4 · Base UI"]
+    end
+
+    subgraph AmbienteApp["Ambiente Local de Execução"]
+        subgraph AppContainer["Aplicação Full-Stack (Node.js 24 LTS)"]
+            NextApp["Servidor Next.js 16 (App Router)<br/>React Server Components (RSC) · Server Actions · Route Handlers"]
+            Boss["Fila em Background (pg-boss)<br/>Worker de Expiração e Desbloqueio de Reservas"]
+        end
+
+        Postgres[("Banco de Dados Relacional em Docker<br/>PostgreSQL 17 + Prisma 7 ORM<br/>Extensão btree_gist (Exclusion Constraints)")]
+    end
+
+    subgraph Externos["Serviços Externos"]
+        MP["Mercado Pago API<br/>Checkout Pro + Webhooks com Assinatura HMAC"]
+        R2["Cloudflare R2 Storage<br/>Armazenamento S3-compatível · Assinatura Prévia de Uploads"]
+        Resend["Resend API<br/>Disparo Transacional de Recuperação de Senhas"]
+        Turnstile["Cloudflare Turnstile<br/>Proteção Antibot em Formulário de Contato"]
+    end
+
+    UI -->|HTTP / HTTPS| NextApp
+    NextApp -->|Leitura e Escrita Transacional| Postgres
+    Boss -->|Processamento de Tarefas Agendadas| Postgres
+    NextApp -.->|Enfileira Jobs| Boss
+    NextApp <-->|REST / SDK Oficial| MP
+    MP -->|Webhooks HTTP POST| NextApp
+    NextApp -->|Gera URLs Pré-assinadas| R2
+    UI -->|Upload Direto de Mídia| R2
+    NextApp -->|Disparo de E-mails| Resend
+    UI -.->|Token de Verificação| Turnstile

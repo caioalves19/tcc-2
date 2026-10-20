@@ -1,5 +1,5 @@
 classDiagram
-  direction LR
+  direction TB
   class User {
     +id
     +papel : CLIENTE, ARTISTA, ADMIN
@@ -45,7 +45,7 @@ classDiagram
   class Payment {
     +provedor
     +idExterno
-    +metodo : PIX, CARTAO, BOLETO
+    +metodo : PIX, CARTAO, BOLETO, SALDO_MERCADO_PAGO
     +situacao : PENDENTE, APROVADO, RECUSADO, ESTORNADO
     +estornarMotivo
   }
@@ -55,7 +55,7 @@ classDiagram
   }
   class PortfolioItem {
     +titulo
-    +imagem
+    +imagemUrl
     +regiaoCorpo
   }
   class Appointment {

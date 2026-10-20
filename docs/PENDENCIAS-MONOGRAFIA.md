@@ -8,30 +8,29 @@
 - **Oficial, em edição:** `docs/TCC2_Grupo_19_Monografia.md`. Todos editam este.
 - Rascunhos anteriores, só de consulta (não editar): `docs/MONOGRAFIA-TCC2-FINAL.md`, `docs/CAPITULO-1` a `6-*.md` e `docs/TCC.txt` (agora com o texto do rascunho, não mais o do TCC 1; o original está no histórico do Git).
 - `.docx` (`TCC2_Grupo_19_Monografia.docx`, `MONOGRAFIA-TCC2-FINAL.docx`): desatualizados; só serão regenerados quando o `.md` fechar.
-- `docs/figuras_geradas/`: Fig. 4.1 a 4.6 válidas; `figura_4_7_*` a `figura_4_12_*` vêm do protótipo de design e **não devem ser usadas** (ver abaixo).
+- Diagramas atuais: blocos Mermaid da monografia, com cópias em `docs/figuras_geradas/fontes/`. Os PNGs antigos das Fig. 4.1 a 4.6 estão desatualizados; os das Fig. 4.7 a 4.12 são protótipos. **Não inserir esses PNGs na versão final.**
 
 ## Figuras (mínimo exigido: 5, numeradas e citadas no texto)
 
-Hoje há 12 figuras no `.md`: 6 diagramas (as Fig. 4.1 e 4.2 em Mermaid dentro do texto; as Fig. 4.3 a 4.6 como PNG em `docs/figuras_geradas/`, com os fontes em `figuras_geradas/fontes/`) e 6 esquemas ASCII de telas (Fig. 4.7 a 4.12), com legenda "esquema ilustrativo".
+Hoje há seis diagramas Mermaid (Fig. 4.1 a 4.6) e sete placeholders de capturas essenciais (Fig. 4.7 a 4.13) no Markdown. Cada placeholder tem título, fonte prevista e comentário editorial com rota, papel de acesso e conteúdo a mostrar.
 
-- [ ] **Fig. 4.1 e 4.2** (arquitetura e DER): exportar como PNG e inserir; conferir `figura_4_1_arquitetura.png` e `figura_4_2_der.png` contra o texto atual (Base UI, sem Caddy, sem `ESTORNO_PENDENTE` como situação).
-- [ ] **Fig. 4.7 a 4.12 (tirar prints do sistema rodando, com dados de teste).** Os esquemas atuais são ilustrativos e não condizem com o projeto, e os PNG de `docs/telas/` são protótipos de design (rodapé com Bixiga, artistas fictícios), que não devem ser usados:
-  - [ ] Fig. 4.7: `/obras` (catálogo, desktop)
-  - [ ] Fig. 4.8: `/obras/[slug]` (ficha de uma obra)
-  - [ ] Fig. 4.9: `/checkout` com reserva ativa (contador visível)
-  - [ ] Fig. 4.10: `/agendamento`, passo 7 (avisos de conformidade)
-  - [ ] Fig. 4.11: `/tatuagens` (portfólio com filtros)
-  - [ ] Fig. 4.12: `/admin/pedidos` (lista e detalhe de um pedido pago)
-  - [ ] Ao inserir cada print, trocar a legenda "esquema ilustrativo" pela fonte "Elaborado pelos autores (2026)" e apagar o `TODO` e o bloco ASCII.
-- [x] **Fig. 4.3** casos de uso, **4.4** classes, **4.5** sequência da reserva, **4.6** sequência do webhook (geradas e inseridas no `.md`).
-- [ ] Conferir se as Fig. 4.3 a 4.6 (PNG) ficam legíveis na largura útil da página no Word.
-- [ ] Citar cada figura no texto **antes** de ela aparecer; título acima, fonte abaixo (as legendas do `.md` já seguem isso).
-- [x] Lista de Figuras atualizada até a 4.12.
-- [ ] (Opcional) Gráfico do Lighthouse no Capítulo 5.
+- [x] Corrigir arquitetura, DER, permissões dos casos de uso, meios de pagamento nas classes e sequências de reserva/webhook; inserir os seis diagramas como Mermaid no Markdown.
+- [ ] Na diagramação final, exportar os Mermaid corrigidos em formato compatível com o editor e conferir legibilidade. Os PNGs antigos não foram regenerados.
+- [ ] Substituir os placeholders por capturas reais em ambiente de teste:
+  - [ ] Fig. 4.7: `/obras`, catálogo com busca e obras.
+  - [ ] Fig. 4.8: `/obras/[slug]`, ficha de uma obra disponível.
+  - [ ] Fig. 4.9: `/checkout/[numero]`, pedido com reserva ativa e botão de pagar.
+  - [ ] Fig. 4.10: `/agendamento`, passo 7, três avisos obrigatórios.
+  - [ ] Fig. 4.11: `/tatuagens`, filtros e trabalhos encontrados.
+  - [ ] Fig. 4.12: `/admin/pedidos/[numero]`, detalhe administrativo de pedido para entrega.
+  - [ ] Fig. 4.13: `/admin/relatorio`, período e resultados de vendas.
+- [ ] Ao inserir cada captura, remover o placeholder e a orientação editorial correspondente; manter título acima e fonte abaixo. Não usar protótipos como capturas do sistema.
+- [ ] Conferir as chamadas no texto, os títulos da lista de figuras e as páginas após a diagramação.
+- [x] Lista de figuras atualizada até a 4.13. Não foram incluídas capturas redundantes de login, cadastro ou carrinho isolado.
 
 ## Modelagem (Estrutura da Monografia, Capítulo 4)
 
-- [x] DER e modelo físico (Fig. 4.2, dicionário de dados em 4.3.2), com frase sobre MER e modelo lógico.
+- [x] DER e modelo físico (Fig. 4.2, dicionário de dados em 4.3.2), com descrição do recorte do modelo lógico e das cardinalidades opcionais.
 - [x] Casos de uso (Fig. 4.3), classes (Fig. 4.4) e sequência (Fig. 4.5 e 4.6), na Seção 4.3.3 e nas Seções 4.4.1 e 4.4.2.
 
 ## Referências e citações
