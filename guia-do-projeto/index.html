@@ -1,0 +1,1642 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guia do Kolô</title>
+<meta name="description" content="Guia didático do projeto Kolô (TCC 2): produto, arquitetura, stack, dados, features, qualidade e preparação para a banca.">
+<link rel="icon" href="img/atelie-selo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Tokens da identidade visual do Kolô (docs/IDENTIDADE-VISUAL.md) */
+:root {
+  --ceruleo: #0088cc;
+  --azul: #006193;
+  --amarelo: #ffd600;
+  --amarelo-claro: #ffe170;
+  --marinho: #0b2d6f;
+  --marinho-fundo: #082052;
+  --royal: #0a35a0;
+  --ouro: #f5b71a;
+  --bruma: #c3d0ec;
+  --grafite: #1a1a1a;
+  --ardosia: #3f4850;
+  --cinza: #5f6872;
+  --linha: #e5e2e1;
+  --nevoa: #f0eded;
+  --gelo: #f6f8fa;
+  --papel: #fcf9f8;
+  --branco: #ffffff;
+  --erro: #ba1a1a;
+  --erro-fundo: #ffdad6;
+  --ok: #1b6e3a;
+  --ok-fundo: #d9f2e1;
+  --alerta-fundo: #fff4c2;
+
+  --fonte-titulo: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --fonte-corpo: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  --fonte-mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+  --sombra-adesivo: 4px 4px 0 var(--grafite);
+  --sombra-adesivo-sm: 2px 2px 0 var(--grafite);
+  --raio-card: 16px;
+  --largura-nav: 272px;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; animation: none !important; } }
+body {
+  margin: 0;
+  background: var(--papel);
+  color: var(--grafite);
+  font: 16px/1.65 var(--fonte-corpo);
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+a { color: var(--azul); text-underline-offset: 3px; }
+a:hover { color: var(--grafite); }
+:focus-visible { outline: 3px solid var(--ceruleo); outline-offset: 3px; border-radius: 4px; }
+code, kbd { font-family: var(--fonte-mono); font-size: .86em; background: var(--nevoa); padding: .1em .4em; border-radius: 6px; overflow-wrap: anywhere; }
+h1, h2, h3, h4 { font-family: var(--fonte-titulo); line-height: 1.2; margin: 0 0 .5em; letter-spacing: -.01em; }
+h2 { font-size: clamp(1.6rem, 3.4vw, 2.25rem); text-transform: uppercase; }
+h2 em { font-style: normal; color: var(--azul); }
+h3 { font-size: 1.3rem; margin-top: 2rem; }
+h4 { font-size: 1.05rem; margin-top: 1.25rem; }
+p { margin: 0 0 1em; }
+ul, ol { padding-left: 1.3em; margin: 0 0 1em; }
+li { margin-bottom: .3em; }
+.pular { position: absolute; left: -9999px; top: 8px; background: var(--amarelo); padding: 8px 14px; z-index: 100; border: 2px solid var(--grafite); }
+.pular:focus { left: 16px; }
+
+/* ---------- Barra de progresso e topo ---------- */
+.progresso { position: fixed; inset: 0 0 auto 0; height: 5px; background: transparent; z-index: 60; }
+.progresso span { display: block; height: 100%; width: 0; background: var(--amarelo); border-right: 2px solid var(--grafite); }
+.topo {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; min-height: 60px;
+  background: rgba(252, 249, 248, .94); backdrop-filter: blur(6px);
+  border-bottom: 2px solid var(--grafite);
+}
+.topo img { width: 38px; height: 38px; }
+.topo .marca { font-family: var(--fonte-titulo); font-weight: 700; font-size: 1.05rem; }
+.topo .onde { margin-left: auto; font-size: .85rem; color: var(--cinza); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46vw; }
+.topo .onde b { color: var(--grafite); }
+.botao-sumario { display: none; }
+
+/* ---------- Botões e chips ---------- */
+.botao {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 48px;
+  padding: 10px 20px; border: 2px solid var(--grafite); border-radius: 4px;
+  background: var(--amarelo); color: var(--grafite); font: 700 1rem var(--fonte-titulo);
+  text-decoration: none; box-shadow: var(--sombra-adesivo); cursor: pointer;
+  transition: transform .12s, box-shadow .12s;
+}
+.botao:hover { background: var(--amarelo-claro); color: var(--grafite); transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--grafite); }
+.botao.secundario { background: var(--branco); }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 36px;
+  padding: 4px 14px; border: 2px solid var(--grafite); border-radius: 999px;
+  background: var(--branco); font: 600 .88rem var(--fonte-titulo); cursor: pointer; color: var(--grafite);
+}
+.chip[aria-pressed="true"] { background: var(--grafite); color: var(--branco); }
+.selo { display: inline-block; font: 700 .72rem/1 var(--fonte-titulo); text-transform: uppercase; letter-spacing: .04em; padding: 5px 8px; border-radius: 4px; border: 1.5px solid currentColor; white-space: nowrap; vertical-align: middle; }
+.selo.ok { color: var(--ok); background: var(--ok-fundo); }
+.selo.plan { color: #7a4f00; background: var(--alerta-fundo); }
+.selo.nao { color: var(--erro); background: var(--erro-fundo); }
+.selo.info { color: var(--azul); background: #e3f1fa; }
+
+/* ---------- Layout ---------- */
+.layout { display: grid; grid-template-columns: var(--largura-nav) minmax(0, 1fr); max-width: 1320px; margin: 0 auto; }
+.lateral { position: sticky; top: 62px; align-self: start; height: calc(100vh - 62px); overflow-y: auto; padding: 24px 16px 40px 20px; border-right: 2px solid var(--linha); }
+.lateral h2 { font-size: .8rem; letter-spacing: .08em; color: var(--cinza); margin: 18px 0 6px; }
+.lateral h2:first-child { margin-top: 0; }
+.lateral ol { list-style: none; padding: 0; margin: 0; }
+.lateral a { display: flex; gap: 10px; align-items: baseline; padding: 7px 10px; border-radius: 8px; text-decoration: none; color: var(--ardosia); font-size: .93rem; line-height: 1.35; }
+.lateral a .n { font: 700 .78rem var(--fonte-titulo); color: var(--cinza); min-width: 1.4em; }
+.lateral a:hover { background: var(--nevoa); color: var(--grafite); }
+.lateral a.ativo { background: var(--grafite); color: var(--branco); }
+.lateral a.ativo .n { color: var(--amarelo); }
+.lateral .resumo-progresso { margin-top: 22px; padding: 12px; border: 2px dashed var(--linha); border-radius: 12px; font-size: .85rem; color: var(--cinza); }
+.lateral .resumo-progresso b { color: var(--grafite); }
+main { min-width: 0; padding: 0 clamp(16px, 4vw, 56px) 80px; }
+.secao { max-width: 900px; margin: 0 auto; padding: 56px 0 24px; border-bottom: 2px solid var(--linha); }
+.secao:last-of-type { border-bottom: 0; }
+.parte { display: inline-flex; align-items: center; gap: 8px; font: 700 .78rem var(--fonte-titulo); text-transform: uppercase; letter-spacing: .08em; color: var(--cinza); margin-bottom: 12px; }
+.parte .bolinha { width: 10px; height: 10px; border-radius: 50%; background: var(--amarelo); border: 2px solid var(--grafite); }
+.lead { font-size: 1.12rem; color: var(--ardosia); max-width: 70ch; }
+.resumo-secao { background: var(--branco); border: 2px solid var(--grafite); border-radius: var(--raio-card); padding: 16px 20px; box-shadow: var(--sombra-adesivo-sm); margin: 18px 0 8px; }
+.resumo-secao h3 { margin: 0 0 6px; font-size: .9rem; text-transform: uppercase; letter-spacing: .05em; color: var(--azul); }
+.resumo-secao ul { margin: 0; }
+
+/* ---------- Hero ---------- */
+.hero { background: var(--grafite); color: var(--branco); border-bottom: 2px solid var(--grafite); }
+.hero-dentro { max-width: 1180px; margin: 0 auto; padding: clamp(40px, 7vw, 88px) 16px; display: grid; grid-template-columns: 1.3fr .9fr; gap: 40px; align-items: center; }
+.hero h1 { font-size: clamp(2.1rem, 6vw, 3.6rem); text-transform: uppercase; margin-bottom: 16px; }
+.hero h1 em { font-style: normal; color: var(--amarelo); }
+.hero p { color: #d9d9d9; font-size: 1.12rem; max-width: 60ch; }
+.hero .acoes { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 24px; }
+.hero .botao.secundario { background: transparent; color: var(--branco); border-color: var(--branco); box-shadow: 4px 4px 0 var(--amarelo); }
+.hero .botao.secundario:hover { background: var(--branco); color: var(--grafite); }
+.hero-arte { position: relative; display: flex; justify-content: center; }
+.hero-arte img.mascote { width: min(300px, 70%); filter: drop-shadow(6px 6px 0 rgba(0,0,0,.35)); }
+.fatos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 32px; }
+.fato { border: 2px solid #444; border-radius: 12px; padding: 12px; }
+.fato b { display: block; font: 700 1.6rem var(--fonte-titulo); color: var(--amarelo); }
+.fato span { font-size: .82rem; color: #cfcfcf; }
+
+/* ---------- Componentes de conteúdo ---------- */
+.cartoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin: 20px 0; }
+.cartao { background: var(--branco); border: 2px solid var(--grafite); border-radius: var(--raio-card); padding: 18px; }
+.cartao h4 { margin-top: 0; display: flex; gap: 8px; align-items: center; }
+.cartao p:last-child, .cartao ul:last-child { margin-bottom: 0; }
+.cartao .icone { width: 36px; height: 36px; border-radius: 10px; display: inline-grid; place-items: center; background: var(--amarelo); border: 2px solid var(--grafite); font-size: 1.1rem; flex: none; }
+.aviso { display: flex; gap: 14px; padding: 16px 18px; border-radius: 12px; border: 2px solid var(--grafite); margin: 20px 0; background: var(--alerta-fundo); }
+.aviso.info { background: #e3f1fa; }
+.aviso.perigo { background: var(--erro-fundo); }
+.aviso .simbolo { font-size: 1.4rem; line-height: 1.2; flex: none; }
+.aviso p:last-child { margin-bottom: 0; }
+.onde-codigo { margin: 16px 0; padding: 12px 16px; border-left: 5px solid var(--ceruleo); background: var(--gelo); border-radius: 0 10px 10px 0; font-size: .92rem; }
+.onde-codigo strong { font-family: var(--fonte-titulo); display: block; font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; color: var(--azul); margin-bottom: 4px; }
+.onde-codigo ul { margin: 0; }
+pre { background: var(--grafite); color: #f2f2f2; padding: 16px 18px; border-radius: 12px; overflow-x: auto; font: .85rem/1.6 var(--fonte-mono); margin: 16px 0; }
+pre .c { color: #9fb0bf; }
+pre .k { color: var(--amarelo); }
+pre .s { color: #8fd3ff; }
+pre code { background: none; padding: 0; font-size: inherit; }
+
+/* Tabelas */
+.tabela-rolagem { overflow-x: auto; margin: 18px 0; border: 2px solid var(--grafite); border-radius: 12px; background: var(--branco); }
+table { width: 100%; border-collapse: collapse; font-size: .93rem; }
+th, td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--linha); }
+th { font-family: var(--fonte-titulo); background: var(--nevoa); font-size: .85rem; text-transform: uppercase; letter-spacing: .03em; position: sticky; top: 0; }
+tr:last-child td { border-bottom: 0; }
+td.centro, th.centro { text-align: center; }
+.tabela-stack td:nth-child(3) { min-width: 220px; }
+.tabela-stack td:first-child { white-space: nowrap; font-weight: 700; }
+
+/* Figuras */
+figure { margin: 24px 0; }
+figcaption { font-size: .86rem; color: var(--cinza); margin-top: 8px; }
+.diagrama { background: var(--branco); border: 2px solid var(--grafite); border-radius: var(--raio-card); padding: 16px; overflow-x: auto; }
+.diagrama svg { display: block; width: 100%; height: auto; min-width: 640px; font-family: var(--fonte-corpo); }
+.diagrama.estreito svg { min-width: 520px; }
+.legenda-num { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 6px 20px; list-style: none; padding: 0; margin: 14px 0 0; font-size: .9rem; }
+.legenda-num li { display: flex; gap: 10px; align-items: baseline; }
+.legenda-num .num { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--grafite); color: var(--amarelo); display: inline-grid; place-items: center; font: 700 .78rem var(--fonte-titulo); }
+.tela { border: 2px solid var(--grafite); border-radius: 12px; overflow: hidden; background: var(--branco); cursor: zoom-in; padding: 0; width: 100%; display: block; }
+.tela img { width: 100%; height: 280px; object-fit: cover; object-position: top; }
+.galeria { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+
+/* Fluxo em raias */
+.raias { border: 2px solid var(--grafite); border-radius: var(--raio-card); background: var(--branco); overflow: hidden; }
+.raias-cabeca, .raia-passo { display: grid; grid-template-columns: 52px repeat(3, 1fr); }
+.raias-cabeca div { padding: 10px 12px; font: 700 .82rem var(--fonte-titulo); text-transform: uppercase; letter-spacing: .04em; background: var(--nevoa); border-bottom: 2px solid var(--grafite); }
+.raias-cabeca div + div { border-left: 1px dashed #c9c5c4; }
+.raia-passo > div { padding: 10px 12px; border-bottom: 1px solid var(--linha); min-height: 54px; }
+.raia-passo > div + div { border-left: 1px dashed #d9d5d4; }
+.raia-passo .num { font: 700 1rem var(--fonte-titulo); color: var(--cinza); display: grid; place-items: center; }
+.passo-caixa { background: var(--gelo); border: 2px solid var(--grafite); border-radius: 10px; padding: 8px 10px; font-size: .88rem; line-height: 1.45; }
+.passo-caixa b { font-family: var(--fonte-titulo); display: block; font-size: .92rem; }
+.passo-caixa.chave { background: var(--amarelo); }
+.passo-caixa.mp { background: #e3f1fa; }
+.raia-passo:last-child > div { border-bottom: 0; }
+.raias.roteiro .raias-cabeca, .raias.roteiro .raia-passo { grid-template-columns: 52px 1.3fr 1fr 1fr; }
+
+/* Corrida de concorrência */
+.corrida { display: grid; grid-template-columns: 1fr 1.1fr 1fr; gap: 0; border: 2px solid var(--grafite); border-radius: var(--raio-card); overflow: hidden; background: var(--branco); }
+.corrida > div { padding: 10px 12px; border-bottom: 1px solid var(--linha); font-size: .88rem; }
+.corrida .cab { font: 700 .82rem var(--fonte-titulo); text-transform: uppercase; background: var(--nevoa); border-bottom: 2px solid var(--grafite); }
+.corrida .meio { background: var(--gelo); border-left: 1px dashed #c9c5c4; border-right: 1px dashed #c9c5c4; text-align: center; }
+.corrida .vazio { color: transparent; }
+.trava { display: inline-block; background: var(--grafite); color: var(--amarelo); padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: .8rem; }
+
+/* Wizard (modo Tattoo) */
+.modo-tattoo { background: var(--marinho); color: var(--branco); border-radius: 24px; padding: clamp(18px, 3vw, 32px); margin: 24px 0; }
+.modo-tattoo h3, .modo-tattoo h4 { color: var(--branco); margin-top: 0; }
+.modo-tattoo a { color: var(--ouro); }
+.modo-tattoo p, .modo-tattoo li { color: #e6ecf8; }
+.modo-tattoo code { background: var(--marinho-fundo); color: var(--bruma); }
+.passos-wizard { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 0 0 18px; }
+.passos-wizard button { min-height: 40px; border-radius: 999px; padding: 4px 14px; border: 2px solid var(--bruma); background: transparent; color: var(--branco); font: 600 .85rem var(--fonte-titulo); cursor: pointer; }
+.passos-wizard button[aria-current="step"] { background: var(--ouro); color: var(--marinho); border-color: var(--ouro); }
+.passos-wizard button:focus-visible { outline-color: var(--ouro); }
+.wizard-palco { display: grid; grid-template-columns: 230px 1fr; gap: 24px; align-items: start; }
+.celular { border: 6px solid var(--marinho-fundo); border-radius: 26px; overflow: hidden; background: var(--branco); box-shadow: 0 0 0 2px var(--ouro); cursor: zoom-in; padding: 0; display: block; width: 100%; }
+.celular img { width: 100%; height: 420px; object-fit: cover; object-position: top; }
+.wizard-texto h4 { font-size: 1.2rem; color: var(--ouro); }
+.wizard-nav { display: flex; gap: 10px; margin-top: 14px; }
+.wizard-nav button { min-height: 44px; padding: 6px 16px; border-radius: 999px; border: 2px solid var(--ouro); background: var(--ouro); color: var(--marinho); font: 700 .9rem var(--fonte-titulo); cursor: pointer; }
+.wizard-nav button.vazado { background: transparent; color: var(--ouro); }
+.wizard-nav button:disabled { opacity: .4; cursor: default; }
+.mensagem-zap { background: #e7ffdb; color: #10301a; border-radius: 12px 12px 12px 2px; padding: 12px 14px; font-size: .9rem; white-space: pre-line; border: 2px solid var(--marinho-fundo); max-width: 520px; }
+
+/* Perguntas da banca */
+.banca { margin: 22px 0; }
+.banca-titulo { display: flex; align-items: center; gap: 10px; font: 700 .85rem var(--fonte-titulo); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+.banca-titulo::before { content: "🎓"; font-size: 1.2rem; }
+details.pergunta { background: var(--branco); border: 2px solid var(--grafite); border-radius: 12px; margin-bottom: 10px; box-shadow: var(--sombra-adesivo-sm); }
+details.pergunta summary { cursor: pointer; padding: 14px 48px 14px 16px; font: 600 1rem/1.4 var(--fonte-titulo); list-style: none; position: relative; min-height: 48px; }
+details.pergunta summary::-webkit-details-marker { display: none; }
+details.pergunta summary::after { content: "+"; position: absolute; right: 16px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; border-radius: 50%; background: var(--amarelo); border: 2px solid var(--grafite); display: grid; place-items: center; font-weight: 700; line-height: 1; }
+details.pergunta[open] summary::after { content: "−"; }
+details.pergunta[open] summary { border-bottom: 1px dashed var(--linha); }
+.resposta { padding: 12px 16px 16px; font-size: .95rem; }
+.resposta p:last-child, .resposta ul:last-child { margin-bottom: 0; }
+.resposta .curta { font-weight: 600; background: var(--alerta-fundo); padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; }
+.resposta .tag-secao { font-size: .78rem; color: var(--cinza); margin-top: 10px; display: block; }
+.modo-tattoo details.pergunta { color: var(--grafite); }
+.modo-tattoo details.pergunta p, .modo-tattoo details.pergunta li { color: var(--grafite); }
+.modo-tattoo details.pergunta code { background: var(--nevoa); color: var(--grafite); }
+.modo-tattoo details.pergunta a { color: var(--azul); }
+
+/* Simulado */
+.filtros { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.busca { width: 100%; min-height: 48px; padding: 10px 14px; border: 2px solid var(--grafite); border-radius: 8px; font: 1rem var(--fonte-corpo); background: var(--branco); }
+.contador { font-size: .88rem; color: var(--cinza); margin: 6px 0 12px; }
+
+/* Checklist */
+.checklist { list-style: none; padding: 0; }
+.checklist li { margin: 0; }
+.checklist label { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 2px solid var(--linha); border-radius: 10px; margin-bottom: 8px; background: var(--branco); cursor: pointer; min-height: 48px; }
+.checklist input { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--grafite); flex: none; }
+.checklist input:checked + span { text-decoration: line-through; color: var(--cinza); }
+.checklist label:has(input:checked) { border-color: var(--ok); background: var(--ok-fundo); }
+.barra-check { height: 14px; border: 2px solid var(--grafite); border-radius: 999px; overflow: hidden; background: var(--branco); margin: 10px 0 18px; }
+.barra-check span { display: block; height: 100%; width: 0; background: var(--amarelo); transition: width .3s; }
+
+/* Linha do tempo de etapas */
+.etapas { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 16px 0; }
+.etapa { background: var(--branco); border: 2px solid var(--grafite); border-radius: 8px; padding: 6px 12px; font: 600 .85rem var(--fonte-titulo); }
+.etapa.forte { background: var(--amarelo); }
+.seta { font-weight: 700; color: var(--cinza); }
+
+/* Mapa de módulos */
+.modulos { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 16px 0; }
+.modulo { border: 2px solid var(--grafite); border-radius: 10px; padding: 10px 12px; background: var(--branco); font-size: .88rem; }
+.modulo b { font-family: var(--fonte-mono); font-size: .9rem; display: block; color: var(--azul); }
+
+/* Glossário */
+dl.glossario { display: grid; grid-template-columns: minmax(140px, 220px) 1fr; gap: 0; border: 2px solid var(--grafite); border-radius: 12px; overflow: hidden; background: var(--branco); }
+dl.glossario dt, dl.glossario dd { margin: 0; padding: 10px 14px; border-bottom: 1px solid var(--linha); }
+dl.glossario dt { font: 700 .92rem var(--fonte-titulo); background: var(--nevoa); }
+dl.glossario dd { font-size: .92rem; }
+
+/* Fim */
+.fim { background: var(--grafite); color: var(--branco); border-radius: 24px; padding: clamp(22px, 4vw, 40px); margin: 32px 0; display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: center; }
+.fim h3 { color: var(--amarelo); margin-top: 0; font-size: 1.6rem; text-transform: uppercase; }
+.fim p { color: #ddd; }
+.fim img { width: 140px; }
+.proxima { display: flex; justify-content: flex-end; margin-top: 28px; }
+.proxima a { font: 700 .95rem var(--fonte-titulo); text-decoration: none; display: inline-flex; gap: 8px; align-items: center; padding: 10px 16px; border: 2px solid var(--grafite); border-radius: 999px; background: var(--branco); color: var(--grafite); }
+.proxima a:hover { background: var(--amarelo); }
+.voltar-topo { position: fixed; right: 16px; bottom: 16px; width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--grafite); background: var(--amarelo); box-shadow: var(--sombra-adesivo-sm); font: 700 1.2rem var(--fonte-titulo); cursor: pointer; display: none; z-index: 40; }
+.voltar-topo.visivel { display: block; }
+
+/* Lightbox */
+dialog.zoom { border: 2px solid var(--grafite); border-radius: 14px; padding: 0; max-width: min(1100px, 94vw); max-height: 92vh; background: var(--branco); }
+dialog.zoom::backdrop { background: rgba(10, 10, 10, .75); }
+dialog.zoom .zoom-corpo { max-height: calc(92vh - 60px); overflow: auto; }
+dialog.zoom img { width: 100%; height: auto; }
+dialog.zoom .zoom-barra { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 2px solid var(--grafite); font-size: .9rem; }
+dialog.zoom button { min-height: 40px; padding: 4px 14px; border: 2px solid var(--grafite); border-radius: 6px; background: var(--amarelo); font: 700 .9rem var(--fonte-titulo); cursor: pointer; }
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 1020px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .lateral { position: fixed; top: 62px; left: 0; bottom: 0; width: min(320px, 86vw); height: auto; background: var(--papel); z-index: 45; transform: translateX(-105%); transition: transform .2s; border-right: 2px solid var(--grafite); }
+  .lateral.aberta { transform: none; box-shadow: 8px 0 0 rgba(0,0,0,.08); }
+  .botao-sumario { display: inline-flex; min-height: 44px; padding: 6px 14px; border: 2px solid var(--grafite); border-radius: 8px; background: var(--amarelo); font: 700 .9rem var(--fonte-titulo); cursor: pointer; align-items: center; gap: 6px; }
+  .hero-dentro { grid-template-columns: 1fr; }
+  .hero-arte { display: none; }
+}
+@media (max-width: 720px) {
+  .fatos { grid-template-columns: repeat(2, 1fr); }
+  .topo .onde { display: none; }
+  .wizard-palco { grid-template-columns: 1fr; }
+  .celular { max-width: 240px; margin: 0 auto; }
+  .raias-cabeca { display: none; }
+  .raia-passo { grid-template-columns: 36px 1fr; }
+  .raia-passo > div:not(.num):empty { display: none; }
+  .raia-passo > div + div { border-left: 0; }
+  .raia-passo > div:not(.num) { grid-column: 2; }
+  .raias.roteiro .raia-passo { grid-template-columns: 36px 1fr; }
+  .raia-passo > div[data-raia]::before { content: attr(data-raia); display: block; font: 700 .7rem var(--fonte-titulo); text-transform: uppercase; color: var(--cinza); margin-bottom: 4px; }
+  .corrida { grid-template-columns: 1fr; }
+  .corrida .vazio { display: none; }
+  .corrida .meio { border: 0; }
+  .corrida > div[data-quem]::before { content: attr(data-quem); display: block; font: 700 .7rem var(--fonte-titulo); text-transform: uppercase; color: var(--cinza); }
+  .corrida .cab { display: none; }
+  dl.glossario { grid-template-columns: 1fr; }
+  dl.glossario dt { border-bottom: 0; }
+  .fim { grid-template-columns: 1fr; }
+  .fim img { display: none; }
+}
+
+/* Impressão: tudo aberto, sem navegação */
+@media print {
+  .topo, .lateral, .progresso, .voltar-topo, .proxima, .filtros, .busca, .wizard-nav, .passos-wizard { display: none !important; }
+  .layout { display: block; }
+  body { background: #fff; }
+  details.pergunta { box-shadow: none; break-inside: avoid; }
+  .secao { break-before: page; }
+}
+</style>
+</head>
+<body>
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+<div class="progresso" aria-hidden="true"><span id="barra-progresso"></span></div>
+
+<header class="topo">
+  <button class="botao-sumario" id="abrir-sumario" aria-expanded="false" aria-controls="sumario">☰ Sumário</button>
+  <img src="img/atelie-selo.svg" alt="Kolô Ateliê">
+  <span class="marca">Guia do Kolô</span>
+  <span class="onde" aria-live="polite">Você está em: <b id="secao-atual">Início</b></span>
+</header>
+
+<section class="hero" aria-labelledby="titulo-hero">
+  <div class="hero-dentro">
+    <div>
+      <div class="parte" style="color:#bbb"><span class="bolinha"></span> TCC 2 · guia interno da equipe</div>
+      <h1 id="titulo-hero">O Kolô <em>inteiro</em> em uma página</h1>
+      <p>O que o sistema faz, como ele é construído, por que escolhemos cada ferramenta e o que a banca deve perguntar. A ideia é que qualquer integrante consiga explicar qualquer parte do projeto no dia 24/11.</p>
+      <p style="font-size:.95rem">Leitura completa: uns 40 minutos. Tem três partes: <b style="color:#fff">Início</b> (o produto e o escopo), <b style="color:#fff">Meio</b> (a técnica) e <b style="color:#fff">Fim</b> (banca, simulado e checklist).</p>
+      <div class="acoes">
+        <a class="botao" href="#produto">Começar pelo início →</a>
+        <a class="botao secundario" href="#simulado">Ir direto ao simulado</a>
+      </div>
+      <div class="fatos">
+        <div class="fato"><b>32</b><span>requisitos funcionais (RF01–RF32)</span></div>
+        <div class="fato"><b>12</b><span>regras de negócio (RN01–RN12)</span></div>
+        <div class="fato"><b>171</b><span>arquivos de teste (unit, integração, E2E)</span></div>
+        <div class="fato"><b>9</b><span>migrações do banco</span></div>
+      </div>
+    </div>
+    <div class="hero-arte"><img class="mascote" src="img/atelie-mascote.svg" alt=""></div>
+  </div>
+</section>
+
+<div class="layout">
+  <aside class="lateral" id="sumario" aria-label="Sumário">
+    <h2>Início</h2>
+    <ol>
+      <li><a href="#como-ler"><span class="n">0</span>Como usar este guia</a></li>
+      <li><a href="#produto"><span class="n">1</span>O problema e o produto</a></li>
+      <li><a href="#escopo"><span class="n">2</span>Escopo: o que entrou e o que saiu</a></li>
+    </ol>
+    <h2>Meio</h2>
+    <ol>
+      <li><a href="#arquitetura"><span class="n">3</span>Arquitetura</a></li>
+      <li><a href="#stack"><span class="n">4</span>Stack: cada ferramenta e onde ela é usada</a></li>
+      <li><a href="#dados"><span class="n">5</span>Modelo de dados</a></li>
+      <li><a href="#loja"><span class="n">6</span>Feature: loja e pagamento</a></li>
+      <li><a href="#agenda"><span class="n">7</span>Feature: agendamento e portfólio</a></li>
+      <li><a href="#vitrine"><span class="n">8</span>Feature: vitrine, contas e back-office</a></li>
+      <li><a href="#seguranca"><span class="n">9</span>Segurança e LGPD</a></li>
+      <li><a href="#qualidade"><span class="n">10</span>Qualidade e testes</a></li>
+    </ol>
+    <h2>Fim</h2>
+    <ol>
+      <li><a href="#banca"><span class="n">11</span>Situação para a banca</a></li>
+      <li><a href="#simulado"><span class="n">12</span>Simulado de perguntas</a></li>
+      <li><a href="#checklist"><span class="n">13</span>Checklist e glossário</a></li>
+    </ol>
+    <div class="resumo-progresso">Checklist “sei explicar”: <b id="progresso-lateral">0 de 0</b></div>
+  </aside>
+
+  <main id="conteudo">
+
+<!-- ======================= 0 ======================= -->
+<section class="secao" id="como-ler" data-titulo="Como usar este guia">
+  <div class="parte"><span class="bolinha"></span> Início · 0</div>
+  <h2>Como usar <em>este guia</em></h2>
+  <p class="lead">Cada capítulo segue a mesma ordem: um resumo de 30 segundos, a explicação com diagramas e telas, onde aquilo está no código e as perguntas que a banca pode fazer.</p>
+  <div class="cartoes">
+    <div class="cartao"><h4><span class="icone">⏱</span>Resumo de 30 s</h4><p>A caixa com borda preta no topo do capítulo. Se só der tempo de ler uma coisa, leia essa.</p></div>
+    <div class="cartao"><h4><span class="icone">📁</span>Onde no código</h4><p>A faixa azul com caminhos de arquivo. Serve para abrir o código na hora se a banca pedir.</p></div>
+    <div class="cartao"><h4><span class="icone">🎓</span>Pergunta da banca</h4><p>Clique para abrir. A primeira linha amarela é a resposta curta, para falar em uma frase. O resto é o argumento completo.</p></div>
+    <div class="cartao"><h4><span class="icone">⚠️</span>Atenção</h4><p>Pontos onde é fácil errar na fala, ou que ainda estão pendentes. Melhor saber antes da banca.</p></div>
+  </div>
+  <div class="aviso info"><span class="simbolo">ℹ️</span><div><p><b>De onde vem o conteúdo:</b> <code>docs/ESCOPO-E-STACK.md</code> (v2.2), <code>docs/DER.md</code>, <code>docs/PREPARACAO-BANCA.md</code> e o código em <code>src/</code>, <code>prisma/</code> e <code>tests/</code>. Se este guia e a spec discordarem, vale a spec. As telas mostradas são as <b>referências visuais do Google Stitch</b> (<code>docs/telas/</code>), que o sistema implementado segue.</p></div></div>
+  <div class="proxima"><a href="#produto">Próximo: o problema e o produto →</a></div>
+</section>
+
+<!-- ======================= 1 ======================= -->
+<section class="secao" id="produto" data-titulo="O problema e o produto">
+  <div class="parte"><span class="bolinha"></span> Início · 1</div>
+  <h2>O problema e <em>o produto</em></h2>
+  <div class="resumo-secao">
+    <h3>Resumo de 30 segundos</h3>
+    <ul>
+      <li>O Kolô é um ateliê de arte e estúdio de tatuagem que <b>perdeu o espaço físico</b> em Pinheiros. Hoje vende, agenda e controla tudo à mão, por conversa.</li>
+      <li>O sistema vira o canal principal: <b>vende obras de arte</b> online, <b>mostra o portfólio</b> de tatuagem e <b>encaminha o agendamento</b> para o WhatsApp com os dados já organizados.</li>
+      <li>São três públicos: visitante/cliente, artista e administrador.</li>
+    </ul>
+  </div>
+
+  <h3>Antes × depois</h3>
+  <div class="tabela-rolagem">
+    <table>
+      <thead><tr><th>Hoje (manual)</th><th>Com o sistema</th><th>Requisitos</th></tr></thead>
+      <tbody>
+        <tr><td>Vendas controladas fora de sistema</td><td>Loja com carrinho, checkout e pagamento pelo Mercado Pago; estoque baixa sozinho</td><td>RF11–RF16</td></tr>
+        <tr><td>Nenhum catálogo consultável</td><td>Catálogo em grade, ficha da obra com fotos e ficha técnica, busca sem acento</td><td>RF09, RF10</td></tr>
+        <tr><td>Agendamento negociado do zero em cada conversa</td><td>Wizard coleta artista, estilo, região, tamanho e data, e abre o WhatsApp com a mensagem pronta</td><td>RF20, RF21</td></tr>
+        <tr><td>Agenda de cabeça ou em papel</td><td>Artista ou admin cadastra o horário combinado; o banco impede sobreposição</td><td>RF22, RN08</td></tr>
+        <tr><td>Nenhum histórico de clientes</td><td>Perfil do cliente com compras, painel de indicadores e relatório de vendas</td><td>RF30, RF32</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>As três frentes do produto</h3>
+  <div class="cartoes">
+    <div class="cartao"><h4><span class="icone">🖼</span>Vitrine pública</h4><ul><li>Home com destaques</li><li>Catálogo e ficha da obra</li><li>Portfólio de tatuagens</li><li>Wizard de agendamento</li><li>Carrinho e checkout</li><li>Contato e políticas</li></ul></div>
+    <div class="cartao"><h4><span class="icone">👤</span>Área do cliente</h4><ul><li>Meus pedidos e rastreio</li><li>Um endereço de entrega</li><li>Meus dados e senha</li><li>Excluir a própria conta (LGPD)</li></ul></div>
+    <div class="cartao"><h4><span class="icone">🛠</span>Back-office</h4><ul><li>Obras, artistas, estilos e tags</li><li>Portfólio e agenda</li><li>Pedidos, envios e estornos</li><li>Clientes e configurações</li><li>Painel e relatório de vendas</li></ul></div>
+  </div>
+
+  <h3>Duas marcas, um sistema</h3>
+  <p>O Kolô tem duas identidades irmãs. O <b>modo Ateliê</b> (papel claro, amarelo, sombra de “adesivo”) cobre a loja, a conta e o admin. O <b>modo Tattoo</b> (marinho e ouro, botões em pílula) cobre o portfólio e o wizard. O componente troca de visual sozinho com o atributo <code>data-brand="tattoo"</code>, porque os componentes usam papéis de cor (<code>--kolo-fundo</code>, <code>--kolo-acao</code>…) e não cores fixas.</p>
+  <div class="galeria">
+    <figure><button class="tela" data-zoom="img/home-celular.webp" data-legenda="Home (celular), modo Ateliê"><img src="img/home-celular.webp" alt="Tela de referência da home do Kolô no celular, com destaques de obras e chamada para agendar tatuagem" loading="lazy"></button><figcaption>Home, modo Ateliê (clique para ampliar)</figcaption></figure>
+    <figure><button class="tela" data-zoom="img/portfolio-desktop.webp" data-legenda="Portfólio de tatuagens, modo Tattoo"><img src="img/portfolio-desktop.webp" alt="Tela de referência do portfólio de tatuagens em fundo marinho com filtros" loading="lazy"></button><figcaption>Portfólio, modo Tattoo</figcaption></figure>
+  </div>
+  <div class="onde-codigo"><strong>📁 Onde no código</strong><ul><li>Tokens das duas marcas: <code>src/app/globals.css</code> (explicados em <code>docs/IDENTIDADE-VISUAL.md</code>)</li><li>Teste que reprova contraste ruim: <code>npm run test:unit -- identidade-visual</code></li><li>Logos e mascotes: <code>public/marca/</code></li></ul></div>
+
+  <div class="banca"><div class="banca-titulo">Perguntas prováveis da banca</div><div data-qa="produto"></div></div>
+  <div class="proxima"><a href="#escopo">Próximo: escopo →</a></div>
+</section>
+
+<!-- ======================= 2 ======================= -->
+<section class="secao" id="escopo" data-titulo="Escopo">
+  <div class="parte"><span class="bolinha"></span> Início · 2</div>
+  <h2>Escopo: o que entrou <em>e o que saiu</em></h2>
+  <div class="resumo-secao">
+    <h3>Resumo de 30 segundos</h3>
+    <ul>
+      <li>O prazo é de 8 semanas. A versão 2.2 do escopo cortou o que dobrava o trabalho sem mudar a tese: 3D, Google Calendar, motor de horários e e-mail de pedido.</li>
+      <li>O agendamento termina no WhatsApp, que é como o estúdio já trabalha. O site organiza o pedido e o artista cadastra o horário depois.</li>
+      <li>O sistema <b>não guarda dado de saúde</b>. A anamnese e o termo ficam presenciais.</li>
+    </ul>
+  </div>
+
+  <h3>Prioridades</h3>
+  <p><b>P0</b> é indispensável para a defesa. <b>P1</b> entra se o P0 fechar no prazo. Quase todos os 32 RFs são P0; RF30 (perfil do cliente) e RF31 (configurações do site) são P1 e foram entregues. O RF32 (painel e relatório) entrou em 18/10 por causa do critério 8 da banca (PBI-48).</p>
+
+  <h3>Evolução das decisões</h3>
+  <div class="etapas" aria-label="Linha do tempo do escopo">
+    <span class="etapa">TCC 1: React + Laravel + MySQL, 3D, Calendar</span><span class="seta">→</span>
+    <span class="etapa">v2.1: Next.js + Postgres, ainda com motor de horários</span><span class="seta">→</span>
+    <span class="etapa forte">v2.2: wizard → WhatsApp, 3D adiado</span><span class="seta">→</span>
+    <span class="etapa">18/10: RF32 (painel) incluído</span>
+  </div>
+
+  <div class="tabela-rolagem">
+    <table>
+      <thead><tr><th>Item</th><th>Situação</th><th>Por quê</th></tr></thead>
+      <tbody>
+        <tr><td>Visualizador 3D das obras</td><td><span class="selo plan">adiado</span></td><td>Modelar cada obra em 3D e manter o fallback 2D custa semanas. A ficha 2D já vende.</td></tr>
+        <tr><td>Google Calendar e lembrete automático</td><td><span class="selo plan">adiado</span></td><td>Exige OAuth com conta Google por artista e sincronização em dois sentidos. A agenda interna resolve.</td></tr>
+        <tr><td>Motor de horários livres e aprovação</td><td><span class="selo plan">adiado</span></td><td>Disponibilidade semanal, bloqueios e fila de aprovação triplicam as regras. O estúdio já combina pelo WhatsApp.</td></tr>
+        <tr><td>E-mail de pedido</td><td><span class="selo plan">adiado</span></td><td>Só a recuperação de senha manda e-mail. O cliente acompanha o pedido em <code>/conta/pedidos</code>.</td></tr>
+        <tr><td>Login com Google, páginas públicas de artista, filtros do catálogo</td><td><span class="selo plan">adiado</span></td><td>Não mudam a tese e podem voltar depois.</td></tr>
+        <tr><td>API oficial do WhatsApp</td><td><span class="selo nao">fora</span></td><td>Pede conta Business verificada, aprovação de modelos de mensagem e cobra por conversa.</td></tr>
+        <tr><td>Ficha de anamnese digital e dado de saúde</td><td><span class="selo nao">fora</span></td><td>Dado de saúde é dado pessoal sensível na LGPD. Não guardar é a forma mais segura de proteger.</td></tr>
+        <tr><td>Marketplace com divisão de pagamento</td><td><span class="selo nao">fora</span></td><td>O Kolô é loja única. O repasse aos artistas é combinado fora do sistema.</td></tr>
+        <tr><td>Chatbot com IA, tour 360°, app nativo, nota fiscal</td><td><span class="selo nao">fora</span></td><td>Fora do problema do cliente e do prazo.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="aviso"><span class="simbolo">⚠️</span><div><p><b>Cuidado com a monografia:</b> as seções 4.6, 5.1 e 5.4 de <code>docs/TCC.txt</code> ainda citam a <b>Google Calendar API</b>, que está fora do escopo v2.2. Se a banca ler isso e perguntar, a resposta é que foi adiada (ESCOPO §14). Vale alinhar o texto antes da entrega para não haver contradição.</p></div></div>
+  <div class="banca"><div class="banca-titulo">Perguntas prováveis da banca</div><div data-qa="escopo"></div></div>
+  <div class="proxima"><a href="#arquitetura">Próximo: arquitetura →</a></div>
+</section>
+
+<!-- ======================= 3 ======================= -->
+<section class="secao" id="arquitetura" data-titulo="Arquitetura">
+  <div class="parte"><span class="bolinha"></span> Meio · 3</div>
+  <h2>Arquitetura: <em>monolito modular</em></h2>
+  <div class="resumo-secao">
+    <h3>Resumo de 30 segundos</h3>
+    <ul>
+      <li><b>Uma aplicação só</b> (Next.js) faz as telas e o servidor, em TypeScript. Um banco (PostgreSQL). Tudo em contêineres Docker numa VPS.</li>
+      <li>“Modular” quer dizer que o código é dividido por domínio em <code>src/modules/</code>, e um módulo só usa outro pela porta da frente (<code>index.ts</code>).</li>
+      <li>Serviços externos: Mercado Pago (pagamento), Cloudflare R2 (imagens), Resend (e-mail), Turnstile (antibot) e links do WhatsApp.</li>
+    </ul>
+  </div>
+
+  <figure>
+    <div class="diagrama">
+      <svg viewBox="0 0 860 470" role="img" aria-labelledby="arq-t arq-d">
+        <title id="arq-t">Diagrama de arquitetura do Kolô</title>
+        <desc id="arq-d">O navegador acessa por HTTPS o Caddy, que repassa ao Next.js dentro da VPS. O Next.js usa o PostgreSQL e o pg-boss, e conversa com Mercado Pago, Resend e Turnstile. O Mercado Pago chama o webhook. O navegador envia imagens direto ao R2 e abre o WhatsApp.</desc>
+        <defs>
+          <marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#1a1a1a"/></marker>
+          <marker id="seta-azul" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#006193"/></marker>
+        </defs>
+        <!-- VPS -->
+        <rect x="200" y="24" width="400" height="390" rx="16" fill="#f6f8fa" stroke="#1a1a1a" stroke-width="2" stroke-dasharray="7 5"/>
+        <text x="216" y="48" font-size="13" font-weight="700" fill="#3f4850">VPS · Docker Compose</text>
+        <!-- Caddy -->
+        <rect x="224" y="62" width="352" height="54" rx="10" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+        <text x="400" y="85" text-anchor="middle" font-size="14" font-weight="700">Caddy (proxy reverso)</text>
+        <text x="400" y="104" text-anchor="middle" font-size="11.5" fill="#5f6872">HTTPS automático · cabeçalhos de segurança</text>
+        <!-- Next -->
+        <rect x="224" y="146" width="352" height="136" rx="10" fill="#ffd600" stroke="#1a1a1a" stroke-width="2"/>
+        <text x="400" y="170" text-anchor="middle" font-size="14" font-weight="700">Next.js 16 (a aplicação)</text>
+        <rect x="236" y="182" width="104" height="30" rx="6" fill="#fff" stroke="#1a1a1a"/>
+        <text x="288" y="201" text-anchor="middle" font-size="10.5">Server Components</text>
+        <rect x="348" y="182" width="104" height="30" rx="6" fill="#fff" stroke="#1a1a1a"/>
+        <text x="400" y="201" text-anchor="middle" font-size="10.5">Server Actions</text>
+        <rect x="460" y="182" width="104" height="30" rx="6" fill="#fff" stroke="#1a1a1a"/>
+        <text x="512" y="201" text-anchor="middle" font-size="10.5">Route Handlers</text>
+        <rect x="236" y="224" width="328" height="44" rx="6" fill="#1a1a1a"/>
+        <text x="400" y="242" text-anchor="middle" font-size="11.5" fill="#ffd600" font-weight="700">src/modules/* — regras de negócio</text>
+        <text x="400" y="259" text-anchor="middle" font-size="10.5" fill="#fff">orders · payments · scheduling · catalog · media …</text>
+        <!-- pg-boss -->
+        <rect x="224" y="318" width="150" height="74" rx="10" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+        <text x="299" y="345" text-anchor="middle" font-size="14" font-weight="700">pg-boss</text>
+        <text x="299" y="363" text-anchor="middle" font-size="11" fill="#5f6872">libera reservas</text>
+        <text x="299" y="378" text-anchor="middle" font-size="11" fill="#5f6872">vencidas (1×/min)</text>
+        <!-- Postgres -->
+        <path d="M414 330 a81 12 0 0 1 162 0 v52 a81 12 0 0 1 -162 0 z" fill="#e3f1fa" stroke="#1a1a1a" stroke-width="2"/>
+        <path d="M414 330 a81 12 0 0 0 162 0" fill="none" stroke="#1a1a1a" stroke-width="2"/>
+        <text x="495" y="362" text-anchor="middle" font-size="14" font-weight="700">PostgreSQL 17</text>
+        <text x="495" y="380" text-anchor="middle" font-size="11" fill="#3f4850">dados · fila · rate limit</text>
+        <!-- Navegador e WhatsApp -->
+        <rect x="20" y="190" width="140" height="74" rx="12" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+        <text x="90" y="220" text-anchor="middle" font-size="14" font-weight="700">Navegador</text>
+        <text x="90" y="240" text-anchor="middle" font-size="11" fill="#5f6872">React 19 · celular/PC</text>
+        <rect x="20" y="330" width="140" height="60" rx="12" fill="#e7ffdb" stroke="#1a1a1a" stroke-width="2"/>
+        <text x="90" y="356" text-anchor="middle" font-size="14" font-weight="700">WhatsApp</text>
+        <text x="90" y="375" text-anchor="middle" font-size="11" fill="#3f4850">link wa.me</text>
+        <!-- Externos -->
+        <rect x="640" y="30" width="200" height="84" rx="12" fill="#e3f1fa" stroke="#1a1a1a" stroke-width="2"/>
+        <text x="740" y="62" text-anchor="middle" font-size="14" font-weight="700">Mercado Pago</text>
+        <text x="740" y="82" text-anchor="middle" font-size="11" fill="#3f4850">Checkout Pro</text>
+        <text x="740" y="98" text-anchor="middle" font-size="11" fill="#3f4850">Pix · cartão · boleto</text>
+        <rect x="640" y="176" width="200" height="50" rx="12" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+        <text x="740" y="199" text-anchor="middle" font-size="13.5" font-weight="700">Resend</text>
+        <text x="740" y="216" text-anchor="middle" font-size="11" fill="#5f6872">e-mail de nova senha</text>
+        <rect x="640" y="240" width="200" height="50" rx="12" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+        <text x="740" y="263" text-anchor="middle" font-size="13.5" font-weight="700">Cloudflare Turnstile</text>
+        <text x="740" y="280" text-anchor="middle" font-size="11" fill="#5f6872">antibot do contato</text>
+        <rect x="640" y="330" width="200" height="64" rx="12" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+        <text x="740" y="358" text-anchor="middle" font-size="13.5" font-weight="700">Cloudflare R2</text>
+        <text x="740" y="377" text-anchor="middle" font-size="11" fill="#5f6872">imagens (compatível S3)</text>
+        <!-- Setas -->
+        <path d="M160 212 H188 V89 H222" fill="none" stroke="#1a1a1a" stroke-width="2" marker-end="url(#seta)"/>
+        <line x1="400" y1="116" x2="400" y2="144" stroke="#1a1a1a" stroke-width="2" marker-end="url(#seta)"/>
+        <line x1="495" y1="282" x2="495" y2="316" stroke="#1a1a1a" stroke-width="2" marker-end="url(#seta)"/>
+        <line x1="299" y1="282" x2="299" y2="316" stroke="#1a1a1a" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#seta)"/>
+        <line x1="374" y1="355" x2="412" y2="355" stroke="#1a1a1a" stroke-width="2" marker-end="url(#seta)"/>
+        <path d="M576 160 H700 V116" fill="none" stroke="#1a1a1a" stroke-width="2" marker-end="url(#seta)"/>
+        <path d="M640 92 H578" fill="none" stroke="#006193" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#seta-azul)"/>
+        <line x1="576" y1="200" x2="638" y2="200" stroke="#1a1a1a" stroke-width="2" marker-end="url(#seta)"/>
+        <line x1="576" y1="265" x2="638" y2="265" stroke="#1a1a1a" stroke-width="2" marker-end="url(#seta)"/>
+        <path d="M30 264 V300 H10 V448 H740 V396" fill="none" stroke="#006193" stroke-width="2" marker-end="url(#seta-azul)"/>
+        <line x1="120" y1="264" x2="120" y2="328" stroke="#1a1a1a" stroke-width="2" marker-end="url(#seta)"/>
+        <!-- Números -->
+        <g font-size="11" font-weight="700" text-anchor="middle">
+          <circle cx="174" cy="150" r="11" fill="#1a1a1a"/><text x="174" y="154" fill="#ffd600">1</text>
+          <circle cx="420" cy="131" r="11" fill="#1a1a1a"/><text x="420" y="135" fill="#ffd600">2</text>
+          <circle cx="515" cy="299" r="11" fill="#1a1a1a"/><text x="515" y="303" fill="#ffd600">3</text>
+          <circle cx="393" cy="340" r="11" fill="#1a1a1a"/><text x="393" y="344" fill="#ffd600">4</text>
+          <circle cx="660" cy="160" r="11" fill="#1a1a1a"/><text x="660" y="164" fill="#ffd600">5</text>
+          <circle cx="609" cy="76" r="11" fill="#006193"/><text x="609" y="80" fill="#fff">6</text>
+          <circle cx="607" cy="188" r="11" fill="#1a1a1a"/><text x="607" y="192" fill="#ffd600">7</text>
+          <circle cx="607" cy="253" r="11" fill="#1a1a1a"/><text x="607" y="257" fill="#ffd600">8</text>
+          <circle cx="400" cy="448" r="11" fill="#006193"/><text x="400" y="452" fill="#fff">9</text>
+          <circle cx="138" cy="300" r="11" fill="#1a1a1a"/><text x="138" y="304" fill="#ffd600">10</text>
+        </g>
+      </svg>
+    </div>
+    <ol class="legenda-num">
+      <li><span class="num">1</span><span>Todo acesso entra por HTTPS no Caddy.</span></li>
+      <li><span class="num">2</span><span>O Caddy repassa para o Next.js.</span></li>
+      <li><span class="num">3</span><span>O Next.js lê e grava no Postgres pelo Prisma, com transações.</span></li>
+      <li><span class="num">4</span><span>O pg-boss guarda a fila no próprio Postgres e apaga reservas vencidas.</span></li>
+      <li><span class="num">5</span><span>O servidor cria a cobrança (preferência) e consulta o pagamento no Mercado Pago.</span></li>
+      <li><span class="num">6</span><span>O Mercado Pago avisa o pagamento pelo webhook assinado (linha azul tracejada).</span></li>
+      <li><span class="num">7</span><span>Recuperação de senha sai pelo Resend.</span></li>
+      <li><span class="num">8</span><span>O servidor confere o desafio antibot do formulário de contato.</span></li>
+      <li><span class="num">9</span><span>O navegador envia a imagem direto ao R2 com URL assinada. O servidor não carrega o arquivo.</span></li>
+      <li><span class="num">10</span><span>O wizard abre o WhatsApp com a mensagem pronta. Nada é gravado.</span></li>
+    </ol>
+    <figcaption>Arquitetura de produção prevista. A VPS e o Caddy ainda não estão no ar (PBI-46); localmente, o Docker Compose sobe só o Postgres e o Next roda com <code>npm run dev</code>.</figcaption>
+  </figure>
+
+  <h3>As três formas de o servidor responder no Next.js</h3>
+  <div class="cartoes">
+    <div class="cartao"><h4>Server Components</h4><p>A página é montada no servidor, já com os dados do banco. O navegador recebe HTML pronto e menos JavaScript. Ex.: catálogo, ficha da obra, painel do admin.</p></div>
+    <div class="cartao"><h4>Server Actions</h4><p>Funções do servidor chamadas direto por um formulário, sem escrever uma API REST. Ex.: <code>src/app/admin/actions.ts</code>, finalizar compra, salvar horário.</p></div>
+    <div class="cartao"><h4>Route Handlers</h4><p>Endpoints HTTP de verdade, para quem está fora do site. Ex.: <code>src/app/api/webhooks/mercadopago/route.ts</code>, que o Mercado Pago chama.</p></div>
+  </div>
+
+  <h3>Mapa dos módulos (<code>src/modules/</code>)</h3>
+  <p>Cada pasta é um domínio. A regra é: <b>quem está fora de um módulo só importa o <code>index.ts</code> dele</b>. Assim dá para mudar o interior de um módulo sem quebrar os outros. A única exceção é o <code>cliente.ts</code>, com código puro que pode ir para o navegador quando o <code>index.ts</code> puxa coisa de servidor (SDK, <code>sharp</code>, banco).</p>
+  <div class="modulos">
+    <div class="modulo"><b>identity</b>cadastro, login, perfil, recuperação e exclusão de conta</div>
+    <div class="modulo"><b>catalog</b>obras, imagens, situação por estoque, busca</div>
+    <div class="modulo"><b>orders</b>carrinho, checkout, reserva, frete, transições do pedido</div>
+    <div class="modulo"><b>payments</b>Mercado Pago, webhook, assinatura, estorno</div>
+    <div class="modulo"><b>scheduling</b>mensagem do wizard, agenda manual</div>
+    <div class="modulo"><b>portfolio</b>trabalhos de tatuagem, filtros, gestão</div>
+    <div class="modulo"><b>artists</b>artistas, estilos, tags, controle de acesso (<code>comoAdmin</code>)</div>
+    <div class="modulo"><b>media</b>URL assinada, validação, miniatura com <code>sharp</code></div>
+    <div class="modulo"><b>customers</b>perfil unificado, exclusão LGPD</div>
+    <div class="modulo"><b>reports</b>painel de indicadores, relatório de vendas</div>
+    <div class="modulo"><b>settings</b>contato, horários, textos do site</div>
+    <div class="modulo"><b>contact · endereco</b>formulário com Turnstile; um endereço por cliente</div>
+  </div>
+  <div class="onde-codigo"><strong>📁 Onde no código</strong><ul><li>Rotas e telas: <code>src/app/</code> (ex.: <code>admin/</code>, <code>checkout/[numero]/</code>, <code>agendamento/</code>)</li><li>Regras de negócio: <code>src/modules/*/</code></li><li>Infra compartilhada: <code>src/lib/</code> (auth, e-mail, rate limit, conexão com o banco)</li><li>Inicialização do worker: <code>src/instrumentation.ts</code></li></ul></div>
+  <div class="banca"><div class="banca-titulo">Perguntas prováveis da banca</div><div data-qa="arquitetura"></div></div>
+  <div class="proxima"><a href="#stack">Próximo: a stack →</a></div>
+</section>
+
+<!-- ======================= 4 ======================= -->
+<section class="secao" id="stack" data-titulo="Stack">
+  <div class="parte"><span class="bolinha"></span> Meio · 4</div>
+  <h2>Stack: cada ferramenta <em>e onde ela é usada</em></h2>
+  <div class="resumo-secao">
+    <h3>Resumo de 30 segundos</h3>
+    <ul>
+      <li><b>Uma linguagem de ponta a ponta</b> (TypeScript): o tipo que a tela usa é o mesmo que o servidor devolve.</li>
+      <li><b>Postgres faz mais do que guardar dados</b>: impede agenda sobreposta, trava estoque, busca sem acento e ainda serve de fila. Menos peças para manter.</li>
+      <li><b>Pagamento e imagens ficam com especialistas</b> (Mercado Pago e R2). O cartão nunca passa pelo nosso servidor.</li>
+    </ul>
+  </div>
+  <p>Use os filtros para ver uma camada por vez. A coluna “onde usamos” aponta o arquivo ou a pasta para abrir na banca.</p>
+  <div class="filtros" role="group" aria-label="Filtrar ferramentas por camada" id="filtros-stack">
+    <button class="chip" aria-pressed="true" data-camada="todas">Todas</button>
+    <button class="chip" aria-pressed="false" data-camada="app">Aplicação</button>
+    <button class="chip" aria-pressed="false" data-camada="dados">Dados</button>
+    <button class="chip" aria-pressed="false" data-camada="integracao">Integrações</button>
+    <button class="chip" aria-pressed="false" data-camada="qualidade">Qualidade</button>
+    <button class="chip" aria-pressed="false" data-camada="infra">Infra</button>
+  </div>
+  <div class="tabela-rolagem">
+    <table class="tabela-stack" id="tabela-stack">
+      <thead><tr><th>Ferramenta</th><th>Situação</th><th>Onde usamos</th><th>Por que ela</th><th>Alternativa descartada</th></tr></thead>
+      <tbody>
+        <tr data-camada="app"><td>TypeScript (estrito)</td><td><span class="selo ok">em uso</span></td><td>Todo o código; <code>tsconfig.json</code> com <code>strict</code>, sem <code>any</code></td><td>Erro de tipo aparece antes de rodar. O tipo do banco (gerado pelo Prisma) chega até o componente.</td><td>JavaScript puro</td></tr>
+        <tr data-camada="app"><td>Node.js 24 LTS</td><td><span class="selo ok">em uso</span></td><td><code>.nvmrc</code>, <code>engines</code> do <code>package.json</code>, CI</td><td>Versão com suporte de segurança ativo (RNF02).</td><td>Versões fora do LTS</td></tr>
+        <tr data-camada="app"><td>Next.js 16 (App Router)</td><td><span class="selo ok">em uso</span></td><td><code>src/app/</code> (rotas), Server Actions, <code>api/webhooks/mercadopago/route.ts</code>, <code>src/instrumentation.ts</code></td><td>Tela e servidor no mesmo projeto e no mesmo deploy. Server Actions dispensam uma API REST interna.</td><td>React + Laravel (TCC 1): duas linguagens, dois deploys, contrato duplicado</td></tr>
+        <tr data-camada="app"><td>React 19</td><td><span class="selo ok">em uso</span></td><td><code>src/components/</code> (loja, agenda, admin, portfolio…)</td><td>Server Components mandam menos JavaScript ao navegador, o que ajuda o LCP (RNF13).</td><td>Templates no servidor sem interatividade</td></tr>
+        <tr data-camada="app"><td>Tailwind CSS 4</td><td><span class="selo ok">em uso</span></td><td><code>src/app/globals.css</code>: tokens <code>--kolo-*</code> das duas marcas</td><td>Os tokens viram classes; o contraste dos tokens tem teste automático.</td><td>CSS solto por página</td></tr>
+        <tr data-camada="app"><td>shadcn/ui + Base UI</td><td><span class="selo ok">em uso</span></td><td><code>src/components/ui/</code>; <code>components.json</code></td><td>Componentes acessíveis (teclado, foco, ARIA) cujo código fica no repositório, sem dependência fechada.</td><td>Biblioteca pronta com tema difícil de mudar</td></tr>
+        <tr data-camada="app"><td>React Hook Form + Zod</td><td><span class="selo ok">em uso</span></td><td><code>src/modules/*/validacao.ts</code></td><td>O mesmo esquema valida no navegador e de novo no servidor (RNF09). Entrada nunca é confiada.</td><td>Validação manual com <code>if</code></td></tr>
+        <tr data-camada="dados"><td>PostgreSQL 17</td><td><span class="selo ok">em uso</span></td><td><code>docker-compose.yml</code>; restrições em <code>prisma/migrations/0001_init</code>; busca em <code>0006_busca_sem_acento</code></td><td><code>EXCLUDE</code> contra agenda sobreposta, <code>FOR UPDATE</code> no estoque, <code>unaccent</code> na busca, <code>JSONB</code> para o webhook.</td><td>MySQL: sem restrição de exclusão por intervalo</td></tr>
+        <tr data-camada="dados"><td>Prisma 7</td><td><span class="selo ok">em uso</span></td><td><code>prisma/schema.prisma</code>, 9 migrações, <code>prisma/seed.ts</code>, adaptador <code>@prisma/adapter-pg</code></td><td>O schema é o contrato do banco; o cliente é tipado e as consultas são parametrizadas (RNF04).</td><td>SQL na mão em todo lugar; ORMs sem tipos</td></tr>
+        <tr data-camada="dados"><td>pg-boss</td><td><span class="selo ok">em uso</span></td><td><code>src/modules/orders/tarefas.ts</code>, <code>src/lib/tarefas</code>, iniciado em <code>src/instrumentation.ts</code></td><td>Fila dentro do Postgres que já existe: nenhum contêiner a mais. Roda a limpeza de reservas a cada minuto.</td><td>Redis + BullMQ; cron do sistema</td></tr>
+        <tr data-camada="integracao"><td>Better Auth</td><td><span class="selo ok">em uso</span></td><td><code>src/lib/auth/index.ts</code>; tabelas <code>session</code>, <code>account</code>, <code>verification</code></td><td>Sessão guardada no banco e revogável (RF02), e-mail e senha prontos, hash de senha lento com salt.</td><td>JWT próprio (não dá para revogar); escrever auth do zero</td></tr>
+        <tr data-camada="integracao"><td>Mercado Pago Checkout Pro</td><td><span class="selo ok">em uso</span></td><td><code>src/modules/payments/</code>: <code>preferencia.ts</code>, <code>webhook.ts</code>, <code>assinatura.ts</code>, <code>estorno.ts</code></td><td>Pix, cartão e boleto, o meio mais comum no Brasil. A página de pagamento é do Mercado Pago, então o cartão nunca chega até nós (RNF10).</td><td>Checkout transparente (o cartão passaria pela nossa tela)</td></tr>
+        <tr data-camada="integracao"><td>Cloudflare R2 + AWS SDK</td><td><span class="selo ok">em uso</span></td><td><code>src/modules/media/</code>: <code>assinatura.ts</code> (URL assinada), <code>r2.ts</code></td><td>Compatível com S3 e sem taxa de saída de dados. O navegador envia direto, com URL assinada de 5 minutos.</td><td>Guardar imagens no disco da VPS</td></tr>
+        <tr data-camada="integracao"><td>sharp + next/image</td><td><span class="selo ok">em uso</span></td><td><code>media/processamento.ts</code>, <code>miniatura.ts</code>; <code>next.config.ts</code> (AVIF/WebP)</td><td>Confirma que o arquivo é imagem de verdade, gera miniatura WebP de 400 px e serve tamanhos responsivos (RNF14).</td><td>Confiar na extensão do arquivo</td></tr>
+        <tr data-camada="integracao"><td>Resend + React Email</td><td><span class="selo ok">em uso</span></td><td><code>src/lib/email/</code>; registro em <code>email_log</code></td><td>Único e-mail do produto: recuperação de senha (RF03).</td><td>SMTP próprio (cai em spam)</td></tr>
+        <tr data-camada="integracao"><td>Links <code>wa.me</code></td><td><span class="selo ok">em uso</span></td><td><code>src/modules/scheduling/whatsapp.ts</code></td><td>Sem custo, sem aprovação e sem guardar a conversa. Quem envia é a própria pessoa.</td><td>API oficial do WhatsApp Business</td></tr>
+        <tr data-camada="integracao"><td>Cloudflare Turnstile</td><td><span class="selo ok">em uso</span></td><td><code>src/modules/contact/turnstile.ts</code></td><td>Antibot no contato sem obrigar a pessoa a clicar em semáforos.</td><td>reCAPTCHA</td></tr>
+        <tr data-camada="qualidade"><td>Vitest + Testing Library</td><td><span class="selo ok">em uso</span></td><td><code>tests/unit/</code> (122 arquivos), <code>tests/integration/</code> (42, com Postgres real)</td><td>Rápido, entende TypeScript sem configuração extra.</td><td>Jest</td></tr>
+        <tr data-camada="qualidade"><td>Playwright + axe-core</td><td><span class="selo ok">em uso</span></td><td><code>tests/e2e/</code>: <code>compra</code>, <code>wizard</code>, <code>restricoes</code>, <code>varredura</code>…</td><td>Testa o navegador de verdade, em 4 larguras de tela, e audita acessibilidade.</td><td>Cypress</td></tr>
+        <tr data-camada="qualidade"><td>ESLint 9 + Prettier</td><td><span class="selo ok">em uso</span></td><td><code>eslint.config.js</code>; <code>npm run lint</code>, <code>format:check</code></td><td>Padrão de código igual para os cinco integrantes; a CI barra o que fugir dele.</td><td>—</td></tr>
+        <tr data-camada="infra"><td>GitHub Actions</td><td><span class="selo ok">em uso</span></td><td><code>.github/workflows/ci.yml</code></td><td>Todo PR passa por lint, formatação, tipos, testes, build e E2E antes de entrar na <code>main</code> (RNF22).</td><td>Rodar só na máquina de cada um</td></tr>
+        <tr data-camada="infra"><td>Docker + Compose</td><td><span class="selo ok">local</span> <span class="selo plan">produção</span></td><td><code>docker-compose.yml</code> (Postgres local); produção no PBI-46</td><td>Ambiente igual em toda máquina com um comando (RNF23).</td><td>Instalar Postgres em cada PC</td></tr>
+        <tr data-camada="infra"><td>Caddy</td><td><span class="selo plan">planejado</span></td><td>Caddyfile do PBI-46</td><td>Certificado HTTPS automático e renovado sozinho (RNF01), cabeçalhos de segurança (RNF07).</td><td>Nginx + certbot (mais configuração)</td></tr>
+        <tr data-camada="infra"><td>pino + Sentry</td><td><span class="selo plan">planejado</span></td><td>Ainda não está no código</td><td>Logs estruturados e captura de erros em produção (RNF24).</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="aviso"><span class="simbolo">⚠️</span><div><p><b>Fale só do que existe.</b> Caddy, Dockerfile de produção, cabeçalhos de segurança (RNF07) e pino/Sentry (RNF24) ainda não estão no código. Se a banca perguntar, diga que estão planejados no PBI-46 e mostre o que já roda.</p></div></div>
+  <div class="banca"><div class="banca-titulo">Perguntas prováveis da banca</div><div data-qa="stack"></div></div>
+  <div class="proxima"><a href="#dados">Próximo: modelo de dados →</a></div>
+</section>
+
+<!-- ======================= 5 ======================= -->
+<section class="secao" id="dados" data-titulo="Modelo de dados">
+  <div class="parte"><span class="bolinha"></span> Meio · 5</div>
+  <h2>Modelo de <em>dados</em></h2>
+  <div class="resumo-secao">
+    <h3>Resumo de 30 segundos</h3>
+    <ul>
+      <li>São 27 tabelas em cinco grupos: identidade, acervo, comércio, tatuagem/agenda e operação.</li>
+      <li>As regras mais importantes estão <b>no próprio banco</b>, não só no código: agenda sem sobreposição, preço e estoque nunca negativos, pagamento e evento de webhook únicos.</li>
+      <li>Dinheiro em centavos (inteiro), datas em UTC, IDs em UUID. Não existe tabela de dado de saúde.</li>
+    </ul>
+  </div>
+
+  <h3>Os cinco grupos</h3>
+  <div class="cartoes">
+    <div class="cartao"><h4>Identidade</h4><p><code>user</code>, <code>session</code>, <code>account</code>, <code>verification</code>, <code>address</code> (no máximo um), <code>artist</code></p></div>
+    <div class="cartao"><h4>Acervo</h4><p><code>artwork</code>, <code>artwork_image</code>, <code>tag</code>, <code>artwork_tag</code></p></div>
+    <div class="cartao"><h4>Comércio</h4><p><code>cart</code>, <code>cart_item</code>, <code>order</code>, <code>order_item</code>, <code>payment</code>, <code>webhook_event</code>, <code>artwork_reservation</code></p></div>
+    <div class="cartao"><h4>Tatuagem e agenda</h4><p><code>tattoo_style</code>, <code>artist_style</code>, <code>portfolio_item</code>, <code>portfolio_item_style</code>, <code>size_tier</code>, <code>appointment</code></p></div>
+    <div class="cartao"><h4>Operação</h4><p><code>site_setting</code>, <code>contact_message</code>, <code>email_log</code>, <code>rate_limit</code></p></div>
+  </div>
+
+  <h3>O núcleo da compra</h3>
+  <figure>
+    <div class="diagrama">
+      <svg viewBox="0 0 860 370" role="img" aria-labelledby="er-t er-d">
+        <title id="er-t">Diagrama entidade-relacionamento do núcleo da compra</title>
+        <desc id="er-d">Usuário tem carrinhos e pedidos. Carrinho liga-se a obras por cart_item. Obra tem reservas. Pedido tem itens e pagamentos. Item do pedido aponta para a obra. webhook_event fica isolado.</desc>
+        <defs><marker id="seta2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1a1a1a"/></marker></defs>
+        <g font-size="12">
+          <rect x="20" y="24" width="170" height="60" rx="10" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+          <text x="105" y="50" text-anchor="middle" font-weight="700" font-size="14">user</text><text x="105" y="69" text-anchor="middle" fill="#5f6872">papel · e-mail único</text>
+          <rect x="240" y="24" width="170" height="60" rx="10" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+          <text x="325" y="50" text-anchor="middle" font-weight="700" font-size="14">cart</text><text x="325" y="69" text-anchor="middle" fill="#5f6872">usuário OU cookie</text>
+          <rect x="460" y="24" width="170" height="60" rx="10" fill="#ffd600" stroke="#1a1a1a" stroke-width="2"/>
+          <text x="545" y="50" text-anchor="middle" font-weight="700" font-size="14">artwork</text><text x="545" y="69" text-anchor="middle" fill="#1a1a1a">preço (centavos) · estoque</text>
+          <rect x="680" y="24" width="170" height="60" rx="10" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+          <text x="765" y="50" text-anchor="middle" font-weight="700" font-size="14">artwork_reservation</text><text x="765" y="69" text-anchor="middle" fill="#5f6872">sessão · expira em 10 min</text>
+          <rect x="20" y="160" width="170" height="60" rx="10" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+          <text x="105" y="186" text-anchor="middle" font-weight="700" font-size="14">order</text><text x="105" y="205" text-anchor="middle" fill="#5f6872">endereço copiado (JSONB)</text>
+          <rect x="240" y="160" width="170" height="60" rx="10" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+          <text x="325" y="186" text-anchor="middle" font-weight="700" font-size="14">order_item</text><text x="325" y="205" text-anchor="middle" fill="#5f6872">título e preço copiados</text>
+          <rect x="20" y="290" width="170" height="60" rx="10" fill="#e3f1fa" stroke="#1a1a1a" stroke-width="2"/>
+          <text x="105" y="316" text-anchor="middle" font-weight="700" font-size="14">payment</text><text x="105" y="335" text-anchor="middle" fill="#3f4850">único (provedor, id externo)</text>
+          <rect x="240" y="290" width="170" height="60" rx="10" fill="#e3f1fa" stroke="#1a1a1a" stroke-width="2" stroke-dasharray="6 4"/>
+          <text x="325" y="316" text-anchor="middle" font-weight="700" font-size="14">webhook_event</text><text x="325" y="335" text-anchor="middle" fill="#3f4850">id do evento único</text>
+        </g>
+        <g stroke="#1a1a1a" stroke-width="2" fill="none">
+          <line x1="190" y1="54" x2="238" y2="54" marker-end="url(#seta2)"/>
+          <line x1="410" y1="54" x2="458" y2="54" marker-end="url(#seta2)"/>
+          <line x1="630" y1="54" x2="678" y2="54" marker-end="url(#seta2)"/>
+          <line x1="105" y1="84" x2="105" y2="158" marker-end="url(#seta2)"/>
+          <line x1="190" y1="190" x2="238" y2="190" marker-end="url(#seta2)"/>
+          <line x1="410" y1="180" x2="530" y2="86" marker-end="url(#seta2)"/>
+          <line x1="105" y1="220" x2="105" y2="288" marker-end="url(#seta2)"/>
+        </g>
+        <g font-size="11" font-weight="700" fill="#006193">
+          <text x="214" y="46" text-anchor="middle">1:N</text>
+          <text x="434" y="46" text-anchor="middle">N:N</text>
+          <text x="434" y="74" text-anchor="middle" font-weight="400" font-size="9.5" fill="#5f6872">cart_item</text>
+          <text x="654" y="46" text-anchor="middle">1:N</text>
+          <text x="122" y="126">1:N</text>
+          <text x="214" y="182" text-anchor="middle">1:N</text>
+          <text x="478" y="146">N:1</text>
+          <text x="122" y="258">1:N</text>
+        </g>
+        <g font-size="12">
+          <rect x="460" y="190" width="390" height="160" rx="12" fill="#f6f8fa" stroke="#e5e2e1"/>
+          <text x="478" y="214" font-weight="700" font-size="13">Regras garantidas pelo banco</text>
+          <text x="478" y="238">• preço e estoque nunca negativos (CHECK)</text>
+          <text x="478" y="260">• quantidade no carrinho e no pedido ≥ 1 (CHECK)</text>
+          <text x="478" y="282">• um pagamento por (provedor, id externo) (UNIQUE)</text>
+          <text x="478" y="304">• um registro por evento de webhook (UNIQUE)</text>
+          <text x="478" y="326">• tracejado: tabela sem FK, de propósito</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>Versão simplificada. O DER completo, com todas as colunas, está em <code>docs/DER.md</code> (Mermaid).</figcaption>
+  </figure>
+
+  <h3>A regra mais elegante: agenda sem sobreposição no próprio banco</h3>
+  <p>Um artista não pode ter dois horários que se encostam no tempo (RN08). Em vez de confiar só no código, a migração cria uma <b>restrição de exclusão</b>: o Postgres recusa qualquer linha cujo intervalo se cruze com outro do mesmo artista. Funciona mesmo se duas pessoas salvarem ao mesmo tempo.</p>
+<pre><code><span class="c">-- prisma/migrations/0001_init/migration.sql</span>
+<span class="k">CREATE EXTENSION IF NOT EXISTS</span> btree_gist;
+
+<span class="k">ALTER TABLE</span> "appointment"
+  <span class="k">ADD CONSTRAINT</span> "appointment_no_overlap"
+  <span class="k">EXCLUDE USING</span> gist (
+    "artist_id" <span class="k">WITH</span> =,                                  <span class="c">-- mesmo artista</span>
+    tstzrange("inicia_em", "termina_em", <span class="s">'[)'</span>) <span class="k">WITH</span> &amp;&amp;   <span class="c">-- intervalos que se cruzam</span>
+  )
+  <span class="k">WHERE</span> ("excluido_em" <span class="k">IS NULL AND</span> "situacao" &lt;&gt; <span class="s">'CANCELADO'</span>);</code></pre>
+  <figure>
+    <div class="diagrama estreito">
+      <svg viewBox="0 0 760 210" role="img" aria-labelledby="ag-t ag-d">
+        <title id="ag-t">Exemplo da restrição de agenda</title>
+        <desc id="ag-d">Existe um horário das 14h às 16h. Uma tentativa das 15h às 17h é recusada porque se cruza. Uma tentativa das 16h às 18h é aceita porque o intervalo é fechado no início e aberto no fim.</desc>
+        <g font-size="12" fill="#5f6872" text-anchor="middle">
+          <text x="140" y="24">13h</text><text x="240" y="24">14h</text><text x="340" y="24">15h</text><text x="440" y="24">16h</text><text x="540" y="24">17h</text><text x="640" y="24">18h</text>
+        </g>
+        <g stroke="#e5e2e1"><line x1="140" y1="32" x2="140" y2="196"/><line x1="240" y1="32" x2="240" y2="196"/><line x1="340" y1="32" x2="340" y2="196"/><line x1="440" y1="32" x2="440" y2="196"/><line x1="540" y1="32" x2="540" y2="196"/><line x1="640" y1="32" x2="640" y2="196"/></g>
+        <text x="10" y="70" font-size="12" font-weight="700">Já existe</text>
+        <rect x="240" y="48" width="200" height="34" rx="6" fill="#1a1a1a"/><text x="340" y="70" text-anchor="middle" font-size="12" fill="#ffd600" font-weight="700">14h–16h · artista Ana</text>
+        <text x="10" y="120" font-size="12" font-weight="700">Tentativa 1</text>
+        <rect x="340" y="98" width="200" height="34" rx="6" fill="#ffdad6" stroke="#ba1a1a" stroke-width="2"/><text x="440" y="120" text-anchor="middle" font-size="12" fill="#93000a" font-weight="700">15h–17h ✗ recusado</text>
+        <text x="10" y="170" font-size="12" font-weight="700">Tentativa 2</text>
+        <rect x="440" y="148" width="200" height="34" rx="6" fill="#d9f2e1" stroke="#1b6e3a" stroke-width="2"/><text x="540" y="170" text-anchor="middle" font-size="12" fill="#1b6e3a" font-weight="700">16h–18h ✓ aceito</text>
+      </svg>
+    </div>
+    <figcaption>O <code>'[)'</code> deixa o intervalo fechado no início e aberto no fim: terminar às 16h e começar às 16h não é conflito.</figcaption>
+  </figure>
+
+  <h3>Convenções que a banca costuma notar</h3>
+  <div class="tabela-rolagem">
+    <table>
+      <thead><tr><th>Convenção</th><th>Exemplo</th><th>Motivo</th></tr></thead>
+      <tbody>
+        <tr><td>Dinheiro em centavos, inteiro</td><td><code>preco_centavos = 125000</code> = R$ 1.250,00</td><td>Ponto flutuante erra conta de dinheiro (0,1 + 0,2 ≠ 0,3). RN07</td></tr>
+        <tr><td>Datas em UTC, exibidas em São Paulo</td><td><code>timestamptz</code></td><td>Evita erro de fuso e de horário de verão. RN09</td></tr>
+        <tr><td>Cópia no pedido</td><td><code>endereco_copia</code>, <code>titulo_copia</code>, <code>preco_centavos_copia</code></td><td>O pedido é um registro histórico. Se a obra mudar de preço ou o cliente mudar de endereço, o pedido continua igual.</td></tr>
+        <tr><td>Exclusão lógica</td><td><code>excluido_em</code></td><td>Pedido pago precisa continuar existindo para a contabilidade, mesmo se o cliente sair (RN12).</td></tr>
+        <tr><td>UUID como chave</td><td><code>id uuid</code></td><td>Não revela quantos pedidos ou clientes existem e pode ser gerado fora do banco.</td></tr>
+        <tr><td>Imagem guarda a chave, não a URL</td><td><code>obras/&lt;artistId&gt;/&lt;uuid&gt;.webp</code></td><td>Trocar de domínio ou de bucket não exige migrar dados.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="onde-codigo"><strong>📁 Onde no código</strong><ul><li>Schema: <code>prisma/schema.prisma</code> · Migrações: <code>prisma/migrations/0001_init</code> … <code>0009_modalidade_entrega</code></li><li>Seed: <code>prisma/seed.ts</code> (<code>npm run db:seed</code>)</li><li>Mostrar o banco: <code>npx prisma studio</code> ou <code>psql</code></li><li>Teste da restrição de agenda: <code>tests/integration/agenda.test.ts</code></li></ul></div>
+  <div class="banca"><div class="banca-titulo">Perguntas prováveis da banca</div><div data-qa="dados"></div></div>
+  <div class="proxima"><a href="#loja">Próximo: loja e pagamento →</a></div>
+</section>
+
+<!-- ======================= 6 ======================= -->
+<section class="secao" id="loja" data-titulo="Loja e pagamento">
+  <div class="parte"><span class="bolinha"></span> Meio · 6</div>
+  <h2>Feature: loja <em>e pagamento</em></h2>
+  <div class="resumo-secao">
+    <h3>Resumo de 30 segundos</h3>
+    <ul>
+      <li>Quando o cliente vai pagar, a obra fica <b>reservada por 10 minutos</b> para ele. Duas pessoas nunca compram a mesma peça única.</li>
+      <li>O pedido só vira <b>PAGO</b> quando o Mercado Pago avisa pelo <b>webhook assinado</b>, e mesmo assim nós consultamos a API para confirmar.</li>
+      <li>Se o mesmo aviso chegar duas vezes, ele é processado uma vez só (idempotência).</li>
+    </ul>
+  </div>
+
+  <div class="galeria">
+    <figure><button class="tela" data-zoom="img/catalogo-desktop.webp" data-legenda="Catálogo de obras"><img src="img/catalogo-desktop.webp" alt="Tela de referência do catálogo de obras em grade" loading="lazy"></button><figcaption>1. Catálogo</figcaption></figure>
+    <figure><button class="tela" data-zoom="img/obra-desktop.webp" data-legenda="Ficha da obra"><img src="img/obra-desktop.webp" alt="Tela de referência da ficha de uma obra com galeria e ficha técnica" loading="lazy"></button><figcaption>2. Ficha da obra</figcaption></figure>
+    <figure><button class="tela" data-zoom="img/carrinho-desktop.webp" data-legenda="Carrinho"><img src="img/carrinho-desktop.webp" alt="Tela de referência do carrinho" loading="lazy"></button><figcaption>3. Carrinho</figcaption></figure>
+    <figure><button class="tela" data-zoom="img/checkout-desktop.webp" data-legenda="Checkout com resumo, entrega e prazo da reserva"><img src="img/checkout-desktop.webp" alt="Tela de referência do checkout com resumo do pedido e endereço" loading="lazy"></button><figcaption>4. Checkout (a reserva começa aqui)</figcaption></figure>
+    <figure><button class="tela" data-zoom="img/confirmando-pagamento-desktop.webp" data-legenda="Confirmando pagamento: esperando o webhook"><img src="img/confirmando-pagamento-desktop.webp" alt="Tela de referência aguardando a confirmação do pagamento" loading="lazy"></button><figcaption>5. Esperando o webhook</figcaption></figure>
+    <figure><button class="tela" data-zoom="img/pedido-confirmado-desktop.webp" data-legenda="Pedido confirmado"><img src="img/pedido-confirmado-desktop.webp" alt="Tela de referência do pedido confirmado" loading="lazy"></button><figcaption>6. Pedido confirmado</figcaption></figure>
+  </div>
+
+  <h3>O fluxo completo da compra</h3>
+  <p>Cada linha é um passo. As colunas mostram quem age. O passo amarelo é onde mora a garantia principal.</p>
+  <div class="raias" role="table" aria-label="Fluxo da compra por participante">
+    <div class="raias-cabeca" role="row"><div role="columnheader">#</div><div role="columnheader">Cliente (navegador)</div><div role="columnheader">Kolô (servidor + banco)</div><div role="columnheader">Mercado Pago</div></div>
+    <div class="raia-passo" role="row"><div class="num">1</div><div data-raia="Cliente"><div class="passo-caixa"><b>Adiciona ao carrinho</b>Visitante: cookie. Logado: no usuário. Ao entrar, os dois carrinhos se juntam.</div></div><div></div><div></div></div>
+    <div class="raia-passo" role="row"><div class="num">2</div><div data-raia="Cliente"><div class="passo-caixa"><b>Finaliza a compra</b>Precisa estar logado (RN01). Escolhe retirada ou entrega.</div></div><div></div><div></div></div>
+    <div class="raia-passo" role="row"><div class="num">3</div><div></div><div data-raia="Kolô"><div class="passo-caixa chave"><b>Cria o pedido PENDENTE e reserva</b>Na <u>mesma transação</u>: trava as obras, confere estoque − reservas ativas, reserva por 10 min. Frete calculado no servidor.</div></div><div></div></div>
+    <div class="raia-passo" role="row"><div class="num">4</div><div></div><div data-raia="Kolô"><div class="passo-caixa"><b>Cria a preferência</b>Envia itens, URLs de retorno, URL do webhook e o número do pedido.</div></div><div data-raia="Mercado Pago"><div class="passo-caixa mp"><b>Devolve o link do checkout</b></div></div></div>
+    <div class="raia-passo" role="row"><div class="num">5</div><div data-raia="Cliente"><div class="passo-caixa"><b>Paga na página do Mercado Pago</b>Pix, cartão ou boleto. O cartão é digitado lá, não no Kolô.</div></div><div></div><div data-raia="Mercado Pago"><div class="passo-caixa mp"><b>Processa o pagamento</b></div></div></div>
+    <div class="raia-passo" role="row"><div class="num">6</div><div></div><div data-raia="Kolô"><div class="passo-caixa"><b>Recebe o webhook</b>Confere a assinatura HMAC (<code>x-signature</code>). Inválida → 401.</div></div><div data-raia="Mercado Pago"><div class="passo-caixa mp"><b>Envia a notificação</b>Pode reenviar várias vezes.</div></div></div>
+    <div class="raia-passo" role="row"><div class="num">7</div><div></div><div data-raia="Kolô"><div class="passo-caixa"><b>Consulta a situação real</b>Pergunta à API pelo id. Nunca confia no que veio no corpo nem na URL de retorno (RN05).</div></div><div data-raia="Mercado Pago"><div class="passo-caixa mp"><b>Responde: aprovado / pendente / recusado</b></div></div></div>
+    <div class="raia-passo" role="row"><div class="num">8</div><div></div><div data-raia="Kolô"><div class="passo-caixa chave"><b>Aprovado: PAGO + baixa o estoque</b>Na mesma transação: grava o evento (único), confere valor e moeda, marca PAGO, baixa estoque, tira do carrinho.</div></div><div></div></div>
+    <div class="raia-passo" role="row"><div class="num">9</div><div data-raia="Cliente"><div class="passo-caixa"><b>Acompanha em /conta/pedidos</b>Situação e código de rastreio que o admin registra.</div></div><div></div><div></div></div>
+  </div>
+
+  <h3>Por que duas pessoas nunca levam a mesma obra</h3>
+  <p>Imagine a última unidade de uma tela e dois clientes clicando em “finalizar” no mesmo segundo. Sem cuidado, os dois leriam “estoque = 1” e os dois comprariam. A função <code>reservarItens</code> usa <code>SELECT … FOR UPDATE</code>: a primeira transação <b>tranca a linha da obra</b> e a segunda espera na fila até a primeira terminar.</p>
+  <div class="corrida" role="table" aria-label="Duas compras simultâneas da mesma obra">
+    <div class="cab">Ana</div><div class="cab meio">Banco (linha da obra)</div><div class="cab">Bruno</div>
+    <div data-quem="Ana">Clica em finalizar</div><div class="meio vazio">.</div><div data-quem="Bruno">Clica em finalizar</div>
+    <div data-quem="Ana">Pede a trava da obra</div><div class="meio" data-quem="Banco"><span class="trava">🔒 trancada para Ana</span></div><div data-quem="Bruno">Pede a trava… <b>espera</b></div>
+    <div data-quem="Ana">Estoque 1 − reservas 0 = 1 ✓ reserva</div><div class="meio vazio">.</div><div class="vazio">.</div>
+    <div data-quem="Ana">Commit</div><div class="meio" data-quem="Banco"><span class="trava">🔒 trancada para Bruno</span></div><div data-quem="Bruno">Recebe a trava</div>
+    <div class="vazio">.</div><div class="meio vazio">.</div><div data-quem="Bruno">Estoque 1 − reservas 1 = 0 ✗ <b>“indisponível”</b></div>
+  </div>
+  <p style="margin-top:12px">Detalhes que valem citar: as obras são trancadas <b>sempre na mesma ordem (por id)</b>, o que evita deadlock quando dois carrinhos têm as mesmas obras em ordens diferentes; e a reserva é <b>tudo ou nada</b>, ou reserva o carrinho inteiro ou nada.</p>
+<pre><code><span class="c">// src/modules/orders/reserva.ts (trecho)</span>
+<span class="k">await</span> tx.$queryRaw`<span class="s">SELECT id FROM artwork WHERE id = ANY(${ids}::uuid[]) ORDER BY id FOR UPDATE</span>`;
+<span class="c">// disponível = estoque − reservas ativas das OUTRAS sessões</span>
+obra.stockQuantity - ocupadas(id) &lt; item.quantidade  <span class="c">// → "indisponivel"</span></code></pre>
+
+  <h3>Situações do pedido</h3>
+  <figure>
+    <div class="diagrama estreito">
+      <svg viewBox="0 0 780 190" role="img" aria-labelledby="st-t st-d">
+        <title id="st-t">Máquina de estados do pedido</title>
+        <desc id="st-d">Pendente vai para Pago quando o webhook aprova, ou para Cancelado quando a reserva ou o Pix vence. Pago vai para Em preparação, Enviado e Entregue, alterados pelo admin.</desc>
+        <defs><marker id="seta3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1a1a1a"/></marker></defs>
+        <g font-size="12.5" font-weight="700" text-anchor="middle">
+          <rect x="10" y="40" width="120" height="44" rx="22" fill="#fff4c2" stroke="#1a1a1a" stroke-width="2"/><text x="70" y="67">PENDENTE</text>
+          <rect x="190" y="40" width="110" height="44" rx="22" fill="#d9f2e1" stroke="#1a1a1a" stroke-width="2"/><text x="245" y="67">PAGO</text>
+          <rect x="360" y="40" width="130" height="44" rx="22" fill="#fff" stroke="#1a1a1a" stroke-width="2"/><text x="425" y="67">EM PREPARAÇÃO</text>
+          <rect x="530" y="40" width="110" height="44" rx="22" fill="#fff" stroke="#1a1a1a" stroke-width="2"/><text x="585" y="67">ENVIADO</text>
+          <rect x="660" y="120" width="110" height="44" rx="22" fill="#fff" stroke="#1a1a1a" stroke-width="2"/><text x="715" y="147">ENTREGUE</text>
+          <rect x="10" y="130" width="120" height="44" rx="22" fill="#ffdad6" stroke="#1a1a1a" stroke-width="2"/><text x="70" y="157">CANCELADO</text>
+        </g>
+        <g stroke="#1a1a1a" stroke-width="2" fill="none">
+          <line x1="130" y1="62" x2="188" y2="62" marker-end="url(#seta3)"/>
+          <line x1="300" y1="62" x2="358" y2="62" marker-end="url(#seta3)"/>
+          <line x1="490" y1="62" x2="528" y2="62" marker-end="url(#seta3)"/>
+          <path d="M640 62 H715 V118" marker-end="url(#seta3)"/>
+          <line x1="70" y1="84" x2="70" y2="128" marker-end="url(#seta3)"/>
+        </g>
+        <g font-size="11" fill="#3f4850" text-anchor="middle">
+          <text x="160" y="20">webhook</text><text x="160" y="34">aprovado</text>
+          <text x="485" y="110">o admin muda a situação e registra o rastreio</text>
+          <text x="84" y="104" text-anchor="start">reserva, Pix ou boleto venceu,</text>
+          <text x="84" y="119" text-anchor="start">ou o admin cancelou antes do pagamento</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>No banco, “em preparação” é <code>PROCESSANDO</code>. Pedido pago não volta a pendente.</figcaption>
+  </figure>
+
+  <h3>Casos difíceis que o sistema já trata</h3>
+  <div class="tabela-rolagem">
+    <table>
+      <thead><tr><th>Situação</th><th>O que acontece</th><th>Regra</th></tr></thead>
+      <tbody>
+        <tr><td>Cliente sai do checkout sem pagar</td><td>A reserva vence em 10 min e a obra volta a ficar disponível. O pg-boss apaga as vencidas a cada minuto, mas a disponibilidade já ignora as vencidas mesmo que a fila atrase.</td><td>RN03</td></tr>
+        <tr><td>Pagou com Pix ou boleto, que demora</td><td>A reserva é prorrogada até o vencimento do Pix/boleto, para a obra não ir para outra pessoa enquanto o pagamento compensa.</td><td>RN06</td></tr>
+        <tr><td>Mesmo webhook chega duas vezes</td><td>O evento tem id único (<code>webhook_event</code>) e o pagamento é único por (provedor, id externo). O segundo não muda nada.</td><td>RNF11</td></tr>
+        <tr><td>Alguém manda um POST falso no webhook</td><td>Sem assinatura válida → 401, e o corpo nem é lido.</td><td>RNF11</td></tr>
+        <tr><td>Aprovado com valor diferente do pedido</td><td>Não paga o pedido; marca o pagamento para estorno (<code>VALOR_DIVERGENTE</code>).</td><td>RN07, PBI-43</td></tr>
+        <tr><td>Aprovado depois de a obra ir para outro</td><td>O pedido fica pago (o cliente pagou), marcado como <code>SEM_ESTOQUE</code>; o admin estorna pelo filtro “Estorno pendente”.</td><td>RN06, PBI-43</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <figure style="max-width:520px"><button class="tela" data-zoom="img/reserva-expirada-desktop.webp" data-legenda="Reserva expirada"><img src="img/reserva-expirada-desktop.webp" alt="Tela de referência avisando que a reserva expirou" loading="lazy"></button><figcaption>Tela de reserva expirada: o cliente pode tentar de novo se a obra ainda estiver livre.</figcaption></figure>
+  <div class="onde-codigo"><strong>📁 Onde no código (os 3 trechos para mostrar à banca)</strong><ul><li>Reserva transacional: <code>src/modules/orders/reserva.ts</code> (<code>reservarItens</code>, <code>baixarEstoque</code>)</li><li>Webhook com assinatura e idempotência: <code>src/modules/payments/webhook.ts</code> e <code>assinatura.ts</code></li><li>Transições do pedido: <code>src/modules/orders/transicoes.ts</code></li><li>Testes com Postgres real: <code>tests/integration/reserva.test.ts</code>, <code>webhook-aprovacao.test.ts</code>, <code>webhook-http.test.ts</code>; E2E: <code>tests/e2e/compra.spec.ts</code></li></ul></div>
+  <div class="banca"><div class="banca-titulo">Perguntas prováveis da banca</div><div data-qa="loja"></div></div>
+  <div class="proxima"><a href="#agenda">Próximo: agendamento e portfólio →</a></div>
+</section>
+
+<!-- ======================= 7 ======================= -->
+<section class="secao" id="agenda" data-titulo="Agendamento e portfólio">
+  <div class="parte"><span class="bolinha"></span> Meio · 7</div>
+  <h2>Feature: agendamento <em>e portfólio</em></h2>
+  <div class="resumo-secao">
+    <h3>Resumo de 30 segundos</h3>
+    <ul>
+      <li>O <b>wizard</b> faz 8 perguntas, uma por tela, e abre o WhatsApp do estúdio com a mensagem pronta. <b>Não grava nada.</b></li>
+      <li>Três avisos obrigatórios (anamnese, termo e maioridade) só liberam o botão. Eles não viram dado no banco.</li>
+      <li>Depois de combinar na conversa, o <b>artista ou o admin cadastra o horário</b>, e o banco impede sobreposição.</li>
+    </ul>
+  </div>
+
+  <div class="modo-tattoo" data-brand="tattoo">
+    <h3>Passeie pelo wizard</h3>
+    <ol class="passos-wizard" id="passos-wizard" aria-label="Etapas do wizard"></ol>
+    <div class="wizard-palco">
+      <button class="celular" id="wizard-tela" data-zoom="" data-legenda=""><img id="wizard-img" src="img/wizard-1-nome-celular.webp" alt=""></button>
+      <div class="wizard-texto" aria-live="polite">
+        <h4 id="wizard-titulo"></h4>
+        <p id="wizard-desc"></p>
+        <div class="wizard-nav"><button class="vazado" id="wizard-ant">← Anterior</button><button id="wizard-prox">Próximo →</button></div>
+      </div>
+    </div>
+    <h4 style="margin-top:24px">A mensagem que chega ao estúdio</h4>
+    <p>Montada pela função pura <code>mensagemAgendamento</code> em <code>src/modules/scheduling/whatsapp.ts</code> e enviada como <code>https://wa.me/&lt;número&gt;?text=…</code>:</p>
+    <div class="mensagem-zap">Olá! Sou Marina e quero agendar uma tatuagem com Léo.
+Estilo: Fine line
+Região do corpo: Antebraço
+Tamanho: Médio
+Preferência: 12/11/2026 às 15:00 (horário de São Paulo)
+Li e aceito os avisos: anamnese e termo de consentimento presenciais e declaração de maioridade.</div>
+  </div>
+
+  <h3>Do wizard ao horário na agenda</h3>
+  <div class="etapas">
+    <span class="etapa">Visitante preenche o wizard</span><span class="seta">→</span>
+    <span class="etapa">Abre o WhatsApp com a mensagem</span><span class="seta">→</span>
+    <span class="etapa">Conversa: referências, valor, data</span><span class="seta">→</span>
+    <span class="etapa forte">Artista/admin cadastra o horário (RF22)</span><span class="seta">→</span>
+    <span class="etapa">Banco recusa se sobrepuser (RN08)</span>
+  </div>
+  <p>A agenda mostra a semana do artista. O artista só vê e edita a própria agenda e o próprio portfólio (RN10); o admin vê todos. Os próximos 7 dias aparecem também no painel do admin.</p>
+
+  <h3>Portfólio de tatuagens</h3>
+  <p>Galeria pública filtrável por artista, estilo e região do corpo, com busca por palavra-chave (RF17, RF18). O admin e o próprio artista incluem, editam, ordenam, destacam e removem fotos (RF19). As imagens sobem para o R2 com URL assinada e passam pelo <code>sharp</code>, que confirma que o arquivo é mesmo uma imagem e gera a miniatura.</p>
+  <div class="aviso"><span class="simbolo">⚠️</span><div><p><b>Na fala, não diga que o sistema “confere a maioridade”.</b> O check é uma declaração da pessoa. A conferência do documento, a anamnese e a assinatura do termo acontecem presencialmente, na sessão, e ficam fora do sistema por decisão de escopo.</p></div></div>
+  <div class="onde-codigo"><strong>📁 Onde no código</strong><ul><li>Wizard (tela): <code>src/app/agendamento/</code>, componentes em <code>src/components/scheduling/</code></li><li>Mensagem e link: <code>src/modules/scheduling/whatsapp.ts</code> · Agenda manual: <code>agenda.ts</code>, <code>agenda-regras.ts</code></li><li>Portfólio: <code>src/modules/portfolio/</code>, telas em <code>src/app/portfolio/</code> e <code>src/app/tatuagens/</code></li><li>Testes: <code>tests/integration/wizard-agendamento.test.ts</code>, <code>agenda.test.ts</code>; E2E <code>tests/e2e/wizard.spec.ts</code></li></ul></div>
+  <div class="banca"><div class="banca-titulo">Perguntas prováveis da banca</div><div data-qa="agenda"></div></div>
+  <div class="proxima"><a href="#vitrine">Próximo: vitrine, contas e back-office →</a></div>
+</section>
+
+<!-- ======================= 8 ======================= -->
+<section class="secao" id="vitrine" data-titulo="Vitrine, contas e back-office">
+  <div class="parte"><span class="bolinha"></span> Meio · 8</div>
+  <h2>Vitrine, contas <em>e back-office</em></h2>
+  <div class="resumo-secao">
+    <h3>Resumo de 30 segundos</h3>
+    <ul>
+      <li>Três papéis: <b>Cliente</b>, <b>Artista</b> e <b>Admin</b>. O cadastro público sempre cria Cliente; Artista nasce no admin; o primeiro Admin só pelo seed.</li>
+      <li>Esconder o menu não é segurança: <b>cada operação no servidor relê a sessão e o papel no banco</b>.</li>
+      <li>O admin tem painel de indicadores e relatório de vendas por período, com versão para impressão (RF32).</li>
+    </ul>
+  </div>
+
+  <h3>Quem pode o quê</h3>
+  <div class="tabela-rolagem">
+    <table>
+      <thead><tr><th>Recurso</th><th class="centro">Visitante</th><th class="centro">Cliente</th><th class="centro">Artista</th><th class="centro">Admin</th></tr></thead>
+      <tbody>
+        <tr><td>Catálogo, ficha da obra, portfólio</td><td class="centro">✓</td><td class="centro">✓</td><td class="centro">✓</td><td class="centro">✓</td></tr>
+        <tr><td>Wizard e WhatsApp</td><td class="centro">✓</td><td class="centro">✓</td><td class="centro">✓</td><td class="centro">✓</td></tr>
+        <tr><td>Comprar obra e ver os próprios pedidos</td><td class="centro">—</td><td class="centro">✓</td><td class="centro">✓</td><td class="centro">✓</td></tr>
+        <tr><td>Gerir o próprio portfólio e a própria agenda</td><td class="centro">—</td><td class="centro">—</td><td class="centro">✓</td><td class="centro">✓</td></tr>
+        <tr><td>Obras, artistas, estilos, tags, clientes</td><td class="centro">—</td><td class="centro">—</td><td class="centro">—</td><td class="centro">✓</td></tr>
+        <tr><td>Pedidos, envios, estornos</td><td class="centro">—</td><td class="centro">—</td><td class="centro">—</td><td class="centro">✓</td></tr>
+        <tr><td>Configurações do site, painel e relatório</td><td class="centro">—</td><td class="centro">—</td><td class="centro">—</td><td class="centro">✓</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Como a permissão é conferida</h3>
+  <p>Toda operação do admin passa por <code>comoAdmin</code>. Ele lê a sessão do cookie, confere o papel e, <b>dentro de uma transação serializável</b>, busca a sessão de novo no banco e confere se o usuário ainda é ADMIN, está ativo e não foi excluído. Se alguém for rebaixado ou tiver a sessão revogada, perde o acesso na hora, sem esperar um token vencer.</p>
+<pre><code><span class="c">// src/modules/artists/acesso.ts (resumo)</span>
+<span class="k">export async function</span> comoAdmin(cabecalhos, executar) {
+  <span class="k">const</span> sessao = <span class="k">await</span> sessaoDaRequisicao(cabecalhos);   <span class="c">// sem sessão → "nao_autenticado"</span>
+  <span class="k">if</span> (sessao.papel !== <span class="s">"ADMIN"</span>) <span class="k">throw</span> ...;            <span class="c">// → "proibido"</span>
+  <span class="k">return</span> prisma.$transaction(<span class="k">async</span> (tx) =&gt; {
+    <span class="c">// relê no banco: sessão válida, papel ADMIN, ATIVO, não excluído</span>
+    <span class="k">return</span> executar(tx);
+  }, { isolationLevel: <span class="s">"Serializable"</span> });
+}</code></pre>
+
+  <h3>Contas</h3>
+  <div class="cartoes">
+    <div class="cartao"><h4>Cadastro e login</h4><p>Nome, e-mail, telefone e senha (RF01). Sessão guardada no banco e revogável (RF02). Tentativas de login limitadas por janela (RNF08).</p></div>
+    <div class="cartao"><h4>Recuperar senha</h4><p>Token de uso único com prazo, guardado só como hash. E-mail pelo Resend (RF03).</p></div>
+    <div class="cartao"><h4>Excluir conta</h4><p>Pede a senha, anonimiza o cliente e preserva os pedidos pagos (RN12, RNF19).</p></div>
+  </div>
+
+  <h3>Painel e relatório (critério 8 da banca)</h3>
+  <div class="cartoes">
+    <div class="cartao"><h4><span class="icone">📊</span>Painel em <code>/admin</code></h4><ul><li>Faturamento pago no mês</li><li>Pedidos pagos e ticket médio</li><li>Pedidos por situação, com link para o filtro</li><li>Obras disponíveis, esgotadas e em rascunho</li><li>Agendamentos dos próximos 7 dias</li></ul></div>
+    <div class="cartao"><h4><span class="icone">🧾</span>Relatório em <code>/admin/relatorio</code></h4><ul><li>Este mês, últimos 30 dias ou intervalo escolhido</li><li>Obras mais vendidas</li><li>Faturamento por artista</li><li>Versão para impressão (o navegador salva em PDF)</li></ul></div>
+    <div class="cartao"><h4><span class="icone">🔎</span>Consultas que já existiam</h4><ul><li>Filtros e busca de pedidos e clientes</li><li>Busca no catálogo sem acento</li><li>Filtros e busca no portfólio</li><li>Perfil do cliente com total gasto</li><li>Agenda semanal</li></ul></div>
+  </div>
+  <div class="onde-codigo"><strong>📁 Onde no código</strong><ul><li>Autenticação: <code>src/lib/auth/index.ts</code> · Limite de tentativas: <code>src/lib/rate-limit/index.ts</code></li><li>Guarda do admin: <code>src/modules/artists/acesso.ts</code> (<code>comoAdmin</code>)</li><li>Painel e relatório: <code>src/modules/reports/</code> (<code>painel.ts</code>, <code>relatorio.ts</code>, <code>periodo.ts</code>), telas em <code>src/app/admin/</code></li><li>E2E das restrições de papel: <code>tests/e2e/restricoes.spec.ts</code></li></ul></div>
+  <div class="banca"><div class="banca-titulo">Perguntas prováveis da banca</div><div data-qa="contas"></div></div>
+  <div class="proxima"><a href="#seguranca">Próximo: segurança e LGPD →</a></div>
+</section>
+
+<!-- ======================= 9 ======================= -->
+<section class="secao" id="seguranca" data-titulo="Segurança e LGPD">
+  <div class="parte"><span class="bolinha"></span> Meio · 9</div>
+  <h2>Segurança <em>e LGPD</em></h2>
+  <div class="resumo-secao">
+    <h3>Resumo de 30 segundos</h3>
+    <ul>
+      <li>O sistema evita guardar o que é perigoso: <b>nenhum dado de cartão</b> e <b>nenhum dado de saúde</b>.</li>
+      <li>Toda entrada é validada no servidor (Zod), todo SQL é parametrizado (Prisma) e o React escapa o HTML.</li>
+      <li>HTTPS e cabeçalhos de segurança dependem do deploy, que ainda está pendente.</li>
+    </ul>
+  </div>
+  <div class="tabela-rolagem">
+    <table>
+      <thead><tr><th>Ameaça ou exigência</th><th>Como tratamos</th><th>Situação</th></tr></thead>
+      <tbody>
+        <tr><td>Senha vazada do banco (RNF03)</td><td>Só o hash, com algoritmo lento e salt por usuário (Better Auth). Token de recuperação também só como hash.</td><td><span class="selo ok">feito</span></td></tr>
+        <tr><td>SQL Injection (RNF04)</td><td>Prisma parametriza tudo; onde usamos SQL direto, é <code>$queryRaw</code> com template (os valores viram parâmetros) ou <code>pool.query</code> com <code>$1</code>.</td><td><span class="selo ok">feito</span></td></tr>
+        <tr><td>XSS (RNF05)</td><td>O React escapa o texto. Upload não aceita SVG (poderia carregar script). CSP restritiva fica com o deploy.</td><td><span class="selo ok">escape</span> <span class="selo plan">CSP</span></td></tr>
+        <tr><td>CSRF (RNF06)</td><td>Server Actions conferem a origem da requisição; cookies de sessão <code>HttpOnly</code> e <code>SameSite</code>.</td><td><span class="selo ok">feito</span></td></tr>
+        <tr><td>Força bruta e spam (RNF08)</td><td>Tabela <code>rate_limit</code> no Postgres; o contador soma e decide num só comando (<code>INSERT … ON CONFLICT</code>), então uma rajada simultânea não escapa. A chave é um hash de IP + e-mail. Turnstile no contato.</td><td><span class="selo ok">feito</span></td></tr>
+        <tr><td>Entrada maliciosa (RNF09)</td><td>Esquemas Zod em <code>validacao.ts</code> de cada módulo, sempre no servidor.</td><td><span class="selo ok">feito</span></td></tr>
+        <tr><td>Dado de cartão (RNF10)</td><td>O cartão é digitado no Checkout Pro do Mercado Pago. Nunca passa pelo Kolô.</td><td><span class="selo ok">feito</span></td></tr>
+        <tr><td>Webhook falso ou repetido (RNF11)</td><td>Assinatura HMAC conferida pelo validador oficial do SDK; evento com id único.</td><td><span class="selo ok">feito</span></td></tr>
+        <tr><td>Segredo no Git (RNF12)</td><td>Tudo em variável de ambiente; <code>.env</code> fora do versionamento; o servidor confere as variáveis de produção ao subir.</td><td><span class="selo ok">feito</span></td></tr>
+        <tr><td>HTTPS e cabeçalhos (RNF01, RNF07)</td><td>Caddy com certificado automático, HSTS, X-Frame-Options etc.</td><td><span class="selo plan">deploy</span></td></tr>
+        <tr><td>Dado de saúde (RNF18)</td><td>Não existe tabela nem campo para isso. Os checks do wizard não são gravados.</td><td><span class="selo ok">feito</span></td></tr>
+        <tr><td>Direito de sair (RNF19, RN12)</td><td>O cliente exclui a conta; os dados pessoais são anonimizados e os pedidos pagos ficam.</td><td><span class="selo ok">feito</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="aviso info"><span class="simbolo">💡</span><div><p><b>Frase para guardar:</b> “O dado mais seguro é o que a gente não guarda.” Ela resume três decisões: cartão no Mercado Pago, saúde presencial e o wizard sem persistência.</p></div></div>
+  <div class="banca"><div class="banca-titulo">Perguntas prováveis da banca</div><div data-qa="seguranca"></div></div>
+  <div class="proxima"><a href="#qualidade">Próximo: qualidade e testes →</a></div>
+</section>
+
+<!-- ======================= 10 ======================= -->
+<section class="secao" id="qualidade" data-titulo="Qualidade e testes">
+  <div class="parte"><span class="bolinha"></span> Meio · 10</div>
+  <h2>Qualidade <em>e testes</em></h2>
+  <div class="resumo-secao">
+    <h3>Resumo de 30 segundos</h3>
+    <ul>
+      <li>171 arquivos de teste em três níveis. Os testes de integração usam um <b>Postgres de verdade</b>, porque é lá que as travas e as restrições vivem.</li>
+      <li>A CI do GitHub roda tudo em todo PR. Se algo falha, o PR não entra.</li>
+      <li>Acessibilidade e responsividade são medidas: 35 telas em 4 larguras sem violação no axe-core; Lighthouse 97 no catálogo e 98 na obra.</li>
+    </ul>
+  </div>
+
+  <figure>
+    <div class="diagrama estreito">
+      <svg viewBox="0 0 720 300" role="img" aria-labelledby="pi-t pi-d">
+        <title id="pi-t">Pirâmide de testes do Kolô</title>
+        <desc id="pi-d">Na base, 122 arquivos de teste unitário. No meio, 42 de integração com Postgres. No topo, 7 especificações ponta a ponta com Playwright.</desc>
+        <polygon points="260,20 330,20 380,100 210,100" fill="#ffd600" stroke="#1a1a1a" stroke-width="2"/>
+        <polygon points="210,100 380,100 440,190 150,190" fill="#e3f1fa" stroke="#1a1a1a" stroke-width="2"/>
+        <polygon points="150,190 440,190 500,280 90,280" fill="#fff" stroke="#1a1a1a" stroke-width="2"/>
+        <g text-anchor="middle" font-weight="700"><text x="295" y="70" font-size="15">E2E</text><text x="295" y="152" font-size="15">Integração</text><text x="295" y="242" font-size="15">Unitário</text></g>
+        <g font-size="12.5">
+          <text x="400" y="50" font-weight="700">7 specs · Playwright + axe-core</text>
+          <text x="400" y="68" fill="#5f6872">compra com webhook, wizard, restrições de papel,</text>
+          <text x="400" y="84" fill="#5f6872">varredura de 35 telas em 320/768/1440/1920 px</text>
+          <text x="460" y="138" font-weight="700">42 arquivos · Vitest + Postgres</text>
+          <text x="460" y="156" fill="#5f6872">reserva concorrente, agenda sem sobreposição,</text>
+          <text x="460" y="172" fill="#5f6872">idempotência do webhook, permissões</text>
+          <text x="520" y="228" font-weight="700">122 arquivos · Vitest</text>
+          <text x="520" y="246" fill="#5f6872">regras puras, validações, mensagem do</text>
+          <text x="520" y="262" fill="#5f6872">wa.me, componentes (Testing Library)</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>Contagem de arquivos em <code>tests/unit</code>, <code>tests/integration</code> e <code>tests/e2e</code> em 19/10/2026. Antes de citar o número de <b>casos</b> de teste, rode <code>npm test</code> e anote o total.</figcaption>
+  </figure>
+
+  <h3>O que a CI roda em todo PR</h3>
+  <div class="etapas">
+    <span class="etapa">npm ci</span><span class="seta">→</span><span class="etapa">lint</span><span class="seta">→</span><span class="etapa">format:check</span><span class="seta">→</span><span class="etapa">typecheck</span><span class="seta">→</span><span class="etapa">testes unitários</span><span class="seta">→</span><span class="etapa forte">integração (Postgres 17)</span><span class="seta">→</span><span class="etapa">build</span><span class="seta">→</span><span class="etapa forte">E2E (Playwright)</span><span class="seta">→</span><span class="etapa">relatório com capturas</span>
+  </div>
+
+  <h3>Como o grupo trabalha</h3>
+  <p>O processo está escrito em <code>AGENTS.md</code> e vale para pessoas e para os assistentes de IA usados no desenvolvimento:</p>
+  <ol>
+    <li><b>Pedido em 4 blocos</b> antes de codar: o que quero, como, o que não quero, como sei que está pronto (comando + saída).</li>
+    <li><b>TDD em fatias verticais</b>: um teste que falha, o mínimo de código para passar, repete. Nada de escrever todos os testes primeiro.</li>
+    <li><b>“Pronto” é comando executado</b>: <code>npm run lint</code>, <code>npm run typecheck</code> e <code>npm test</code> com a saída à vista.</li>
+    <li><b>Revisão por outra pessoa ou agente</b> no fim da feature: quem escreveu não é quem aprova.</li>
+    <li><b>Commits pequenos</b>, um PBI por vez, no padrão Conventional Commits.</li>
+  </ol>
+
+  <h3>Números de qualidade já medidos</h3>
+  <div class="tabela-rolagem">
+    <table>
+      <thead><tr><th>Requisito</th><th>Meta</th><th>Resultado</th></tr></thead>
+      <tbody>
+        <tr><td>RNF13 · desempenho</td><td>Lighthouse ≥ 90 e LCP &lt; 2,5 s</td><td>Catálogo 97 (2,43 s) · Ficha da obra 98 (2,25 s)</td></tr>
+        <tr><td>RNF20 · responsividade</td><td>320 a 1920 px sem rolagem horizontal</td><td>35 telas × 4 larguras na varredura E2E</td></tr>
+        <tr><td>RNF21 · acessibilidade</td><td>axe-core sem violação crítica</td><td>35 telas passam; contraste dos tokens com teste próprio</td></tr>
+        <tr><td>RNF21 · teclado e foco</td><td>Navegação por teclado nos fluxos principais</td><td><span class="selo plan">conferir à mão</span> (o axe não cobre)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="banca"><div class="banca-titulo">Perguntas prováveis da banca</div><div data-qa="qualidade"></div></div>
+  <div class="proxima"><a href="#banca">Próximo: situação para a banca →</a></div>
+</section>
+
+<!-- ======================= 11 ======================= -->
+<section class="secao" id="banca" data-titulo="Situação para a banca">
+  <div class="parte"><span class="bolinha"></span> Fim · 11</div>
+  <h2>Situação <em>para a banca</em></h2>
+  <div class="resumo-secao">
+    <h3>Resumo de 30 segundos</h3>
+    <ul>
+      <li>Banca em <b>24/11/2026, a partir das 19h10</b>, nos laboratórios. <b>Sem PowerPoint</b>: a avaliação é sobre o sistema funcionando.</li>
+      <li>São 10 critérios de 0 a 0,5. As maiores lacunas são o <b>deploy</b> (9), a <b>validação com o cliente</b> (10) e a <b>assinatura do documento de requisitos</b> (1).</li>
+      <li>Precisamos de um plano B: ambiente local num notebook e um vídeo das operações.</li>
+    </ul>
+  </div>
+  <div class="tabela-rolagem">
+    <table>
+      <thead><tr><th>#</th><th>Critério</th><th>Evidência pedida</th><th>Situação</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Levantamento de requisitos</td><td>Documento validado e assinado pela empresa</td><td><span class="selo plan">sem assinatura</span></td></tr>
+        <tr><td>2</td><td>Modelagem do banco</td><td>DER e banco implementado</td><td><span class="selo ok">pronto</span> DER, schema, 9 migrações</td></tr>
+        <tr><td>3</td><td>Back-end</td><td>Demonstração e código</td><td><span class="selo ok">pronto</span></td></tr>
+        <tr><td>4</td><td>Front-end</td><td>Demonstração das interfaces</td><td><span class="selo ok">pronto</span> admin com o visual do site (PBI-48)</td></tr>
+        <tr><td>5</td><td>Integração front × back</td><td>Operações completas pela interface</td><td><span class="selo ok">pronto</span> webhook ao vivo precisa de URL pública</td></tr>
+        <tr><td>6</td><td>Usabilidade e UX</td><td>Demonstração dos fluxos</td><td><span class="selo ok">E2E e axe</span> <span class="selo plan">teclado e teste com usuários</span></td></tr>
+        <tr><td>7</td><td>Autenticação e perfis</td><td>Acesso e funções de cada perfil</td><td><span class="selo ok">pronto</span></td></tr>
+        <tr><td>8</td><td>Relatórios e consultas</td><td>Consultas e relatórios do sistema</td><td><span class="selo ok">pronto</span> painel e relatório (PBI-48)</td></tr>
+        <tr><td>9</td><td>Disponibilidade e acesso</td><td>Sistema acessível por endereço eletrônico</td><td><span class="selo nao">sem deploy</span> PBI-46</td></tr>
+        <tr><td>10</td><td>Validação com o cliente</td><td>Documento de aceite ou feedback</td><td><span class="selo nao">nada registrado</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="aviso"><span class="simbolo">⚠️</span><div><p>O documento NORMAS DISCIPLINA TCC2 (04/08) traz outros critérios (Apresentação, Complexidade, Técnica, Mercado e Domínio). A mensagem da banca é mais nova. Confirmar com a Profa. Elisa qual vale. Detalhes em <code>docs/PREPARACAO-BANCA.md</code>.</p></div></div>
+
+  <h3>Roteiro da demonstração (10 a 15 min)</h3>
+  <div class="raias roteiro" role="table" aria-label="Roteiro da demonstração">
+    <div class="raias-cabeca" role="row"><div role="columnheader">#</div><div role="columnheader">O que mostrar</div><div role="columnheader">Perfil</div><div role="columnheader">Critérios</div></div>
+    <div class="raia-passo" role="row"><div class="num">1</div><div data-raia="Mostrar">Requisitos assinados e DER aberto</div><div data-raia="Perfil">—</div><div data-raia="Critérios">1, 2</div></div>
+    <div class="raia-passo" role="row"><div class="num">2</div><div data-raia="Mostrar">Home, catálogo, ficha da obra, portfólio, wizard até o WhatsApp</div><div data-raia="Perfil">Visitante</div><div data-raia="Critérios">4, 6</div></div>
+    <div class="raia-passo" role="row"><div class="num">3</div><div data-raia="Mostrar">Cadastro, carrinho, checkout, pagamento no sandbox, pedido confirmado, acompanhamento</div><div data-raia="Perfil">Cliente</div><div data-raia="Critérios">5, 7</div></div>
+    <div class="raia-passo" role="row"><div class="num">4</div><div data-raia="Mostrar">Portfólio e agenda; tentativa de sobrepor horário recusada; acesso ao admin negado</div><div data-raia="Perfil">Artista</div><div data-raia="Critérios">7</div></div>
+    <div class="raia-passo" role="row"><div class="num">5</div><div data-raia="Mostrar">Obras, pedidos e rastreio, clientes, painel e relatório</div><div data-raia="Perfil">Admin</div><div data-raia="Critérios">3, 8</div></div>
+    <div class="raia-passo" role="row"><div class="num">6</div><div data-raia="Mostrar">Endereço público e termo de aceite do cliente</div><div data-raia="Perfil">—</div><div data-raia="Critérios">9, 10</div></div>
+  </div>
+  <div class="proxima"><a href="#simulado">Próximo: simulado →</a></div>
+</section>
+
+<!-- ======================= 12 ======================= -->
+<section class="secao" id="simulado" data-titulo="Simulado de perguntas">
+  <div class="parte"><span class="bolinha"></span> Fim · 12</div>
+  <h2>Simulado <em>de perguntas</em></h2>
+  <p class="lead">Todas as perguntas do guia num lugar só. Um treina o outro: um lê a pergunta, o outro responde em voz alta e depois confere a resposta.</p>
+  <label for="busca-perguntas" class="parte" style="margin-bottom:6px">Buscar pergunta</label>
+  <input id="busca-perguntas" class="busca" type="search" placeholder="Ex.: webhook, monolito, LGPD, Postgres…">
+  <div class="filtros" role="group" aria-label="Filtrar perguntas por tema" id="filtros-perguntas"></div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px">
+    <button class="chip" id="sortear">🎲 Sortear uma pergunta</button>
+    <button class="chip" id="abrir-todas">Abrir todas</button>
+    <button class="chip" id="fechar-todas">Fechar todas</button>
+  </div>
+  <p class="contador" id="contador-perguntas" aria-live="polite"></p>
+  <div id="lista-simulado"></div>
+  <div class="proxima"><a href="#checklist">Próximo: checklist e glossário →</a></div>
+</section>
+
+<!-- ======================= 13 ======================= -->
+<section class="secao" id="checklist" data-titulo="Checklist e glossário">
+  <div class="parte"><span class="bolinha"></span> Fim · 13</div>
+  <h2>Checklist <em>“sei explicar”</em></h2>
+  <p class="lead">Marque só o que você consegue explicar sem olhar. As marcações ficam salvas neste navegador.</p>
+  <div class="barra-check" aria-hidden="true"><span id="barra-check"></span></div>
+  <p class="contador" id="contador-check" aria-live="polite"></p>
+  <ul class="checklist" id="lista-check"></ul>
+  <button class="chip" id="limpar-check">Desmarcar tudo</button>
+
+  <h3>Glossário</h3>
+  <dl class="glossario">
+    <dt>RF / RNF / RN</dt><dd>Requisito funcional (o que o sistema faz), não funcional (como ele deve ser: seguro, rápido, acessível) e regra de negócio (política do Kolô que o sistema impõe).</dd>
+    <dt>P0 / P1</dt><dd>Prioridade: P0 é indispensável para a defesa; P1 entra se o P0 fechar.</dd>
+    <dt>PBI</dt><dd>Item do backlog do produto. Cada feature tem um, em <code>docs/features/</code> e nos documentos de sprint.</dd>
+    <dt>Monolito modular</dt><dd>Uma aplicação e um deploy só, com o código dividido em módulos de fronteira clara.</dd>
+    <dt>Server Action</dt><dd>Função do servidor que o formulário chama direto, sem escrever uma API.</dd>
+    <dt>Route Handler</dt><dd>Endpoint HTTP do Next.js. O webhook do Mercado Pago é um.</dd>
+    <dt>Transação</dt><dd>Grupo de operações no banco que acontece inteiro ou não acontece.</dd>
+    <dt><code>FOR UPDATE</code></dt><dd>Tranca as linhas lidas até a transação terminar, para outra transação esperar em vez de ler um valor velho.</dd>
+    <dt>Restrição de exclusão</dt><dd><code>EXCLUDE USING gist</code>: o Postgres recusa duas linhas que “colidem”, como dois horários sobrepostos do mesmo artista.</dd>
+    <dt>Webhook</dt><dd>Aviso que outro sistema manda para o nosso quando algo acontece (ex.: pagamento aprovado).</dd>
+    <dt>HMAC</dt><dd>Assinatura feita com um segredo compartilhado. Prova que o aviso veio do Mercado Pago e não foi alterado.</dd>
+    <dt>Idempotência</dt><dd>Processar a mesma coisa duas vezes dá o mesmo resultado que processar uma vez.</dd>
+    <dt>Preferência</dt><dd>A “cobrança” criada no Mercado Pago, com itens e URLs. Gera o link do checkout.</dd>
+    <dt>Sandbox</dt><dd>Ambiente de teste do Mercado Pago: pagamentos de mentira, mesmo código de produção.</dd>
+    <dt>URL assinada</dt><dd>Link temporário que autoriza um envio ao R2 sem expor as credenciais.</dd>
+    <dt>Seed</dt><dd>Script que coloca dados iniciais no banco (<code>prisma/seed.ts</code>).</dd>
+    <dt>Migração</dt><dd>Arquivo SQL versionado que muda a estrutura do banco, em ordem.</dd>
+    <dt>LCP</dt><dd>Largest Contentful Paint: tempo até o maior elemento da tela aparecer. Meta abaixo de 2,5 s.</dd>
+    <dt>E2E</dt><dd>Teste ponta a ponta: um navegador de verdade clicando no sistema rodando.</dd>
+    <dt>TDD</dt><dd>Escrever o teste antes do código: vermelho, verde, repete.</dd>
+    <dt>Anonimizar</dt><dd>Trocar os dados pessoais por valores que não identificam ninguém, mantendo o registro.</dd>
+  </dl>
+
+  <div class="fim">
+    <div>
+      <h3>Chegou ao fim</h3>
+      <p>Se você leu tudo, já consegue explicar o produto, a arquitetura, as escolhas da stack e as garantias de compra e agenda. Os próximos passos da equipe são o deploy (PBI-46), a assinatura do documento de requisitos, a sessão de validação com o cliente e dois ensaios cronometrados do roteiro.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:12px">
+        <a class="botao" href="#simulado">Treinar com o simulado</a>
+        <a class="botao secundario" style="background:transparent;color:#fff;border-color:#fff;box-shadow:4px 4px 0 var(--amarelo)" href="#como-ler">Voltar ao início</a>
+      </div>
+    </div>
+    <img src="img/tattoo-mascote.svg" alt="">
+  </div>
+</section>
+
+  </main>
+</div>
+
+<button class="voltar-topo" id="voltar-topo" aria-label="Voltar ao topo">↑</button>
+
+<dialog class="zoom" id="zoom" aria-label="Imagem ampliada">
+  <div class="zoom-barra"><span id="zoom-legenda"></span><button id="zoom-fechar">Fechar (Esc)</button></div>
+  <div class="zoom-corpo"><img id="zoom-img" src="" alt=""></div>
+</dialog>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- Perguntas da banca (fonte única: aparecem na seção e no simulado) ----------
+  const TEMAS = {
+    produto: "Produto", escopo: "Escopo", arquitetura: "Arquitetura", stack: "Stack",
+    dados: "Dados", loja: "Loja e pagamento", agenda: "Agenda", contas: "Contas e papéis",
+    seguranca: "Segurança e LGPD", qualidade: "Qualidade", entrega: "Entrega"
+  };
+  const PERGUNTAS = [
+    { tema: "produto", p: "Qual problema real o sistema resolve?",
+      curta: "O Kolô perdeu o espaço físico e fazia tudo à mão; o site vira o canal de venda, vitrine e porta de entrada do agendamento.",
+      r: "<p>Antes: vendas fora de sistema, nenhum catálogo consultável, agendamento negociado do zero em cada conversa e nenhum histórico de cliente. Agora: loja com pagamento e estoque automáticos, catálogo e portfólio públicos, wizard que organiza o pedido de tatuagem e back-office com painel e relatório.</p>" },
+    { tema: "produto", p: "Quem são os usuários do sistema?",
+      curta: "Visitante, Cliente, Artista e Admin, com permissões diferentes.",
+      r: "<p>O visitante navega e usa o wizard. O cliente compra e acompanha pedidos. O artista gere o próprio portfólio e a própria agenda (RN10). O admin gere tudo. O cadastro público sempre cria Cliente; Artista nasce no admin; o primeiro Admin só pelo seed.</p>" },
+    { tema: "escopo", p: "Por que tiraram o 3D, o Google Calendar e o motor de horários?",
+      curta: "Prazo de 8 semanas: cada um dobrava o trabalho sem mudar a tese. Foram adiados, não descartados.",
+      r: "<ul><li><b>3D:</b> modelar cada obra e manter um fallback 2D custa semanas; a ficha 2D já vende.</li><li><b>Calendar:</b> OAuth por artista e sincronização em dois sentidos.</li><li><b>Motor de horários:</b> disponibilidade semanal, bloqueios e fila de aprovação triplicam as regras, e o estúdio já fecha pelo WhatsApp.</li></ul><p>A lista completa e o motivo de cada corte estão em <code>ESCOPO-E-STACK.md</code> §§2 e 14.</p>" },
+    { tema: "escopo", p: "Por que não usaram a API oficial do WhatsApp?",
+      curta: "Ela exige conta Business verificada, aprovação de modelos de mensagem e cobra por conversa. O link wa.me resolve sem custo.",
+      r: "<p>Com <code>wa.me</code>, quem envia a mensagem é a própria pessoa, pelo WhatsApp dela. O sistema não guarda a conversa, não precisa de aprovação da Meta e não tem custo. O ponto fraco é que não temos confirmação de que a mensagem foi enviada, e para o fluxo do estúdio isso não importa.</p>" },
+    { tema: "escopo", p: "Por que o wizard não grava a solicitação de agendamento?",
+      curta: "Minimização de dados (LGPD) e menos coisa para gerir: o horário só existe quando o artista confirma.",
+      r: "<p>Gravar a solicitação criaria uma fila de pendentes para alguém administrar, com dados pessoais parados no banco. Como o fechamento acontece no WhatsApp, o sistema só guarda o horário combinado (RF22), cadastrado pelo artista ou pelo admin.</p>" },
+    { tema: "escopo", p: "O escopo dizia “sem dashboard”. Por que agora tem painel?",
+      curta: "O critério 8 da banca pede relatórios e consultas; a mudança foi registrada no PBI-48 (RF32) em 18/10.",
+      r: "<p>Mudança de escopo justificada e documentada: o RF32 entrou no ESCOPO, saiu da lista de adiados, e o painel e o relatório foram implementados com testes de integração (<code>painel-admin.test.ts</code>, <code>relatorio-vendas.test.ts</code>).</p>" },
+    { tema: "arquitetura", p: "Por que monolito e não microsserviços?",
+      curta: "Cinco pessoas, oito semanas, um deploy. E a compra precisa de uma transação única entre pedido, reserva e pagamento.",
+      r: "<p>Microsserviços resolvem problemas de times grandes e escala independente, que o Kolô não tem. Com eles, “criar pedido e reservar estoque juntos” viraria consistência distribuída (sagas, compensação). No monolito, é uma transação do Postgres. Ser <b>modular</b> mantém as fronteiras claras (<code>src/modules/*/index.ts</code>), então separar um módulo no futuro continua possível.</p>" },
+    { tema: "arquitetura", p: "Por que Next.js e não o React + Laravel do TCC 1?",
+      curta: "Uma linguagem só, tipos compartilhados entre tela e servidor, um deploy só. Menos divergência de contrato e cabe no prazo.",
+      r: "<p>Com React + Laravel, cada mudança de dado exige alterar a API em PHP, o cliente em JS e manter os dois de acordo. No Next.js, o Server Component lê o banco e entrega para o componente com o mesmo tipo TypeScript; as Server Actions substituem os endpoints internos. A decisão está registrada na monografia (seção 4.5).</p>" },
+    { tema: "arquitetura", p: "Onde fica a regra de negócio: na tela ou no servidor?",
+      curta: "No servidor, nos módulos. A tela só mostra e chama Server Actions.",
+      r: "<p>Validação, permissão, estoque e transições de pedido ficam em <code>src/modules/</code>. Mesmo que o formulário valide no navegador, o servidor valida de novo com o mesmo esquema Zod (RNF09). A permissão é relida no banco a cada operação (<code>comoAdmin</code>).</p>" },
+    { tema: "arquitetura", p: "Como garantem que um módulo não mexa no interior do outro?",
+      curta: "A API pública de cada módulo é o index.ts; a regra está no AGENTS.md e é conferida na revisão.",
+      r: "<p>Quem está fora de <code>src/modules/orders/</code> importa só de <code>orders/index.ts</code>. A exceção documentada é o <code>cliente.ts</code>, com código puro para componentes de navegador quando o <code>index.ts</code> puxa dependências de servidor (SDK, <code>sharp</code>, banco).</p>" },
+    { tema: "stack", p: "Por que PostgreSQL e não MySQL?",
+      curta: "Porque o Postgres garante regras que precisamos: agenda sem sobreposição (EXCLUDE), trava de estoque, busca sem acento, JSONB, e ainda serve de fila.",
+      r: "<ul><li><code>EXCLUDE USING gist</code> com <code>tstzrange</code>: o MySQL não tem restrição de exclusão por intervalo.</li><li><code>unaccent</code> na busca: “Metrópole” e “metropole” acham a mesma obra.</li><li><code>JSONB</code> para guardar o payload do webhook.</li><li>O pg-boss usa o próprio Postgres como fila, então não precisamos de Redis.</li></ul>" },
+    { tema: "stack", p: "Por que Prisma? ORM não esconde o SQL?",
+      curta: "O schema vira contrato tipado, as migrações ficam versionadas e as consultas são parametrizadas. Onde o Prisma não alcança, usamos SQL de propósito.",
+      r: "<p>A restrição de agenda e os <code>CHECK</code> estão escritos em SQL na migração <code>0001_init</code>, e a trava de estoque usa <code>$queryRaw</code> com <code>FOR UPDATE</code>. Usamos o ORM para o comum e SQL para o que é específico do Postgres.</p>" },
+    { tema: "stack", p: "Por que Better Auth e não JWT próprio ou Auth.js?",
+      curta: "Sessão guardada no banco e revogável, e-mail/senha prontos, hash seguro e adaptador para o Prisma. Escrever autenticação do zero é risco.",
+      r: "<p>Um JWT sem estado não pode ser revogado antes de vencer sem uma lista negra. Com a sessão no banco, excluir a linha derruba o acesso na hora, o que precisamos ao rebaixar um artista ou excluir uma conta (RF02).</p>" },
+    { tema: "stack", p: "Por que Mercado Pago Checkout Pro?",
+      curta: "Pix, cartão e boleto no meio de pagamento mais usado no Brasil, e o cartão é digitado na página deles, nunca na nossa.",
+      r: "<p>Como a página de pagamento é hospedada pelo Mercado Pago, o Kolô não trafega nem guarda cartão (RNF10), o que tira o sistema do escopo pesado de PCI-DSS. O sandbox permite testar com o mesmo código de produção; trocar para produção é trocar as credenciais.</p>" },
+    { tema: "stack", p: "Por que pg-boss e não Redis com BullMQ ou um cron?",
+      curta: "Só há uma tarefa (limpar reservas vencidas) e o Postgres já está lá: um serviço a menos para subir e monitorar.",
+      r: "<p>Além disso, a tarefa é só higiene: a disponibilidade já ignora reservas vencidas na consulta. Se a fila atrasar ou rodar duas vezes, o estoque livre não muda. Por isso, se a fila não subir, a loja sobe mesmo assim (<code>src/instrumentation.ts</code>).</p>" },
+    { tema: "stack", p: "Por que Cloudflare R2 para as imagens?",
+      curta: "Compatível com S3, sem taxa de saída de dados, e o navegador envia direto com URL assinada.",
+      r: "<p>O servidor valida tipo e tamanho <b>antes</b> de assinar, guarda só a chave do objeto e depois processa com o <code>sharp</code>: confirma que é JPEG, PNG ou WebP de verdade, limita a 40 milhões de pixels e gera a miniatura WebP. SVG não é aceito porque pode conter script.</p>" },
+    { tema: "stack", p: "Por que VPS e não Vercel?",
+      curta: "Precisamos de um processo Node sempre ligado (o worker do pg-boss) e do Postgres junto, com custo fixo de R$ 30–60/mês.",
+      r: "<p>Plataformas serverless desligam o processo entre requisições, o que não combina com o worker da fila. A VPS com Docker Compose sobe app, Postgres (sem porta exposta), Caddy (HTTPS) e o backup diário.</p>" },
+    { tema: "stack", p: "Por que Tailwind e shadcn/ui?",
+      curta: "Os tokens das duas marcas viram classes e o contraste é testado; os componentes são acessíveis e o código fica no repositório.",
+      r: "<p>Os componentes usam papéis de cor (<code>--kolo-fundo</code>, <code>--kolo-acao</code>) e mudam de visual com <code>data-brand=\"tattoo\"</code>. Um teste lê o <code>globals.css</code> e reprova qualquer par de cores abaixo do AA.</p>" },
+    { tema: "dados", p: "Por que guardar preço em centavos?",
+      curta: "Ponto flutuante erra conta de dinheiro (0,1 + 0,2 dá 0,30000000000000004). Inteiro em centavos não erra.",
+      r: "<p>RN07. R$ 1.250,00 é guardado como <code>125000</code>. O webhook também compara o valor pago com o total do pedido em centavos: se divergir, não paga o pedido e marca para estorno.</p>" },
+    { tema: "dados", p: "Como garantem que um artista não tenha dois horários sobrepostos?",
+      curta: "Uma restrição de exclusão no próprio Postgres recusa a gravação, mesmo com duas pessoas salvando ao mesmo tempo.",
+      r: "<p><code>EXCLUDE USING gist (artist_id WITH =, tstzrange(inicia_em, termina_em, '[)') WITH &amp;&amp;)</code>, ignorando cancelados e excluídos. Validar só no código teria uma janela de corrida entre o “confere” e o “grava”. Teste: <code>tests/integration/agenda.test.ts</code>.</p>" },
+    { tema: "dados", p: "Por que o pedido copia o endereço, o título e o preço?",
+      curta: "O pedido é um registro histórico: não pode mudar quando a obra muda de preço ou o cliente muda de endereço.",
+      r: "<p><code>order.endereco_copia</code> (JSONB), <code>order_item.titulo_copia</code> e <code>preco_centavos_copia</code> congelam o que foi comprado. O endereço do cliente (<code>address</code>) continua editável sem afetar pedidos antigos.</p>" },
+    { tema: "dados", p: "Por que UUID e não id numérico sequencial?",
+      curta: "Não revela quantos registros existem nem permite adivinhar o próximo id, e pode ser gerado fora do banco.",
+      r: "<p>Com id sequencial, <code>/pedido/41</code> sugere que existe o 40. Mesmo com permissão conferida no servidor, UUID evita vazar volume de vendas e facilita gerar ids antes de gravar.</p>" },
+    { tema: "loja", p: "Como evitam vender a mesma obra duas vezes?",
+      curta: "Reserva dentro de uma transação que tranca a linha da obra (SELECT … FOR UPDATE): a segunda compra espera e vê o estoque já reservado.",
+      r: "<p><code>reservarItens</code> em <code>src/modules/orders/reserva.ts</code>: tranca as obras sempre na mesma ordem (por id, para não haver deadlock), calcula disponível = estoque − reservas ativas das outras sessões e reserva tudo ou nada por 10 minutos. O teste de integração dispara compras concorrentes contra um Postgres real.</p>" },
+    { tema: "loja", p: "Por que o pedido só vira pago pelo webhook e não pela página de retorno?",
+      curta: "A URL de retorno passa pelo navegador e pode ser forjada; o webhook é assinado, e mesmo assim consultamos a API do Mercado Pago.",
+      r: "<p>RN05. Qualquer pessoa pode digitar <code>?status=approved</code> na barra de endereço. O webhook tem assinatura HMAC conferida pelo validador oficial do SDK, e o servidor ainda busca o pagamento pelo id na API para ler a situação real. A tela “confirmando pagamento” só espera esse aviso.</p>" },
+    { tema: "loja", p: "E se o Mercado Pago mandar o mesmo aviso duas vezes?",
+      curta: "Nada muda: o evento tem id único e o pagamento é único por (provedor, id externo). É idempotente.",
+      r: "<p>RNF11. O evento é gravado na mesma transação que marca o pedido como pago e baixa o estoque: ou tudo acontece, ou nada. Um reenvio encontra o evento já registrado. Testes: <code>webhook-aprovacao.test.ts</code>, <code>webhook-http.test.ts</code>.</p>" },
+    { tema: "loja", p: "E se o cliente pagar com Pix e demorar?",
+      curta: "A reserva é prorrogada até o vencimento do Pix ou do boleto, para a obra não ir para outra pessoa.",
+      r: "<p>RN06. Quando o webhook avisa um Pix/boleto pendente, <code>prorrogarReserva</code> estende a reserva. Se vencer sem pagar, o pedido é cancelado e as unidades voltam. Cartão recusado não cancela: o cliente pode tentar de novo enquanto a reserva durar.</p>" },
+    { tema: "loja", p: "E se o pagamento for aprovado, mas a obra já tiver ido para outra pessoa?",
+      curta: "O pedido fica pago (o cliente pagou) e o pagamento é marcado para estorno; o admin resolve pelo filtro “Estorno pendente”.",
+      r: "<p>PBI-43. O mesmo vale para valor diferente do pedido (<code>VALOR_DIVERGENTE</code>) e para pagamento de pedido que não estava mais pendente (<code>PEDIDO_NAO_PENDENTE</code>). O motivo fica em <code>payment.estornar_motivo</code>.</p>" },
+    { tema: "loja", p: "Vocês guardam dados de cartão?",
+      curta: "Não. O cartão é digitado na página do Mercado Pago e nunca passa pelo Kolô.",
+      r: "<p>RNF10. Guardamos só o id externo do pagamento, o método, a situação, o valor e o payload da consulta, para auditoria.</p>" },
+    { tema: "agenda", p: "Como o wizard funciona sem banco?",
+      curta: "Ele só monta um texto e um link wa.me com os dados; quem envia é a própria pessoa.",
+      r: "<p>A função pura <code>mensagemAgendamento</code> recebe nome, artista, estilo, região, tamanho, data, horário e os três aceites e devolve o texto. Por ser pura, é testada sem banco. A data é tratada no fuso de São Paulo (RN09). O wizard tem limite de tentativas (RNF08).</p>" },
+    { tema: "agenda", p: "O sistema confere se o cliente é maior de idade?",
+      curta: "Não. O check é uma declaração; a conferência do documento é presencial, por decisão de escopo.",
+      r: "<p>Os três avisos (RF23–RF25) só liberam o botão do WhatsApp. O documento, a ficha de anamnese e o termo de consentimento ficam na sessão presencial. O sistema não guarda nenhum desses dados.</p>" },
+    { tema: "agenda", p: "Como o artista é impedido de mexer na agenda de outro?",
+      curta: "O servidor confere o papel e o dono do registro em cada operação; o artista só alcança a própria agenda e o próprio portfólio.",
+      r: "<p>RN10. Isso vale no servidor, não só no menu. O E2E <code>restricoes.spec.ts</code> tenta acessar como outro perfil e confere que é negado.</p>" },
+    { tema: "contas", p: "Esconder o menu do admin já protege?",
+      curta: "Não. Cada operação do servidor relê a sessão e o papel no banco; o menu é só conveniência.",
+      r: "<p><code>comoAdmin</code> confere a sessão do cookie e, dentro de uma transação serializável, confirma no banco que o usuário ainda é ADMIN, está ativo e não foi excluído. Quem for rebaixado perde o acesso na hora.</p>" },
+    { tema: "contas", p: "Como a senha é guardada?",
+      curta: "Só o hash, com algoritmo lento e salt por usuário, feito pelo Better Auth. O token de recuperação também é guardado só como hash.",
+      r: "<p>RNF03. O token de recuperação é de uso único e expira (RF03). Mesmo com acesso ao banco, não dá para usar um token roubado da tabela, porque lá está só o hash.</p>" },
+    { tema: "contas", p: "E se alguém tentar adivinhar senhas em massa?",
+      curta: "Limite de tentativas por janela, guardado no Postgres e calculado num único comando atômico.",
+      r: "<p><code>src/lib/rate-limit/index.ts</code>: <code>INSERT … ON CONFLICT DO UPDATE</code> soma e decide no mesmo comando, então uma rajada simultânea não passa toda antes de a contagem ser gravada. A chave é um hash de IP + e-mail, sem guardar nenhum dos dois legível.</p>" },
+    { tema: "seguranca", p: "O que o sistema faz com dados de saúde?",
+      curta: "Nada: não coleta e não guarda. Não existe tabela nem campo para isso (RNF18).",
+      r: "<p>Dado de saúde é dado pessoal sensível na LGPD e exige cuidados específicos. A anamnese e o termo acontecem presencialmente. O wizard só exige o aceite dos avisos para abrir o WhatsApp, e esse aceite não é gravado.</p>" },
+    { tema: "seguranca", p: "Como fica a LGPD quando o cliente exclui a conta?",
+      curta: "Os dados pessoais são anonimizados e os pedidos pagos ficam, para a integridade contábil (RN12, RNF19).",
+      r: "<p>A exclusão pede a senha e roda numa transação só (<code>src/modules/customers/exclusao.ts</code>): troca o nome por “Cliente excluído” e o e-mail por um endereço reservado que nunca recebe mensagem, apaga telefone, sessões, credencial, endereço e carrinho, cancela pedidos ainda pendentes e marca <code>excluido_em</code>. No endereço copiado dos pedidos ficam só cidade e UF, que servem ao registro da venda sem identificar a pessoa. Se houver pedido a caminho, a exclusão espera a entrega.</p>" },
+    { tema: "seguranca", p: "Como se protegem de SQL Injection e XSS?",
+      curta: "SQL: consultas parametrizadas pelo Prisma e templates no SQL direto. XSS: o React escapa o texto e o upload não aceita SVG.",
+      r: "<p>A CSP restritiva e os cabeçalhos de segurança (RNF05, RNF07) entram com o Caddy no deploy, e esse ponto deve ser apresentado como pendente.</p>" },
+    { tema: "qualidade", p: "Como vocês sabem que o sistema funciona?",
+      curta: "171 arquivos de teste em três níveis, e a CI roda todos em cada PR antes de entrar na main.",
+      r: "<p>Lint, formatação, tipos, testes unitários, integração com Postgres 17, build de produção e E2E com Playwright. O relatório do Playwright guarda as capturas das telas nas 4 larguras como evidência. Cada RF P0 tem ao menos um teste automatizado.</p>" },
+    { tema: "qualidade", p: "Por que não usam mock do banco nos testes?",
+      curta: "O que queremos provar (trava, restrição, unicidade) só existe no Postgres; um mock passaria com o bug.",
+      r: "<p>A regra do projeto é: escrita transacional (reserva, agenda, webhook) é testada contra Postgres real. Os testes de integração criam bancos descartáveis próprios, sem tocar o banco de desenvolvimento.</p>" },
+    { tema: "qualidade", p: "Como mediram acessibilidade e responsividade?",
+      curta: "axe-core em 35 telas e 4 larguras (320, 768, 1440, 1920 px) sem violação; Lighthouse 97 e 98; contraste dos tokens testado.",
+      r: "<p>O axe não confere navegação por teclado e foco visível nos fluxos; isso ainda precisa de revisão manual (pendência do PBI-45).</p>" },
+    { tema: "qualidade", p: "Vocês usaram IA para desenvolver?",
+      curta: "Sim, como ferramenta, dentro de um processo: pedido em 4 blocos, TDD, gate de testes e revisão por outro agente ou pessoa. A responsabilidade pelo código é da equipe.",
+      r: "<p>O processo está escrito em <code>AGENTS.md</code> e nas skills do repositório. Nenhuma mudança entra sem lint, tipos e testes passando na CI, e cada integrante precisa saber explicar o que foi feito, que é o objetivo deste guia. Respondam com transparência.</p>" },
+    { tema: "entrega", p: "O sistema está no ar?",
+      curta: "Hoje, não: o deploy na VPS com HTTPS é o PBI-46. Temos um plano B com ambiente local e vídeo.",
+      r: "<p>Atualizem esta resposta quando o deploy sair. O plano inclui Dockerfile, Compose de produção (app, Postgres sem porta exposta, Caddy, backup), variáveis de produção, URL do webhook no painel do Mercado Pago e CORS do R2.</p>" },
+    { tema: "entrega", p: "O cliente validou o sistema?",
+      curta: "Pendente: falta a sessão com o responsável do Kolô e o termo de aceite assinado.",
+      r: "<p>O roteiro previsto: o cliente executa as tarefas principais, registramos o feedback (atende / atende parcialmente / não atende), corrigimos o que for rápido e o resto vira trabalho futuro na monografia.</p>" }
+  ];
+
+  const escapar = (t) => t.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  function cartaoPergunta(q, mostrarTema) {
+    const d = document.createElement("details");
+    d.className = "pergunta";
+    d.dataset.tema = q.tema;
+    d.innerHTML = `<summary>${escapar(q.p)}</summary><div class="resposta"><p class="curta">Resposta curta: ${escapar(q.curta)}</p>${q.r}${mostrarTema ? `<span class="tag-secao">Tema: ${TEMAS[q.tema]}</span>` : ""}</div>`;
+    return d;
+  }
+  document.querySelectorAll("[data-qa]").forEach((alvo) => {
+    PERGUNTAS.filter((q) => q.tema === alvo.dataset.qa).forEach((q) => alvo.appendChild(cartaoPergunta(q, false)));
+  });
+
+  // Simulado com busca e filtro por tema
+  const lista = document.getElementById("lista-simulado");
+  const cartoesSimulado = PERGUNTAS.map((q) => {
+    const c = cartaoPergunta(q, true);
+    c.dataset.texto = (q.p + " " + q.curta + " " + q.r.replace(/<[^>]+>/g, " ")).toLowerCase();
+    lista.appendChild(c);
+    return c;
+  });
+  const filtrosP = document.getElementById("filtros-perguntas");
+  let temaAtual = "todos";
+  [["todos", "Todos"], ...Object.entries(TEMAS)].forEach(([chave, nome]) => {
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.textContent = nome;
+    b.setAttribute("aria-pressed", String(chave === "todos"));
+    b.addEventListener("click", () => {
+      temaAtual = chave;
+      filtrosP.querySelectorAll(".chip").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      aplicarFiltro();
+    });
+    filtrosP.appendChild(b);
+  });
+  const busca = document.getElementById("busca-perguntas");
+  const contador = document.getElementById("contador-perguntas");
+  function visiveis() { return cartoesSimulado.filter((c) => !c.hidden); }
+  function aplicarFiltro() {
+    const termo = busca.value.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    cartoesSimulado.forEach((c) => {
+      const texto = c.dataset.texto.normalize("NFD").replace(/[̀-ͯ]/g, "");
+      c.hidden = !((temaAtual === "todos" || c.dataset.tema === temaAtual) && (!termo || texto.includes(termo)));
+    });
+    contador.textContent = `${visiveis().length} de ${cartoesSimulado.length} perguntas`;
+  }
+  busca.addEventListener("input", aplicarFiltro);
+  aplicarFiltro();
+  document.getElementById("abrir-todas").addEventListener("click", () => visiveis().forEach((c) => (c.open = true)));
+  document.getElementById("fechar-todas").addEventListener("click", () => cartoesSimulado.forEach((c) => (c.open = false)));
+  document.getElementById("sortear").addEventListener("click", () => {
+    const v = visiveis();
+    if (!v.length) return;
+    cartoesSimulado.forEach((c) => (c.open = false));
+    const escolhida = v[Math.floor(Math.random() * v.length)];
+    escolhida.scrollIntoView({ block: "center" });
+    escolhida.querySelector("summary").focus();
+  });
+
+  // ---------- Filtro da stack ----------
+  const filtrosStack = document.getElementById("filtros-stack");
+  filtrosStack.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    filtrosStack.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    document.querySelectorAll("#tabela-stack tbody tr").forEach((tr) => {
+      tr.hidden = b.dataset.camada !== "todas" && tr.dataset.camada !== b.dataset.camada;
+    });
+  });
+
+  // ---------- Wizard ----------
+  const PASSOS = [
+    ["Nome", "Como a pessoa quer ser chamada. Vai na primeira linha da mensagem."],
+    ["Artista", "Lista os artistas cadastrados no admin (RF28). Não há página pública de artista nesta versão."],
+    ["Estilo", "Estilos de tatuagem ligados ao artista escolhido (tabela artist_style)."],
+    ["Região do corpo", "Onde será a tatuagem. Ajuda o artista a estimar tempo e valor na conversa."],
+    ["Tamanho", "Faixas de tamanho (size_tier), não medida exata."],
+    ["Data e horário", "É uma preferência, não um horário travado: não existe motor de horários livres. Tratado no fuso de São Paulo (RN09)."],
+    ["Avisos obrigatórios", "Três checks: anamnese presencial (RF23), termo presencial (RF24) e maioridade (RF25). Sem os três, o botão não libera. Nada é gravado."],
+    ["WhatsApp", "Abre wa.me com a mensagem pronta (RF21). Referências de imagem a pessoa manda na própria conversa."]
+  ];
+  const arquivos = ["1-nome", "2-artista", "3-estilo", "4-regiao", "5-tamanho", "6-data", "7-avisos", "8-whatsapp"];
+  const passosEl = document.getElementById("passos-wizard");
+  let passo = 0;
+  PASSOS.forEach(([nome], i) => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.textContent = `${i + 1}. ${nome}`;
+    b.addEventListener("click", () => mostrarPasso(i));
+    li.appendChild(b);
+    passosEl.appendChild(li);
+  });
+  function mostrarPasso(i) {
+    passo = i;
+    const src = `img/wizard-${arquivos[i]}-celular.webp`;
+    const img = document.getElementById("wizard-img");
+    img.src = src;
+    img.alt = `Tela de referência do wizard, etapa ${i + 1}: ${PASSOS[i][0]}`;
+    const tela = document.getElementById("wizard-tela");
+    tela.dataset.zoom = src;
+    tela.dataset.legenda = `Wizard, etapa ${i + 1}: ${PASSOS[i][0]}`;
+    document.getElementById("wizard-titulo").textContent = `Etapa ${i + 1} de 8 · ${PASSOS[i][0]}`;
+    document.getElementById("wizard-desc").textContent = PASSOS[i][1];
+    passosEl.querySelectorAll("button").forEach((b, j) => (j === i ? b.setAttribute("aria-current", "step") : b.removeAttribute("aria-current")));
+    document.getElementById("wizard-ant").disabled = i === 0;
+    document.getElementById("wizard-prox").disabled = i === PASSOS.length - 1;
+  }
+  document.getElementById("wizard-ant").addEventListener("click", () => mostrarPasso(Math.max(0, passo - 1)));
+  document.getElementById("wizard-prox").addEventListener("click", () => mostrarPasso(Math.min(PASSOS.length - 1, passo + 1)));
+  mostrarPasso(0);
+
+  // ---------- Zoom de imagens ----------
+  const dialogo = document.getElementById("zoom");
+  document.addEventListener("click", (e) => {
+    const alvo = e.target.closest("[data-zoom]");
+    if (!alvo || !alvo.dataset.zoom) return;
+    document.getElementById("zoom-img").src = alvo.dataset.zoom;
+    document.getElementById("zoom-img").alt = alvo.dataset.legenda || "";
+    document.getElementById("zoom-legenda").textContent = alvo.dataset.legenda || "";
+    dialogo.showModal();
+  });
+  document.getElementById("zoom-fechar").addEventListener("click", () => dialogo.close());
+  dialogo.addEventListener("click", (e) => { if (e.target === dialogo) dialogo.close(); });
+
+  // ---------- Checklist ----------
+  const ITENS = [
+    "Explicar o problema do Kolô e as três frentes do produto",
+    "Dizer o que saiu do escopo e por quê (3D, Calendar, motor de horários)",
+    "Desenhar a arquitetura: navegador, Caddy, Next.js, Postgres, pg-boss e serviços externos",
+    "Justificar monolito modular e Next.js no lugar de React + Laravel",
+    "Dizer onde cada ferramenta da stack é usada no código",
+    "Explicar a restrição EXCLUDE que impede agenda sobreposta",
+    "Explicar a reserva de 10 minutos com FOR UPDATE",
+    "Explicar por que o pedido só fica pago pelo webhook (assinatura + consulta à API)",
+    "Explicar idempotência do webhook",
+    "Explicar o caminho do wizard até o WhatsApp e por que nada é gravado",
+    "Explicar como o papel é conferido no servidor (comoAdmin)",
+    "Explicar o que o sistema faz com dados de saúde e de cartão",
+    "Mostrar a CI e explicar os três níveis de teste",
+    "Saber o que ainda está pendente (deploy, assinatura, validação) e o plano B"
+  ];
+  const listaCheck = document.getElementById("lista-check");
+  const CHAVE = "kolo-guia-checklist";
+  let marcados = [];
+  try { marcados = JSON.parse(localStorage.getItem(CHAVE) || "[]"); } catch (_) { marcados = []; }
+  ITENS.forEach((texto, i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<label><input type="checkbox" data-i="${i}"${marcados.includes(i) ? " checked" : ""}><span>${escapar(texto)}</span></label>`;
+    listaCheck.appendChild(li);
+  });
+  function atualizarCheck() {
+    const atuais = [...listaCheck.querySelectorAll("input:checked")].map((x) => Number(x.dataset.i));
+    try { localStorage.setItem(CHAVE, JSON.stringify(atuais)); } catch (_) {}
+    const txt = `${atuais.length} de ${ITENS.length}`;
+    document.getElementById("contador-check").textContent = `${txt} itens que você sabe explicar`;
+    document.getElementById("progresso-lateral").textContent = txt;
+    document.getElementById("barra-check").style.width = `${(atuais.length / ITENS.length) * 100}%`;
+  }
+  listaCheck.addEventListener("change", atualizarCheck);
+  document.getElementById("limpar-check").addEventListener("click", () => {
+    listaCheck.querySelectorAll("input").forEach((x) => (x.checked = false));
+    atualizarCheck();
+  });
+  atualizarCheck();
+
+  // ---------- Navegação: progresso, seção atual, sumário móvel ----------
+  const barra = document.getElementById("barra-progresso");
+  const topoBtn = document.getElementById("voltar-topo");
+  function aoRolar() {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    barra.style.width = `${max > 0 ? (scrollY / max) * 100 : 0}%`;
+    topoBtn.classList.toggle("visivel", scrollY > 900);
+  }
+  addEventListener("scroll", aoRolar, { passive: true });
+  aoRolar();
+  topoBtn.addEventListener("click", () => scrollTo({ top: 0 }));
+
+  const links = [...document.querySelectorAll(".lateral a")];
+  const secaoAtual = document.getElementById("secao-atual");
+  const observador = new IntersectionObserver((entradas) => {
+    entradas.forEach((en) => {
+      if (!en.isIntersecting) return;
+      links.forEach((a) => {
+        const ativo = a.getAttribute("href") === `#${en.target.id}`;
+        a.classList.toggle("ativo", ativo);
+        if (ativo) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current");
+      });
+      secaoAtual.textContent = en.target.dataset.titulo || "";
+    });
+  }, { rootMargin: "-30% 0px -65% 0px" });
+  document.querySelectorAll("section.secao").forEach((s) => observador.observe(s));
+
+  const lateral = document.getElementById("sumario");
+  const abrir = document.getElementById("abrir-sumario");
+  abrir.addEventListener("click", () => {
+    const aberta = lateral.classList.toggle("aberta");
+    abrir.setAttribute("aria-expanded", String(aberta));
+  });
+  links.forEach((a) => a.addEventListener("click", () => {
+    lateral.classList.remove("aberta");
+    abrir.setAttribute("aria-expanded", "false");
+  }));
+  addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && lateral.classList.contains("aberta")) {
+      lateral.classList.remove("aberta");
+      abrir.setAttribute("aria-expanded", "false");
+      abrir.focus();
+    }
+  });
+})();
+</script>
+</body>
+</html>
