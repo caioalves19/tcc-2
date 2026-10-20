@@ -36,8 +36,10 @@ Hoje há 12 figuras no `.md`: 6 diagramas (as Fig. 4.1 e 4.2 em Mermaid dentro d
 
 ## Referências e citações
 
-- [ ] **Artigos científicos**: em separação pelo grupo. Hoje a lista só tem livros, normas e documentação.
-- [ ] Conferir que cada citação do texto está na lista e vice-versa, depois de entrarem os artigos.
+- [x] **Artigos científicos**: 13 artigos e 1 dissertação incluídos e citados no texto (Cap. 1, 2, 3 e 5), conferidos no Crossref e nos repositórios. Com a tese de Fielding (2000), o Capítulo 2 cobre os seis tipos pedidos na estrutura: artigos, livros, normas, documentação oficial, dissertação e tese.
+- [x] Conferir que cada citação do texto está na lista e vice-versa, depois de entrarem os artigos. A LGPD passou a ser citada como (BRASIL, 2018), e Mercado Pago, PostgreSQL e React, que estavam só na lista, passaram a ser citados no §4.2.2.
+- [ ] Manter OWASP 2021 e WCAG 2.1: os títulos da Seção 2.4 usam os códigos de 2021, e o RNF21 e os testes usam a WCAG 2.1. Trocar de versão exigiria renumerar a seção.
+- [ ] Não tirar Fielding (2000) da lista: é a única tese citada.
 - [x] Tabela 2.1 reescrita só com o que as páginas citadas informam (o resto está como "não identificado").
 - [x] Frases sobre "taxas de intermediação" (§1.6 e §6.3.1) reescritas de forma neutra, sem afirmar fato verificável.
 - [ ] (Opcional) Procurar fontes específicas sobre dados de saúde em Booksy e sobre reserva de estoque no checkout do Shopify, para reforçar a Tabela 2.1. (Nuvemshop foi removida da tabela por falta de informação verificada.)
