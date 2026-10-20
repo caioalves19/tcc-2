@@ -123,6 +123,7 @@ This Final Course Project (TCC) addresses the modernization of operational proce
 | Sigla | Significado |
 | :--- | :--- |
 | **ACID** | Atomicidade, Consistência, Isolamento e Durabilidade (*Atomicity, Consistency, Isolation, Durability*) |
+| **ANSI** | Instituto Nacional Americano de Padrões (*American National Standards Institute*) |
 | **API** | Interface de Programação de Aplicações (*Application Programming Interface*) |
 | **ARIA** | Aplicações Ricas de Internet Acessíveis (*Accessible Rich Internet Applications*) |
 | **CGI.br** | Comitê Gestor da Internet no Brasil |
@@ -227,6 +228,8 @@ Impulsionado pela divulgação de seu processo criativo por meio de plataformas 
 
 Conforme apontam Laudon e Traver (2021), a evolução do comércio eletrônico exige que pequenas e médias empresas desenvolvam ecossistemas digitais próprios, capazes de assegurar a integridade de transações comerciais, a autonomia na apresentação do acervo e a comunicação assíncrona com consumidores, integrando os canais físicos e digitais do negócio.
 
+No caso brasileiro, Sousa, Klein e Voese (2022), em pesquisa com 120 gestores de micro e pequenas empresas que vendem pela internet, verificaram que a percepção dos benefícios e dos obstáculos do comércio eletrônico é influenciada pelas pressões institucionais do ambiente em que o negócio atua. O resultado ajuda a compreender por que a adoção de canais digitais próprios tornou-se uma pauta também para pequenos negócios, como o Kolô.
+
 ## 1.2 Problema de Pesquisa
 
 A despeito da demanda gerada pela divulgação virtual, o diagnóstico dos processos operacionais do Kolô revelou limitações tecnológicas nos controles internos:
@@ -234,7 +237,7 @@ A despeito da demanda gerada pela divulgação virtual, o diagnóstico dos proce
 1. **Gestão Manual de Vendas e Acervo:** O controle do catálogo de obras e as vendas eram realizados de forma predominantemente manual, dependendo de trocas individuais de mensagens em redes sociais e registros descentralizados. Esse modelo gerava retrabalho na conferência de disponibilidade de peças físicas e atrasos no fechamento de pedidos;
 2. **Ausência de Catálogo Digital Centralizado:** Interessados na aquisição de obras dependiam do envio avulso de fotos e informações por aplicativos de mensagens, sem um ambiente unificado para consulta de dados catalográficos, dimensões, técnicas de produção e certificados de autenticidade;
 3. **Complexidade no Atendimento Inicial de Tatuagem:** O processo de agendamento de sessões exigia diálogos longos e repetitivos para triagem preliminar de ideias, estilos artísticos, regiões corporais, dimensões aproximadas e esclarecimento de normas de biossegurança e conformidade legal (como a maioridade civil e a realização presencial da anamnese clínica);
-4. **Governança de Dados e Conformidade:** O trânsito de dados pessoais por múltiplos canais informais de mensagens exigia a estruturação de um ambiente formalizado em conformidade com as diretrizes da Lei Geral de Proteção de Dados (LGPD, Lei 13.709/2018), resguardando o estabelecimento quanto à não retenção digital de dados clínicos sensíveis.
+4. **Governança de Dados e Conformidade:** O trânsito de dados pessoais por múltiplos canais informais de mensagens exigia a estruturação de um ambiente formalizado em conformidade com as diretrizes da Lei Geral de Proteção de Dados — LGPD, Lei 13.709/2018 (BRASIL, 2018) —, resguardando o estabelecimento quanto à não retenção digital de dados clínicos sensíveis.
 
 Diante desse cenário, formula-se o seguinte **problema de pesquisa**:
 
@@ -298,9 +301,13 @@ Os sistemas de informação são conceituados por Laudon e Laudon (2014) como um
 
 No contexto econômico, Turban et al. (2015) definem o comércio eletrônico (*e-commerce*) como a realização de transações comerciais, compra e venda de mercadorias e prestação de serviços mediadas por redes de computadores. Enquanto os grandes conglomerados varejistas exploram modelos de catálogo massificado de bens de consumo padronizados, a digitalização dos setores artesanais e autorais — englobados pelo conceito de economia criativa — impõe particularidades substantivas.
 
-A pesquisa TIC Empresas, conduzida pelo Comitê Gestor da Internet no Brasil (CGI.br, 2023), acompanha o uso de tecnologias digitais, inclusive o comércio eletrônico, pelas empresas brasileiras; nesse contexto, a adoção de canais próprios de venda amplia a capacidade de relacionamento direto de pequenos negócios com seus consumidores. No caso específico de um ateliê de arte física e estúdio de tatuagem, o modelo de negócios transcende o varejo tradicional: cada obra física representa uma peça única e autoral, frequentemente de tiragem unitária e alto valor agregado estético, cuja venda exige transparência técnica (dimensões, pigmentos, suporte) e confiança transacional (LAUDON; TRAVER, 2021). 
+A pesquisa TIC Empresas, conduzida pelo Comitê Gestor da Internet no Brasil (CGI.br, 2023), acompanha o uso de tecnologias digitais, inclusive o comércio eletrônico, pelas empresas brasileiras; nesse contexto, a adoção de canais próprios de venda amplia a capacidade de relacionamento direto de pequenos negócios com seus consumidores. No caso específico de um ateliê de arte física e estúdio de tatuagem, o modelo de negócios transcende o varejo tradicional: cada obra física representa uma peça única e autoral, frequentemente de tiragem unitária e alto valor agregado estético, cuja venda exige transparência técnica (dimensões, pigmentos, suporte) e confiança transacional (LAUDON; TRAVER, 2021).
+
+Gefen, Karahanna e Straub (2003) demonstraram que, nas compras on-line, a confiança no vendedor pesa tanto quanto a utilidade e a facilidade de uso percebidas, e que essa confiança se constrói, entre outros fatores, pela percepção de mecanismos de segurança no site e por uma interface típica e fácil de usar. No Kolô, esses conceitos se aplicam à delegação do pagamento ao ambiente de um provedor reconhecido e à apresentação clara das políticas da loja.
 
 Ademais, ao contrário de plataformas que operam como *marketplaces* multifacetados abertos a terceiros — que demandam esquemas complexos de divisão de repasses (*split payment*) e gestão de disputa entre múltiplos vendedores (EVANS; SCHMALENSEE, 2016) —, o Kolô adota o modelo de **loja autoral centralizada**. Nesse modelo, o ateliê gerencia o acervo físico de seus artistas residentes, necessitando de uma vitrine coesa que projete sua identidade e ofereça uma jornada de checkout sem etapas redundantes.
+
+Essa escolha dialoga com a literatura sobre o mercado de arte. Ricucci e Blank (2026) analisam por que as plataformas digitais não eliminaram os intermediários desse mercado, no qual as galerias continuam centrais na atribuição de valor às obras. No Kolô, o próprio ateliê exerce esse papel de intermediação entre seus artistas e os compradores, agora também no ambiente digital.
 
 ---
 
@@ -326,6 +333,8 @@ A análise comparativa, limitada ao que as páginas consultadas informam, eviden
 2. O marketplace de arte consultado condiciona a venda à candidatura como parceiro (galeria, instituição, leilão, feira ou outro), o que limita o uso por um ateliê independente que deseja manter sua própria vitrine, e não contempla serviços de tatuagem;
 3. As plataformas de agendamento consultadas (Booksy e Tattoodo) priorizam a reserva direta de horários com profissionais, com portfólios e avaliações, e não descrevem uma etapa estruturada de triagem do projeto de tatuagem nem o encaminhamento ao WhatsApp. O tratamento de dados de saúde por essas plataformas não foi avaliado neste trabalho: a decisão do Kolô de não armazenar a anamnese decorre do Artigo 11 da LGPD (Seção 2.5.2), e não de uma deficiência verificada nas demais soluções.
 
+No âmbito acadêmico, Lee e Lee (2019) estudaram a Saatchi Art, plataforma digital de comercialização de arte, e observaram que ela reduz barreiras para compradores iniciantes, como a distância geográfica e o ambiente intimidador das galerias, mas que a participação dos usuários na valorização das obras permanece limitada e orientada pela curadoria. O resultado reforça a importância de uma identidade curatorial própria, como a que o Kolô mantém em sua vitrine.
+
 Assim, a concepção do sistema Kolô justifica-se por unificar a comercialização de acervo físico e a triagem assistida de serviços corporais em um único ambiente sob controle do estabelecimento.
 
 ---
@@ -334,7 +343,7 @@ Assim, a concepção do sistema Kolô justifica-se por unificar a comercializaç
 
 A consistência de dados em aplicações de comércio eletrônico repousa sobre a correta implementação dos princípios ACID (Atomicidade, Consistência, Isolamento e Durabilidade), formalizados na teoria de bancos de dados relacionais (SILBERSCHATZ; KORTH; SUDARSHAN, 2020). 
 
-Em sistemas web multiusuário, requisições HTTP paralelas são processadas de maneira concorrente pelo servidor. Quando múltiplos clientes tentam simultaneamente reservar ou adquirir o mesmo registro no banco de dados, podem manifestar-se anomalias de concorrência:
+Em sistemas web multiusuário, requisições HTTP paralelas são processadas de maneira concorrente pelo servidor. Quando múltiplos clientes tentam simultaneamente reservar ou adquirir o mesmo registro no banco de dados, podem manifestar-se anomalias de concorrência, sistematizadas por Berenson et al. (1995) em sua crítica aos níveis de isolamento definidos pelo padrão ANSI SQL:
 - **Atualização Perdida (*Lost Update*):** Ocorre quando duas transações leem o mesmo estado inicial de um registro e gravam alterações subsequentes com base nessa leitura, de modo que a segunda transação sobrescreve e anula os efeitos da primeira sem o conhecimento do sistema (KLEPPMANN, 2017);
 - **Leitura Suja (*Dirty Read*):** Situação em que uma transação lê dados modificados por outra transação que ainda não realizou o commit formal e que pode vir a ser revertida (*rollback*);
 - **Leitura Não Repetível (*Non-repeatable Read*) e Fantasmas (*Phantom Reads*):** Quando uma transação executa uma consulta agregada ou condicional repetidas vezes e encontra registros inseridos ou alterados por outras transações concorrentes já concluídas.
@@ -368,9 +377,11 @@ A aplicação Kolô implementa defesas em duas camadas:
 - Na camada de apresentação, o framework React 19 realiza o escape automático de entidades HTML por padrão em todas as variáveis interpoladas em componentes JSX/TSX (BANKS; PORCELLO, 2020; STEFANOV, 2016);
 - Na camada de aplicação servidora (`src/proxy.ts` e `src/lib/seguranca.ts`), o sistema gera cabeçalhos de segurança dinâmicos, incluindo uma Content Security Policy (CSP) com *nonce* criptográfico individual por requisição, delimitando as origens autorizadas para carregamento de scripts e estilos.
 
+A opção por uma CSP baseada em *nonce* segue a proposta de Weichselbaum et al. (2016). Ao analisarem 26.011 políticas distintas em uso na web, os autores identificaram falhas que permitiam contornar 94,72% delas e verificaram que 75,81% empregavam listas de domínios autorizados que possibilitavam esse contorno. Como alternativa, propuseram políticas baseadas em *nonce* combinadas com a diretiva `strict-dynamic`, abordagem adotada pelo Kolô.
+
 ### 2.4.3 Autenticação Segura com Hash scrypt (A07:2021 — Identification and Authentication Failures)
 
-Senhas de acesso nunca são salvas em formato de texto claro. O módulo de autenticação utiliza o Better Auth, que processa senhas por meio do algoritmo de derivação de chaves **scrypt** com *salt* criptográfico individual por usuário. O scrypt foi concebido com alto custo de memória e processamento, dificultando ataques baseados em força bruta paralela ou dicionários pré-computados (*Rainbow Tables*).
+Senhas de acesso nunca são salvas em formato de texto claro. O módulo de autenticação utiliza o Better Auth, que processa senhas por meio do algoritmo de derivação de chaves **scrypt** (PERCIVAL; JOSEFSSON, 2016), com *salt* criptográfico individual por usuário. O scrypt foi concebido com alto custo de memória e processamento, dificultando ataques baseados em força bruta paralela ou dicionários pré-computados (*Rainbow Tables*).
 
 As sessões autenticadas utilizam cookies protegidos com os atributos:
 - `HttpOnly`: Impede que o token de sessão seja acessado via scripts no navegador (mitigando roubo de sessão via XSS);
@@ -387,13 +398,15 @@ Ao receber um webhook do Mercado Pago no endpoint `/api/webhooks/mercadopago`, o
 
 ## 2.5 Privacidade e Conformidade com a LGPD (Lei 13.709/2018)
 
-A promulgação da Lei Geral de Proteção de Dados Pessoais (LGPD, Lei Federal nº 13.709/2018) estabeleceu diretrizes para a coleta, tratamento e retenção de dados de pessoas naturais.
+A promulgação da Lei Geral de Proteção de Dados Pessoais — LGPD, Lei Federal nº 13.709/2018 (BRASIL, 2018) — estabeleceu diretrizes para a coleta, tratamento e retenção de dados de pessoas naturais.
 
 ### 2.5.1 Princípios de Minimização e Finalidade (Artigo 6º)
 
 O princípio da necessidade (Art. 6º, III) estipula que o tratamento de dados deve se limitar ao mínimo indispensável para a realização de suas finalidades específicas. A arquitetura de dados do Kolô foi projetada sob o paradigma do *Privacy by Design*:
 - O cadastro de clientes restringe-se estritamente aos dados exigidos para contato e despacho postal de encomendas: nome completo, e-mail, telefone e endereço de entrega;
 - A conferência de documentos fiscais e dados de pagamento é delegada integralmente ao gateway bancário homologado PCI DSS (PCI SECURITY STANDARDS COUNCIL, 2022).
+
+Camêlo e Alves (2023) observam que a LGPD é de difícil interpretação e conversão em requisitos de software, e propõem um guia para especificar requisitos de privacidade desde as fases iniciais do desenvolvimento. No Kolô, essa preocupação aparece nos requisitos não funcionais de privacidade e nas decisões descritas nas Seções 2.5.2 e 2.5.3; tais medidas, por si sós, não atestam a conformidade integral com a lei.
 
 ### 2.5.2 Tratamento de Dados Sensíveis de Saúde na Tatuagem (Artigo 11)
 
@@ -422,6 +435,8 @@ A eficácia de um sistema web depende de sua capacidade de proporcionar uma inte
 
 ### 2.6.1 Heurísticas de Usabilidade de Nielsen
 
+A avaliação heurística foi apresentada por Nielsen e Molich (1990) como um método de inspeção em que avaliadores examinam a interface à luz de princípios gerais de usabilidade. Os autores mostraram que um avaliador isolado identifica apenas parte dos problemas e que a combinação de três a cinco avaliadores produz resultados melhores. Neste trabalho, as heurísticas foram empregadas como diretrizes de projeto, e não como método formal de avaliação.
+
 Dentre as dez heurísticas ergonômicas propostas por Nielsen (1994), destacam-se quatro que orientaram diretamente o projeto de interfaces do Kolô:
 1. **Visibilidade do Estado do Sistema:** A interface comunica o andamento de operações assíncronas através de indicadores visuais claros, como o cronômetro regressivo de reserva no checkout e indicadores de etapa no wizard de agendamento;
 2. **Correspondência entre o Sistema e o Mundo Real:** A terminologia empregada reflete o vocabulário de ateliês e estúdios de arte (ficha técnica, técnica mista, tiragem, blackwork), dispensando jargões computacionais desnecessários;
@@ -437,11 +452,13 @@ Para assegurar conformidade com o nível AA:
 - **Navegação por Teclado e Foco Visível:** Todos os elementos operáveis (links, formulários, botões) possuem estados de foco evidentes (`focus-visible`), permitindo a navegação completa via teclado;
 - **Semântica Estrutural e Textos Alternativos:** A interface utiliza elementos semânticos do HTML5 e provê descrições no atributo `alt` de fotografias de acervo e portfólio, garantindo leitura por tecnologias assistivas de leitores de tela.
 
+A verificação automática, contudo, não esgota a avaliação de acessibilidade. Vigo, Brown e Conway (2013) compararam ferramentas automáticas com a avaliação de especialistas e mostraram que elas cobrem apenas parte dos critérios da WCAG. Guimarães (2016), ao avaliar sites brasileiros de comércio eletrônico com ferramentas automáticas e com usuários cegos, constatou que nenhum deles atingia o nível mínimo recomendado pela WCAG 2.0 e que as barreiras de navegação chegaram a impedir a conclusão de uma compra. Essas limitações são retomadas na Seção 5.6.3.
+
 ---
 
 ## 2.7 Padrões Arquiteturais de Software: Monólito Modular versus Microsserviços
 
-A escolha do padrão arquitetural constitui uma decisão relevante para a viabilidade, custo e manutenibilidade de uma aplicação web (SOMMERVILLE, 2019; PRESSMAN; MAXIM, 2021). A literatura recente discute a divisão entre microsserviços distribuídos e sistemas monolíticos (NEWMAN, 2015).
+A escolha do padrão arquitetural constitui uma decisão relevante para a viabilidade, custo e manutenibilidade de uma aplicação web (SOMMERVILLE, 2019; PRESSMAN; MAXIM, 2021). A literatura discute a divisão entre microsserviços distribuídos e sistemas monolíticos (NEWMAN, 2015).
 
 A arquitetura de microsserviços propõe a divisão da aplicação em serviços autônomos, cada qual com banco de dados próprio, comunicando-se através da rede. Conforme apontam Richards e Ford (2020), embora os microsserviços ofereçam escalabilidade independente para organizações com múltiplas equipes, introduzem complexidades adicionais:
 - Latência cumulativa de rede e necessidade de gerenciar falhas parciais;
@@ -450,8 +467,10 @@ A arquitetura de microsserviços propõe a divisão da aplicação em serviços 
 
 Em contrapartida, a **Arquitetura Monolítica Modular** reúne as camadas de negócio e apresentação em uma única base de código implantada como uma unidade executável, organizando internamente as responsabilidades através de fronteiras de módulos delimitadas (SOMMERVILLE, 2019).
 
+Em revisão sistemática recente, Al-Qora'n e Al-Said Ahmad (2025) caracterizam o monólito modular como uma arquitetura híbrida, posicionada entre o monólito tradicional e os microsserviços, que combina a simplicidade operacional do primeiro com modularidade e manutenibilidade. Os autores apontam, porém, a escassez de comparações empíricas entre as arquiteturas; por isso, a escolha é apresentada aqui como adequada ao contexto do Kolô, e não como superior em qualquer cenário.
+
 Para o escopo do Kolô, a arquitetura monolítica modular mostrou-se mais adequada pelas seguintes razões técnicas:
-1. **Transações ACID Locais:** O controle de reserva temporária de obras ($Q=1$) exige atomicidade imediata entre o decremento de estoque e a gravação da reserva. No monólito sobre o PostgreSQL, a operação é resolvida dentro de uma transação serializada única, sem dependência de consistência eventual;
+1. **Transações ACID Locais:** O controle de reserva temporária de obras ($Q=1$) exige atomicidade imediata entre o decremento de estoque e a gravação da reserva. No monólito sobre o PostgreSQL, a operação é resolvida dentro de uma única transação local, com bloqueio das linhas disputadas (Seção 2.3), sem dependência de consistência eventual;
 2. **Eliminação de Divergências de Contrato:** O uso do Next.js 16 com TypeScript em modo estrito compartilha modelos de dados e esquemas de validação Zod diretamente entre as Server Actions (servidor) e a interface reativa (cliente) (VERCEL, 2026; NODE.JS, 2026);
 3. **Custo Operacional e Simplicidade de Manutenção:** O sistema completo — abrangendo servidor web, banco relacional e fila de tarefas assíncronas — pode ser operado em uma única máquina virtual privada (VPS) conteinerizada, reduzindo a complexidade de manutenção.
 
@@ -524,8 +543,9 @@ A Sprint 2 implementou os fluxos transacionais e de valor da plataforma:
 
 O trabalho colaborativo pautou-se pelas seguintes práticas:
 1. **Rastreabilidade por PBIs:** Toda funcionalidade correspondeu a um Item do Backlog do Produto formalizado na pasta `docs/features/PBI-*.md`, contendo seus contratos de interface, dependências e critérios de aceite;
-2. **Segregação de Branches e Revisão por Pares (*Peer Review*):** Cada integrante trabalhou em branches temáticas. A aprovação de solicitações de integração (*Pull Requests*) exigiu a revisão de código por outro integrante da equipe;
-3. **Portões de Qualidade na Esteira de CI (GitHub Actions):** O repositório foi configurado para validar a cada PR a checagem de tipos (`npm run typecheck`), a conformidade do linter (`npm run lint`), a formatação (`npm run format:check`) e a suíte de testes automatizados (`npm test`).
+2. **Segregação de Branches e Revisão por Pares (*Peer Review*):** Cada integrante trabalhou em branches temáticas. A aprovação de solicitações de integração (*Pull Requests*) exigiu a revisão de código por outro integrante da equipe. Bacchelli e Bird (2013) mostram que, embora a busca por defeitos seja a principal motivação das revisões, elas também promovem transferência de conhecimento, consciência da equipe sobre o código e soluções alternativas, benefícios relevantes em uma equipe de cinco integrantes;
+3. **Portões de Qualidade na Esteira de CI (GitHub Actions):** O repositório foi configurado para validar a cada PR a checagem de tipos (`npm run typecheck`), a conformidade do linter (`npm run lint`), a formatação (`npm run format:check`), os testes unitários (`npm test`), os testes de integração com PostgreSQL real (`npm run test:integration`), o build de produção e os testes de ponta a ponta com Playwright (`npm run test:e2e`). A prática é discutida por Hilton et al. (2016), que estudaram o uso, os custos e os benefícios da integração contínua em projetos de código aberto;
+4. **Desenvolvimento Orientado a Testes (TDD):** Os comportamentos foram especificados por testes escritos antes do código de produção (BECK, 2002). Em estudo de caso com quatro equipes industriais, Nagappan et al. (2008) observaram redução de 40% a 90% na densidade de defeitos antes do lançamento, acompanhada de aumento de 15% a 35% no tempo inicial de desenvolvimento; esses números referem-se àquele estudo e não foram medidos neste trabalho.
 
 ---
 
@@ -683,7 +703,7 @@ As regras de negócio do Kolô expressam os requisitos determinísticos de integ
 
 A plataforma Kolô foi estruturada segundo o padrão arquitetural de **Monólito Modular Cliente-Servidor**, orquestrado sobre a plataforma Docker.
 
-A escolha do monólito modular fundamenta-se nas lições de Sommerville (2019) e Richards e Ford (2020), que ressaltam que sistemas integrados de médio porte obtêm coesão, menor custo operacional e menor complexidade de infraestrutura ao manter módulos de negócio delimitados dentro de um mesmo processo executável, evitando os custos de serialização de rede e orquestração inerentes aos microsserviços distribuídos.
+A escolha do monólito modular fundamenta-se nas lições de Sommerville (2019) e Richards e Ford (2020), e na caracterização de Al-Qora'n e Al-Said Ahmad (2025) discutida na Seção 2.7. Esses autores ressaltam que sistemas integrados de médio porte obtêm coesão, menor custo operacional e menor complexidade de infraestrutura ao manter módulos de negócio delimitados dentro de um mesmo processo executável, evitando os custos de serialização de rede e orquestração inerentes aos microsserviços distribuídos.
 
 ### 4.2.1 Diagrama Estrutural da Arquitetura
 
@@ -731,11 +751,11 @@ graph TB
 Cada tecnologia do sistema foi selecionada com base em critérios técnicos mensuráveis:
 
 1. **TypeScript (Linguagem):** Adotado tanto no back-end quanto no front-end em modo estrito (`strict: true`). Garante integridade de tipos de ponta a ponta, permitindo que alterações nos modelos de dados ou esquemas de validação reflitam imediatamente em avisos de compilação;
-2. **Next.js 16 e Node.js 24 LTS (Framework Full-stack e Runtime):** A adoção do Next.js App Router consolida a arquitetura monolítica modular. Por meio dos *React Server Components* (RSC), o servidor renderiza a vitrine de obras e portfólios diretamente em HTML, reduzindo o volume de JavaScript enviado ao navegador. As alterações de estado ocorrem via *Server Actions*, que encapsulam validações com proteção CSRF embutida;
+2. **Next.js 16 e Node.js 24 LTS (Framework Full-stack e Runtime):** A adoção do Next.js App Router consolida a arquitetura monolítica modular. Por meio dos *React Server Components* (RSC), o servidor renderiza a vitrine de obras e portfólios diretamente em HTML, reduzindo o volume de JavaScript enviado ao navegador (REACT, 2024; VERCEL, 2026). As alterações de estado ocorrem via *Server Actions*, que encapsulam validações com proteção CSRF embutida;
 3. **Tailwind CSS 4 e shadcn/ui (Estilização e Componentes):** A interface utiliza componentes desacoplados baseados nas primitivas acessíveis do Base UI (`@base-ui/react`) estilizadas pelo Tailwind CSS, assegurando conformidade com os tokens de identidade visual do ateliê e semântica de acessibilidade (ARIA) nativa;
-4. **PostgreSQL 17 e Prisma 7 (Persistência e ORM):** O PostgreSQL foi selecionado devido ao seu suporte nativo a índices GiST para verificação de sobreposição temporal de intervalos, isolamento serializável de transações e campos do tipo `JSONB` para armazenamento de snapshots de endereços e payloads de webhooks. O Prisma 7 atua como camada de mapeamento objeto-relacional (ORM), oferecendo migrações declarativas e consultas parametrizadas;
+4. **PostgreSQL 17 e Prisma 7 (Persistência e ORM):** O PostgreSQL foi selecionado devido ao seu suporte nativo a índices GiST para verificação de sobreposição temporal de intervalos, isolamento serializável de transações e campos do tipo `JSONB` para armazenamento de snapshots de endereços e payloads de webhooks (POSTGRESQL GLOBAL DEVELOPMENT GROUP, 2026). O Prisma 7 atua como camada de mapeamento objeto-relacional (ORM), oferecendo migrações declarativas e consultas parametrizadas;
 5. **Better Auth (Autenticação e Sessões):** Adotado para emissão de sessões registradas e verificadas no banco de dados relacional com senhas derivadas em scrypt. Permite a revogação de sessões ativas (logout forçado, encerramento de acesso pós-exclusão LGPD);
-6. **Mercado Pago Checkout Pro (Gateway de Pagamento):** A solução de Checkout Pro transfere a responsabilidade da coleta de números de cartões para o ambiente seguro do provedor, enquadrando o Kolô no nível simplificado de conformidade PCI DSS (SAQ-A) e oferecendo suporte simultâneo a Pix, cartão de crédito e boleto bancário;
+6. **Mercado Pago Checkout Pro (Gateway de Pagamento):** A solução de Checkout Pro transfere a responsabilidade da coleta de números de cartões para o ambiente seguro do provedor, enquadrando o Kolô no nível simplificado de conformidade PCI DSS (SAQ-A) e oferecendo suporte simultâneo a Pix, cartão de crédito e boleto bancário (MERCADO PAGO, 2024);
 7. **Cloudflare R2 (Armazenamento de Objetos):** Solução de armazenamento compatível com a API S3 da AWS, sem tarifas de tráfego de saída (*egress fees*), viabilizando o armazenamento de imagens do acervo;
 8. **pg-boss (Fila em Background):** Gerenciador de filas executado no próprio PostgreSQL, empregado para o agendamento de tarefas de liberação de reservas expiradas.
 
@@ -1307,7 +1327,7 @@ A assertiva formal do teste evidenciou:
 2. `expect(rows[0].total).toBe(1)`: A consulta à tabela relacional `artwork_reservation` atestou que a soma das unidades bloqueadas no banco de dados jamais ultrapassou o teto físico unitário ($1$);
 3. **Ausência de Deadlocks:** A ordenação prévia dos identificadores das obras (`ORDER BY id ASC`) assegurou que nenhum bloqueio mútuo fatal ocorresse durante a aquisição das travas no PostgreSQL.
 
-O experimento fornece evidência experimental da eficácia do mecanismo de transação serializada contra condições de corrida (*race conditions*).
+O experimento fornece evidência experimental da eficácia do bloqueio pessimista (`SELECT ... FOR UPDATE`), com ordenação prévia das travas, contra condições de corrida (*race conditions*).
 
 ---
 
@@ -1397,6 +1417,7 @@ Em observância ao rigor acadêmico, apontam-se as seguintes limitações do tra
 
 - **Validação Financeira em Sandbox:** As transações financeiras foram processadas sobre o ambiente de testes (sandbox) do Mercado Pago com compradores simulados, haja vista que a ativação de credenciais finais de produção depende de trâmites bancários de pessoa jurídica do ateliê;
 - **Ambiente de Testes Pré-Deploy:** As métricas de desempenho e acessibilidade foram coletadas localmente sobre o build de produção (`next start`) em contêineres Docker, estando o deploy público na VPS (PBI-46) e a homologação com cartões reais (PBI-47) programados para a etapa subsequente que antecede a banca examinadora;
+- **Acessibilidade Verificada de Forma Automatizada:** A conformidade com a WCAG 2.1 AA foi verificada com o motor `axe-core`, sem avaliação com usuários com deficiência. Como mostram Vigo, Brown e Conway (2013), ferramentas automáticas cobrem apenas parte dos critérios da WCAG, e Guimarães (2016) evidenciou que testes com usuários cegos revelam barreiras concretas de navegação e de conclusão de compra. A ausência de violações reportadas pelo motor, portanto, não equivale à acessibilidade plena do sistema;
 - **Escopo Deliberadamente Postergado (v2.2):** Funcionalidades acessórias — como o visualizador 3D para esculturas e a integração bidirecional com a API do Google Calendar — foram conscientemente postergadas para trabalhos futuros, priorizando a estabilidade do fluxo de compras e a conformidade legal.
 
 
@@ -1484,17 +1505,25 @@ Como desdobramento da plataforma desenvolvida, propõem-se as seguintes frentes 
 
 # REFERÊNCIAS BIBLIOGRÁFICAS
 
+AL-QORA'N, Lamis F.; AL-SAID AHMAD, Amro. Modular monolith architecture in cloud environments: a systematic literature review. **Future Internet**, Basel, v. 17, n. 11, 496, 2025. DOI: 10.3390/fi17110496.
+
 ANDERSON, Ross. **Security Engineering: A Guide to Building Dependable Distributed Systems**. 3. ed. Indianapolis: John Wiley & Sons, 2020.
 
 ARTSY. **Applications | Artsy**. [S. l.]: Artsy, [s. d.]. Disponível em: https://apply.artsy.net/partnerships. Acesso em: 19 out. 2026.
+
+BACCHELLI, Alberto; BIRD, Christian. Expectations, outcomes, and challenges of modern code review. In: INTERNATIONAL CONFERENCE ON SOFTWARE ENGINEERING, 35., 2013, San Francisco. **Proceedings** [...]. Piscataway: IEEE, 2013. p. 712-721. DOI: 10.1109/ICSE.2013.6606617.
 
 BANKS, Alex; PORCELLO, Eve. **Learning React: Modern Patterns for Developing React Apps**. 2. ed. Sebastopol: O'Reilly Media, 2020.
 
 BECK, Kent. **Test-Driven Development: By Example**. Boston: Addison-Wesley Professional, 2002.
 
+BERENSON, Hal et al. A critique of ANSI SQL isolation levels. In: ACM SIGMOD INTERNATIONAL CONFERENCE ON MANAGEMENT OF DATA, 1995, San Jose. **Proceedings** [...]. New York: ACM, 1995. p. 1-10. DOI: 10.1145/223784.223785.
+
 BOOKSY. **Agende Serviços de Beleza em Poucos Cliques – Booksy**. [S. l.]: Booksy, [s. d.]. Disponível em: https://booksy.com/pt-br/. Acesso em: 19 out. 2026.
 
 BRASIL. **Lei nº 13.709, de 14 de agosto de 2018**. Lei Geral de Proteção de Dados Pessoais (LGPD). Diário Oficial da União: seção 1, Brasília, DF, 15 ago. 2018.
+
+CAMÊLO, Moisés Neves; ALVES, Carina. G-Priv: um guia para apoiar a especificação de requisitos de privacidade em conformidade com a LGPD. **iSys: Revista Brasileira de Sistemas de Informação**, Porto Alegre, v. 16, n. 1, 2023. DOI: 10.5753/isys.2023.2743.
 
 CGI.br — COMITÊ GESTOR DA INTERNET NO BRASIL. **Pesquisa sobre o Uso das Tecnologias de Informação e Comunicação nas Empresas Brasileiras — TIC Empresas 2023**. São Paulo: Comitê Gestor da Internet no Brasil, 2023. Disponível em: https://cetic.br/pt/pesquisa/empresas/. Acesso em: 15 out. 2026.
 
@@ -1504,7 +1533,13 @@ FIELDING, Roy Thomas. **Architectural Styles and the Design of Network-based Sof
 
 FOWLER, Martin. **Patterns of Enterprise Application Architecture**. Boston: Addison-Wesley, 2002.
 
+GEFEN, David; KARAHANNA, Elena; STRAUB, Detmar W. Trust and TAM in online shopping: an integrated model. **MIS Quarterly**, Minneapolis, v. 27, n. 1, p. 51-90, 2003. DOI: 10.2307/30036519.
+
 GIL, Antonio Carlos. **Como Elaborar Projetos de Pesquisa**. 6. ed. São Paulo: Atlas, 2017.
+
+GUIMARÃES, Ítalo José Bastos. **Acessibilidade em websites de comércio eletrônico**: avaliação através da interação com usuários cegos. 2016. Dissertação (Mestrado em Ciência da Informação) — Universidade Federal da Paraíba, João Pessoa, 2016. Disponível em: https://repositorio.ufpb.br/jspui/handle/tede/8312. Acesso em: 19 out. 2026.
+
+HILTON, Michael; TUNNELL, Timothy; HUANG, Kai; MARINOV, Darko; DIG, Danny. Usage, costs, and benefits of continuous integration in open-source projects. In: IEEE/ACM INTERNATIONAL CONFERENCE ON AUTOMATED SOFTWARE ENGINEERING, 31., 2016, Singapura. **Proceedings** [...]. New York: ACM, 2016. p. 426-437. DOI: 10.1145/2970276.2970358.
 
 KLEPPMANN, Martin. **Designing Data-Intensive Applications: The Big Ideas Behind Reliable, Scalable, and Maintainable Systems**. Sebastopol: O'Reilly Media, 2017.
 
@@ -1514,11 +1549,17 @@ LAUDON, Kenneth C.; LAUDON, Jane Price. **Management Information Systems: Managi
 
 LAUDON, Kenneth C.; TRAVER, Carol Guercio. **E-commerce: Business, Technology, Society**. 16. ed. Boston: Pearson, 2021.
 
+LEE, Jin Woo; LEE, Soo Hee. User participation and valuation in digital art platforms: the case of Saatchi Art. **European Journal of Marketing**, [s. l.], v. 53, n. 6, p. 1125-1151, 2019. DOI: 10.1108/EJM-12-2016-0788.
+
 MERCADO PAGO. **Documentação para Desenvolvedores: Checkout Pro e Webhooks**. São Paulo: Mercado Livre, 2024. Disponível em: https://www.mercadopago.com.br/developers/pt/docs. Acesso em: 15 out. 2026.
+
+NAGAPPAN, Nachiappan; MAXIMILIEN, E. Michael; BHAT, Thirumalesh; WILLIAMS, Laurie. Realizing quality improvement through test driven development: results and experiences of four industrial teams. **Empirical Software Engineering**, [s. l.], v. 13, n. 3, p. 289-302, 2008. DOI: 10.1007/s10664-008-9062-z.
 
 NEWMAN, Sam. **Building Microservices: Designing Fine-Grained Systems**. Sebastopol: O'Reilly Media, 2015.
 
 NIELSEN, Jakob. **Usability Engineering**. San Francisco: Morgan Kaufmann, 1994.
+
+NIELSEN, Jakob; MOLICH, Rolf. Heuristic evaluation of user interfaces. In: CONFERENCE ON HUMAN FACTORS IN COMPUTING SYSTEMS, 1990, Seattle. **Proceedings** [...]. New York: ACM, 1990. p. 249-256. DOI: 10.1145/97243.97281.
 
 NODE.JS. **Node.js v24.x LTS Documentation**. OpenJS Foundation, 2026. Disponível em: https://nodejs.org/docs/. Acesso em: 15 out. 2026.
 
@@ -1526,6 +1567,8 @@ NODE.JS. **Node.js v24.x LTS Documentation**. OpenJS Foundation, 2026. Disponív
 OWASP — OPEN WORLDWIDE APPLICATION SECURITY PROJECT. **OWASP Top 10: The Ten Most Critical Web Application Security Risks**. OWASP Foundation, 2021. Disponível em: https://owasp.org/Top10/. Acesso em: 10 out. 2026.
 
 PCI SECURITY STANDARDS COUNCIL. **Payment Card Industry (PCI) Data Security Standard: Requirements and Testing Procedures v4.0**. Wakefield: PCI SSC, 2022.
+
+PERCIVAL, Colin; JOSEFSSON, Simon. **RFC 7914: The scrypt Password-Based Key Derivation Function**. Fremont: IETF, 2016. Disponível em: https://www.rfc-editor.org/rfc/rfc7914. Acesso em: 19 out. 2026.
 
 POSTGRESQL GLOBAL DEVELOPMENT GROUP. **PostgreSQL 17.x Documentation**. 2026. Disponível em: https://www.postgresql.org/docs/17/. Acesso em: 15 out. 2026.
 
@@ -1537,6 +1580,8 @@ REACT. **React: A JavaScript library for building user interfaces**. Meta Open S
 
 RICHARDS, Mark; FORD, Neal. **Fundamentals of Software Architecture: An Engineering Approach**. Sebastopol: O'Reilly Media, 2020.
 
+RICUCCI, Rachel; BLANK, Grant. The limits of platforms: why disintermediation has failed in the art market. **New Media & Society**, [s. l.], v. 28, n. 5, p. 1936-1954, 2026. DOI: 10.1177/14614448251316498.
+
 SCHWABER, Ken; SUTHERLAND, Jeff. **The Scrum Guide: The Definitive Guide to Scrum: The Rules of the Game**. Scrum.org, 2020. Disponível em: https://scrumguides.org/. Acesso em: 10 out. 2026.
 
 SHOPIFY. **Shopify Help Center | Inventory and locations**. [S. l.]: Shopify, [s. d.]. Disponível em: https://help.shopify.com/en/manual/inventory-and-locations. Acesso em: 19 out. 2026.
@@ -1544,6 +1589,8 @@ SHOPIFY. **Shopify Help Center | Inventory and locations**. [S. l.]: Shopify, [s
 SILBERSCHATZ, Abraham; KORTH, Henry F.; SUDARSHAN, S. **Database System Concepts**. 7. ed. New York: McGraw-Hill Education, 2020.
 
 SOMMERVILLE, Ian. **Engenharia de Software**. 10. ed. São Paulo: Pearson Education do Brasil, 2019.
+
+SOUSA, Henrique Adriano de; KLEIN, Luciana; VOESE, Simone Bernardes. O impacto das pressões institucionais na adoção e manutenção do e-commerce em micro e pequenas empresas (MPEs) brasileiras. **Revista Brasileira de Gestão de Negócios**, São Paulo, v. 24, n. 2, p. 366-382, 2022. DOI: 10.7819/rbgn.v24i2.4174.
 
 STEFANOV, Stoyan. **React: Up & Running: Building Web Applications**. Sebastopol: O'Reilly Media, 2016.
 
@@ -1555,4 +1602,8 @@ TURBAN, Efraim et al. **Electronic Commerce: A Managerial and Social Networks Pe
 
 VERCEL. **Next.js 16 Documentation: App Router and Server Actions**. Vercel Inc., 2026. Disponível em: https://nextjs.org/docs. Acesso em: 15 out. 2026.
 
+VIGO, Markel; BROWN, Justin; CONWAY, Vivienne. Benchmarking web accessibility evaluation tools: measuring the harm of sole reliance on automated tests. In: INTERNATIONAL CROSS-DISCIPLINARY CONFERENCE ON WEB ACCESSIBILITY, 10., 2013, Rio de Janeiro. **Proceedings** [...]. New York: ACM, 2013. p. 1-10. DOI: 10.1145/2461121.2461124.
+
 W3C — WORLD WIDE WEB CONSORTIUM. **Web Content Accessibility Guidelines (WCAG) 2.1**. W3C Recommendation, 2018. Disponível em: https://www.w3.org/TR/WCAG21/. Acesso em: 10 out. 2026.
+
+WEICHSELBAUM, Lukas; SPAGNUOLO, Michele; LEKIES, Sebastian; JANC, Artur. CSP is dead, long live CSP! On the insecurity of whitelists and the future of content security policy. In: ACM SIGSAC CONFERENCE ON COMPUTER AND COMMUNICATIONS SECURITY, 2016, Viena. **Proceedings** [...]. New York: ACM, 2016. p. 1376-1387. DOI: 10.1145/2976749.2978363.
