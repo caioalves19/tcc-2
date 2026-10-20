@@ -1,26 +1,65 @@
 name: CI
 
-# Só documentação (monografia, specs, .md) não passa por lint/testes/build: o Prettier já
-# ignora *.md e nenhum teste lê docs/.
+# Roda em todo PR e push na main, sem paths-ignore no gatilho: com paths-ignore o workflow nem
+# começa, o check obrigatório `verify` fica em "Expected — waiting" e trava o merge. O job
+# `changes` decide o que rodar; job pulado por `if` conta como sucesso no check obrigatório.
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
   pull_request:
     branches: [main]
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
 
+permissions:
+  contents: read
+  pull-requests: read
+
+# Em PR, um push novo cancela a execução antiga. Na main, cada merge termina a sua.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  verify:
+  changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          predicate-quantifier: some-with-excludes
+          filters: |
+            # Só documentação (docs/, .md) e instruções de agentes (.claude/, .cursor/) não
+            # passam por lint/testes/build: o Prettier ignora docs/ e *.md, não lê *.mdc e
+            # nenhum teste lê essas pastas.
+            code:
+              - "**"
+              - "!docs/**"
+              - "!**/*.md"
+              - "!.claude/**"
+              - "!.cursor/**"
+            # O E2E só roda quando muda o que chega ao navegador ou ao servidor do E2E.
+            e2e:
+              - "src/**"
+              - "tests/e2e/**"
+              - "prisma/**"
+              - "public/**"
+              - "package.json"
+              - "package-lock.json"
+              - "next.config.ts"
+              - "playwright.config.ts"
+              - ".nvmrc"
+              - ".github/workflows/ci.yml"
+
+  verify:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     services:
       postgres:
@@ -36,6 +75,9 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+
+    env:
+      RUN_E2E: ${{ needs.changes.outputs.e2e }}
 
     steps:
       - uses: actions/checkout@v4
@@ -65,19 +107,46 @@ jobs:
         env:
           DATABASE_URL: postgresql://kolo_user:kolo_password@localhost:5432/kolo_db
 
+      # Cache de build recomendado pelo Next; a chave muda com dependências e código.
+      - uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'public/**', 'next.config.ts') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
       - name: Build
         run: npm run build
 
       # PBI-45: E2E contra o build acima, no Postgres de serviço (banco kolo_e2e descartável).
+      - name: Playwright version
+        if: env.RUN_E2E == 'true'
+        id: playwright
+        run: echo "version=$(npx playwright --version | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        if: env.RUN_E2E == 'true'
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
       - name: Install Playwright Chromium
+        if: env.RUN_E2E == 'true' && steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
+      # O cache guarda só o navegador; as bibliotecas do sistema voltam a cada runner novo.
+      - name: Install Playwright system deps
+        if: env.RUN_E2E == 'true' && steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
       - name: E2E tests
+        if: env.RUN_E2E == 'true'
         run: npm run test:e2e
 
       # §13/RNF20: o relatório leva as capturas das telas nas 4 larguras; fica sempre, como evidência.
       - name: Upload Playwright report
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.RUN_E2E == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
