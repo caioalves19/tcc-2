@@ -4,5 +4,7 @@ coverage
 dist
 package-lock.json
 *.md
+# Documentação (monografia, guia do projeto): fora do CI (ver .github/workflows/ci.yml).
+docs
 # Cópia literal de shadcn/dist/tailwind.css (ver o cabeçalho do arquivo).
 src/app/shadcn-tailwind.css
