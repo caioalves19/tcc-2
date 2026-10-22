@@ -33,3 +33,6 @@ CLAUDE.local.md
 # TypeScript / Next.js: gerados automaticamente
 *.tsbuildinfo
 next-env.d.ts
+
+# Saída local do prisma/imagens-demo/popular.ts (UUIDs do banco local; regenerável)
+/public/seed/
