@@ -12,7 +12,7 @@ import { PrismaClient } from "../../generated/prisma/client";
 import { databaseUrl } from "../../src/lib/database-url";
 import { armazenamentoR2, chaveMiniatura } from "../../src/modules/media/index";
 import type { Armazenamento } from "../../src/modules/media/index";
-import { obras, tatuagens } from "./catalogo";
+import { AVISO_DEMO, obras, tatuagens } from "./catalogo";
 
 const pool = new Pool({ connectionString: databaseUrl() });
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
@@ -94,7 +94,7 @@ async function main(): Promise<void> {
         id: t.id,
         artistId: artista.id,
         title: t.titulo,
-        description: t.descricao,
+        description: `${t.descricao} ${AVISO_DEMO}`,
         imageUrl: chave,
         bodyRegion: t.regiaoCorpo,
         durationMins: t.duracaoMinutos,

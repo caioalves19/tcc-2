@@ -19,6 +19,162 @@ export type Tatuagem = {
   prompt: string;
 };
 
+import { situacaoPorEstoque } from "../../src/modules/catalog/cliente";
+import type { SituacaoObra } from "../../src/modules/catalog/cliente";
+
+// Cadastro que o seed de demonstração (prisma/seed-demo.ts) grava antes do popular.ts.
+export type ObraDemo = {
+  slug: string;
+  artistaSlug: string;
+  titulo: string;
+  descricao: string;
+  tecnica: string;
+  dimensoes: string;
+  ano: number;
+  precoCentavos: number; // RN07
+  estoque: number; // RN02; 0 deixa a obra esgotada (RN11)
+  destaque: boolean;
+};
+
+export type EstiloDemo = { slug: string; nome: string; descricao: string };
+
+// PBI-49: as imagens são ilustrativas, não obras do acervo real.
+// Vai ao fim da descrição das obras (seed-demo.ts) e das tatuagens (popular.ts).
+export const AVISO_DEMO = "Demonstração: imagem ilustrativa gerada por IA, fora do acervo real.";
+
+export const artistaDemo = {
+  email: "marina.duarte@kolo.test",
+  nome: "Marina Duarte",
+  slug: "demo-marina-duarte",
+  bio: "Artista fictícia de demonstração. Desenha em traço fino e aquarela, na pele e no papel.",
+  estilos: ["demo-traco-fino", "demo-aquarela"],
+};
+
+// O artista-exemplo vem do prisma/seed.ts; aqui só ganha o estilo das tatuagens dele.
+export const estilosDoArtistaExemplo = ["demo-blackwork"];
+
+export const estilosDemo: EstiloDemo[] = [
+  {
+    slug: "demo-traco-fino",
+    nome: "Traço fino",
+    descricao: "Linhas finas e delicadas, feitas com agulha única.",
+  },
+  {
+    slug: "demo-aquarela",
+    nome: "Aquarela",
+    descricao: "Manchas e aguadas de cor que imitam a pintura em aquarela.",
+  },
+  {
+    slug: "demo-blackwork",
+    nome: "Blackwork",
+    descricao: "Preto sólido, geometria e pontilhismo.",
+  },
+];
+
+export const obrasDemo: ObraDemo[] = [
+  {
+    slug: "demo-estudo-de-maos",
+    artistaSlug: "demo-marina-duarte",
+    titulo: "Estudo de mãos",
+    descricao: "Mãos em gestos diferentes, desenhadas a grafite.",
+    tecnica: "Grafite sobre papel",
+    dimensoes: "29,7 × 42 cm",
+    ano: 2024,
+    precoCentavos: 45_000,
+    estoque: 1,
+    destaque: false,
+  },
+  {
+    slug: "demo-noturno-em-azul",
+    artistaSlug: "artista-exemplo",
+    titulo: "Noturno em azul",
+    descricao: "Telhados da cidade à noite, sob a lua cheia.",
+    tecnica: "Acrílica sobre tela",
+    dimensoes: "60 × 80 cm",
+    ano: 2025,
+    precoCentavos: 280_000,
+    estoque: 1,
+    destaque: true,
+  },
+  {
+    slug: "demo-raizes",
+    artistaSlug: "artista-exemplo",
+    titulo: "Raízes",
+    descricao: "Raízes entrelaçadas na terra vermelha, em empastes de ocre e marrom.",
+    tecnica: "Óleo sobre tela",
+    dimensoes: "70 × 100 cm",
+    ano: 2023,
+    precoCentavos: 420_000,
+    estoque: 0,
+    destaque: false,
+  },
+  {
+    slug: "demo-mare-baixa",
+    artistaSlug: "artista-exemplo",
+    titulo: "Maré baixa",
+    descricao: "Barcos de pesca na areia molhada, na luz da manhã.",
+    tecnica: "Óleo sobre tela",
+    dimensoes: "50 × 70 cm",
+    ano: 2024,
+    precoCentavos: 350_000,
+    estoque: 1,
+    destaque: true,
+  },
+  {
+    slug: "demo-serie-varandas",
+    artistaSlug: "demo-marina-duarte",
+    titulo: "Série Varandas",
+    descricao: "Varandas antigas com grades de ferro trabalhado, a nanquim.",
+    tecnica: "Nanquim sobre papel",
+    dimensoes: "21 × 29,7 cm",
+    ano: 2025,
+    precoCentavos: 32_000,
+    estoque: 3,
+    destaque: false,
+  },
+  {
+    slug: "demo-minhocao",
+    artistaSlug: "demo-marina-duarte",
+    titulo: "Minhocão",
+    descricao: "O Elevado ao entardecer, com gente caminhando sob o céu laranja.",
+    tecnica: "Aquarela sobre papel",
+    dimensoes: "30 × 40 cm",
+    ano: 2025,
+    precoCentavos: 120_000,
+    estoque: 1,
+    destaque: true,
+  },
+  {
+    slug: "demo-feira-de-domingo",
+    artistaSlug: "demo-marina-duarte",
+    titulo: "Feira de domingo",
+    descricao: "Barracas de frutas com toldos listrados numa feira de rua.",
+    tecnica: "Aquarela sobre papel",
+    dimensoes: "30 × 40 cm",
+    ano: 2024,
+    precoCentavos: 98_000,
+    estoque: 1,
+    destaque: false,
+  },
+  {
+    slug: "demo-avenida-paulista",
+    artistaSlug: "artista-exemplo",
+    titulo: "Avenida Paulista",
+    descricao: "Prédios, árvores e trânsito da avenida em aguadas soltas.",
+    tecnica: "Aquarela sobre papel",
+    dimensoes: "36 × 48 cm",
+    ano: 2025,
+    precoCentavos: 150_000,
+    estoque: 2,
+    destaque: false,
+  },
+];
+
+// Toda obra de demonstração é publicada; disponível ou esgotada sai do estoque (RN11).
+export function situacaoDemo(obra: ObraDemo): SituacaoObra {
+  return situacaoPorEstoque(true, obra.estoque);
+}
+
 const OBRA =
   "the artwork photographed flat and straight on, filling the frame, no text, no signature";
 const TATUAGEM =
