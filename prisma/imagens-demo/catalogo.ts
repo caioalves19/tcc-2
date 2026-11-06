@@ -1,5 +1,6 @@
 // Imagens ilustrativas geradas por IA (Pollinations.ai) para os dados de demonstração.
 // gerar.ts baixa cada prompt para imagens/; popular.ts publica os arquivos (R2 ou public/) e grava no banco.
+// Também traz o cadastro (artista, estilos, obras) que ../seed-demo.ts grava antes do popular.ts.
 
 export type ImagemObra = {
   slug: string; // slug da obra já cadastrada
@@ -18,9 +19,6 @@ export type Tatuagem = {
   destaque: boolean;
   prompt: string;
 };
-
-import { situacaoPorEstoque } from "../../src/modules/catalog/cliente";
-import type { SituacaoObra } from "../../src/modules/catalog/cliente";
 
 // Cadastro que o seed de demonstração (prisma/seed-demo.ts) grava antes do popular.ts.
 export type ObraDemo = {
@@ -169,11 +167,6 @@ export const obrasDemo: ObraDemo[] = [
     destaque: false,
   },
 ];
-
-// Toda obra de demonstração é publicada; disponível ou esgotada sai do estoque (RN11).
-export function situacaoDemo(obra: ObraDemo): SituacaoObra {
-  return situacaoPorEstoque(true, obra.estoque);
-}
 
 const OBRA =
   "the artwork photographed flat and straight on, filling the frame, no text, no signature";

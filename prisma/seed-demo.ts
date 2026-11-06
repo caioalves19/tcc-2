@@ -7,13 +7,14 @@ import { Pool } from "pg";
 
 import { PrismaClient } from "../generated/prisma/client";
 import { databaseUrl } from "../src/lib/database-url";
+import { situacaoPorEstoque } from "../src/modules/catalog/index";
+import { planoDoSeed } from "../src/modules/identity/index";
 import {
   AVISO_DEMO,
   artistaDemo,
   estilosDemo,
   estilosDoArtistaExemplo,
   obrasDemo,
-  situacaoDemo,
 } from "./imagens-demo/catalogo";
 
 const pool = new Pool({ connectionString: databaseUrl() });
@@ -31,7 +32,8 @@ async function ligarEstilos(artistId: string, slugs: string[]): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const exemplo = await prisma.artist.findUnique({ where: { slug: "artista-exemplo" } });
+  const slugExemplo = planoDoSeed().artista.slug;
+  const exemplo = await prisma.artist.findUnique({ where: { slug: slugExemplo } });
   if (!exemplo) throw new Error("Rode npm run db:seed antes do db:seed:demo.");
 
   for (const estilo of estilosDemo) {
@@ -58,7 +60,7 @@ async function main(): Promise<void> {
 
   const artistas = new Map([
     [artistaDemo.slug, marina.id],
-    ["artista-exemplo", exemplo.id],
+    [slugExemplo, exemplo.id],
   ]);
   for (const obra of obrasDemo) {
     const artistId = artistas.get(obra.artistaSlug);
@@ -72,7 +74,8 @@ async function main(): Promise<void> {
       year: obra.ano,
       priceCents: obra.precoCentavos,
       stockQuantity: obra.estoque,
-      status: situacaoDemo(obra),
+      // Toda obra de demonstração é publicada; disponível ou esgotada sai do estoque (RN11).
+      status: situacaoPorEstoque(true, obra.estoque),
       featured: obra.destaque,
     };
     await prisma.artwork.upsert({

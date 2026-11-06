@@ -71,6 +71,10 @@ it("PBI-49 popular.ts liga uma imagem a cada obra e cria as 9 tatuagens, sem dup
   try {
     rodar("npm run db:seed:demo");
     rodar("npx tsx prisma/imagens-demo/popular.ts", { R2_PUBLIC_URL: `/${PASTA_LOCAL}` });
+    // Banco que recebeu o popular.ts antes do aviso: repetir o script acrescenta o aviso.
+    await db.query(
+      "UPDATE portfolio_item SET descricao = 'Sem aviso.' WHERE id = '00000000-0000-4000-9000-000000000001'",
+    );
     rodar("npx tsx prisma/imagens-demo/popular.ts", { R2_PUBLIC_URL: `/${PASTA_LOCAL}` });
 
     const imagens = await db.query<{ slug: string; principal: boolean; url: string }>(

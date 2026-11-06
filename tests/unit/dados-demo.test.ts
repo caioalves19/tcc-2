@@ -6,11 +6,8 @@ import {
   estilosDoArtistaExemplo,
   obras,
   obrasDemo,
-  situacaoDemo,
   tatuagens,
 } from "../../prisma/imagens-demo/catalogo";
-
-const situacoesDemo = () => obrasDemo.map(situacaoDemo);
 
 // PBI-49: popular.ts só liga a imagem a uma obra já cadastrada; o seed de demonstração precisa
 // cadastrar exatamente as obras que têm imagem.
@@ -30,8 +27,7 @@ it("PBI-49 as obras de demonstração respeitam preço, estoque e mostram uma es
     expect(obra.precoCentavos, obra.slug).toBeLessThanOrEqual(100_000_000);
     expect(Number.isInteger(obra.estoque) && obra.estoque >= 0 && obra.estoque <= 999).toBe(true);
   }
-  expect(situacoesDemo().filter((s) => s === "ESGOTADA")).toHaveLength(1);
-  expect(situacoesDemo().filter((s) => s === "DISPONIVEL")).toHaveLength(7);
+  expect(obrasDemo.filter((obra) => obra.estoque === 0)).toHaveLength(1);
 });
 
 // popular.ts pula a tatuagem cujo artista ou estilo não existe; o artista também precisa

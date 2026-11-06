@@ -81,7 +81,18 @@ async function main(): Promise<void> {
     }
     const chave = `portfolio/${artista.id}/${t.id}.webp`;
     await enviar(`tatuagens/${t.id}.webp`, chave);
-    if (await prisma.portfolioItem.findUnique({ where: { id: t.id } })) {
+    const descricao = `${t.descricao} ${AVISO_DEMO}`;
+    const existente = await prisma.portfolioItem.findUnique({ where: { id: t.id } });
+    if (existente) {
+      // Banco que recebeu este script antes do aviso de imagem ilustrativa (PBI-49).
+      if (existente.description !== descricao) {
+        await prisma.portfolioItem.update({
+          where: { id: t.id },
+          data: { description: descricao },
+        });
+        console.log(`~ tatuagem ${t.titulo} (aviso de demonstração)`);
+        continue;
+      }
       console.log(`= tatuagem ${t.titulo}`);
       continue;
     }
@@ -94,7 +105,7 @@ async function main(): Promise<void> {
         id: t.id,
         artistId: artista.id,
         title: t.titulo,
-        description: `${t.descricao} ${AVISO_DEMO}`,
+        description: descricao,
         imageUrl: chave,
         bodyRegion: t.regiaoCorpo,
         durationMins: t.duracaoMinutos,
