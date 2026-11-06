@@ -12,6 +12,35 @@ npm run db:seed
 
 O cadastro público, quando existir, nasce `CLIENTE`. O primeiro `ADMIN` só entra por este seed.
 
+## Dados de demonstração — PBI-49
+
+Para ver o catálogo, a página da obra, a home e o portfólio com obras e tatuagens fictícias (com
+imagem), rode depois do bloco acima:
+
+```bash
+npm run db:migrate
+npm run db:seed
+npm run db:seed:demo                      # artista demo-marina-duarte, 3 estilos e 8 obras demo-*
+npx tsx prisma/imagens-demo/popular.ts    # imagens das obras e as 9 tatuagens do portfólio
+```
+
+Os dois últimos comandos podem rodar de novo sem duplicar nada. O `db:seed:demo` fica fora do
+`db:seed` de propósito: o banco de produção do cliente só recebe a demonstração se alguém rodar
+esse comando. As imagens são ilustrativas, geradas por IA. Origem, licença e como regenerar estão
+em [`prisma/imagens-demo/README.md`](prisma/imagens-demo/README.md).
+
+O `popular.ts` envia as imagens para um de dois destinos, conforme o `R2_PUBLIC_URL` do `.env`:
+
+| Forma | `R2_PUBLIC_URL` | Para onde vão as imagens |
+| --- | --- | --- |
+| Local, sem R2 | `/seed` | `public/seed/` (fora do git), servida pelo próprio Next |
+| Com R2 | `https://pub-....r2.dev` ou o domínio do bucket | bucket do `R2_BUCKET`, com as credenciais da seção “Upload de imagens” |
+
+Com `/seed`, as credenciais do R2 podem ficar vazias. O upload pelas telas (PBI-17) só funciona
+com R2. O banco guarda só a chave da imagem (`obras/<id do artista>/…`), e o endereço completo
+sai do `R2_PUBLIC_URL` na hora de exibir. Se trocar de forma, rode o `popular.ts` de novo para os
+arquivos existirem no destino novo. Depois de mudar o `.env`, reinicie o `npm run dev`.
+
 ## 📌 Padronização de Commits
 
 Este projeto utiliza o padrão [Conventional Commits](https://www.conventionalcommits.org/).
