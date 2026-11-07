@@ -72,7 +72,7 @@ export const estilosDemo: EstiloDemo[] = [
 export const obrasDemo: ObraDemo[] = [
   {
     slug: "demo-estudo-de-maos",
-    artistaSlug: "demo-marina-duarte",
+    artistaSlug: "artista-exemplo",
     titulo: "Estudo de mãos",
     descricao: "Mãos em gestos diferentes, desenhadas a grafite.",
     tecnica: "Grafite sobre papel",
@@ -156,7 +156,7 @@ export const obrasDemo: ObraDemo[] = [
   },
   {
     slug: "demo-avenida-paulista",
-    artistaSlug: "artista-exemplo",
+    artistaSlug: "demo-marina-duarte",
     titulo: "Avenida Paulista",
     descricao: "Prédios, árvores e trânsito da avenida em aguadas soltas.",
     tecnica: "Aquarela sobre papel",
