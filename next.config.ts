@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+import { cabecalhosDeArquivo } from "./src/lib/seguranca";
+
 // Libera o host público do R2 para o next/image (RNF14: formato moderno e tamanhos
 // responsivos). Sem R2_PUBLIC_URL nenhuma imagem remota é aceita.
 function hostsDeImagem(): NonNullable<NonNullable<NextConfig["images"]>["remotePatterns"]> {
@@ -20,8 +22,23 @@ function origensDeDesenvolvimento(): string[] {
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: origensDeDesenvolvimento(),
+  // RNF07: a resposta não anuncia o framework.
+  poweredByHeader: false,
   // O `next dev` registra os argumentos das Server Actions, e o login e o cadastro levam senha.
   logging: { serverFunctions: false },
+  // RNF07: o proxy (src/proxy.ts) pula todo caminho com ponto (robots.txt, sitemap.xml,
+  // /_next/static, public); aqui esses caminhos recebem os cabeçalhos de segurança.
+  async headers() {
+    return [
+      {
+        source: "/:arquivo(.*\\..*)",
+        headers: Object.entries(cabecalhosDeArquivo(process.env)).map(([key, value]) => ({
+          key,
+          value,
+        })),
+      },
+    ];
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: hostsDeImagem(),

@@ -14,8 +14,12 @@ export type CabecalhosDeSeguranca = {
   "X-Content-Type-Options": string;
   "Referrer-Policy": string;
   "X-Frame-Options": string;
+  "Permissions-Policy": string;
   "Strict-Transport-Security"?: string;
 };
+
+// RNF07: recursos do navegador que o site não usa ficam desligados para qualquer script.
+const PERMISSOES = "camera=(), microphone=(), geolocation=(), payment=(), usb=()";
 
 // RNF05: CSP estrita por nonce. O proxy gera um nonce novo a cada requisição e o Next o aplica
 // aos próprios scripts; 'strict-dynamic' libera o que esses scripts carregarem (ex.: Turnstile).
@@ -56,6 +60,18 @@ export function cabecalhosDeSeguranca(nonce: string, ambiente: Ambiente): Cabeca
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "X-Frame-Options": "DENY",
+    "Permissions-Policy": PERMISSOES,
     ...(producao ? { "Strict-Transport-Security": "max-age=31536000" } : {}),
+  };
+}
+
+// RNF07: robots.txt, sitemap.xml, /_next/static e o public ficam fora do proxy (sem nonce). Nenhum é
+// página, então a CSP não libera nada; o resto repete os cabeçalhos das páginas.
+export function cabecalhosDeArquivo(ambiente: Ambiente): CabecalhosDeSeguranca {
+  return {
+    ...cabecalhosDeSeguranca("", ambiente),
+    // form-action, base-uri e frame-ancestors não herdam do default-src.
+    "Content-Security-Policy":
+      "default-src 'none'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'",
   };
 }
