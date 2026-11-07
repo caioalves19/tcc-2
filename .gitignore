@@ -39,3 +39,6 @@ docs/aps/evidencias/*/e2e.json
 
 # Saída local do prisma/imagens-demo/popular.ts (UUIDs do banco local; regenerável)
 /public/seed/
+
+# APS: .docx gerado a partir do APS.md (regenerável; ver docs/aps/README.md)
+docs/aps/APS-gerado.docx
