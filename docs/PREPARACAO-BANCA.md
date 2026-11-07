@@ -6,7 +6,7 @@
 >
 > **Atenção:** o documento NORMAS DISCIPLINA TCC2 (04/08/2026) traz outros critérios (Apresentação, Complexidade, Técnica, Mercado e Domínio, 1,0 ponto cada). A mensagem da banca é mais nova; confirmar com a Profa. Elisa qual vale.
 >
-> **Pré-requisito:** quem não entregar a monografia até 20/10 não apresenta (ver `PREPARACAO-MONOGRAFIA.md`).
+> **Pré-requisito:** quem não entregar a monografia até 20/10 não apresenta (entregue: `docs/tcc-2.pdf`).
 
 ---
 
