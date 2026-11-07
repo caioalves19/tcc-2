@@ -51,6 +51,7 @@ export function FormularioEndereco({
   }
   return (
     <form
+      method="post"
       noValidate
       onChange={() => setSucesso(false)}
       onSubmit={(evento) => {
