@@ -187,3 +187,21 @@ it("o seed disponibiliza tamanhos iniciais sem duplicar ao repetir", async () =>
   const tamanhos = await db.query("SELECT nome FROM size_tier ORDER BY ordem");
   expect(tamanhos.rows).toEqual([{ nome: "Pequena" }, { nome: "Média" }, { nome: "Grande" }]);
 }, 30_000);
+
+// APS (qualidade): o bloqueio também vale para a revisão, não só para a consulta de opções.
+it("RNF08 com o limite estourado, a revisão da preferência é recusada antes de validar", async () => {
+  const { createHash } = await import("node:crypto");
+  const { revisarPreferenciaWizard } = await import("../../src/modules/scheduling/index");
+  const chave = `wizard:${createHash("sha256").update("aps-limite-revisao").digest("hex")}`;
+  await db.query(
+    "INSERT INTO rate_limit (chave, tentativas, janela_inicio) VALUES ($1, 60, NOW())",
+    [chave],
+  );
+
+  expect(
+    await revisarPreferenciaWizard(
+      { nome: "inválido" },
+      new Headers({ "x-real-ip": "aps-limite-revisao" }),
+    ),
+  ).toEqual({ ok: false, mensagem: "Muitas tentativas. Tente novamente em 10 minutos." });
+});

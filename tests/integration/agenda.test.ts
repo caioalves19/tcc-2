@@ -418,3 +418,47 @@ it("RF22/RN10 o admin vê todos os artistas e filtra; cliente e visitante não l
   expect(await lerAgenda(cliente, {})).toMatchObject({ ok: false, erro: "proibido" });
   expect(await lerAgenda(new Headers(), {})).toMatchObject({ ok: false, erro: "nao_autenticado" });
 });
+
+// APS (qualidade): ramos de RN10 e RF22 que a suíte ainda não exercitava.
+it("RN10 conta de artista inativada perde a agenda na hora, mesmo com sessão aberta", async () => {
+  const { lerAgenda } = await import("../../src/modules/scheduling");
+  await db.query("UPDATE \"user\" SET situacao = 'INATIVO' WHERE email = 'bia@pbi17.test'");
+  try {
+    expect(await lerAgenda(bia, {})).toMatchObject({ ok: false, erro: "proibido" });
+  } finally {
+    await db.query("UPDATE \"user\" SET situacao = 'ATIVO' WHERE email = 'bia@pbi17.test'");
+  }
+});
+
+it("RF22 semana que não vem como texto (?semana repetido) cai na semana atual", async () => {
+  const { lerAgenda } = await import("../../src/modules/scheduling");
+  const segunda = async (filtro: Record<string, unknown>) => {
+    const r = await lerAgenda(admin, filtro);
+    if (!r.ok) throw new Error(r.mensagem);
+    return r.dados.dias[0]?.data;
+  };
+  // A semana atual é lida antes e depois: o teste não falha se rodar na virada da semana.
+  const antes = await segunda({});
+  const repetida = await segunda({ semana: ["2026-10-14", "2026-10-21"] });
+  const depois = await segunda({});
+
+  expect([antes, depois]).toContain(repetida);
+  expect(repetida).not.toBe("2026-10-12");
+});
+
+it("RF22 o admin edita sem escolher artista e o horário continua com a artista original", async () => {
+  const { cadastrarHorario, editarHorario } = await import("../../src/modules/scheduling");
+  const criado = await cadastrarHorario(horario(), ana);
+  if (!criado.ok) throw new Error(criado.mensagem);
+  const { id } = criado.dados;
+
+  expect(await editarHorario({ id, ...horario({ nomeContato: "Lucas S." }) }, admin)).toMatchObject(
+    { ok: true },
+  );
+
+  const { rows } = await db.query("SELECT artist_id, nome_contato FROM appointment WHERE id = $1", [
+    id,
+  ]);
+  expect(rows).toEqual([{ artist_id: idAna, nome_contato: "Lucas S." }]);
+  expect(await editarHorario(null, admin)).toMatchObject({ ok: false, erro: "nao_encontrado" });
+});
