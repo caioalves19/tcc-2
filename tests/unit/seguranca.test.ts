@@ -57,6 +57,17 @@ it("RF27 a CSP libera o endereço público do R2 nas imagens e o endpoint da con
   );
 });
 
+// PBI-49: em desenvolvimento as imagens de demonstração saem de public/seed (R2_PUBLIC_URL=/seed),
+// do próprio site.
+it("RF27 com R2_PUBLIC_URL relativa as imagens ficam restritas ao próprio site", () => {
+  const csp = cabecalhosDeSeguranca("abc123", {
+    NODE_ENV: "development",
+    R2_PUBLIC_URL: "/seed",
+  })["Content-Security-Policy"];
+
+  expect(diretiva(csp, "img-src")).toEqual(["'self'", "data:"]);
+});
+
 // RNF08 (PBI-44): o desafio do Turnstile abre num iframe da Cloudflare.
 it("RNF08 a CSP libera o iframe do Turnstile e nenhum outro", () => {
   const csp = cabecalhosDeSeguranca("abc123", { NODE_ENV: "production" })[

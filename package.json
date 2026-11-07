@@ -22,6 +22,7 @@
     "test:e2e": "playwright test",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed",
+    "db:seed:demo": "tsx prisma/seed-demo.ts",
     "db:generate": "prisma generate",
     "postinstall": "prisma generate"
   },
