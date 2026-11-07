@@ -30,10 +30,10 @@ export function cabecalhosDeSeguranca(nonce: string, ambiente: Ambiente): Cabeca
   // upgrade-insecure-requests deixariam o navegador preso em https.
   const producao = ambiente.NODE_ENV === "production";
   // RF27 (PBI-17): imagens do endereço público do bucket; envio direto do navegador ao endpoint
-  // da conta (URL assinada em path-style, ver modules/media/r2.ts).
-  const r2Publico = ambiente.R2_PUBLIC_URL?.trim()
-    ? new URL(ambiente.R2_PUBLIC_URL).origin
-    : undefined;
+  // da conta (URL assinada em path-style, ver modules/media/r2.ts). Caminho relativo (ex.: /seed,
+  // PBI-49) é do próprio site e já cabe no 'self'.
+  const publica = ambiente.R2_PUBLIC_URL?.trim();
+  const r2Publico = publica && !publica.startsWith("/") ? new URL(publica).origin : undefined;
   const r2Envio = ambiente.R2_ACCOUNT_ID?.trim()
     ? `https://${ambiente.R2_ACCOUNT_ID.trim()}.r2.cloudflarestorage.com`
     : undefined;
