@@ -48,7 +48,7 @@ async function imagensDa(obraId: string) {
   const { listarObras } = await import("../../src/modules/catalog");
   const lista = await listarObras(admin);
   if (!lista.ok) throw new Error(lista.mensagem);
-  return lista.dados.find((obra) => obra.id === obraId)?.imagens ?? [];
+  return lista.dados.obras.find((obra) => obra.id === obraId)?.imagens ?? [];
 }
 
 async function obraComImagens(slug: string, quantidade: number, base: number) {

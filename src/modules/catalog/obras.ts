@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { Prisma } from "../../../generated/prisma/client";
 import { comoAdmin, ErroGestao, validar } from "../artists/index";
 import type { ResultadoGestao } from "../artists/index";
@@ -114,41 +115,72 @@ export async function excluirObra(
   return { ok: true, dados: { modo: excluida.dados.modo } };
 }
 
-export function listarObras(cabecalhos: Headers) {
+const OBRAS_ADMIN_POR_PAGINA = 20;
+// Vêm da URL (?pagina=...&editar=...): qualquer valor fora do esperado volta ao padrão.
+const schemaListaObras = z.object({
+  pagina: z.coerce.number().int().min(1).max(1_000_000).catch(1),
+  editar: z.uuid().nullable().catch(null).default(null),
+});
+const INCLUI_OBRA_ADMIN = {
+  artist: { include: { user: true } },
+  tags: true,
+  images: { orderBy: { order: "asc" } },
+} satisfies Prisma.ArtworkInclude;
+type ObraComVinculos = Prisma.ArtworkGetPayload<{ include: typeof INCLUI_OBRA_ADMIN }>;
+
+function obraDoAdmin(obra: ObraComVinculos) {
+  return {
+    id: obra.id,
+    titulo: obra.title,
+    slug: obra.slug,
+    descricao: obra.description,
+    artistaId: obra.artistId,
+    artistaNome: obra.artist.user.name,
+    tecnica: obra.technique,
+    dimensoes: obra.dimensions,
+    ano: obra.year,
+    precoCentavos: obra.priceCents,
+    estoque: obra.stockQuantity,
+    situacao: obra.status,
+    destaque: obra.featured,
+    tags: obra.tags.map((vinculo) => vinculo.tagId),
+    imagens: obra.images.map((imagem) => ({
+      id: imagem.id,
+      chave: imagem.url,
+      chaveMiniatura: chaveMiniatura(imagem.url),
+      ordem: imagem.order,
+      principal: imagem.primary,
+      textoAlternativo: imagem.altText ?? "",
+    })),
+  };
+}
+
+export function listarObras(cabecalhos: Headers, entrada: unknown = {}) {
   return comoAdmin(cabecalhos, async (tx) => {
+    const { pagina, editar } = schemaListaObras.parse(
+      typeof entrada === "object" && entrada !== null ? entrada : {},
+    );
+    const where = { deletedAt: null };
+    const total = await tx.artwork.count({ where });
     const obras = await tx.artwork.findMany({
-      where: { deletedAt: null },
-      include: {
-        artist: { include: { user: true } },
-        tags: true,
-        images: { orderBy: { order: "asc" } },
-      },
-      orderBy: { title: "asc" },
+      where,
+      include: INCLUI_OBRA_ADMIN,
+      // O id desempata, para uma obra não repetir nem sumir entre as páginas.
+      orderBy: [{ title: "asc" }, { id: "asc" }],
+      skip: (pagina - 1) * OBRAS_ADMIN_POR_PAGINA,
+      take: OBRAS_ADMIN_POR_PAGINA,
     });
-    return obras.map((obra) => ({
-      id: obra.id,
-      titulo: obra.title,
-      slug: obra.slug,
-      descricao: obra.description,
-      artistaId: obra.artistId,
-      artistaNome: obra.artist.user.name,
-      tecnica: obra.technique,
-      dimensoes: obra.dimensions,
-      ano: obra.year,
-      precoCentavos: obra.priceCents,
-      estoque: obra.stockQuantity,
-      situacao: obra.status,
-      destaque: obra.featured,
-      tags: obra.tags.map((vinculo) => vinculo.tagId),
-      imagens: obra.images.map((imagem) => ({
-        id: imagem.id,
-        chave: imagem.url,
-        chaveMiniatura: chaveMiniatura(imagem.url),
-        ordem: imagem.order,
-        principal: imagem.primary,
-        textoAlternativo: imagem.altText ?? "",
-      })),
-    }));
+    // A obra recém-criada pode cair em outra página, e o editor precisa dela para as imagens.
+    const emEdicao = editar
+      ? await tx.artwork.findFirst({ where: { ...where, id: editar }, include: INCLUI_OBRA_ADMIN })
+      : null;
+    return {
+      obras: obras.map(obraDoAdmin),
+      emEdicao: emEdicao ? obraDoAdmin(emEdicao) : null,
+      total,
+      pagina,
+      totalPaginas: Math.ceil(total / OBRAS_ADMIN_POR_PAGINA),
+    };
   });
 }
 

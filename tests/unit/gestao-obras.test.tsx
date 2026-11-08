@@ -4,13 +4,15 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import { GestaoObras } from "../../src/components/admin/gestao-obras";
 
+const roteador = vi.hoisted(() => ({ refresh: vi.fn(), replace: vi.fn() }));
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ refresh: vi.fn() }),
+  useRouter: () => roteador,
   unstable_rethrow: vi.fn(),
 }));
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  roteador.replace.mockClear();
 });
 
 const artistas = [{ id: "artista-1", nome: "Caio Alves" }];
@@ -36,7 +38,15 @@ const publicada = {
   imagens: [],
 };
 
-function montar(registros = [publicada]) {
+function montar(
+  registros: (typeof publicada)[] = [publicada],
+  paginas: Partial<{
+    total: number;
+    pagina: number;
+    totalPaginas: number;
+    emEdicao: typeof publicada | null;
+  }> = {},
+) {
   const criar = vi.fn().mockResolvedValue({ ok: true, dados: { id: "nova" } });
   const editar = vi.fn().mockResolvedValue({ ok: true, dados: undefined });
   const excluir = vi.fn().mockResolvedValue({ ok: true, dados: { modo: "apagada" } });
@@ -48,10 +58,49 @@ function montar(registros = [publicada]) {
       criar={criar}
       editar={editar}
       excluir={excluir}
+      total={registros.length}
+      pagina={1}
+      totalPaginas={1}
+      emEdicao={null}
+      {...paginas}
     />,
   );
   return { criar, editar, excluir };
 }
+
+async function preencherECriar() {
+  const usuario = userEvent.setup();
+  await usuario.type(screen.getByLabelText("Título"), "Nova");
+  await usuario.type(screen.getByLabelText("Slug"), "nova");
+  await usuario.selectOptions(screen.getByLabelText("Artista"), "artista-1");
+  await usuario.type(screen.getByLabelText("Preço (R$)"), "10,00");
+  await usuario.click(screen.getByRole("button", { name: "Salvar obra" }));
+}
+
+it("criar com a lista cheia pede a obra nova pela URL, na mesma página", async () => {
+  montar([publicada], { total: 21, pagina: 2, totalPaginas: 2 });
+  await preencherECriar();
+  await waitFor(() =>
+    expect(roteador.replace).toHaveBeenCalledWith("/admin/obras?pagina=2&editar=nova"),
+  );
+});
+
+it("abre o editor da obra que veio pela URL, mesmo fora da página", () => {
+  montar([publicada], { emEdicao: { ...publicada, id: "nova", titulo: "Fora da página" } });
+  expect(screen.getByRole("heading", { name: "Editar obra" })).toBeDefined();
+  expect((screen.getByLabelText("Título") as HTMLInputElement).value).toBe("Fora da página");
+});
+
+it("mostra a paginação e, além do fim, oferece voltar à primeira", () => {
+  montar([], { total: 21, pagina: 9, totalPaginas: 2 });
+  expect(screen.queryByText("Nenhuma obra cadastrada.")).toBeNull();
+  expect(screen.getByRole("link", { name: "Ir para a primeira página" }).getAttribute("href")).toBe(
+    "/admin/obras",
+  );
+  expect(screen.getByRole("link", { name: "2" }).getAttribute("href")).toBe(
+    "/admin/obras?pagina=2",
+  );
+});
 
 it("RF26/RN02 cadastra obra com preço em reais, estoque padrão 1, artista e tags", async () => {
   const usuario = userEvent.setup();

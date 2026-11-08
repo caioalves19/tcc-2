@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Paginacao } from "@/components/ui/paginacao";
 import type { ResultadoGestao } from "@/modules/artists";
 import type { EntradaEditarObra, EntradaObra } from "@/modules/catalog";
 import {
@@ -41,6 +44,11 @@ export type ObraAdmin = {
 type Opcao = { id: string; nome: string };
 type Props = {
   registros: ObraAdmin[];
+  // Obra pedida pela URL (?editar=): pode estar fora da página atual.
+  emEdicao: ObraAdmin | null;
+  total: number;
+  pagina: number;
+  totalPaginas: number;
   artistas: Opcao[];
   tags: Opcao[];
   criar: (entrada: EntradaObra) => Promise<ResultadoGestao<{ id: string }>>;
@@ -59,6 +67,10 @@ const ROTULO_SITUACAO: Record<SituacaoObra, string> = {
 
 export function GestaoObras({
   registros,
+  emEdicao,
+  total,
+  pagina,
+  totalPaginas,
   artistas,
   tags,
   criar,
@@ -67,9 +79,13 @@ export function GestaoObras({
   acoesImagem,
 }: Props) {
   // O id, não o objeto: depois do refresh a obra em edição vem atualizada (imagens novas).
-  const [editandoId, setEditandoId] = useState<string | null>(null);
-  const editando = registros.find((obra) => obra.id === editandoId) ?? null;
+  const [editandoId, setEditandoId] = useState<string | null>(emEdicao?.id ?? null);
+  const editando =
+    registros.find((obra) => obra.id === editandoId) ??
+    (emEdicao?.id === editandoId ? emEdicao : null);
   const gestao = useGestao();
+  const router = useRouter();
+  const base = acoesImagem?.baseImagens?.replace(/\/+$/, "") ?? null;
   return (
     <div className="grid gap-8 lg:grid-cols-2">
       <section aria-labelledby="formulario-titulo" className="min-w-0">
@@ -116,6 +132,11 @@ export function GestaoObras({
                 form.reset();
                 // Abre a obra recém-criada para receber as imagens.
                 setEditandoId(criada);
+                // Ela pode cair em outra página: a URL garante que o servidor a entregue.
+                const consulta = new URLSearchParams();
+                if (pagina > 1) consulta.set("pagina", String(pagina));
+                if (criada) consulta.set("editar", criada);
+                router.replace(`/admin/obras?${consulta.toString()}`);
               },
               "Obra cadastrada como rascunho. Agora adicione as imagens.",
             );
@@ -257,64 +278,86 @@ export function GestaoObras({
         <h2 id="lista-titulo" className="mb-4 font-display text-xl">
           Obras cadastradas
         </h2>
-        {registros.length === 0 ? (
+        {total === 0 ? (
           <p>Nenhuma obra cadastrada.</p>
+        ) : registros.length === 0 ? (
+          <a href="/admin/obras" className="underline underline-offset-4">
+            Ir para a primeira página
+          </a>
         ) : (
           <ul aria-labelledby="lista-titulo" className="grid gap-3">
-            {registros.map((obra) => (
-              <li
-                key={obra.id}
-                className="rounded-campo border-2 border-[var(--kolo-contorno)] p-4"
-              >
-                <p className="break-words font-semibold">{obra.titulo}</p>
-                <p className="break-words text-nota">
-                  {obra.artistaNome} · {ROTULO_SITUACAO[obra.situacao]}
-                  {obra.destaque && " · Destaque"}
-                </p>
-                <p className="text-nota">
-                  {formatarPreco(obra.precoCentavos)} · Estoque: {obra.estoque} ·{" "}
-                  {obra.imagens.length === 1 ? "1 imagem" : `${obra.imagens.length} imagens`}
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant="contorno"
-                    disabled={gestao.pendente}
-                    aria-label={`Editar ${obra.titulo}`}
-                    onClick={() => {
-                      setEditandoId(obra.id);
-                      gestao.limpar();
-                    }}
-                  >
-                    Editar
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="contorno"
-                    disabled={gestao.pendente}
-                    aria-label={`Excluir ${obra.titulo}`}
-                    onClick={() => {
-                      if (
-                        window.confirm(
-                          `Excluir a obra “${obra.titulo}”? Se ela estiver em carrinho ou pedido, será arquivada: sai da vitrine, mas o histórico fica preservado.`,
+            {registros.map((obra) => {
+              const capa = obra.imagens.find((imagem) => imagem.principal) ?? obra.imagens[0];
+              return (
+                <li
+                  key={obra.id}
+                  className="flex min-w-0 flex-wrap items-center gap-3 rounded-campo border-2 border-[var(--kolo-contorno)] p-3"
+                >
+                  {base && capa && (
+                    <Image
+                      src={`${base}/${capa.chaveMiniatura}`}
+                      alt=""
+                      width={64}
+                      height={64}
+                      sizes="64px"
+                      className="size-16 shrink-0 rounded-campo object-cover"
+                    />
+                  )}
+                  <div className="min-w-0 flex-1 basis-40">
+                    <p className="break-words font-semibold">{obra.titulo}</p>
+                    <p className="break-words text-nota">
+                      {obra.artistaNome} · {ROTULO_SITUACAO[obra.situacao]}
+                      {obra.destaque && " · Destaque"}
+                    </p>
+                    <p className="text-nota">
+                      {formatarPreco(obra.precoCentavos)} · Estoque: {obra.estoque} ·{" "}
+                      {obra.imagens.length === 1 ? "1 imagem" : `${obra.imagens.length} imagens`}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="contorno"
+                      disabled={gestao.pendente}
+                      aria-label={`Editar ${obra.titulo}`}
+                      onClick={() => {
+                        setEditandoId(obra.id);
+                        gestao.limpar();
+                      }}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="contorno"
+                      disabled={gestao.pendente}
+                      aria-label={`Excluir ${obra.titulo}`}
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `Excluir a obra “${obra.titulo}”? Se ela estiver em carrinho ou pedido, será arquivada: sai da vitrine, mas o histórico fica preservado.`,
+                          )
                         )
-                      )
-                        void gestao.executar(
-                          () => excluir(obra.id),
-                          () => {
-                            if (editandoId === obra.id) setEditandoId(null);
-                          },
-                          "Obra excluída. Se estava em carrinho ou pedido, foi arquivada.",
-                        );
-                    }}
-                  >
-                    Excluir
-                  </Button>
-                </div>
-              </li>
-            ))}
+                          void gestao.executar(
+                            () => excluir(obra.id),
+                            () => {
+                              if (editandoId === obra.id) setEditandoId(null);
+                            },
+                            "Obra excluída. Se estava em carrinho ou pedido, foi arquivada.",
+                          );
+                      }}
+                    >
+                      Excluir
+                    </Button>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
+        <Paginacao caminho="/admin/obras" pagina={pagina} totalPaginas={totalPaginas} />
       </section>
     </div>
   );

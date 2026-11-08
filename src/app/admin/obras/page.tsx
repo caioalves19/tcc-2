@@ -14,10 +14,18 @@ import {
   removerImagemAcao,
 } from "./actions";
 
-export default async function PaginaObras() {
+const primeiro = (valor: string | string[] | undefined) =>
+  Array.isArray(valor) ? valor[0] : valor;
+
+export default async function PaginaObras({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { pagina, editar } = await searchParams;
   const cabecalhos = await headers();
   const [obras, artistas, tags] = await Promise.all([
-    listarObras(cabecalhos),
+    listarObras(cabecalhos, { pagina: primeiro(pagina), editar: primeiro(editar) }),
     listarArtistas(cabecalhos),
     listarTaxonomias("tags", cabecalhos),
   ]);
@@ -32,7 +40,11 @@ export default async function PaginaObras() {
         <p role="alert">{tags.mensagem}</p>
       ) : (
         <GestaoObras
-          registros={obras.dados}
+          registros={obras.dados.obras}
+          emEdicao={obras.dados.emEdicao}
+          total={obras.dados.total}
+          pagina={obras.dados.pagina}
+          totalPaginas={obras.dados.totalPaginas}
           artistas={artistas.dados.map((artista) => ({ id: artista.id, nome: artista.nome }))}
           tags={tags.dados.map((tag) => ({ id: tag.id, nome: tag.nome }))}
           criar={criarObraAcao}
