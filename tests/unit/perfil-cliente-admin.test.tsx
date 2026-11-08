@@ -128,6 +128,8 @@ it("RF30 cliente sem compras, sem endereço e com a conta excluída", () => {
         endereco: null,
         pedidos: [],
         totalGastoCentavos: 0,
+        totalPedidos: 0,
+        totalPaginasPedidos: 0,
       }}
     />,
   );
