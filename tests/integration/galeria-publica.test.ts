@@ -43,6 +43,23 @@ it("RF17/RN01: consulta sem sessão combina artista, estilo e região por inters
   expect(resultado.artistas.map((a) => a.nome)).toEqual(["Ana", "Bia"]);
   expect(resultado.regioes).toEqual(["Braço", "Perna"]);
 });
+it("mostra 12 trabalhos por página, sem repetir, e o total considera os filtros", async () => {
+  const { listarGaleria } = await import("../../src/modules/portfolio");
+  await contas.db.query(
+    "INSERT INTO portfolio_item (id, artist_id, titulo, imagem_url, regiao_corpo, ordem) SELECT gen_random_uuid(), $1, 'Série ' || n, 'portfolio/foto.png', 'Costas', n FROM generate_series(1, 13) n",
+    [contas.idAna],
+  );
+  try {
+    const primeira = await listarGaleria({ regiao: "Costas", pagina: "1" });
+    const segunda = await listarGaleria({ regiao: "Costas", pagina: "2" });
+    expect(primeira).toMatchObject({ total: 13, pagina: 1, totalPaginas: 2 });
+    expect(primeira.trabalhos).toHaveLength(12);
+    expect(segunda.trabalhos.map((t) => t.titulo)).toEqual(["Série 13"]);
+    expect(await listarGaleria({ regiao: "Costas", pagina: "abc" })).toMatchObject({ pagina: 1 });
+  } finally {
+    await contas.db.query("DELETE FROM portfolio_item WHERE regiao_corpo = 'Costas'");
+  }
+});
 it("RF17: filtros isolados e pares, ausência de resultados e parâmetros inválidos", async () => {
   const { listarGaleria } = await import("../../src/modules/portfolio");
   for (const [filtros, titulos] of [

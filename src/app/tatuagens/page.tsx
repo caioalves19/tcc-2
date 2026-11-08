@@ -16,12 +16,13 @@ export default async function PaginaGaleria({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { artista, estilo, regiao, busca } = await searchParams;
+  const { artista, estilo, regiao, busca, pagina } = await searchParams;
   const galeria = await listarGaleria({
     artista: primeiro(artista),
     estilo: primeiro(estilo),
     regiao: primeiro(regiao),
     busca: primeiro(busca),
+    pagina: primeiro(pagina),
   });
   return (
     <section className="mx-auto w-full max-w-pagina px-margem py-12 md:px-margem-desktop md:py-16">

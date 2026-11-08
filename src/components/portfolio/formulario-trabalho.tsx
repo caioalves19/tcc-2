@@ -19,6 +19,7 @@ type Props = AcoesFormulario & {
   estilos: { id: string; nome: string }[];
   trabalho?: TrabalhoPortfolio;
   aoCancelar: () => void;
+  aoSalvar: (mensagem: string) => void;
 };
 
 export function FormularioTrabalho({
@@ -30,6 +31,7 @@ export function FormularioTrabalho({
   solicitar,
   processar,
   aoCancelar,
+  aoSalvar,
 }: Props) {
   const gestao = useGestao();
   const [enviando, setEnviando] = useState(false);
@@ -69,6 +71,7 @@ export function FormularioTrabalho({
               setChave(undefined);
               setVersaoUpload((v) => v + 1);
               if (!trabalho) form.reset();
+              aoSalvar(trabalho ? "Trabalho salvo." : "Trabalho cadastrado.");
             },
             trabalho ? "Trabalho salvo." : "Trabalho cadastrado.",
           );
@@ -139,11 +142,9 @@ export function FormularioTrabalho({
         <Button type="submit" disabled={enviando || imagemPendente}>
           {gestao.pendente ? "Salvando…" : "Salvar trabalho"}
         </Button>
-        {trabalho && (
-          <Button type="button" variant="contorno" onClick={aoCancelar}>
-            Cancelar edição
-          </Button>
-        )}
+        <Button type="button" variant="contorno" onClick={aoCancelar}>
+          {trabalho ? "Cancelar edição" : "Cancelar"}
+        </Button>
       </FormularioAdmin>
     </section>
   );

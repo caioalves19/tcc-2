@@ -1,8 +1,22 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { unstable_rethrow, useRouter } from "next/navigation";
 import type { ResultadoGestao } from "@/modules/artists";
+
+// Painel de cadastro/edição acima da grade: ao abrir (ou trocar de registro), leva a tela até ele
+// e põe o foco no primeiro campo, senão o clique em Editar no fim da grade parece não fazer nada.
+export function usePainelAberto(chaveAberta: string | null) {
+  const painel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (chaveAberta === null) return;
+    painel.current?.scrollIntoView({ block: "start" });
+    painel.current
+      ?.querySelector<HTMLElement>("input:not([type=hidden]), select, textarea")
+      ?.focus({ preventScroll: true });
+  }, [chaveAberta]);
+  return painel;
+}
 
 export const classeCampo =
   "w-full rounded-campo border-2 border-[var(--kolo-contorno)] bg-transparent px-3 py-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50";

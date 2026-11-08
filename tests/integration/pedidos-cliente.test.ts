@@ -151,6 +151,31 @@ it("RF16 lista só os pedidos visíveis do próprio cliente, do mais recente ao 
   expect(await listarMeusPedidos({ cabecalhos: new Headers() }, AGORA)).toBeNull();
 });
 
+it("RF16 pagina de 20 em 20, sem contar tentativas ocultas, e só os pedidos do próprio cliente", async () => {
+  const { listarMeusPedidosPaginados } = await import("../../src/modules/orders");
+  const paula = await novoCliente("paula@pbi29.test");
+  for (let i = 1; i <= 21; i++)
+    await pedidoDeTeste(paula, {
+      numero: `20260801-PAG${String(i).padStart(3, "0")}`,
+      situacao: "PAGO",
+      criadoEm: `2026-08-${String(i).padStart(2, "0")}T15:00:00Z`,
+      pagamentos: ["APROVADO"],
+    });
+  await pedidoDeTeste(paula, {
+    numero: "20260831-OCULTO",
+    situacao: "CANCELADO",
+    criadoEm: "2026-08-31T15:00:00Z",
+  });
+
+  const primeira = await listarMeusPedidosPaginados(paula, { pagina: "1" }, AGORA);
+  const segunda = await listarMeusPedidosPaginados(paula, { pagina: "2" }, AGORA);
+  expect(primeira).toMatchObject({ total: 21, pagina: 1, totalPaginas: 2 });
+  expect(primeira?.pedidos).toHaveLength(20);
+  expect(primeira?.pedidos[0]?.numero).toBe("20260801-PAG021");
+  expect(segunda?.pedidos.map((p) => p.numero)).toEqual(["20260801-PAG001"]);
+  expect(await listarMeusPedidosPaginados({ cabecalhos: new Headers() }, {}, AGORA)).toBeNull();
+}, 60_000);
+
 it("RF16/RN03 o pedido recém-finalizado aguarda pagamento e some quando a reserva vence sem pagamento", async () => {
   const { adicionarAoCarrinho, finalizarCompra, listarMeusPedidos } =
     await import("../../src/modules/orders");

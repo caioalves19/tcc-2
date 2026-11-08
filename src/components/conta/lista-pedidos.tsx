@@ -1,23 +1,28 @@
 import { buttonVariants } from "@/components/ui/button";
+import { Paginacao } from "@/components/ui/paginacao";
 import { dataDoPedido, EtiquetaSituacao } from "@/components/conta/situacao-pedido";
 import { formatarPreco } from "@/modules/catalog/cliente";
-import type { PedidoDaLista } from "@/modules/orders";
+import type { PaginaMeusPedidos } from "@/modules/orders";
 
 // RF16: pedidos do cliente, do mais recente ao mais antigo (listarMeusPedidos). O cartão inteiro
 // leva ao detalhe pelo link do número, sem link aninhado.
-export function ListaPedidos({ pedidos }: { pedidos: PedidoDaLista[] }) {
+export function ListaPedidos({ pedidos, total, pagina, totalPaginas }: PaginaMeusPedidos) {
   return (
     <>
       <h1 className="font-display text-titulo-xl-mobile uppercase md:text-titulo-xl">
         Meus pedidos
       </h1>
-      {pedidos.length === 0 ? (
+      {total === 0 ? (
         <div className="mt-8 grid max-w-md justify-items-start gap-4">
           <p>Você ainda não tem pedidos.</p>
           <a href="/obras" className={buttonVariants()}>
             Ver obras
           </a>
         </div>
+      ) : pedidos.length === 0 ? (
+        <a href="/conta/pedidos" className={`mt-8 ${buttonVariants({ variant: "contorno" })}`}>
+          Ir para a primeira página
+        </a>
       ) : (
         <ul className="mt-8 grid gap-4">
           {pedidos.map((pedido) => (
@@ -47,6 +52,7 @@ export function ListaPedidos({ pedidos }: { pedidos: PedidoDaLista[] }) {
           ))}
         </ul>
       )}
+      <Paginacao caminho="/conta/pedidos" pagina={pagina} totalPaginas={totalPaginas} />
     </>
   );
 }

@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { urlDeLogin } from "@/modules/identity";
 import { finalizarCompra } from "@/modules/orders";
 import { lerTokenDoCarrinho } from "../carrinho/cookie";
 
@@ -18,6 +19,6 @@ export async function finalizarCompraAcao(entrada: unknown): Promise<RecusaCheck
   if (resultado.ok) redirect(`/checkout/${resultado.dados.numero}`);
   // RN06: com Pix ou boleto em aberto, o cliente volta ao pedido que já existe.
   if (resultado.erro === "pendente") redirect(`/checkout/${resultado.numero}`);
-  if (resultado.erro === "nao_autenticado") redirect("/login");
+  if (resultado.erro === "nao_autenticado") redirect(urlDeLogin("/checkout"));
   return resultado;
 }

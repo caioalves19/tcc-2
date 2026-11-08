@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
@@ -30,6 +30,10 @@ const acoes = () => ({
   solicitar: vi.fn(),
   processar: vi.fn(),
 });
+const paginaUnica = { total: 2, pagina: 1, totalPaginas: 1 };
+beforeEach(() => {
+  Element.prototype.scrollIntoView = vi.fn();
+});
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -45,11 +49,15 @@ it("RF19: artista cadastra com upload, estilos e região, sem seletor de artista
       artistas={[]}
       estilos={[{ id: "floral", nome: "Floral" }]}
       trabalhos={[]}
+      {...paginaUnica}
+      total={0}
       {...funcs}
     />,
   );
   expect(screen.queryByLabelText("Artista")).toBeNull();
   expect(screen.getByText("Nenhum trabalho cadastrado.")).toBeDefined();
+  expect(screen.queryByLabelText("Título")).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Novo trabalho" }));
   await user.type(screen.getByLabelText("Título"), "Rosa no braço");
   await user.type(screen.getByLabelText("Região do corpo"), "Braço");
   await user.click(screen.getByLabelText("Floral"));
@@ -69,7 +77,28 @@ it("RF19: artista cadastra com upload, estilos e região, sem seletor de artista
       }),
     ),
   );
-  expect(screen.getByRole("status").textContent).toContain("Trabalho cadastrado");
+  expect((await screen.findByRole("status")).textContent).toContain("Trabalho cadastrado");
+  expect(screen.queryByLabelText("Título")).toBeNull();
+});
+
+it("o cadastro abre pelo botão e fecha ao cancelar", async () => {
+  const user = userEvent.setup();
+  render(
+    <GestaoPortfolio
+      papel="ARTISTA"
+      artistaId="ana"
+      artistas={[]}
+      estilos={[]}
+      trabalhos={[]}
+      {...paginaUnica}
+      total={0}
+      {...acoes()}
+    />,
+  );
+  await user.click(screen.getByRole("button", { name: "Novo trabalho" }));
+  expect(document.activeElement).toBe(screen.getByLabelText("Título"));
+  await user.click(screen.getByRole("button", { name: "Cancelar" }));
+  expect(screen.queryByLabelText("Título")).toBeNull();
 });
 
 const trabalho = (id: string, titulo: string) => ({
@@ -93,20 +122,23 @@ it("RF19: lista, edita, move e confirma remoção; erro preserva o formulário",
       artistas={[]}
       estilos={[{ id: "floral", nome: "Floral" }]}
       trabalhos={[trabalho("a", "Rosa"), trabalho("b", "Lírio")]}
+      {...paginaUnica}
       {...funcs}
     />,
   );
   expect(screen.getByRole("img", { name: "Rosa" })).toBeDefined();
-  expect(
-    (screen.getByRole("button", { name: "Mover para cima: Rosa" }) as HTMLButtonElement).disabled,
-  ).toBe(true);
-  expect(
-    (screen.getByRole("button", { name: "Mover para baixo: Lírio" }) as HTMLButtonElement).disabled,
-  ).toBe(true);
-  await user.click(screen.getByRole("button", { name: "Mover para cima: Lírio" }));
+  expect((screen.getByRole("button", { name: "Subir Rosa" }) as HTMLButtonElement).disabled).toBe(
+    true,
+  );
+  expect((screen.getByRole("button", { name: "Descer Lírio" }) as HTMLButtonElement).disabled).toBe(
+    true,
+  );
+  await user.click(screen.getByRole("button", { name: "Subir Lírio" }));
   expect(funcs.mover).toHaveBeenCalledWith({ id: "b", direcao: "antes" });
   await user.click(screen.getByRole("button", { name: "Editar Rosa" }));
   expect((screen.getByLabelText("Título") as HTMLInputElement).value).toBe("Rosa");
+  expect(document.activeElement).toBe(screen.getByLabelText("Título"));
+  expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
   await user.click(screen.getByLabelText("Destacar trabalho"));
   funcs.editar.mockResolvedValueOnce({
     ok: false,
@@ -126,6 +158,60 @@ it("RF19: lista, edita, move e confirma remoção; erro preserva o formulário",
   expect(funcs.remover).toHaveBeenCalledWith("a");
 });
 
+const desabilitado = (nome: string) =>
+  (screen.getByRole("button", { name: nome }) as HTMLButtonElement).disabled;
+
+it("nas bordas da página os botões de mover só travam no primeiro e no último geral", () => {
+  const props = { papel: "ADMIN" as const, artistaId: "ana", estilos: [], ...acoes() };
+  const artistas = [{ id: "ana", nome: "Ana" }];
+  const { rerender } = render(
+    <GestaoPortfolio
+      {...props}
+      artistas={artistas}
+      trabalhos={[trabalho("a", "Rosa"), trabalho("b", "Lírio")]}
+      total={3}
+      pagina={1}
+      totalPaginas={2}
+    />,
+  );
+  expect(desabilitado("Subir Rosa")).toBe(true);
+  expect(desabilitado("Descer Lírio")).toBe(false);
+  expect(screen.getByRole("link", { name: "2" }).getAttribute("href")).toBe(
+    "/portfolio/gestao?artista=ana&pagina=2",
+  );
+
+  rerender(
+    <GestaoPortfolio
+      {...props}
+      artistas={artistas}
+      trabalhos={[trabalho("c", "Ipê")]}
+      total={3}
+      pagina={2}
+      totalPaginas={2}
+    />,
+  );
+  expect(desabilitado("Subir Ipê")).toBe(false);
+  expect(desabilitado("Descer Ipê")).toBe(true);
+});
+
+it("página além do fim oferece voltar à primeira", () => {
+  render(
+    <GestaoPortfolio
+      papel="ARTISTA"
+      artistaId="ana"
+      artistas={[]}
+      estilos={[]}
+      trabalhos={[]}
+      total={3}
+      pagina={9}
+      totalPaginas={1}
+      {...acoes()}
+    />,
+  );
+  expect(screen.queryByText("Nenhum trabalho cadastrado.")).toBeNull();
+  expect(screen.getByRole("link", { name: "Ir para a primeira página" })).toBeDefined();
+});
+
 it("RF19: ADMIN escolhe artista antes de cadastrar e filtro usa a URL da gestão", () => {
   render(
     <GestaoPortfolio
@@ -137,6 +223,8 @@ it("RF19: ADMIN escolhe artista antes de cadastrar e filtro usa a URL da gestão
       ]}
       estilos={[]}
       trabalhos={[]}
+      {...paginaUnica}
+      total={0}
       {...acoes()}
     />,
   );

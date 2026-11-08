@@ -276,6 +276,62 @@ it("RF28 edita artista e estilos; impede exclusões vinculadas e preserva conta 
   expect(await excluirArtista(ana.id, admin)).toMatchObject({ ok: false, erro: "nao_encontrado" });
 });
 
+it("lista 12 artistas por página, sem repetir, e só ADMIN acessa", async () => {
+  const { criarArtista, listarArtistasPaginados } = await import("../../src/modules/artists");
+  const inicio = await listarArtistasPaginados({}, admin);
+  if (!inicio.ok) throw new Error(inicio.mensagem);
+  for (let i = 1; i <= 21; i++) {
+    const criado = await criarArtista(
+      {
+        modo: "novo",
+        nome: `Artista ${String(i).padStart(2, "0")}`,
+        email: `lista-${i}@pbi16.test`,
+        telefone: "11987654321",
+        senha: "senha-inicial-123",
+        slug: `lista-${i}`,
+        estilos: [],
+      },
+      admin,
+    );
+    expect(criado).toMatchObject({ ok: true });
+  }
+  const total = inicio.dados.total + 21;
+  const primeira = await listarArtistasPaginados({ pagina: "1" }, admin);
+  const segunda = await listarArtistasPaginados({ pagina: "2" }, admin);
+  if (!primeira.ok || !segunda.ok) throw new Error("leitura recusada");
+  expect(primeira.dados).toMatchObject({ total, pagina: 1, totalPaginas: Math.ceil(total / 12) });
+  expect(primeira.dados.artistas).toHaveLength(12);
+  const juntos = [...primeira.dados.artistas, ...segunda.dados.artistas].map((a) => a.id);
+  expect(new Set(juntos).size).toBe(total);
+  expect(await listarArtistasPaginados({}, cliente)).toMatchObject({ ok: false, erro: "proibido" });
+}, 60_000);
+
+it.each(["estilos", "tags"] as const)(
+  "lista 20 %s por página, sem repetir",
+  async (tipo) => {
+    const { criarTaxonomia, listarTaxonomias, listarTaxonomiasPaginadas } =
+      await import("../../src/modules/artists");
+    for (let i = 1; i <= 21; i++)
+      await criarTaxonomia(tipo, { nome: `Lista ${i}`, slug: `lista-${tipo}-${i}` }, admin);
+    const primeira = await listarTaxonomiasPaginadas(tipo, { pagina: "1" }, admin);
+    const segunda = await listarTaxonomiasPaginadas(tipo, { pagina: "2" }, admin);
+    if (!primeira.ok || !segunda.ok) throw new Error("leitura recusada");
+    expect(primeira.dados.registros).toHaveLength(20);
+    expect(primeira.dados.pagina).toBe(1);
+    const juntos = [...primeira.dados.registros, ...segunda.dados.registros].map((r) => r.id);
+    expect(new Set(juntos).size).toBe(juntos.length);
+    expect(primeira.dados.total).toBeGreaterThanOrEqual(21);
+    expect(await listarTaxonomiasPaginadas(tipo, {}, cliente)).toMatchObject({
+      ok: false,
+      erro: "proibido",
+    });
+    // Os seletores continuam recebendo todas as opções.
+    const todas = await listarTaxonomias(tipo, admin);
+    expect(todas.ok && todas.dados.length).toBe(primeira.dados.total);
+  },
+  60_000,
+);
+
 it("RF28 todas as operações negam visitante, ARTISTA, sessão revogada e ADMIN inativo", async () => {
   const api = await import("../../src/modules/artists");
   const id = "00000000-0000-4000-8000-000000000003";

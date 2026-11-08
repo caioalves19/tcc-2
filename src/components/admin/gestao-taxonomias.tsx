@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Paginacao } from "@/components/ui/paginacao";
 import type { EntradaTaxonomia, ResultadoGestao, TipoTaxonomia } from "@/modules/artists";
 import { CampoAdmin, FormularioAdmin, texto, useGestao } from "./formulario";
 
@@ -9,11 +10,17 @@ type Registro = { id: string; nome: string; slug: string; descricao: string | nu
 export function GestaoTaxonomias({
   tipo,
   registros,
+  total,
+  pagina,
+  totalPaginas,
   salvar,
   excluir,
 }: {
   tipo: TipoTaxonomia;
   registros: Registro[];
+  total: number;
+  pagina: number;
+  totalPaginas: number;
   salvar: (entrada: EntradaTaxonomia, id?: string) => Promise<ResultadoGestao<unknown>>;
   excluir: (id: string) => Promise<ResultadoGestao<unknown>>;
 }) {
@@ -74,8 +81,12 @@ export function GestaoTaxonomias({
         <h2 id="lista-titulo" className="mb-4 font-display text-xl">
           {tipo === "estilos" ? "Estilos cadastrados" : "Tags cadastradas"}
         </h2>
-        {registros.length === 0 ? (
+        {total === 0 ? (
           <p>Nenhum {singular} cadastrado.</p>
+        ) : registros.length === 0 ? (
+          <a href={`/admin/${tipo}`} className="underline underline-offset-4">
+            Ir para a primeira página
+          </a>
         ) : (
           <ul className="grid gap-3">
             {registros.map((registro) => (
@@ -128,6 +139,7 @@ export function GestaoTaxonomias({
             ))}
           </ul>
         )}
+        <Paginacao caminho={`/admin/${tipo}`} pagina={pagina} totalPaginas={totalPaginas} />
       </section>
     </div>
   );

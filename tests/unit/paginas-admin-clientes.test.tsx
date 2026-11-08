@@ -52,20 +52,21 @@ it("RF30 a lista repassa busca e página da URL e mostra o erro de acesso", asyn
 it("RF30 o perfil dá 404 para cliente não encontrado e mostra o perfil encontrado", async () => {
   const id = "0b6f1d3a-1c1e-4c33-9a43-1f1c8f6f0a01";
   const params = Promise.resolve({ id });
+  const searchParams = Promise.resolve({ pagina: ["2", "3"] });
   mocks.ler.mockResolvedValueOnce({
     ok: false,
     erro: "nao_encontrado",
     mensagem: "Cliente não encontrado.",
   });
-  await expect(PaginaClienteAdmin({ params })).rejects.toThrow("notFound");
-  expect(mocks.ler).toHaveBeenCalledWith(id, mocks.headers);
+  await expect(PaginaClienteAdmin({ params, searchParams })).rejects.toThrow("notFound");
+  expect(mocks.ler).toHaveBeenCalledWith(id, mocks.headers, undefined, "2");
 
   mocks.ler.mockResolvedValueOnce({
     ok: false,
     erro: "indisponivel",
     mensagem: "Tente novamente.",
   });
-  render(await PaginaClienteAdmin({ params }));
+  render(await PaginaClienteAdmin({ params, searchParams }));
   expect(screen.getByRole("alert").textContent).toBe("Tente novamente.");
   cleanup();
 
@@ -82,8 +83,11 @@ it("RF30 o perfil dá 404 para cliente não encontrado e mostra o perfil encontr
       endereco: null,
       pedidos: [],
       totalGastoCentavos: 0,
+      totalPedidos: 0,
+      paginaPedidos: 2,
+      totalPaginasPedidos: 0,
     },
   });
-  render(await PaginaClienteAdmin({ params }));
+  render(await PaginaClienteAdmin({ params, searchParams }));
   expect(screen.getByRole("heading", { level: 1, name: "Lucas Silveira" })).toBeDefined();
 });

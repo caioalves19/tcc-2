@@ -45,6 +45,8 @@ export {
 
 export { type ErrosDe, type ResultadoValidacaoDe } from "./validacao";
 
+export { destinoPosLogin, urlDeLogin } from "./destino";
+
 export function papelDoCadastroPublico(): "CLIENTE" {
   return "CLIENTE";
 }

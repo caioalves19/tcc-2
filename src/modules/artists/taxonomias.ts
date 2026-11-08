@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { comoAdmin, validar, ErroGestao } from "./acesso";
+import { ITENS_POR_PAGINA, lerPagina, totalDePaginas } from "./paginacao";
 import { schemaId, schemaTaxonomia, type TipoTaxonomia } from "./validacao";
 
 const schemaTipo = z.enum(["estilos", "tags"]);
@@ -20,6 +21,21 @@ export function criarTaxonomia(tipo: TipoTaxonomia, entrada: unknown, cabecalhos
     };
   });
 }
+function registroDaLista(registro: {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+}) {
+  return {
+    id: registro.id,
+    nome: registro.name,
+    slug: registro.slug,
+    descricao: typeof registro.description === "string" ? registro.description : null,
+  };
+}
+
+// Lista inteira, para os seletores e caixas de marcação (as opções não podem ser cortadas).
 export function listarTaxonomias(tipo: TipoTaxonomia, cabecalhos: Headers) {
   return comoAdmin(cabecalhos, async (tx) => {
     validar(schemaTipo, tipo);
@@ -27,15 +43,34 @@ export function listarTaxonomias(tipo: TipoTaxonomia, cabecalhos: Headers) {
       tipo === "estilos"
         ? await tx.tattooStyle.findMany({ orderBy: { name: "asc" } })
         : await tx.tag.findMany({ orderBy: { name: "asc" } });
-    return registros.map((registro) => ({
-      id: registro.id,
-      nome: registro.name,
-      slug: registro.slug,
-      descricao:
-        "description" in registro && typeof registro.description === "string"
-          ? registro.description
-          : null,
-    }));
+    return registros.map(registroDaLista);
+  });
+}
+
+export function listarTaxonomiasPaginadas(
+  tipo: TipoTaxonomia,
+  entrada: unknown,
+  cabecalhos: Headers,
+) {
+  return comoAdmin(cabecalhos, async (tx) => {
+    validar(schemaTipo, tipo);
+    const pagina = lerPagina(entrada);
+    // O id desempata, para um registro não repetir nem sumir entre as páginas.
+    const consulta = {
+      orderBy: [{ name: "asc" as const }, { id: "asc" as const }],
+      skip: (pagina - 1) * ITENS_POR_PAGINA,
+      take: ITENS_POR_PAGINA,
+    };
+    const [total, registros] =
+      tipo === "estilos"
+        ? await Promise.all([tx.tattooStyle.count(), tx.tattooStyle.findMany(consulta)])
+        : await Promise.all([tx.tag.count(), tx.tag.findMany(consulta)]);
+    return {
+      registros: registros.map(registroDaLista),
+      total,
+      pagina,
+      totalPaginas: totalDePaginas(total),
+    };
   });
 }
 

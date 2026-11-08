@@ -15,7 +15,9 @@ vi.mock("@/modules/artists", () => ({ verificarAcessoAdmin: acesso }));
 afterEach(cleanup);
 it("RF06/RF28 não renderiza conteúdo administrativo para visitante ou usuário proibido", async () => {
   acesso.mockResolvedValue({ ok: false, erro: "nao_autenticado", mensagem: "Entre" });
-  await expect(LayoutAdmin({ children: <p>Dados privados</p> })).rejects.toThrow("redirect:/login");
+  await expect(LayoutAdmin({ children: <p>Dados privados</p> })).rejects.toThrow(
+    "redirect:/login?destino=%2Fadmin",
+  );
   acesso.mockResolvedValue({
     ok: false,
     erro: "proibido",

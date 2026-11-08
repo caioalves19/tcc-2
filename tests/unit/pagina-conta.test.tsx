@@ -20,7 +20,7 @@ import PaginaConta from "@/app/conta/page";
 afterEach(cleanup);
 it("redireciona visitantes sem sessão para o login", async () => {
   mocks.perfil.mockResolvedValueOnce(null);
-  await expect(PaginaConta()).rejects.toThrow("redirect:/login");
+  await expect(PaginaConta()).rejects.toThrow("redirect:/login?destino=%2Fconta");
   expect(mocks.perfil).toHaveBeenCalledWith(mocks.headers);
 });
 it("preenche nome e telefone da sessão e oferece troca de senha", async () => {

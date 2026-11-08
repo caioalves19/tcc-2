@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { buttonVariants } from "@/components/ui/button";
 import { CheckoutCompra } from "@/components/loja/checkout-compra";
+import { urlDeLogin } from "@/modules/identity";
 import { resumoCheckout } from "@/modules/orders";
 import { lerTokenDoCarrinho } from "../carrinho/cookie";
 import { finalizarCompraAcao } from "./actions";
@@ -15,7 +16,7 @@ export default async function PaginaCheckout() {
     cabecalhos: await headers(),
     tokenVisitante: await lerTokenDoCarrinho(),
   });
-  if (!resumo.ok && resumo.erro === "nao_autenticado") redirect("/login");
+  if (!resumo.ok && resumo.erro === "nao_autenticado") redirect(urlDeLogin("/checkout"));
   if (!resumo.ok && resumo.erro === "carrinho_vazio") redirect("/carrinho");
   return (
     <section className="mx-auto w-full max-w-pagina px-margem py-12 md:px-margem-desktop md:py-16">

@@ -9,6 +9,26 @@ vi.mock("next/navigation", () => ({
   unstable_rethrow: vi.fn(),
 }));
 afterEach(cleanup);
+it("pagina a lista no caminho do tipo e, além do fim, oferece voltar à primeira", () => {
+  render(
+    <GestaoTaxonomias
+      tipo="estilos"
+      registros={[]}
+      total={21}
+      pagina={9}
+      totalPaginas={2}
+      salvar={vi.fn()}
+      excluir={vi.fn()}
+    />,
+  );
+  expect(screen.queryByText("Nenhum estilo cadastrado.")).toBeNull();
+  expect(screen.getByRole("link", { name: "Ir para a primeira página" }).getAttribute("href")).toBe(
+    "/admin/estilos",
+  );
+  expect(screen.getByRole("link", { name: "2" }).getAttribute("href")).toBe(
+    "/admin/estilos?pagina=2",
+  );
+});
 it("RF28 administra tags com formulário rotulado, feedback e confirmação de exclusão", async () => {
   const usuario = userEvent.setup();
   const salvar = vi.fn().mockResolvedValue({ ok: true, dados: undefined });
@@ -21,6 +41,9 @@ it("RF28 administra tags com formulário rotulado, feedback e confirmação de e
     <GestaoTaxonomias
       tipo="tags"
       registros={[{ id: "tag-1", nome: "Urbana", slug: "urbana", descricao: null }]}
+      total={1}
+      pagina={1}
+      totalPaginas={1}
       salvar={salvar}
       excluir={excluir}
     />,

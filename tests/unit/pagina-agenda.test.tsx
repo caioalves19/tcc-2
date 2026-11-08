@@ -31,7 +31,7 @@ const busca = (valores: Record<string, string | string[]>) => ({
 
 it("RN10 visitante vai para o login; cliente vê que a agenda é só da equipe", async () => {
   mocks.ler.mockResolvedValueOnce({ ok: false, erro: "nao_autenticado", mensagem: "Entre." });
-  await expect(PaginaAgenda(busca({}))).rejects.toThrow("redirect:/login");
+  await expect(PaginaAgenda(busca({}))).rejects.toThrow("redirect:/login?destino=%2Fagenda");
 
   mocks.ler.mockResolvedValueOnce({
     ok: false,

@@ -13,7 +13,7 @@ export default async function PaginaLogin({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { senha } = await searchParams;
+  const { senha, destino } = await searchParams;
 
   return (
     <section className="mx-auto w-full max-w-md px-margem py-16 md:py-24">
@@ -31,7 +31,7 @@ export default async function PaginaLogin({
         </p>
       )}
       <div className="mt-8">
-        <FormularioLogin acao={entrarAcao} />
+        <FormularioLogin acao={entrarAcao.bind(null, destino)} />
       </div>
       <p className="mt-6 text-corpo">
         <a href="/esqueci-senha" className="text-[var(--kolo-link)] underline underline-offset-4">

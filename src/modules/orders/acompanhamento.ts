@@ -1,9 +1,11 @@
+import { z } from "zod";
 import type { Prisma } from "../../../generated/prisma/client";
 import { obterPrisma } from "../../lib/prisma";
 import type { DadosEndereco } from "../endereco/index";
 import { sessaoAtiva, type ContextoCarrinho } from "./carrinho";
 import type { Modalidade } from "./checkout";
 import { situacaoParaCliente, type SituacaoCliente } from "./regras";
+import { PEDIDOS_POR_PAGINA } from "./validacao";
 
 // RF16 (PBI-29): o cliente acompanha os próprios pedidos. Só lê; quem muda a situação são o
 // webhook (PBI-28) e o admin (PBI-30).
@@ -112,6 +114,39 @@ export async function listarMeusPedidos(
       },
     ];
   });
+}
+
+export type PaginaMeusPedidos = {
+  pedidos: PedidoDaLista[];
+  total: number;
+  pagina: number;
+  totalPaginas: number;
+};
+
+// Vem da URL (?pagina=...): qualquer valor fora do esperado volta à primeira página.
+const schemaPagina = z.object({
+  pagina: z.coerce.number().int().min(1).max(1_000_000).catch(1),
+});
+
+// A visibilidade depende de pagamentos e reservas (situacaoParaCliente), então o corte acontece
+// depois de filtrar: no banco, as tentativas ocultas abririam buracos nas páginas.
+export async function listarMeusPedidosPaginados(
+  contexto: Contexto,
+  entrada: unknown,
+  agora: Date = new Date(),
+): Promise<PaginaMeusPedidos | null> {
+  const todos = await listarMeusPedidos(contexto, agora);
+  if (!todos) return null;
+  const { pagina } = schemaPagina.parse(
+    typeof entrada === "object" && entrada !== null ? entrada : {},
+  );
+  const inicio = (pagina - 1) * PEDIDOS_POR_PAGINA;
+  return {
+    pedidos: todos.slice(inicio, inicio + PEDIDOS_POR_PAGINA),
+    total: todos.length,
+    pagina,
+    totalPaginas: Math.ceil(todos.length / PEDIDOS_POR_PAGINA),
+  };
 }
 
 // RN01: pedido de outro cliente, oculto (tentativa sem pagamento) ou inexistente, visitante e

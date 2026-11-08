@@ -5,11 +5,14 @@ import { redirect } from "next/navigation";
 
 import { entrar, sair } from "@/lib/auth";
 import { ipDaRequisicao } from "@/lib/requisicao";
-import type { EntradaLogin, FalhaLogin } from "@/modules/identity";
+import { destinoPosLogin, type EntradaLogin, type FalhaLogin } from "@/modules/identity";
 
 import { juntarCarrinhoDoVisitante } from "../carrinho/cookie";
 
-export async function entrarAcao(entrada: EntradaLogin): Promise<FalhaLogin | undefined> {
+export async function entrarAcao(
+  destino: unknown,
+  entrada: EntradaLogin,
+): Promise<FalhaLogin | undefined> {
   const cabecalhos = await headers();
   const resultado = await entrar({ ...entrada, ip: ipDaRequisicao(cabecalhos) });
   if (!resultado.ok) {
@@ -18,7 +21,7 @@ export async function entrarAcao(entrada: EntradaLogin): Promise<FalhaLogin | un
   // RF11: o que o visitante separou continua no carrinho da conta.
   await juntarCarrinhoDoVisitante(resultado.token);
   // TODO(PBI da área do cliente): trocar por /conta quando a rota existir.
-  redirect("/");
+  redirect(destinoPosLogin(destino));
 }
 
 export async function sairAcao(): Promise<void> {

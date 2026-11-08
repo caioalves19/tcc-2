@@ -17,6 +17,7 @@ test("RF26 o admin cadastra uma obra, envia a imagem, publica e ela aparece no c
   await entrar(page, ADMIN.email);
 
   await page.goto("/admin/obras");
+  await page.getByRole("button", { name: "Nova obra" }).click();
   await page.getByLabel("Título", { exact: true }).fill(TITULO);
   await page.getByLabel("Slug", { exact: true }).fill(SLUG);
   await page.getByLabel("Artista", { exact: true }).selectOption({ label: ARTISTA.nome });

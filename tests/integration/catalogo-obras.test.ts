@@ -92,22 +92,24 @@ it("RF26/RN02/RN07 a obra nasce como rascunho, com estoque 1 e preço em centavo
   });
   expect(await listarObras(admin)).toMatchObject({
     ok: true,
-    dados: [
-      {
-        id: criada.dados.id,
-        titulo: "Metrópole em chamas",
-        slug: "metropole-em-chamas",
-        artistaId,
-        artistaNome: "Caio Alves",
-        tecnica: "Spray sobre tela",
-        ano: 2024,
-        precoCentavos: 480000,
-        estoque: 1,
-        situacao: "RASCUNHO",
-        destaque: false,
-        tags: [tagId],
-      },
-    ],
+    dados: {
+      obras: [
+        {
+          id: criada.dados.id,
+          titulo: "Metrópole em chamas",
+          slug: "metropole-em-chamas",
+          artistaId,
+          artistaNome: "Caio Alves",
+          tecnica: "Spray sobre tela",
+          ano: 2024,
+          precoCentavos: 480000,
+          estoque: 1,
+          situacao: "RASCUNHO",
+          destaque: false,
+          tags: [tagId],
+        },
+      ],
+    },
   });
 });
 
@@ -216,7 +218,7 @@ it("RF26 exclui de vez obra sem vínculo e apaga as imagens do R2", async () => 
   expect(armazenamento.remover).toHaveBeenCalledWith(`obras/${artistaId}/${id}.png`);
   expect(armazenamento.remover).toHaveBeenCalledWith(`obras/${artistaId}/${id}_thumb.webp`);
   const lista = await listarObras(admin);
-  expect(lista.ok && lista.dados.some((obra) => obra.id === id)).toBe(false);
+  expect(lista.ok && lista.dados.obras.some((obra) => obra.id === id)).toBe(false);
   expect(await excluirObra(id, admin, armazenamento)).toMatchObject({
     ok: false,
     erro: "nao_encontrado",
@@ -266,7 +268,32 @@ it("RF26 com carrinho ou pedido, faz exclusão lógica e preserva o histórico",
   const { rows: itens } = await db.query("SELECT count(*)::int AS total FROM order_item");
   expect(itens[0].total).toBe(1);
   const lista = await listarObras(admin);
-  expect(lista.ok && lista.dados.filter((obra) => [noCarrinho, vendida].includes(obra.id))).toEqual(
-    [],
-  );
+  expect(
+    lista.ok && lista.dados.obras.filter((obra) => [noCarrinho, vendida].includes(obra.id)),
+  ).toEqual([]);
 });
+
+it("lista 12 obras por página, sem repetir, e carrega a obra em edição mesmo fora da página", async () => {
+  const { listarObras } = await import("../../src/modules/catalog");
+  const inicio = await listarObras(admin);
+  if (!inicio.ok) throw new Error(inicio.mensagem);
+  const existentes = inicio.dados.total;
+  const ids: string[] = [];
+  for (let i = 1; i <= 21; i++) ids.push(await obraNova(`paginada-${i}`));
+  await db.query("UPDATE artwork SET titulo = 'Zzz última' WHERE id = $1", [ids[20]]);
+
+  const primeira = await listarObras(admin, { pagina: "1", editar: ids[20] });
+  const segunda = await listarObras(admin, { pagina: "2" });
+  if (!primeira.ok || !segunda.ok) throw new Error("leitura recusada");
+  expect(primeira.dados).toMatchObject({
+    total: existentes + 21,
+    pagina: 1,
+    totalPaginas: Math.ceil((existentes + 21) / 12),
+  });
+  expect(primeira.dados.obras).toHaveLength(12);
+  expect(primeira.dados.obras.map((o) => o.id)).not.toContain(ids[20]);
+  expect(primeira.dados.emEdicao?.id).toBe(ids[20]);
+  expect(segunda.dados.emEdicao).toBeNull();
+  const juntas = [...primeira.dados.obras, ...segunda.dados.obras].map((o) => o.id);
+  expect(new Set(juntas).size).toBe(juntas.length);
+}, 60_000);
