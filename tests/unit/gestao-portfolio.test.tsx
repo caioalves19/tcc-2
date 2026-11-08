@@ -127,13 +127,13 @@ it("RF19: lista, edita, move e confirma remoção; erro preserva o formulário",
     />,
   );
   expect(screen.getByRole("img", { name: "Rosa" })).toBeDefined();
-  expect(
-    (screen.getByRole("button", { name: "Mover para cima: Rosa" }) as HTMLButtonElement).disabled,
-  ).toBe(true);
-  expect(
-    (screen.getByRole("button", { name: "Mover para baixo: Lírio" }) as HTMLButtonElement).disabled,
-  ).toBe(true);
-  await user.click(screen.getByRole("button", { name: "Mover para cima: Lírio" }));
+  expect((screen.getByRole("button", { name: "Subir Rosa" }) as HTMLButtonElement).disabled).toBe(
+    true,
+  );
+  expect((screen.getByRole("button", { name: "Descer Lírio" }) as HTMLButtonElement).disabled).toBe(
+    true,
+  );
+  await user.click(screen.getByRole("button", { name: "Subir Lírio" }));
   expect(funcs.mover).toHaveBeenCalledWith({ id: "b", direcao: "antes" });
   await user.click(screen.getByRole("button", { name: "Editar Rosa" }));
   expect((screen.getByLabelText("Título") as HTMLInputElement).value).toBe("Rosa");
@@ -174,8 +174,8 @@ it("nas bordas da página os botões de mover só travam no primeiro e no últim
       totalPaginas={2}
     />,
   );
-  expect(desabilitado("Mover para cima: Rosa")).toBe(true);
-  expect(desabilitado("Mover para baixo: Lírio")).toBe(false);
+  expect(desabilitado("Subir Rosa")).toBe(true);
+  expect(desabilitado("Descer Lírio")).toBe(false);
   expect(screen.getByRole("link", { name: "2" }).getAttribute("href")).toBe(
     "/portfolio/gestao?artista=ana&pagina=2",
   );
@@ -190,8 +190,8 @@ it("nas bordas da página os botões de mover só travam no primeiro e no últim
       totalPaginas={2}
     />,
   );
-  expect(desabilitado("Mover para cima: Ipê")).toBe(false);
-  expect(desabilitado("Mover para baixo: Ipê")).toBe(true);
+  expect(desabilitado("Subir Ipê")).toBe(false);
+  expect(desabilitado("Descer Ipê")).toBe(true);
 });
 
 it("página além do fim oferece voltar à primeira", () => {

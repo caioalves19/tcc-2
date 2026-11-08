@@ -34,6 +34,7 @@ test("RN10 o artista não entra no admin e não gerencia o portfólio de outro a
   await expect(page.getByRole("navigation", { name: "Administração" })).toHaveCount(0);
 
   await page.goto(`/portfolio/gestao?artista=${OUTRO_ARTISTA.id}`);
+  await page.getByRole("button", { name: "Novo trabalho" }).click();
   await expect(page.getByRole("heading", { name: "Cadastrar trabalho" })).toBeVisible();
   // Nenhuma das recusas do portfólio (o Next também tem um role=alert, o anunciador de rotas).
   await expect(

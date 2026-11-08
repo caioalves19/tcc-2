@@ -15,6 +15,7 @@ test("RF19 a artista inclui um trabalho no portfólio e ele aparece na galeria p
   await entrar(page, ARTISTA.email);
 
   await page.goto("/portfolio/gestao");
+  await page.getByRole("button", { name: "Novo trabalho" }).click();
   await page.getByLabel("Título", { exact: true }).fill(TITULO);
   await page.getByLabel("Região do corpo", { exact: true }).fill("Antebraço");
   await page.getByRole("checkbox", { name: "Fineline" }).check();
