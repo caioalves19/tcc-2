@@ -213,30 +213,110 @@ Fonte Elaborado a partir dos arquivos locais do projeto em 26 out. 2026.
 As evidências são classificadas como resultado histórico documentado, mecanismo inspecionado ou verificação pendente. Uma proposta é explicitamente apresentada como ação futura. Não se atribuem datas de execução, métricas de cobertura, aprovação do cliente ou resultados de produção ausentes nas fontes.
 
 ## 3.3 Plano de qualidade e métricas
-::: {custom-style="Legenda"}
-Quadro 2 Plano de avaliação por atributo
-:::
+O plano de qualidade tem três partes: a classificação dos requisitos não funcionais nas características da ISO/IEC 25010:2011, o desdobramento das características escolhidas em objetivos, perguntas e métricas pelo método GQM e o processo que liga a medição às melhorias. Segundo o [plano da APS](PLANO.md), as metas foram fixadas na sessão de decisões de 6 de novembro de 2026, antes da primeira rodada de medição, para que o resultado não influenciasse o limite com o qual seria comparado (Basili; Caldiera; Rombach, 1994; Equipe Kolô, 2026g; ISO; IEC, 2011).
 
-| **Atributo e requisito**   | **Métrica ou condição de aceite**                                 | **Procedimento**                               |
-|----------------------------|-------------------------------------------------------------------|------------------------------------------------|
-| Confiabilidade RN02 a RN04 | Soma reservada não ultrapassa o estoque em todas as disputas      | Integração PostgreSQL com sessões concorrentes |
-| Pagamento RN05 e RNF11     | Aviso inválido recusado; repetição sem nova baixa                 | Webhook assinado e reenvios concorrentes       |
-| Autorização RF06 e RN10    | Operação de outro perfil ou proprietário recusada                 | Testes de integração e restrições E2E          |
-| Eficiência RNF13           | Lighthouse ≥ 90 e LCP \< 2,5 s em ambas as páginas                | Mediana de três rodadas nas mesmas condições   |
-| Responsividade RNF20       | Sem rolagem horizontal em 320, 768, 1440 e 1920 px                | Playwright com registro da rota e captura      |
-| Acessibilidade RNF21       | Sem violações críticas/sérias no gate; teclado e foco verificados | axe-core e roteiro manual por tarefa           |
-| Manutenibilidade RNF22     | Lint, tipos e testes sem falhas na revisão avaliada               | CI com identificação da revisão e artefatos    |
-| Operação RNF15 e RNF16     | Reinício verificado e restauração documentada                     | Ensaio no ambiente publicado e cópia isolada   |
+### 3.3.1 Requisitos de qualidade
+O escopo do Kolô define 24 requisitos não funcionais, cada um com um critério de verificação. O Quadro 2 classifica cada RNF por característica e subcaracterística da ISO/IEC 25010:2011 e indica como ele é tratado nesta APS. Um requisito pode ser medido nesta avaliação, apoiar-se em evidência registrada no TCC ou ficar fora do escopo por depender do ambiente publicado. Quando o requisito sustenta mais de uma característica, a principal aparece primeiro.
 
 ::: {custom-style="Legenda"}
-Fonte Requisitos de Equipe Kolô (2026a). Critérios operacionais organizados para esta avaliação.
+Quadro 2 Requisitos não funcionais do Kolô na ISO/IEC 25010:2011
 :::
 
-Para uma nova rodada, cada execução deve registrar revisão do código, data, ambiente, comando, resultado e localização do artefato. As metas de LCP e Lighthouse vêm do projeto. A exigência de registro unificado é uma proposta deste estudo para permitir comparação entre rodadas e evitar a combinação de números de versões diferentes.
+| **RNF** | **Requisito (resumo)**                                  | **Característica e subcaracterística**                    | **Tratamento nesta APS**                              |
+|---------|---------------------------------------------------------|-----------------------------------------------------------|-------------------------------------------------------|
+| RNF01   | Tráfego em HTTPS com certificado válido                 | Segurança: confidencialidade, integridade                 | Fora do escopo: depende do deploy                     |
+| RNF02   | Dependências com suporte de segurança                   | Segurança: integridade                                    | Medido: `npm audit` (G5)                              |
+| RNF03   | Senha só como *hash* com derivação lenta e *salt*       | Segurança: confidencialidade                              | Evidência do TCC: inspeção do banco                   |
+| RNF04   | Consultas parametrizadas pelo ORM                       | Segurança: integridade                                    | Evidência do TCC: revisão de código e teste           |
+| RNF05   | Escape na renderização e CSP restritiva                 | Segurança: integridade                                    | Medido: ZAP *baseline* (G5)                           |
+| RNF06   | Proteção CSRF e cookies `HttpOnly`, `Secure`, `SameSite` | Segurança: autenticidade                                  | Medido: ZAP *baseline* com análise dos alertas (G5)   |
+| RNF07   | Cabeçalhos de segurança                                 | Segurança: confidencialidade, integridade                 | Medido: ZAP *baseline* (G5); nota externa após deploy |
+| RNF08   | Limitação de taxa nos formulários públicos              | Segurança: autenticidade; Confiabilidade: disponibilidade | Suíte de integração                                   |
+| RNF09   | Validação de toda entrada no servidor                   | Segurança: integridade                                    | Suíte de integração                                   |
+| RNF10   | Nenhum dado de cartão no sistema                        | Segurança: confidencialidade                              | Evidência do TCC: revisão de arquitetura              |
+| RNF11   | Webhook com assinatura e tratamento idempotente         | Segurança: autenticidade; Confiabilidade: tolerância a falhas | Suíte de integração; ramos de `payments` (G1)     |
+| RNF12   | Segredos só em variáveis de ambiente                    | Segurança: confidencialidade                              | Evidência do TCC: inspeção do repositório             |
+| RNF13   | LCP abaixo de 2,5 s no catálogo e na obra               | Eficiência de desempenho: comportamento temporal          | Evidência do TCC: Lighthouse (G6)                     |
+| RNF14   | Imagens em formato moderno e responsivas                | Eficiência de desempenho: utilização de recursos          | Evidência do TCC: auditoria de rede                   |
+| RNF15   | Disponibilidade 24/7 com reinício automático            | Confiabilidade: disponibilidade                           | Fora do escopo: depende do deploy                     |
+| RNF16   | *Backup* diário com restauração testada                 | Confiabilidade: recuperabilidade                          | Fora do escopo: depende do deploy                     |
+| RNF17   | Coleta mínima com finalidade declarada                  | Segurança: confidencialidade                              | Evidência do TCC: inventário de dados                 |
+| RNF18   | Nenhuma resposta clínica persistida                     | Segurança: confidencialidade                              | Evidência do TCC: inspeção do esquema                 |
+| RNF19   | Exclusão de conta anonimiza e preserva os pedidos       | Segurança: confidencialidade; Adequação funcional: correção | Suíte de integração                                 |
+| RNF20   | Interface de 320 a 1920 px sem rolagem horizontal       | Portabilidade: adaptabilidade; Usabilidade: operabilidade | Suíte E2E (Playwright)                                |
+| RNF21   | Teclado, foco, contraste e texto alternativo            | Usabilidade: acessibilidade                               | Medido: axe-core na suíte E2E (G6); teclado e foco pendentes |
+| RNF22   | Tipagem estrita, *lint* e CI que barra o *merge*        | Manutenibilidade: analisabilidade, modificabilidade       | Medido: *lint*, tipos, cobertura e complexidade (G1, G2) |
+| RNF23   | Ambiente local por um comando, com dados de exemplo     | Portabilidade: instalabilidade                            | Parcial: banco local por `docker compose`; validação por membro novo não registrada |
+| RNF24   | *Logs* estruturados e captura de exceções               | Manutenibilidade: analisabilidade                         | Fora do escopo: depende do ambiente de produção       |
+
+::: {custom-style="Legenda"}
+Fonte Requisitos de Equipe Kolô (2026a). Classificação elaborada para esta avaliação segundo ISO e IEC (2011).
+:::
+
+As regras de negócio completam o quadro na confiabilidade. O limite de estoque (RN02 a RN04) e a confirmação do pedido só com pagamento aprovado (RN05) correspondem à maturidade e à correção funcional. Por isso a rajada concorrente sobre uma obra de estoque unitário aparece no plano como métrica de confiabilidade, e não de desempenho. A restrição de operações por perfil e por proprietário (RF06 e RN10) corresponde à autenticidade e à responsabilização da segurança. Ela é verificada pelas suítes de integração e E2E e reexecutada no caso T03 da seção 3.4 (Equipe Kolô, 2026a).
+
+A ISO/IEC 25010:2011 não tem característica própria de privacidade. Os requisitos de coleta mínima, ausência de dado clínico e anonimização (RNF17 a RNF19) foram classificados em confidencialidade. Compatibilidade não recebeu requisito no escopo; a única integração crítica, o *gateway* de pagamento, é tratada pelo RNF11 (ISO; IEC, 2011).
+
+### 3.3.2 Objetivos, perguntas e métricas
+O Quadro 3 apresenta os objetivos e as perguntas do plano. As características escolhidas cobrem os três fluxos aprofundados e os requisitos que podem ser medidos sem o ambiente publicado. O Quadro 4 traz as métricas, as ferramentas e as metas de cada pergunta, com os mesmos limites usados na linha de base e na nova medição (Equipe Kolô, 2026f, 2026g, 2026h).
+
+::: {custom-style="Legenda"}
+Quadro 3 Objetivos e perguntas do plano GQM
+:::
+
+| **ID** | **Característica**                  | **Objetivo**                                                                           | **Pergunta**                                                                                           |
+|--------|-------------------------------------|----------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| G1     | Manutenibilidade: testabilidade     | Avaliar quanto do código a suíte automatizada exercita                                 | Que parte das linhas e dos ramos é percorrida pelos testes, sobretudo em pedidos, pagamentos e agenda? |
+| G2     | Manutenibilidade: analisabilidade   | Avaliar se as unidades de código são pequenas o bastante para entender e alterar       | Quais funções e arquivos excedem os limites de complexidade e de tamanho?                              |
+| G3     | Eficiência: comportamento temporal  | Avaliar o tempo de resposta dos fluxos de compra sob carga simultânea                  | Catálogo, ficha da obra e reserva do *checkout* respondem dentro do limite com cerca de 20 usuários virtuais? |
+| G4     | Confiabilidade: maturidade          | Verificar a invariante de estoque sob disputa concorrente                              | Pedidos simultâneos pela mesma obra de estoque unitário produzem venda acima do estoque?              |
+| G5     | Segurança                           | Avaliar a exposição a vulnerabilidades conhecidas e a configuração das respostas HTTP  | Há vulnerabilidade alta ou crítica nas dependências ou alerta de risco nas respostas do servidor?      |
+| G6     | Eficiência e usabilidade            | Situar o carregamento medido no TCC e repetir a varredura automática de acessibilidade | As páginas principais carregam no limite do projeto e passam na varredura automática de acessibilidade? |
+
+::: {custom-style="Legenda"}
+Fonte Elaborado pelos autores a partir de Equipe Kolô (2026g), segundo Basili, Caldiera e Rombach (1994).
+:::
+
+::: {custom-style="Legenda"}
+Quadro 4 Métricas, ferramentas e metas
+:::
+
+| **ID** | **Métrica**                                                     | **Ferramenta**                                  | **Meta**                                                  |
+|--------|-----------------------------------------------------------------|-------------------------------------------------|-----------------------------------------------------------|
+| G1     | Cobertura de linhas, testes unitários e de integração juntos    | Vitest com cobertura v8                         | ≥ 80% global                                              |
+| G1     | Cobertura de ramos                                              | Vitest com cobertura v8                         | ≥ 70% global; ≥ 90% em `orders`, `payments` e `scheduling` |
+| G2     | Complexidade ciclomática por função                             | ESLint, regra `complexity`                      | ≤ 10                                                      |
+| G2     | Tamanho de arquivo em `src/`                                    | Contagem de linhas                              | ≤ 500 linhas                                              |
+| G3     | Duração das requisições no percentil 95 e taxa de erro, catálogo e ficha | k6 contra o *build* local                 | p95 \< 500 ms; erro \< 1%                                 |
+| G3     | Duração no percentil 95 e taxa de erro (verificações reprovadas), reserva do *checkout* | k6 contra o *build* local                       | p95 \< 1 s; erro \< 1%                                    |
+| G4     | Vendas acima do estoque em rajada concorrente sobre obra de estoque 1 | k6 e consulta ao banco                    | Zero                                                      |
+| G5     | Vulnerabilidades de severidade alta e crítica                   | `npm audit`                                     | Zero                                                      |
+| G5     | Alertas por nível de risco                                      | OWASP ZAP *baseline* contra o app local         | Zero *High*; cada *Medium* analisado                      |
+| G6     | LCP e pontuação de desempenho                                   | Lighthouse (medição do TCC)                     | LCP \< 2,5 s; pontuação ≥ 90                              |
+| G6     | Violações críticas de acessibilidade                            | axe-core na suíte E2E (Playwright)              | Zero                                                      |
+
+::: {custom-style="Legenda"}
+Fonte Metas de Equipe Kolô (2026g), fixadas antes da medição. Ferramentas: Deque Systems ([202-]), ESLint ([202-]), Google (2019a), Grafana Labs ([202-]), npm (2026), Vitest ([202-]a) e ZAP ([202-]b).
+:::
+
+As metas de G6 vêm do escopo do projeto (RNF13 e RNF21). O Lighthouse não foi executado de novo nesta APS e entra como evidência do TCC, com a revisão e a data da medição original. A varredura axe-core faz parte da suíte E2E e por isso foi repetida em cada rodada, nas larguras de 320 e 1440 px. As demais metas foram definidas para esta avaliação. O limite de complexidade 10 segue a sugestão original de McCabe (1976). O de 500 linhas repete a convenção de estilo do repositório. A meta de 90% de ramos nos três módulos de domínio é mais alta que a global, porque ali estão o estoque, o dinheiro e a agenda. Aprovação de todas as suítes, *lint* e checagem de tipos são condição para medir, e não meta do plano: uma rodada com falha não é comparada.
+
+### 3.3.3 Processo de qualidade
+A avaliação seguiu um ciclo de cinco etapas, com o registro de cada uma em `docs/aps/evidencias/`:
+
+1. **Plano.** Requisitos classificados, perguntas e metas registrados no [plano da APS](PLANO.md) antes de qualquer medição.
+2. **Linha de base.** Todas as métricas do Quadro 4, exceto o Lighthouse, medidas numa mesma revisão do código, na mesma máquina, com os comandos e as saídas brutas guardados no [registro da linha de base](evidencias/BASELINE.md).
+3. **Pontos críticos.** Cada métrica fora da meta e cada alerta de segurança a analisar viram um ponto crítico. A lista resultante é o insumo da escolha das melhorias.
+4. **Melhoria.** Os pontos críticos foram ordenados por risco de mudança às vésperas da banca do TCC. O plano previa apenas testes novos ou refatoração coberta pela suíte. Dois pontos de segurança apontados pelo ZAP foram aceitos como exceção, por serem mudanças pequenas de configuração cobertas por testes unitários e pela suíte E2E. Os pontos escolhidos foram implementados por TDD: um teste que falha pelo motivo esperado, a menor alteração que o faz passar e a repetição até cobrir o comportamento. Quando a melhoria só acrescenta testes a comportamento já existente, não há etapa vermelha. Antes da nova medição, um revisor que não escreveu o código analisou o *diff*, e os ajustes que ele pediu entraram na mesma rodada.
+5. **Nova medição.** Os mesmos comandos, na mesma máquina, sobre a revisão com as melhorias. O [comparativo das melhorias](evidencias/COMPARATIVO.md) põe antes e depois lado a lado na mesma métrica. Nas medidas de tempo, uma variação pequena é lida como ausência de regressão, não como ganho, porque o ensaio local tem ruído.
+
+Pontos críticos não tratados ficam como propostas, com a justificativa de por que ficaram fora (seção 4.6). Uma rodada seguinte repetiria o ciclo a partir da etapa 2, sobre as métricas afetadas pelas mudanças (Beck, 2003; Equipe Kolô, 2026f, 2026h).
+
+Cada rodada registra a revisão do código, a data, o ambiente, o comando, o resultado e o arquivo da evidência. Esse registro permite comparar rodadas e evita a combinação de números de versões diferentes, como a contagem de testes da monografia, anterior à linha de base desta APS.
 
 ## 3.4 Roteiro de testes funcionais e não funcionais
 ::: {custom-style="Legenda"}
-Quadro 3 Casos prioritários para reexecução
+Quadro 5 Casos prioritários para reexecução
 :::
 
 | **Caso**       | **Entrada ou ação**                                               | **Resultado esperado**                                         |
@@ -341,7 +421,7 @@ A Sprint 2 registra varredura de 35 telas nas larguras de 320, 768, 1440 e 1920 
 O resultado é parcial em relação ao RNF21: teclado e foco permaneceram pendentes. A varredura verifica regras automáticas e os impactos selecionados, sem garantir a experiência de usuários com deficiência. A inspeção do teste confirma que resultados inconclusivos não entram no gate. Esse limite deve acompanhar qualquer afirmação sobre acessibilidade.
 
 ::: {custom-style="Legenda"}
-Quadro 4 Evidências históricas de segurança e seus limites
+Quadro 6 Evidências históricas de segurança e seus limites
 :::
 
 | **Controle**          | **Evidência registrada**                               | **Limite**                                           |
@@ -362,7 +442,7 @@ A ausência de anamnese no esquema é coerente com o escopo de minimização de 
 As melhorias já registradas atacam falhas concretas de desempenho, nomes acessíveis, transbordamento e tamanho de botões. O próximo ciclo deve concentrar-se em lacunas de evidência e operação, antes de ampliar funcionalidades. A priorização abaixo é uma proposta desta avaliação; não representa trabalho já executado nem atribuição individual acordada.
 
 ::: {custom-style="Legenda"}
-Quadro 5 Melhorias propostas e critérios de encerramento
+Quadro 7 Melhorias propostas e critérios de encerramento
 :::
 
 | **Prioridade e ação**                 | **Justificativa**                                 | **Critério de aceite**                                                                      |
@@ -383,7 +463,7 @@ Fonte Propostas elaboradas com base nas pendências das Sprints 2 e 3 e na monog
 Cada ação deve gerar um registro com problema observado, requisito afetado, alteração, teste que demonstra o defeito, teste após a correção e evidência final. A versão da aplicação precisa ser identificada para que a comparação tenha significado. Em caso de falha, preserva-se o resultado e abre-se nova tarefa; a tentativa posterior não deve apagar o histórico.
 
 ::: {custom-style="Legenda"}
-Quadro 6 Modelo de registro para o próximo ciclo
+Quadro 8 Modelo de registro para o próximo ciclo
 :::
 
 | **Campo**        | **Conteúdo a registrar**                                |
@@ -505,7 +585,7 @@ Repositório de origem: https://github.com/caioalves19/tcc-2. Revisão local ins
 Consulta da codificação completa na revisão: https://github.com/caioalves19/tcc-2/tree/a94ad02bc90bf4945ded28b7c1b70960abc71b90
 
 ::: {custom-style="Legenda"}
-Quadro 7 Localização dos materiais para conferência
+Quadro 9 Localização dos materiais para conferência
 :::
 
 | **Material**           | **Caminho relativo a tcc-2**              |
