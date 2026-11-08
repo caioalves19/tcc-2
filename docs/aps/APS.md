@@ -813,31 +813,115 @@ Cada métrica fora da meta e cada alerta classificado como problema real virou u
 O isolamento entre origens (COEP, COOP e CORP) e os cabeçalhos de `/_next/image` ficaram fora da lista. Eles são melhorias possíveis, e não falhas contra uma meta do plano.
 
 ### 4.6.2 Plano de melhoria
-As melhorias já registradas atacam falhas concretas de desempenho, nomes acessíveis, transbordamento e tamanho de botões. O próximo ciclo deve concentrar-se em lacunas de evidência e operação, antes de ampliar funcionalidades. A priorização abaixo é uma proposta desta avaliação; não representa trabalho já executado nem atribuição individual acordada.
+Os pontos críticos foram ordenados pelo risco de mudar o sistema a poucos dias da banca do TCC. Três deles podiam ser tratados com mudança pequena, coberta pela suíte e verificável na mesma métrica que os revelou, e viraram as melhorias M1 a M3. Os outros três exigem trocar dependências centrais, reestruturar telas grandes ou mudar a suíte inteira, e viraram propostas. O Quadro 14 registra a decisão para cada ponto (Equipe Kolô, 2026f, 2026g).
 
 ::: {custom-style="Legenda"}
-Quadro 14 Melhorias propostas e critérios de encerramento
+Quadro 14 Decisão sobre cada ponto crítico
 :::
 
-| **Prioridade e ação**                 | **Justificativa**                                 | **Critério de aceite**                                                                      |
-|---------------------------------------|---------------------------------------------------|---------------------------------------------------------------------------------------------|
-| Alta Consolidar execução final        | Contagens e resultados são de momentos diferentes | Mesma revisão com lint, tipos, build e três suítes; artefatos e falhas registrados          |
-| Alta Teclado e foco                   | RNF21 permanece parcialmente verificado           | Compra, login, assistente e admin percorridos sem mouse; foco e ordem documentados          |
-| Alta Homologar integrações publicadas | Dublês E2E não substituem Mercado Pago e R2 reais | Compra sandbox pela URL pública e upload real com miniatura e exibição                      |
-| Alta Restaurar backup                 | Plano de operação ainda carece de comprovação     | Dump restaurado em ambiente isolado; integridade e tempo registrados                        |
-| Média Ampliar concorrência            | Experimento usa apenas uma obra por disputa       | Carrinhos multiobra, repetição concorrente e fronteiras de expiração sem violar invariantes |
-| Média Repetir desempenho na VPS       | Catálogo tem margem local de apenas 70 ms         | Três rodadas comparáveis por página; LCP \< 2,5 s e nota ≥ 90                               |
-| Média Reproduzir dados de demo        | Sprint 3 registra povoamento incompleto           | Clone limpo executa migração e seed e apresenta catálogo e portfólio com imagens            |
+| **Ponto crítico**                      | **Decisão**        | **Justificativa**                                                                            |
+|----------------------------------------|--------------------|----------------------------------------------------------------------------------------------|
+| PC1 Dependências vulneráveis           | Proposta P1        | A correção troca a versão do Next.js e da biblioteca de autenticação; o risco de regressão às vésperas da banca supera o ganho local |
+| PC2 Senha na URL antes da hidratação   | Melhoria M2        | Um atributo por formulário, coberto por teste; não muda o envio depois da hidratação        |
+| PC3 Respostas sem cabeçalhos           | Melhoria M3        | Configuração do servidor, coberta por teste; não altera nenhuma página                       |
+| PC4 Ramos de pagamento e agenda        | Melhoria M1        | Só acrescenta testes de comportamento já existente; não toca o código do sistema             |
+| PC5 Funções acima da complexidade 10   | Proposta P2        | Quebrar as telas de gestão e o assistente exige refatoração ampla da interface               |
+| PC6 Manutenção da suíte                | Proposta P4        | Trocar o relógio real por relógio fixo mexe em muitos testes de expiração de uma vez         |
 
 ::: {custom-style="Legenda"}
-Fonte Propostas elaboradas com base nas pendências das Sprints 2 e 3 e na monografia.
+Fonte Elaborado pelos autores a partir de Equipe Kolô (2026f, 2026g).
+:::
+
+O plano previa apenas testes novos ou refatoração coberta pela suíte. M2 e M3 mudam o comportamento do servidor e foram aceitas como exceção, com a justificativa da seção 3.3.3: são mudanças de configuração, pequenas e cobertas por testes unitários e pelo E2E, que não teve regressão. As propostas não implementadas estão no Quadro 15, cada uma com o motivo e o próximo passo. A P5 decorre da regressão do `npm audit` (seção 4.5.1). As de P6 em diante vêm de pendências anteriores a esta APS, registradas nas Sprints 2 e 3 e na monografia, e continuam válidas.
+
+::: {custom-style="Legenda"}
+Quadro 15 Propostas não implementadas
+:::
+
+| **Proposta**                                    | **Motivo de não implementar agora**                                   | **Próximo passo e critério de aceite**                                                                  |
+|-------------------------------------------------|-----------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| P1 Atualizar `next`, `better-auth` e `zod`      | Troca de *framework* e de autenticação antes da banca                 | Atualizar logo após a banca; `npm audit` sem alta nem crítica, com lint, tipos e as três suítes verdes  |
+| P2 Quebrar `GestaoObras`, `WizardAgendamento` e `GestaoArtistas` | Refatoração ampla da interface, com risco de regressão visual | Extrair subcomponentes por etapa ou seção; nenhuma função acima de 20, e o E2E sem regressão           |
+| P3 Cabeçalhos em `/_next/image`; COOP e CORP    | O otimizador não passa pelo `proxy.ts`; COEP exige revisar o Turnstile | Cabeçalhos aplicados na configuração do Next.js; ZAP sem os alertas 90004 e o Turnstile funcionando    |
+| P4 Relógio fixo e fim da espera de 5,5 s na suíte | Mexe em muitos testes de expiração de uma vez                       | Relógio controlado nos testes de expiração; suíte de integração mais curta e sem relógio real          |
+| P5 Auditoria de dependências na CI              | Fora do escopo das melhorias desta APS                                | Passo da CI que falha com aviso alto ou crítico, para que o RNF02 não volte a falhar sem ninguém ver    |
+| P6 Teclado e foco                               | Exige roteiro manual por tarefa                                       | Compra, *login*, assistente e administração percorridos sem *mouse*, com foco e ordem documentados       |
+| P7 Medições após a publicação                   | Dependem do ambiente publicado                                        | SSL Labs e securityheaders.com com nota A; Lighthouse em três rodadas na VPS; compra no *sandbox* pela URL pública |
+| P8 Disponibilidade e *backup*                   | Dependem do ambiente publicado                                        | Reinício automático verificado; *dump* restaurado em ambiente isolado, com integridade e tempo registrados |
+| P9 Dados de demonstração reproduzíveis          | Pendência registrada na Sprint 3                                      | Clone limpo executa migração e povoamento e mostra catálogo e portfólio com imagens                     |
+
+::: {custom-style="Legenda"}
+Fonte Elaborado pelos autores a partir de Equipe Kolô (2026b, 2026c, 2026f) e de Oliveira et al. (2026).
 :::
 
 ## 4.7 Registro e acompanhamento das melhorias
-Cada ação deve gerar um registro com problema observado, requisito afetado, alteração, teste que demonstra o defeito, teste após a correção e evidência final. A versão da aplicação precisa ser identificada para que a comparação tenha significado. Em caso de falha, preserva-se o resultado e abre-se nova tarefa; a tentativa posterior não deve apagar o histórico.
+
+### 4.7.1 Melhorias implementadas
+Cada melhoria seguiu o ciclo da seção 3.3.3. M2 e M3 foram feitas por TDD: primeiro um teste que falha pelo motivo esperado, depois a menor mudança que o faz passar. M1 só acrescenta testes a comportamento existente e, por isso, não teve etapa vermelha.
+
+- **M1, testes de pagamento e agenda.** Nove casos de integração, contra o PostgreSQL real, para regras que a suíte não exercitava. Entre elas: o cartão em análise não prorroga a reserva; o Pix expirado com outro ainda em aberto; o Pix expirado depois de o pedido já estar pago; cancelar ou estornar o que não existe; artista inativado; semana repetida na URL da agenda; a administração edita sem trocar o artista; e o limite de taxa do assistente na revisão.
+- **M2, formulários por POST.** O atributo `method="post"` em doze formulários: *login*, cadastro, recuperação e redefinição de senha, troca de senha, exclusão de conta, perfil, endereço, contato, assistente, horário da agenda e formulário da administração. Um teste novo confirma o método em cada um. Depois da hidratação, o envio continua pelas ações do servidor. A mudança só impede que um envio antes do JavaScript leve os dados na URL.
+- **M3, cabeçalhos de segurança.** A `Permissions-Policy` nega câmera, microfone, geolocalização, pagamento e USB. O `X-Powered-By` foi desligado. Todo caminho com ponto, que o `proxy.ts` não cobre, passou a receber cabeçalhos próprios de arquivo: CSP sem execução de *script*, `nosniff`, `Referrer-Policy` e `X-Frame-Options`.
+
+Antes da nova medição, um revisor que não escreveu o código analisou o *diff* completo. Ele pediu dois ajustes, que entraram antes da medição: dois formulários que tinham ficado sem método (o assistente e o formulário da administração) e um teste de semana que dependia do relógio real. A Tabela 7 compara as duas rodadas nas mesmas métricas (Equipe Kolô, 2026f).
 
 ::: {custom-style="Legenda"}
-Quadro 15 Modelo de registro para o próximo ciclo
+Tabela 7 Antes e depois das melhorias
+:::
+
+| **Métrica**                     | **Meta**            | **Antes**             | **Depois**            | **Variação**              |
+|---------------------------------|---------------------|-----------------------|-----------------------|---------------------------|
+| Testes unitários                | Todos passam        | 562                   | 579                   | +17                       |
+| Testes de integração            | Todos passam        | 286                   | 295                   | +9                        |
+| Testes E2E                      | Todos passam        | 44                    | 44                    | Sem regressão             |
+| Cobertura de linhas             | ≥ 80%               | 92,46%                | 92,51%                | +0,05 ponto               |
+| Cobertura de ramos global       | ≥ 70%               | 87,39%                | 87,89%                | +0,50 ponto               |
+| Ramos em `payments`             | ≥ 90%               | 88,5% (185/209)       | 91,9% (192/209)       | +3,4 pontos; passa a atender |
+| Ramos em `scheduling`           | ≥ 90%               | 88,2% (135/153)       | 91,5% (140/153)       | +3,3 pontos; passa a atender |
+| Ramos em `orders`               | ≥ 90%               | 90,3%                 | 90,3%                 | Sem mudança               |
+| ZAP *Medium*                    | Analisado           | 1 (CSP ausente)       | 1 (token anti-CSRF, confiança baixa) | Trocou; ver 4.7.2 |
+| ZAP *Low*                       | Analisado           | 8                     | 5                     | −3                        |
+| `X-Powered-By`                  | Ausente             | Presente              | Ausente               | Atende                    |
+| p95 do catálogo (k6)            | \< 500 ms           | 163 ms                | 150 ms                | Sem regressão             |
+| p95 da ficha (k6)               | \< 500 ms           | 212 ms                | 200 ms                | Sem regressão             |
+| p95 do *checkout* (k6)          | \< 1 s              | 446 ms                | 378 ms                | Sem regressão             |
+| Rajada (30 clientes, estoque 1) | 1 criado            | 1 criado, 29 recusados | 1 criado, 29 recusados | Sem mudança             |
+| Funções acima da complexidade 10 | Zero               | 22                    | 22                    | Não tratado (P2)          |
+| `npm audit` alta e crítica      | Zero                | 2 + 2                 | 2 + 2                 | Não tratado (P1)          |
+
+::: {custom-style="Legenda"}
+Fonte Equipe Kolô (2026f), com as saídas brutas em `docs/aps/evidencias/baseline/` e `docs/aps/evidencias/depois/`.
+:::
+
+A melhoria M1 levou os dois módulos que não atendiam à meta de ramos para cima de 90%, com 7 ramos novos em `payments` e 5 em `scheduling`. As três suítes continuaram passando por inteiro. As variações do k6, de 5% a 15% para baixo, estão dentro do ruído de uma única execução numa máquina local. A leitura correta é que não houve regressão, e não que o sistema ficou mais rápido: nenhuma das melhorias mexe no caminho medido.
+
+### 4.7.2 Mudança nos alertas do ZAP
+Cinco alertas saíram na nova medição: a CSP ausente (10038, *Medium*), o `X-Powered-By` (10037), o `X-Content-Type-Options` ausente (10021), a `Permissions-Policy` ausente (10063) e a informação sensível na URL (10024). Os quatro primeiros saíram com M3 e o último com M2.
+
+Dois alertas novos apareceram nas rodadas seguintes. Os dois foram analisados.
+
+- **CSP sem diretiva de recurso alternativo (10055, *Medium*)** em `robots.txt` e `sitemap.xml`. As diretivas `form-action`, `base-uri` e `frame-ancestors` não herdam o valor de `default-src`. A primeira versão da CSP de arquivo declarava só `default-src 'none'` e `frame-ancestors`. A correção acrescentou `form-action 'none'` e `base-uri 'none'`, e a regra passou na rodada seguinte.
+- **Ausência de token anti-CSRF (10202, *Medium*, confiança baixa).** O alerta aparece porque os formulários passaram a declarar POST, e o ZAP começou a examiná-los. É um falso positivo para o Kolô. As ações do servidor do Next.js recusam POST cuja origem difere do *host*, e os *cookies* de sessão usam `SameSite` (RNF06). Nenhum formulário aceita POST de outra origem (OWASP, [202-]).
+
+Na nova medição, a varredura passou em 60 regras e emitiu alerta em 8, sem falha. Continuam, já analisados, o isolamento entre origens (P3), o erro de `/_next/image` causado pelo R2 falso, o redirecionamento de `/conta` e o atributo refletido em `?ordem=` (`zap/zap-baseline.txt` em `docs/aps/evidencias/depois/`).
+
+A revisão apontou dois limites que permanecem. Um caminho inexistente com ponto, como `/obras/foo.bar`, recebe a CSP de arquivo, e a página 404 aparece sem estilo. Nenhuma rota real tem ponto, porque o identificador da obra o proíbe, e o uso normal não é afetado. Além disso, `/_next/image` não tem ponto no caminho nem passa pelo `proxy.ts`, e continua sem os cabeçalhos de segurança (P3).
+
+### 4.7.3 Limitações do estudo
+Os resultados valem nas condições em que foram obtidos, e as limitações abaixo restringem até onde eles podem ser generalizados.
+
+- **Ambiente local.** Todas as medições rodaram num único *notebook*, com o gerador de carga e o servidor dividindo o mesmo processador. Os tempos não representam o servidor publicado, e cada métrica de carga foi medida uma só vez por rodada.
+- **Ruído do k6.** Sem repetição, não há intervalo de confiança. Diferenças da ordem de 10% entre rodadas não permitem concluir ganho nem perda.
+- **Sem publicação.** HTTPS, HSTS, as notas externas de cabeçalhos e TLS, a disponibilidade, o *backup* e as integrações reais com Mercado Pago e R2 ficaram fora (P7 e P8). Os dublês verificam o contrato da integração, não o serviço real.
+- **`npm audit` pendente.** A meta de segurança das dependências não foi atendida nas duas rodadas. Até a atualização (P1), o sistema depende de versões com avisos críticos publicados.
+- **Lighthouse e acessibilidade.** O Lighthouse não foi repetido, e o teclado e o foco não foram verificados manualmente. A varredura axe cobre só regras automáticas.
+- **Escopo da varredura.** O ZAP rodou em modo passivo. Não houve teste ativo de injeção nem roteiro manual de XSS e CSRF além do já registrado no TCC.
+- **Mesmo grupo como avaliador.** O sistema foi avaliado pela equipe que o desenvolveu. A revisão independente do *diff* reduz, mas não elimina, esse viés.
+
+O Quadro 16 mantém o modelo de registro proposto antes da APS. As melhorias M1 a M3 foram registradas por esse modelo no comparativo das evidências, com a situação inicial, a ação, a verificação e a comparação.
+
+::: {custom-style="Legenda"}
+Quadro 16 Modelo de registro para o próximo ciclo
 :::
 
 | **Campo**        | **Conteúdo a registrar**                                |
@@ -850,7 +934,7 @@ Quadro 15 Modelo de registro para o próximo ciclo
 | Encerramento     | Artefato, revisão por outro integrante e pendências     |
 
 ::: {custom-style="Legenda"}
-Fonte Modelo proposto nesta avaliação. Não preenchido com execuções fictícias.
+Fonte Modelo proposto nesta avaliação e aplicado em Equipe Kolô (2026f).
 :::
 
 ## 4.8 Manutenibilidade e código completo
@@ -959,7 +1043,7 @@ Repositório de origem: https://github.com/caioalves19/tcc-2. Revisão local ins
 Consulta da codificação completa na revisão: https://github.com/caioalves19/tcc-2/tree/a94ad02bc90bf4945ded28b7c1b70960abc71b90
 
 ::: {custom-style="Legenda"}
-Quadro 16 Localização dos materiais para conferência
+Quadro 17 Localização dos materiais para conferência
 :::
 
 | **Material**           | **Caminho relativo a tcc-2**              |
