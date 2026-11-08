@@ -282,7 +282,7 @@ Quadro 3 Requisitos não funcionais do Kolô na ISO/IEC 25010:2011
 Fonte Requisitos de Equipe Kolô (2026a). Classificação elaborada para esta avaliação segundo ISO e IEC (2011).
 :::
 
-As regras de negócio completam o quadro na confiabilidade. O limite de estoque (RN02 a RN04) e a confirmação do pedido só com pagamento aprovado (RN05) correspondem à maturidade e à correção funcional. Por isso a rajada concorrente sobre uma obra de estoque unitário aparece no plano como métrica de confiabilidade, e não de desempenho. A restrição de operações por perfil e por proprietário (RF06 e RN10) corresponde à autenticidade e à responsabilização da segurança. Ela é verificada pelas suítes de integração e E2E e reexecutada no caso T03 da seção 3.4 (Equipe Kolô, 2026a).
+As regras de negócio completam o quadro na confiabilidade. O limite de estoque (RN02 a RN04) e a confirmação do pedido só com pagamento aprovado (RN05) correspondem à maturidade e à correção funcional. Por isso a rajada concorrente sobre uma obra de estoque unitário aparece no plano como métrica de confiabilidade, e não de desempenho. A restrição de operações por perfil e por proprietário (RF06 e RN10) corresponde à autenticidade e à responsabilização da segurança. Ela é verificada pelas suítes de integração e E2E e reexecutada no caso CT12 da seção 3.4 (Equipe Kolô, 2026a).
 
 A ISO/IEC 25010:2011 não tem característica própria de privacidade. Os requisitos de coleta mínima, ausência de dado clínico e anonimização (RNF17 a RNF19) foram classificados em confidencialidade. Compatibilidade não recebeu requisito no escopo; a única integração crítica, o *gateway* de pagamento, é tratada pelo RNF11 (ISO; IEC, 2011).
 
@@ -344,24 +344,34 @@ Pontos críticos não tratados ficam como propostas, com a justificativa de por 
 Cada rodada registra a revisão do código, a data, o ambiente, o comando, o resultado e o arquivo da evidência. Esse registro permite comparar rodadas e evita a combinação de números de versões diferentes, como a contagem de testes da monografia, anterior à linha de base desta APS.
 
 ## 3.4 Roteiro de testes funcionais e não funcionais
-::: {custom-style="Legenda"}
-Quadro 6 Casos prioritários para reexecução
-:::
+Os testes funcionais foram avaliados em duas camadas. A primeira é a reexecução das suítes automatizadas inteiras, unitária, de integração e E2E, nas duas rodadas. As contagens, os tempos e a aprovação vêm do relatório de cada executor, e não de contagem manual no código. Casos parametrizados (`it.each`) contam um teste por linha de dados. Por isso o número do relatório é maior que o de chamadas `it` nos arquivos.
 
-| **Caso**       | **Entrada ou ação**                                               | **Resultado esperado**                                         |
-|----------------|-------------------------------------------------------------------|----------------------------------------------------------------|
-| T01 Reserva    | Duas ou mais sessões disputam uma peça de estoque 1               | Só a quantidade disponível é reservada; sem estoque negativo   |
-| T02 Webhook    | Assinatura inválida e depois dois avisos válidos iguais           | Inválido recusado; efeito de negócio aplicado uma vez          |
-| T03 Perfil     | Cliente tenta ação administrativa; artista altera outro portfólio | Operações recusadas no servidor                                |
-| T04 Agenda     | Duas inserções simultâneas sobrepostas do mesmo artista           | Só um horário é aceito                                         |
-| T05 Assistente | Avançar sem aceite e depois completar todos os passos             | Conclusão bloqueada até aceites; link correto sem persistência |
-| T06 Conta      | Excluir conta que tem pedido pago                                 | Dados pessoais tratados conforme contrato; pedido preservado   |
-| T07 Interface  | Percorrer compra e assistente por teclado em tela estreita        | Foco visível, sequência coerente e ações alcançáveis           |
-| T08 Relatório  | Período que cruza meia-noite em São Paulo e pedido estornado      | Totais coerentes com período e situação do pedido              |
+A segunda camada são doze casos de teste formalizados segundo a estrutura de especificação de casos da ISO/IEC/IEEE 29119-3: identificador, requisito, pré-condição, passos, entrada, resultado esperado, resultado obtido e situação. Os casos foram escolhidos pelo risco nos três fluxos aprofundados, mais quatro controles transversais: limite de taxa, recuperação de senha, exclusão de conta e isolamento entre perfis. As entradas foram derivadas por partição de equivalência, em que cada classe de entrada válida ou inválida recebe um representante, e por análise de valor-limite, em que se testam os valores imediatamente abaixo e acima de cada fronteira (ISO; IEC; IEEE, 2021a, 2021b). O Quadro 6 resume o roteiro. A especificação completa e os resultados estão na seção 4.3.
 
 ::: {custom-style="Legenda"}
-Fonte Elaborado a partir de RF06, RF12 a RF25, RF32 e RN01 a RN12.
+Quadro 6 Casos de teste formalizados por fluxo e técnica
 :::
+
+| **ID** | **Requisito**  | **Fluxo**              | **Técnica e classes ou limites**                                                  |
+|--------|----------------|------------------------|-----------------------------------------------------------------------------------|
+| CT01   | RN02, RN03     | Compra                 | Valor-limite: pedido igual e acima do estoque livre                               |
+| CT02   | RN04           | Compra                 | Partição: disputa simultânea por peça única                                       |
+| CT03   | RN03           | Compra                 | Valor-limite: 10 min da reserva, 1 ms antes e 1 ms depois                         |
+| CT04   | RNF11          | Webhook                | Partição: assinatura válida e oito formas de assinatura inválida                  |
+| CT05   | RNF11          | Webhook                | Partição: primeiro aviso e reenvio do mesmo aviso                                 |
+| CT06   | RN05, RN07     | Webhook                | Partição: valor pago igual, menor e diferente do total                            |
+| CT07   | RN08           | Agenda                 | Valor-limite: horário sobreposto, encostado e de outro artista                    |
+| CT08   | RF23 a RF25    | Assistente             | Partição: três aceites, aceite ausente, falso, de outro tipo e campo extra        |
+| CT09   | RNF08          | Transversal            | Valor-limite: 5ª e 6ª tentativa na janela e primeira após a janela                |
+| CT10   | RF03           | Transversal            | Partição: código válido, expirado, inventado, vazio e reutilizado                 |
+| CT11   | RN12, RNF19    | Transversal            | Partição: situação do pedido no momento da exclusão                               |
+| CT12   | RN10           | Transversal            | Partição: dono do registro, outro artista e administração                         |
+
+::: {custom-style="Legenda"}
+Fonte Elaborado pelos autores a partir de Equipe Kolô (2026a), segundo ISO, IEC e IEEE (2021a, 2021b).
+:::
+
+Cada caso aponta para um teste automatizado que já existia antes desta APS, e o caso é executado por esse teste. Assim, o resultado obtido de cada caso vem da mesma execução registrada nas evidências. O roteiro manual de teclado e foco (RNF21) não entra nos casos funcionais: é uma verificação de usabilidade pendente, tratada na seção 4.5. Os testes não funcionais seguem as métricas do Quadro 5, com o procedimento do Quadro 7.
 
 ## 3.5 Repetibilidade
 
@@ -499,10 +509,83 @@ Fonte Elaborado pelos autores a partir de Equipe Kolô (2026f, 2026g, 2026h).
 No comércio, artwork se relaciona a artwork_reservation, cart_item e order_item; order reúne itens e pagamentos. Na agenda, appointment vincula artista, intervalo e contato. As contas e sessões sustentam a identificação e o controle de acesso. O modelo utiliza valores monetários inteiros em centavos e datas armazenadas em UTC. O DER completo e o esquema estão identificados no Apêndice A.
 
 ## 4.3 Resultados de confiabilidade e testes
-A monografia registra um experimento com dez rodadas de oito sessões concorrentes, cada rodada disputando uma obra de estoque unitário. Em cada rodada, uma reserva foi concedida e sete foram recusadas. O total foi de 80 tentativas, com dez reservas concedidas para dez disputas independentes. O resultado sustenta a propriedade de não exceder o estoque nesse cenário, mas não mede latência e não exercita carrinhos com várias obras (Oliveira et al., 2026).
+
+### 4.3.1 Suítes automatizadas
+A Tabela 1 traz as três suítes nas duas rodadas, com os números dos relatórios do Vitest e do Playwright. Todos os testes passaram nas duas rodadas, sem teste ignorado, e o E2E não teve teste instável. Os 17 testes unitários e 9 de integração a mais na nova medição são os testes acrescentados com as melhorias M1 a M3 (seção 4.7). O tempo é a duração total de cada executor na máquina descrita na seção 3.5.1 (Equipe Kolô, 2026f, 2026h).
 
 ::: {custom-style="Legenda"}
-Tabela 1 Síntese do experimento de concorrência registrado
+Tabela 1 Suítes automatizadas na linha de base e na nova medição
+:::
+
+| **Camada**                  | **Arquivos** | **Testes (antes → depois)** | **Aprovação** | **Tempo (antes → depois)** |
+|-----------------------------|--------------|-----------------------------|---------------|----------------------------|
+| Unitária (Vitest)           | 122 → 124    | 562 → 579                   | 100% nas duas | 93,8 s → 89,3 s            |
+| Integração (Vitest, Postgres real) | 42 → 42 | 286 → 295                 | 100% nas duas | 142,4 s → 136,0 s          |
+| E2E (Playwright, *build* de produção) | 7 → 7 | 44 → 44                 | 100% nas duas | 121,8 s → 124,9 s          |
+| Total                       | 171 → 173    | 892 → 918                   | 100% nas duas | —                          |
+
+::: {custom-style="Legenda"}
+Fonte Relatórios `unit.txt`, `integracao.txt` e `e2e-resumo.json` em `docs/aps/evidencias/baseline/` e `docs/aps/evidencias/depois/`.
+:::
+
+A suíte segue a forma de pirâmide: 63% dos testes são unitários, 32% de integração e 5% E2E. As regras com transação e concorrência, como reserva, agenda e *webhook*, são verificadas na camada de integração contra o PostgreSQL real. O E2E cobre só os percursos completos de compra, assistente e gestão, além das larguras de tela e da varredura de acessibilidade.
+
+As contagens da monografia são de momentos anteriores e não foram somadas às desta APS. A monografia informa 562 testes unitários, 276 de integração e 43 E2E e registra que as contagens de integração e E2E antecedem o relatório de vendas. A Sprint 2 registra 532 unitários, 276 de integração e 43 E2E no fechamento da qualidade integrada. A linha de base desta APS confirma os 562 unitários. Ela tem 10 testes de integração e 1 E2E a mais, o que é coerente com a observação da própria monografia sobre o relatório de vendas (Equipe Kolô, 2026b; Oliveira et al., 2026).
+
+### 4.3.2 Casos de teste formalizados
+O Quadro 8 especifica os doze casos do roteiro da seção 3.4. O Quadro 9 registra o resultado obtido de cada um na nova medição, na revisão `51bb1b8`, e o teste automatizado que o executa. Os casos existentes antes das melhorias também passaram na linha de base.
+
+::: {custom-style="Legenda"}
+Quadro 8 Especificação dos casos de teste
+:::
+
+| **ID** | **Pré-condição**                                          | **Passos e entrada**                                                                                   | **Resultado esperado**                                                        |
+|--------|-----------------------------------------------------------|--------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| CT01   | Obra com estoque 3; outra sessão reservou 2               | Segunda sessão reserva 2 unidades; depois, 1 unidade                                                   | 2 recusado como indisponível; 1 aceito; estoque continua 3 até o pagamento    |
+| CT02   | Obra de estoque 1 no carrinho de dois clientes            | Os dois finalizam a compra ao mesmo tempo                                                              | Um pedido pendente criado; o outro recusado como indisponível                 |
+| CT03   | Sessão A reservou a obra de estoque 1 no instante T0      | Sessão B reserva em T0 + 10 min − 1 ms e em T0 + 10 min + 1 ms                                         | Recusada antes do vencimento; aceita depois                                   |
+| CT04   | Segredo do *webhook* configurado                          | Aviso com assinatura válida; aviso com *hash* alterado, segredo errado, outro pagamento, outra requisição, sem cabeçalho, sem `ts`, sem `v1` ou malformado | Válida aceita; as oito inválidas recusadas; na rota, 401 sem consultar a API nem gravar |
+| CT05   | Pedido pendente com reserva ativa; pagamento aprovado     | O mesmo aviso de pagamento é enviado duas vezes                                                        | Pedido pago e estoque baixado uma vez; o reenvio não tem efeito               |
+| CT06   | Pedido pendente com reserva ativa                         | Aprovação com valor igual ao total; com valor menor; com valor diferente                               | Igual: pedido pago; menor: pedido não pago; diferente: pagamento marcado para estorno |
+| CT07   | Horário da artista Ana das 14h às 17h                     | Novo horário da Ana das 16h às 18h; da Ana das 17h às 18h; de outro artista das 14h às 17h             | Sobreposto recusado pelo banco; encostado e de outro artista aceitos          |
+| CT08   | Assistente preenchido até a etapa de avisos               | Envio com os três aceites; sem cada um deles; com um falso; com texto no lugar de verdadeiro; com campo extra | Só os três aceites verdadeiros, sem campo extra, chegam à revisão      |
+| CT09   | Regra de 5 tentativas por janela                          | Seis tentativas na mesma janela; uma tentativa depois de a janela acabar                               | 5 liberadas; a 6ª bloqueada até o fim da janela; a contagem reinicia          |
+| CT10   | Código de recuperação de senha emitido                    | Troca com código válido; reuso do mesmo código; código vencido há 1 min; inventado; vazio              | Só o válido troca a senha, uma vez; nos demais a senha antiga continua valendo |
+| CT11   | Cliente com pedido em cada situação                       | Excluir a conta com pedido pago, em processamento ou enviado e ainda não entregue; com pedido já entregue | Não entregue: exclusão recusada; entregue: conta anônima e pedido com os mesmos valores |
+| CT12   | Horário e trabalho de portfólio da artista Ana            | Outro artista tenta alterar o horário e remover o trabalho; a administração altera o horário           | Outro artista recusado, sem descobrir o horário; administração aceita         |
+
+::: {custom-style="Legenda"}
+Fonte Elaborado pelos autores a partir dos testes automatizados do repositório (Equipe Kolô, 2026d) e de Equipe Kolô (2026a).
+:::
+
+::: {custom-style="Legenda"}
+Quadro 9 Resultado obtido e teste automatizado de cada caso
+:::
+
+| **ID** | **Resultado obtido**                           | **Situação** | **Teste automatizado (arquivo em `tests/`)**                                            |
+|--------|------------------------------------------------|--------------|-----------------------------------------------------------------------------------------|
+| CT01   | Conforme o esperado                            | Aprovado     | `integration/reserva.test.ts`: reserva até o estoque livre                              |
+| CT02   | Conforme o esperado                            | Aprovado     | `integration/checkout.test.ts`: cliques simultâneos e peça única                        |
+| CT03   | Conforme o esperado                            | Aprovado     | `integration/reserva.test.ts`: a reserva vence em 10 minutos                            |
+| CT04   | Conforme o esperado nas nove entradas          | Aprovado     | `unit/webhook-assinatura.test.ts`; `integration/webhook-http.test.ts`: assinatura inválida responde 401 |
+| CT05   | Conforme o esperado                            | Aprovado     | `integration/webhook-aprovacao.test.ts`: o mesmo aviso reenviado é processado uma vez    |
+| CT06   | Conforme o esperado nas três classes           | Aprovado     | `integration/webhook-aprovacao.test.ts`: aprovação confirma e valor menor; `integration/webhook-estorno.test.ts`: valor diferente |
+| CT07   | Conforme o esperado                            | Aprovado     | `integration/agenda.test.ts`: sobreposto recusado, encostado e de outro artista passam  |
+| CT08   | Conforme o esperado em todas as entradas       | Aprovado     | `unit/wizard-validacao.test.ts`; `unit/wizard-avisos.test.tsx`                          |
+| CT09   | Conforme o esperado                            | Aprovado     | `integration/rate-limit.test.ts`: 5 liberadas, 6ª bloqueada e reinício da janela         |
+| CT10   | Conforme o esperado                            | Aprovado     | `integration/recuperacao.test.ts`: token válido não reusa; expirado ou inventado recusado |
+| CT11   | Conforme o esperado nas quatro situações       | Aprovado     | `integration/exclusao-conta.test.ts`: casos RN12 de pedido não entregue e conta anônima |
+| CT12   | Conforme o esperado                            | Aprovado     | `integration/agenda.test.ts` e `integration/portfolio.test.ts`: casos RN10              |
+
+::: {custom-style="Legenda"}
+Fonte Relatórios `unit.json` e `integracao.json` em `docs/aps/evidencias/depois/`.
+:::
+
+### 4.3.3 Concorrência
+A monografia registra um experimento com dez rodadas de oito sessões concorrentes, cada rodada disputando uma obra de estoque unitário. Em cada rodada, uma reserva foi concedida e sete foram recusadas. O total foi de 80 tentativas, com dez reservas concedidas para dez disputas independentes. O resultado sustenta a propriedade de não exceder o estoque nesse cenário, mas não mede latência e não exercita carrinhos com várias obras (Oliveira et al., 2026). Nesta APS, a mesma propriedade foi verificada de novo pelo caso CT02 e, sob carga HTTP contra o *build* de produção, pela rajada de 30 clientes da seção 4.4.
+
+::: {custom-style="Legenda"}
+Tabela 2 Síntese do experimento de concorrência registrado
 :::
 
 | **Condição**                   | **Resultado documentado**       |
@@ -518,15 +601,11 @@ Tabela 1 Síntese do experimento de concorrência registrado
 Fonte Oliveira et al. (2026), seção 5.3. Experimento histórico, sem nova execução nesta análise.
 :::
 
-Os testes presentes incluem reserva concorrente, agenda sobreposta e processamento simultâneo de avisos de pagamento. A inspeção confirma a existência desses casos e dos mecanismos correspondentes; a aprovação atual depende da execução na revisão avaliada. A monografia informa 562 testes unitários, 276 de integração e 43 de ponta a ponta. Também observa que as contagens de integração e E2E antecedem o relatório de vendas.
-
-A Sprint 2, no fechamento da qualidade integrada, registra 532 testes unitários, 276 de integração e 43 E2E. A diferença entre 532 e 562 não foi tratada como erro aritmético nem somada entre documentos: as contagens pertencem a registros de momentos distintos. A ação recomendada é produzir um relatório unificado da revisão final, com contagem, aprovação e artefatos de cada suíte.
-
 ## 4.4 Desempenho e melhorias já registradas
 O catálogo não atingia inicialmente o requisito de desempenho: o registro informa 88 pontos e LCP de 3,92 s. A equipe identificou disputa de banda entre imagens da primeira linha carregadas antecipadamente. A correção manteve prioridade elevada somente na primeira imagem. Depois da alteração, a mediana de três rodadas foi de 97 pontos e LCP de 2,43 s (Equipe Kolô, 2026b).
 
 ::: {custom-style="Legenda"}
-Tabela 2 Comparação de desempenho documentada
+Tabela 3 Comparação de desempenho documentada
 :::
 
 | **Indicador**         | **Catálogo antes** | **Catálogo depois** | **Ficha da obra** |
@@ -564,7 +643,7 @@ A Sprint 2 registra varredura de 35 telas nas larguras de 320, 768, 1440 e 1920 
 O resultado é parcial em relação ao RNF21: teclado e foco permaneceram pendentes. A varredura verifica regras automáticas e os impactos selecionados, sem garantir a experiência de usuários com deficiência. A inspeção do teste confirma que resultados inconclusivos não entram no gate. Esse limite deve acompanhar qualquer afirmação sobre acessibilidade.
 
 ::: {custom-style="Legenda"}
-Quadro 8 Evidências históricas de segurança e seus limites
+Quadro 10 Evidências históricas de segurança e seus limites
 :::
 
 | **Controle**          | **Evidência registrada**                               | **Limite**                                           |
@@ -585,7 +664,7 @@ A ausência de anamnese no esquema é coerente com o escopo de minimização de 
 As melhorias já registradas atacam falhas concretas de desempenho, nomes acessíveis, transbordamento e tamanho de botões. O próximo ciclo deve concentrar-se em lacunas de evidência e operação, antes de ampliar funcionalidades. A priorização abaixo é uma proposta desta avaliação; não representa trabalho já executado nem atribuição individual acordada.
 
 ::: {custom-style="Legenda"}
-Quadro 9 Melhorias propostas e critérios de encerramento
+Quadro 11 Melhorias propostas e critérios de encerramento
 :::
 
 | **Prioridade e ação**                 | **Justificativa**                                 | **Critério de aceite**                                                                      |
@@ -606,7 +685,7 @@ Fonte Propostas elaboradas com base nas pendências das Sprints 2 e 3 e na monog
 Cada ação deve gerar um registro com problema observado, requisito afetado, alteração, teste que demonstra o defeito, teste após a correção e evidência final. A versão da aplicação precisa ser identificada para que a comparação tenha significado. Em caso de falha, preserva-se o resultado e abre-se nova tarefa; a tentativa posterior não deve apagar o histórico.
 
 ::: {custom-style="Legenda"}
-Quadro 10 Modelo de registro para o próximo ciclo
+Quadro 12 Modelo de registro para o próximo ciclo
 :::
 
 | **Campo**        | **Conteúdo a registrar**                                |
@@ -728,7 +807,7 @@ Repositório de origem: https://github.com/caioalves19/tcc-2. Revisão local ins
 Consulta da codificação completa na revisão: https://github.com/caioalves19/tcc-2/tree/a94ad02bc90bf4945ded28b7c1b70960abc71b90
 
 ::: {custom-style="Legenda"}
-Quadro 11 Localização dos materiais para conferência
+Quadro 13 Localização dos materiais para conferência
 :::
 
 | **Material**           | **Caminho relativo a tcc-2**              |
