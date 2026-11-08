@@ -1,0 +1,276 @@
+{
+ "stats": {
+  "startTime": "2026-11-07T00:11:37.775Z",
+  "duration": 121849.978,
+  "expected": 44,
+  "skipped": 0,
+  "unexpected": 0,
+  "flaky": 0
+ },
+ "testes": [
+  {
+   "arquivo": "alvo-de-toque.spec.ts",
+   "titulo": "RNF20 no celular os botões de situação do pedido quebram linha sem perder o alvo de 48 px",
+   "status": "expected",
+   "duracao_ms": 1561
+  },
+  {
+   "arquivo": "compra.spec.ts",
+   "titulo": "RF14 o cliente compra uma obra e o pedido só fica pago pelo webhook, com a obra esgotada",
+   "status": "expected",
+   "duracao_ms": 3646
+  },
+  {
+   "arquivo": "obra.spec.ts",
+   "titulo": "RF26 o admin cadastra uma obra, envia a imagem, publica e ela aparece no catálogo",
+   "status": "expected",
+   "duracao_ms": 2430
+  },
+  {
+   "arquivo": "portfolio.spec.ts",
+   "titulo": "RF19 a artista inclui um trabalho no portfólio e ele aparece na galeria pública",
+   "status": "expected",
+   "duracao_ms": 1459
+  },
+  {
+   "arquivo": "restricoes.spec.ts",
+   "titulo": "RF06 o cliente não entra no admin nem na agenda",
+   "status": "expected",
+   "duracao_ms": 967
+  },
+  {
+   "arquivo": "restricoes.spec.ts",
+   "titulo": "RN10 o artista não entra no admin e não gerencia o portfólio de outro artista",
+   "status": "expected",
+   "duracao_ms": 918
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 toda exceção aponta uma tela da varredura",
+   "status": "expected",
+   "duracao_ms": 1
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 home (visitante)",
+   "status": "expected",
+   "duracao_ms": 2246
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 catálogo (visitante)",
+   "status": "expected",
+   "duracao_ms": 2154
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 ficha da obra (visitante)",
+   "status": "expected",
+   "duracao_ms": 2351
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 obra inexistente (visitante)",
+   "status": "expected",
+   "duracao_ms": 1954
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 galeria de tatuagens (visitante)",
+   "status": "expected",
+   "duracao_ms": 2133
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 agendamento (visitante)",
+   "status": "expected",
+   "duracao_ms": 2050
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 contato (visitante)",
+   "status": "expected",
+   "duracao_ms": 2621
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 política de privacidade (visitante)",
+   "status": "expected",
+   "duracao_ms": 2687
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 termos de uso (visitante)",
+   "status": "expected",
+   "duracao_ms": 2390
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 política de cancelamento (visitante)",
+   "status": "expected",
+   "duracao_ms": 2224
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 login (visitante)",
+   "status": "expected",
+   "duracao_ms": 2106
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 cadastro (visitante)",
+   "status": "expected",
+   "duracao_ms": 2172
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 esqueci a senha (visitante)",
+   "status": "expected",
+   "duracao_ms": 2023
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 redefinir senha (visitante)",
+   "status": "expected",
+   "duracao_ms": 2028
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 carrinho vazio (visitante)",
+   "status": "expected",
+   "duracao_ms": 1873
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 minha conta (cliente)",
+   "status": "expected",
+   "duracao_ms": 3332
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 meus pedidos (cliente)",
+   "status": "expected",
+   "duracao_ms": 2566
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 detalhe do pedido (cliente)",
+   "status": "expected",
+   "duracao_ms": 2944
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 carrinho com obra (cliente)",
+   "status": "expected",
+   "duracao_ms": 2853
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 checkout (cliente)",
+   "status": "expected",
+   "duracao_ms": 3077
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 pedido no checkout (cliente)",
+   "status": "expected",
+   "duracao_ms": 2892
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 admin painel (admin)",
+   "status": "expected",
+   "duracao_ms": 2975
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 admin relatório de vendas (admin)",
+   "status": "expected",
+   "duracao_ms": 3065
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 admin obras (admin)",
+   "status": "expected",
+   "duracao_ms": 3364
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 admin artistas (admin)",
+   "status": "expected",
+   "duracao_ms": 3107
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 admin estilos (admin)",
+   "status": "expected",
+   "duracao_ms": 2945
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 admin tags (admin)",
+   "status": "expected",
+   "duracao_ms": 2898
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 admin pedidos (admin)",
+   "status": "expected",
+   "duracao_ms": 2857
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 admin detalhe do pedido (admin)",
+   "status": "expected",
+   "duracao_ms": 3469
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 admin clientes (admin)",
+   "status": "expected",
+   "duracao_ms": 2849
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 admin perfil do cliente (admin)",
+   "status": "expected",
+   "duracao_ms": 2788
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 admin configurações (admin)",
+   "status": "expected",
+   "duracao_ms": 2932
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 agenda do admin (admin)",
+   "status": "expected",
+   "duracao_ms": 3223
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 portfólio pelo admin (admin)",
+   "status": "expected",
+   "duracao_ms": 2958
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 portfólio da artista (artista)",
+   "status": "expected",
+   "duracao_ms": 3028
+  },
+  {
+   "arquivo": "varredura.spec.ts",
+   "titulo": "RNF20/RNF21 agenda da artista (artista)",
+   "status": "expected",
+   "duracao_ms": 3002
+  },
+  {
+   "arquivo": "wizard.spec.ts",
+   "titulo": "RF20/RF21 o visitante completa o wizard e recebe o link do WhatsApp com a mensagem",
+   "status": "expected",
+   "duracao_ms": 1728
+  }
+ ]
+}

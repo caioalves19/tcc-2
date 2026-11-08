@@ -55,7 +55,7 @@ export function FormularioPedidoRecuperacao({
   }
 
   return (
-    <form noValidate onSubmit={handleSubmit(enviar)} className="grid gap-5">
+    <form method="post" noValidate onSubmit={handleSubmit(enviar)} className="grid gap-5">
       <Campo
         id="email"
         rotulo="E-mail"

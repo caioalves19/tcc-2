@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 
-import { cabecalhosDeSeguranca } from "../../src/lib/seguranca";
+import { cabecalhosDeArquivo, cabecalhosDeSeguranca } from "../../src/lib/seguranca";
 
 // Lê uma diretiva da CSP ("script-src 'self' ...") e devolve as fontes, sem o nome.
 function diretiva(csp: string, nome: string): string[] | undefined {
@@ -116,4 +116,43 @@ it("RNF07 HSTS e upgrade-insecure-requests só em produção", () => {
   expect(diretiva(producao["Content-Security-Policy"], "upgrade-insecure-requests")).toEqual([]);
   expect(dev).not.toHaveProperty("Strict-Transport-Security");
   expect(diretiva(dev["Content-Security-Policy"], "upgrade-insecure-requests")).toBeUndefined();
+});
+
+// RNF07 (APS, achado do OWASP ZAP): o site não usa câmera, microfone nem localização; nenhum
+// script, nem de terceiro (Turnstile), pode pedir esses recursos ao navegador.
+it("RNF07 a Permissions-Policy desliga câmera, microfone e localização", () => {
+  const politica = cabecalhosDeSeguranca("abc123", { NODE_ENV: "production" })[
+    "Permissions-Policy"
+  ];
+
+  expect(politica?.split(",").map((p) => p.trim())).toEqual(
+    expect.arrayContaining(["camera=()", "microphone=()", "geolocation=()"]),
+  );
+});
+
+// RNF07 (APS, achado do OWASP ZAP): robots.txt, sitemap.xml, /_next/static e os arquivos do public
+// ficam fora do matcher do proxy (sem nonce); recebem os mesmos cabeçalhos e uma CSP que não executa
+// nada, porque nenhum deles é uma página.
+it("RNF07 arquivos fora do proxy recebem nosniff, DENY, Permissions-Policy e CSP sem execução", () => {
+  const cabecalhos = cabecalhosDeArquivo({ NODE_ENV: "production" });
+
+  expect(cabecalhos).toMatchObject({
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Strict-Transport-Security": "max-age=31536000",
+  });
+  expect(cabecalhos["Permissions-Policy"]).toContain("camera=()");
+  const csp = cabecalhos["Content-Security-Policy"];
+  expect(diretiva(csp, "default-src")).toEqual(["'none'"]);
+  // Estas três não herdam do default-src (achado 10055 do ZAP na segunda rodada).
+  expect(diretiva(csp, "frame-ancestors")).toEqual(["'none'"]);
+  expect(diretiva(csp, "form-action")).toEqual(["'none'"]);
+  expect(diretiva(csp, "base-uri")).toEqual(["'none'"]);
+});
+
+it("RNF01 fora de produção os arquivos não recebem HSTS (localhost por http)", () => {
+  expect(cabecalhosDeArquivo({ NODE_ENV: "development" })).not.toHaveProperty(
+    "Strict-Transport-Security",
+  );
 });

@@ -231,7 +231,13 @@ export function WizardAgendamento({
           </div>
         </section>
       ) : (
-        <form noValidate onSubmit={avancar} aria-busy={ocupado} className="grid gap-5">
+        <form
+          method="post"
+          noValidate
+          onSubmit={avancar}
+          aria-busy={ocupado}
+          className="grid gap-5"
+        >
           <h2 id="wizard-titulo" ref={titulo} tabIndex={-1} className={TITULO}>
             {etapa + 1}. {ETAPAS[etapa]}
           </h2>
