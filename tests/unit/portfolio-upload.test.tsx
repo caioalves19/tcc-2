@@ -38,6 +38,7 @@ it("RF19: aguarda processamento da nova imagem antes de salvar uma edição", as
       criar={vi.fn()}
       editar={editar}
       aoCancelar={vi.fn()}
+      aoSalvar={() => undefined}
       solicitar={vi.fn().mockResolvedValue({
         ok: true,
         dados: { url: "https://r2.test/upload", chave: "portfolio/ana/nova.png", cabecalhos: {} },
@@ -88,6 +89,7 @@ it("RF19: nova tentativa com falha não salva a imagem da tentativa anterior", a
       criar={vi.fn()}
       editar={editar}
       aoCancelar={vi.fn()}
+      aoSalvar={() => undefined}
       solicitar={vi
         .fn()
         .mockResolvedValueOnce({

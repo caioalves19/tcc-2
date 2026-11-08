@@ -260,16 +260,16 @@ it("RF19: ordena entre vizinhos do mesmo artista, preservando bordas e recusando
   ).toEqual([{ ordem: 1 }]);
 });
 
-it("lista 20 trabalhos por página, sem repetir, e o primeiro da página 2 sobe para a página 1", async () => {
-  for (let i = 1; i <= 21; i++) await trabalhoDaAna(`Trabalho ${i}`);
+it("lista 12 trabalhos por página, sem repetir, e o primeiro da página 2 sobe para a página 1", async () => {
+  for (let i = 1; i <= 13; i++) await trabalhoDaAna(`Trabalho ${i}`);
   const { lerPortfolio, moverTrabalho } = await import("../../src/modules/portfolio");
 
   const primeira = await lerPortfolio(contas.ana, undefined, "1");
   const segunda = await lerPortfolio(contas.ana, undefined, "2");
   if (!primeira.ok || !segunda.ok) throw new Error("leitura recusada");
-  expect(primeira.dados).toMatchObject({ total: 21, pagina: 1, totalPaginas: 2 });
-  expect(primeira.dados.trabalhos).toHaveLength(20);
-  expect(segunda.dados.trabalhos.map((t) => t.titulo)).toEqual(["Trabalho 21"]);
+  expect(primeira.dados).toMatchObject({ total: 13, pagina: 1, totalPaginas: 2 });
+  expect(primeira.dados.trabalhos).toHaveLength(12);
+  expect(segunda.dados.trabalhos.map((t) => t.titulo)).toEqual(["Trabalho 13"]);
 
   expect(
     await moverTrabalho({ id: segunda.dados.trabalhos[0]?.id, direcao: "antes" }, contas.ana),
@@ -277,7 +277,7 @@ it("lista 20 trabalhos por página, sem repetir, e o primeiro da página 2 sobe 
 
   const depois = await lerPortfolio(contas.ana, undefined, "1");
   if (!depois.ok) throw new Error(depois.mensagem);
-  expect(depois.dados.trabalhos.at(-1)?.titulo).toBe("Trabalho 21");
+  expect(depois.dados.trabalhos.at(-1)?.titulo).toBe("Trabalho 13");
 }, 60_000);
 
 it("RF19/RN10: remove trabalho e vínculos de estilos sem permitir exclusão por outro artista", async () => {

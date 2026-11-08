@@ -3,7 +3,7 @@ import { chaveMiniatura, urlPublica } from "../media/index";
 import { comoEquipe } from "./acesso";
 import { id } from "./validacao";
 
-const TRABALHOS_POR_PAGINA = 20;
+const TRABALHOS_POR_PAGINA = 12;
 // Vem da URL (?pagina=...): qualquer valor fora do esperado volta à primeira página.
 const schemaPagina = z.coerce.number().int().min(1).max(1_000_000).catch(1);
 

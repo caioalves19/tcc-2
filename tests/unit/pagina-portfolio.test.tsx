@@ -56,5 +56,5 @@ it("RF19: carrega filtro da URL e entrega a tela da gestão", async () => {
   render(await PaginaPortfolio(busca({ artista: ["ana", "bia"], pagina: "2" })));
   expect(mocks.ler).toHaveBeenCalledWith(mocks.headers, "ana", "2");
   expect(screen.getByRole("heading", { level: 1, name: "Gestão do portfólio" })).toBeDefined();
-  expect(screen.getByLabelText("Título")).toBeDefined();
+  expect(screen.getByRole("button", { name: "Novo trabalho" })).toBeDefined();
 });
