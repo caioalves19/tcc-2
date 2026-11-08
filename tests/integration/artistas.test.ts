@@ -306,6 +306,32 @@ it("lista 20 artistas por página, sem repetir, e só ADMIN acessa", async () =>
   expect(await listarArtistasPaginados({}, cliente)).toMatchObject({ ok: false, erro: "proibido" });
 }, 60_000);
 
+it.each(["estilos", "tags"] as const)(
+  "lista 20 %s por página, sem repetir",
+  async (tipo) => {
+    const { criarTaxonomia, listarTaxonomias, listarTaxonomiasPaginadas } =
+      await import("../../src/modules/artists");
+    for (let i = 1; i <= 21; i++)
+      await criarTaxonomia(tipo, { nome: `Lista ${i}`, slug: `lista-${tipo}-${i}` }, admin);
+    const primeira = await listarTaxonomiasPaginadas(tipo, { pagina: "1" }, admin);
+    const segunda = await listarTaxonomiasPaginadas(tipo, { pagina: "2" }, admin);
+    if (!primeira.ok || !segunda.ok) throw new Error("leitura recusada");
+    expect(primeira.dados.registros).toHaveLength(20);
+    expect(primeira.dados.pagina).toBe(1);
+    const juntos = [...primeira.dados.registros, ...segunda.dados.registros].map((r) => r.id);
+    expect(new Set(juntos).size).toBe(juntos.length);
+    expect(primeira.dados.total).toBeGreaterThanOrEqual(21);
+    expect(await listarTaxonomiasPaginadas(tipo, {}, cliente)).toMatchObject({
+      ok: false,
+      erro: "proibido",
+    });
+    // Os seletores continuam recebendo todas as opções.
+    const todas = await listarTaxonomias(tipo, admin);
+    expect(todas.ok && todas.dados.length).toBe(primeira.dados.total);
+  },
+  60_000,
+);
+
 it("RF28 todas as operações negam visitante, ARTISTA, sessão revogada e ADMIN inativo", async () => {
   const api = await import("../../src/modules/artists");
   const id = "00000000-0000-4000-8000-000000000003";

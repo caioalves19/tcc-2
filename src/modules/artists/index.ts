@@ -1,4 +1,10 @@
-export { criarTaxonomia, listarTaxonomias, editarTaxonomia, excluirTaxonomia } from "./taxonomias";
+export {
+  criarTaxonomia,
+  listarTaxonomias,
+  listarTaxonomiasPaginadas,
+  editarTaxonomia,
+  excluirTaxonomia,
+} from "./taxonomias";
 export type {
   ResultadoGestao,
   EntradaArtista,

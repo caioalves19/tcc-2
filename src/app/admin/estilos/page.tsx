@@ -1,19 +1,28 @@
 import { headers } from "next/headers";
-import { listarTaxonomias } from "@/modules/artists";
+import { listarTaxonomiasPaginadas } from "@/modules/artists";
 import { GestaoTaxonomias } from "@/components/admin/gestao-taxonomias";
 import { salvarEstiloAcao, excluirEstiloAcao } from "../actions";
 
-export default async function PaginaEstilos() {
-  const registros = await listarTaxonomias("estilos", await headers());
+export default async function PaginaEstilos({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { pagina } = await searchParams;
+  const resultado = await listarTaxonomiasPaginadas(
+    "estilos",
+    { pagina: Array.isArray(pagina) ? pagina[0] : pagina },
+    await headers(),
+  );
   return (
     <>
       <h1 className="mb-6 font-display text-2xl">Estilos de tatuagem</h1>
-      {!registros.ok ? (
-        <p role="alert">{registros.mensagem}</p>
+      {!resultado.ok ? (
+        <p role="alert">{resultado.mensagem}</p>
       ) : (
         <GestaoTaxonomias
           tipo="estilos"
-          registros={registros.dados}
+          {...resultado.dados}
           salvar={salvarEstiloAcao}
           excluir={excluirEstiloAcao}
         />
