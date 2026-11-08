@@ -429,16 +429,70 @@ O roteiro de carga sobe até 20 usuários virtuais em catálogo e ficha da obra 
 # 4 DESENVOLVIMENTO
 
 ## 4.1 Sistema e arquitetura observados
-A implementação segue um monólito modular com Next.js, React e TypeScript. PostgreSQL e Prisma sustentam persistência e migrações. Os módulos de domínio incluem identidade, catálogo, mídia, pedidos, pagamentos, agenda, portfólio, clientes e relatórios. A separação permite localizar regras e testar contratos por domínio. Essa estrutura é observável no repositório; a infraestrutura pública descrita no escopo deve ser tratada como planejada enquanto não houver comprovação de implantação.
+O Kolô atende três perfis. O cliente compra obras e prepara o pedido de tatuagem. O artista mantém o próprio portfólio e a agenda. A administração do ateliê gerencia obras, pedidos, artistas e relatórios. A especificação completa e a modelagem estão na monografia. Esta seção resume só o necessário para ler a avaliação (Equipe Kolô, 2026a; Oliveira et al., 2026).
+
+A implementação é um monólito modular em Next.js 16, React 19 e TypeScript em modo estrito (Figura 1). O código de domínio fica em treze módulos em `src/modules/`, cada um com uma API pública em `index.ts`. As páginas e as ações do servidor chamam só essa API. Regras de negócio, validação de entrada com Zod e transações ficam nos módulos, e não nas telas. O PostgreSQL 17, acessado pelo Prisma 7, guarda os dados e também executa parte das regras: as travas de linha da reserva, a restrição que impede horários sobrepostos, a fila de tarefas do pg-boss e o contador do limite de taxa. Os serviços externos são o Mercado Pago (Checkout Pro), o Cloudflare R2 para imagens e o Resend para e-mails de conta. As fotos sobem do navegador direto para o R2, por um endereço assinado de curta duração que o servidor emite depois de conferir tipo e tamanho. Antes de qualquer página, o `proxy.ts` gera o *nonce* da CSP e aplica os cabeçalhos de segurança. Essa estrutura é observável no repositório. A infraestrutura pública descrita no escopo continua planejada enquanto não houver comprovação de implantação (Equipe Kolô, 2026a, 2026d).
 
 ::: {custom-style="Legenda"}
-Figura 1 Relações principais da arquitetura avaliada
+Figura 1 Arquitetura do Kolô avaliada
 :::
 
-![](midia/media/image1.png){width="6.299212598425197in" height="2.7559055118110236in"}
+![](midia/diagramas/arquitetura.png){width="6.3in"}
 
 ::: {custom-style="Legenda"}
-Fonte Elaborado a partir do código e do escopo. O diagrama não comprova implantação pública.
+Fonte Elaborado pelos autores a partir do código (Equipe Kolô, 2026d). O diagrama não comprova implantação pública.
+:::
+
+### 4.1.1 Fluxos críticos
+Os três fluxos aprofundados concentram os riscos apontados na justificativa: a vitrine pública, o dinheiro e o estoque e o contato com o estúdio.
+
+**Catálogo e ficha da obra.** A página é montada no servidor (Figura 2). No catálogo, ela lê da URL os filtros, a ordem e a página, e o módulo `catalog` valida essa entrada com Zod antes de consultar o banco. A ficha é localizada pelo identificador da obra na URL. O catálogo mostra apenas obras fora de rascunho. Uma obra aparece como disponível quando está à venda e tem estoque. As imagens passam pelo otimizador do Next.js, que as entrega no tamanho da tela e em formato moderno. Só a primeira foto é carregada com prioridade, decisão tomada no TCC para cumprir o limite de LCP do RNF13. Esse é o fluxo medido pela carga de leitura do k6 (Equipe Kolô, 2026b).
+
+::: {custom-style="Legenda"}
+Figura 2 Fluxo do catálogo e da ficha da obra
+:::
+
+![](midia/diagramas/fluxo-catalogo.png){width="6.3in"}
+
+::: {custom-style="Legenda"}
+Fonte Elaborado pelos autores a partir do código (Equipe Kolô, 2026d) e de Equipe Kolô (2026b).
+:::
+
+**Carrinho, *checkout* e *webhook*.** Finalizar a compra abre uma transação que trava as linhas das obras e confere o estoque descontado das reservas ativas (Figura 3). Havendo unidade livre, reserva os itens por dez minutos e cria o pedido pendente. Sem unidade livre, nada é gravado. O pagamento acontece no Checkout Pro, fora do Kolô, e o pedido só muda pelo aviso do Mercado Pago. O *webhook* recusa a assinatura inválida antes de ler o corpo e não confia no conteúdo do aviso: ele consulta a situação do pagamento na API. Em seguida, registra o evento com identificador único, e um reenvio do mesmo aviso não tem efeito. Se o pagamento aprovado cobre exatamente o total, o pedido passa a pago e o estoque baixa na mesma transação. O pagamento de valor divergente, de pedido que não aguardava pagamento ou sem unidade livre fica marcado para estorno. Esse fluxo é exercitado pela carga do *checkout* e pela rajada concorrente (Equipe Kolô, 2026a).
+
+::: {custom-style="Legenda"}
+Figura 3 Sequência da compra, do pagamento e da confirmação
+:::
+
+![](midia/diagramas/fluxo-compra.png){width="6.3in"}
+
+::: {custom-style="Legenda"}
+Fonte Elaborado pelos autores a partir do código (Equipe Kolô, 2026d) e das regras RN02 a RN07 e RNF11 (Equipe Kolô, 2026a).
+:::
+
+**Assistente de agendamento e agenda.** O assistente público percorre sete etapas, do nome aos três avisos obrigatórios: anamnese e termo de consentimento presenciais e declaração de maioridade (Figura 4). Na revisão, o servidor aplica o limite de taxa por IP e valida a preferência. A saída é um *link* `wa.me` com a mensagem pronta, que o próprio cliente envia. Nada do assistente é gravado. O horário só passa a existir quando o artista ou a administração o cadastra na agenda interna. Nesse cadastro, o banco recusa, por uma restrição de exclusão, dois horários sobrepostos do mesmo artista (Equipe Kolô, 2026a).
+
+::: {custom-style="Legenda"}
+Figura 4 Fluxo do assistente de agendamento e da agenda interna
+:::
+
+![](midia/diagramas/fluxo-agendamento.png){width="6.3in"}
+
+::: {custom-style="Legenda"}
+Fonte Elaborado pelos autores a partir do código (Equipe Kolô, 2026d) e de RF20 a RF25 (Equipe Kolô, 2026a).
+:::
+
+### 4.1.2 Ciclo de qualidade aplicado
+A Figura 5 mostra o processo da seção 3.3.3 como foi executado nesta APS. A linha de base mediu a revisão `b3587b3`. Os pontos críticos que ela revelou foram separados em melhorias de baixo risco e propostas. A nova medição repetiu os mesmos comandos sobre a revisão `51bb1b8`. Os resultados de cada etapa estão nas seções 4.3 a 4.7 (Equipe Kolô, 2026f, 2026g, 2026h).
+
+::: {custom-style="Legenda"}
+Figura 5 Ciclo de qualidade aplicado na avaliação
+:::
+
+![](midia/diagramas/ciclo-qualidade.png){width="6.3in"}
+
+::: {custom-style="Legenda"}
+Fonte Elaborado pelos autores a partir de Equipe Kolô (2026f, 2026g, 2026h).
 :::
 
 ## 4.2 Modelo de dados e invariantes
@@ -495,7 +549,7 @@ A margem até o limite de 2,5 s é de apenas 0,07 s no catálogo. Assim, o atend
 O catálogo é um dos pontos de entrada do fluxo de compra e uma das páginas avaliadas pelo requisito RNF13. A imagem documenta a organização visual da interface disponível nos arquivos do projeto. Sua presença não representa uma execução de teste.
 
 ::: {custom-style="Legenda"}
-Figura 2 Catálogo de obras do projeto
+Figura 6 Catálogo de obras do projeto
 :::
 
 ![](midia/media/image2.png){width="6.299212598425197in" height="4.921259842519685in"}

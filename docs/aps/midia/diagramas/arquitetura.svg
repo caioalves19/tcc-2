@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="960" viewBox="0 0 1600 960" font-family="Arial, Helvetica, sans-serif" font-size="22" text-anchor="middle">
+  <defs>
+    <marker id="seta" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#000"/>
+    </marker>
+  </defs>
+  <rect width="1600" height="960" fill="#fff"/>
+  <g fill="none" stroke="#000" stroke-width="2">
+    <rect x="30" y="380" width="240" height="140"/>
+    <rect x="340" y="320" width="180" height="260"/>
+    <rect x="580" y="140" width="680" height="620"/>
+    <rect x="600" y="250" width="200" height="90"/>
+    <rect x="820" y="250" width="200" height="90"/>
+    <rect x="1040" y="250" width="200" height="90"/>
+    <rect x="600" y="360" width="640" height="250"/>
+    <rect x="600" y="630" width="310" height="110"/>
+    <rect x="930" y="630" width="310" height="110"/>
+    <rect x="1340" y="380" width="230" height="160"/>
+    <rect x="760" y="10" width="460" height="90"/>
+    <rect x="600" y="830" width="310" height="100"/>
+    <rect x="930" y="830" width="310" height="100"/>
+  </g>
+  <g stroke="#000" stroke-width="2" marker-end="url(#seta)">
+    <line x1="270" y1="450" x2="338" y2="450"/>
+    <line x1="520" y1="450" x2="578" y2="450"/>
+    <line x1="1260" y1="460" x2="1338" y2="460"/>
+    <line x1="980" y1="250" x2="980" y2="102"/>
+    <line x1="1140" y1="100" x2="1140" y2="248"/>
+    <line x1="755" y1="760" x2="755" y2="828"/>
+    <line x1="1085" y1="760" x2="1085" y2="828"/>
+    <path d="M150,520 L150,880 L598,880" fill="none"/>
+  </g>
+  <text x="150" y="435">Navegador</text>
+  <text x="150" y="465">cliente, artista</text>
+  <text x="150" y="492">e administração</text>
+  <text x="430" y="400" font-weight="bold">proxy.ts</text>
+  <text x="430" y="440">CSP com nonce</text>
+  <text x="430" y="470">e cabeçalhos</text>
+  <text x="430" y="500">de segurança</text>
+  <text x="600" y="180" text-anchor="start" font-weight="bold">Next.js 16 no servidor Node.js</text>
+  <text x="700" y="288">Páginas</text>
+  <text x="700" y="318" font-size="19">Server Components</text>
+  <text x="920" y="288">Server Actions</text>
+  <text x="920" y="318" font-size="19">formulários e ações</text>
+  <text x="1140" y="288">Rota do webhook</text>
+  <text x="1140" y="318" font-size="15">/api/webhooks/mercadopago</text>
+  <text x="920" y="395" font-weight="bold">Módulos de domínio (API pública em index.ts)</text>
+  <text x="920" y="440" font-size="20">identity · catalog · media · orders · payments</text>
+  <text x="920" y="480" font-size="20">scheduling · portfolio · artists · customers</text>
+  <text x="920" y="520" font-size="20">endereco · contact · reports · settings</text>
+  <text x="920" y="575" font-size="19" font-style="italic">regras de negócio, validação com Zod e transações</text>
+  <text x="755" y="677">Prisma 7</text>
+  <text x="755" y="707" font-size="19">acesso ao banco e migrações</text>
+  <text x="1085" y="677">pg-boss</text>
+  <text x="1085" y="707" font-size="19">libera reservas vencidas</text>
+  <text x="1455" y="430" font-weight="bold">PostgreSQL 17</text>
+  <text x="1455" y="465" font-size="20">dados e restrições</text>
+  <text x="1455" y="493" font-size="20">travas, fila e</text>
+  <text x="1455" y="521" font-size="20">limite de taxa</text>
+  <text x="990" y="48">Mercado Pago</text>
+  <text x="990" y="80" font-size="19">Checkout Pro, consulta do pagamento e webhook</text>
+  <text x="970" y="128" font-size="17" text-anchor="end">preferência e consulta</text>
+  <text x="1150" y="128" font-size="17" text-anchor="start">aviso assinado</text>
+  <text x="370" y="870" font-size="17">upload por URL assinada</text>
+  <text x="755" y="872">Cloudflare R2</text>
+  <text x="755" y="902" font-size="19">imagens das obras e do portfólio</text>
+  <text x="1085" y="872">Resend</text>
+  <text x="1085" y="902" font-size="19">e-mails de conta</text>
+</svg>

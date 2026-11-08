@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1180" viewBox="0 0 1600 1180" font-family="Arial, Helvetica, sans-serif" font-size="19" text-anchor="middle">
+  <defs>
+    <marker id="seta" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#000"/>
+    </marker>
+  </defs>
+  <rect width="1600" height="1180" fill="#fff"/>
+  <g fill="none" stroke="#000" stroke-width="2">
+    <rect x="70" y="20" width="220" height="70"/>
+    <rect x="510" y="20" width="220" height="70"/>
+    <rect x="950" y="20" width="220" height="70"/>
+    <rect x="1330" y="20" width="220" height="70"/>
+  </g>
+  <text x="180" y="62" font-size="21">Cliente</text>
+  <text x="620" y="62" font-size="21">Kolô (servidor)</text>
+  <text x="1060" y="62" font-size="21">PostgreSQL</text>
+  <text x="1440" y="62" font-size="21">Mercado Pago</text>
+  <g stroke="#000" stroke-width="1.5" stroke-dasharray="6 6">
+    <line x1="180" y1="90" x2="180" y2="1120"/>
+    <line x1="620" y1="90" x2="620" y2="1120"/>
+    <line x1="1060" y1="90" x2="1060" y2="1120"/>
+    <line x1="1440" y1="90" x2="1440" y2="1120"/>
+  </g>
+  <!-- reserva -->
+  <rect x="200" y="112" width="1220" height="290" fill="none" stroke="#000" stroke-width="1.5"/>
+  <text x="210" y="134" text-anchor="start" font-size="17" font-weight="bold">Reserva (RN02 a RN04)</text>
+  <!-- pagamento -->
+  <rect x="200" y="420" width="1350" height="240" fill="none" stroke="#000" stroke-width="1.5"/>
+  <text x="210" y="442" text-anchor="start" font-size="17" font-weight="bold">Pagamento</text>
+  <!-- webhook -->
+  <rect x="200" y="680" width="1350" height="420" fill="none" stroke="#000" stroke-width="1.5"/>
+  <text x="210" y="702" text-anchor="start" font-size="17" font-weight="bold">Confirmação por webhook (RN05, RNF11)</text>
+  <g stroke="#000" stroke-width="2" marker-end="url(#seta)">
+    <line x1="180" y1="170" x2="618" y2="170"/>
+    <line x1="620" y1="225" x2="1058" y2="225"/>
+    <line x1="620" y1="280" x2="1058" y2="280"/>
+    <line x1="620" y1="335" x2="1058" y2="335"/>
+    <line x1="180" y1="480" x2="618" y2="480"/>
+    <line x1="620" y1="530" x2="1438" y2="530"/>
+    <line x1="180" y1="635" x2="1438" y2="635"/>
+    <line x1="1440" y1="740" x2="622" y2="740"/>
+    <line x1="620" y1="840" x2="1438" y2="840"/>
+    <line x1="620" y1="940" x2="1058" y2="940"/>
+    <line x1="620" y1="1000" x2="1058" y2="1000"/>
+  </g>
+  <g stroke="#000" stroke-width="2" stroke-dasharray="8 6" marker-end="url(#seta)">
+    <line x1="620" y1="385" x2="182" y2="385"/>
+    <line x1="1440" y1="575" x2="622" y2="575"/>
+    <line x1="620" y1="605" x2="182" y2="605"/>
+    <line x1="1440" y1="885" x2="622" y2="885"/>
+    <line x1="622" y1="1080" x2="1438" y2="1080"/>
+  </g>
+  <text x="400" y="162">1. Finalizar compra (Server Action)</text>
+  <text x="840" y="217">2. Abre transação e trava as obras</text>
+  <text x="840" y="272">3. Confere estoque menos reservas ativas</text>
+  <text x="840" y="327">4. Reserva por 10 min e cria pedido PENDENTE</text>
+  <text x="400" y="377">5. Número do pedido e prazo da reserva</text>
+  <text x="840" y="302" font-size="16" font-style="italic">sem unidade livre: recusa e nada é gravado</text>
+  <text x="400" y="472">6. Pagar o pedido</text>
+  <text x="1030" y="522">7. Cria a preferência com o total do pedido</text>
+  <text x="1030" y="567">8. Endereço do Checkout Pro</text>
+  <text x="400" y="597">9. Redireciona</text>
+  <text x="810" y="627">10. Paga no Mercado Pago</text>
+  <text x="1030" y="732">11. Aviso assinado (POST)</text>
+  <text x="840" y="785" font-size="17">12. Assinatura inválida: 401, sem ler o corpo</text>
+  
+  <text x="1030" y="832">13. Consulta a situação do pagamento</text>
+  <text x="1030" y="877">14. Situação, valor e moeda</text>
+  <text x="840" y="932">15. Registra o evento; repetido não muda nada</text>
+  <text x="840" y="992">16. Aprovado e valor igual: PAGO e baixa</text>
+  <text x="840" y="1015" font-size="16" font-style="italic">divergência ou sem unidade: marca estorno</text>
+  <text x="1030" y="1072">17. 200 (erro de banco ou da API: 500 e reenvio)</text>
+  <text x="800" y="1160" font-size="17" font-style="italic">Fora do fluxo, o pg-boss libera as reservas vencidas sem pagamento.</text>
+</svg>
