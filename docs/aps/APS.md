@@ -121,31 +121,69 @@ As novas medições foram realizadas em ambiente local, com PostgreSQL em contê
 ## 2.1 Qualidade como requisito verificável
 Neste estudo, qualidade é tratada como o atendimento de critérios explícitos sob condições conhecidas. A especificação do Kolô transforma objetivos amplos em requisitos, como evitar estoque negativo, validar entradas no servidor, limitar o LCP das páginas e restringir operações por perfil. A análise utiliza esses contratos como referência de aceite, em vez de formular uma nota geral sem método (Equipe Kolô, 2026a).
 
-A confiabilidade é observada na preservação de invariantes do domínio e no tratamento de falhas e repetições. A eficiência é examinada por tempo de carregamento e pontuação de desempenho. A manutenibilidade é observada pela separação de módulos, tipagem, validações e controles de integração. A usabilidade exige fluxos compreensíveis e verificações de acessibilidade que vão além da inspeção visual.
+A ISO/IEC 25010:2011 distingue qualidade do produto, observada nas propriedades do sistema, de qualidade em uso, observada nos resultados da interação em um contexto determinado. O modelo de produto agrupa essas propriedades nas características de adequação funcional, eficiência de desempenho, compatibilidade, usabilidade, confiabilidade, segurança, manutenibilidade e portabilidade. Os requisitos funcionais (RF) descrevem o que o sistema deve fazer, enquanto os requisitos não funcionais (RNF) explicitam atributos de qualidade ou restrições. As regras de negócio (RN) expressam condições que a operação deve respeitar, como o limite de estoque. Um requisito pode fornecer evidência para mais de uma característica quando verificado de maneiras diferentes (Equipe Kolô, 2026a; ISO; IEC, 2011).[^iso25010]
+
+[^iso25010]: A ISO/IEC 25010:2023 substituiu a edição de 2011 e trata do modelo de qualidade do produto, agora com nove características. A qualidade em uso passou a ter norma própria, a ISO/IEC 25019:2023. Nesta APS, a classificação dos requisitos e a leitura das métricas seguem a edição de 2011 adotada no plano (ISO; IEC, 2023a, 2023b).
+
+O método Goal–Question–Metric (GQM) parte de um objetivo de avaliação, formula perguntas que permitem julgar seu atendimento e escolhe métricas capazes de respondê-las. Para avaliar a eficiência do catálogo, por exemplo, a pergunta pode ser quanto demora a resposta sob a carga prevista. A métrica é a duração das requisições no percentil 95 e a meta é o limite com o qual esse valor será comparado (Basili; Caldiera; Rombach, 1994). No [plano da APS](PLANO.md), os limites foram estabelecidos antes da medição (Equipe Kolô, 2026g).
+
+A confiabilidade é observada na preservação de invariantes do domínio e no tratamento de falhas e repetições. A eficiência é examinada pela duração das requisições sob carga e pelos indicadores de carregamento das páginas. A manutenibilidade envolve a facilidade de analisar, alterar e testar o produto. Na APS, a separação de módulos, a tipagem, as validações e os controles de integração ajudam a interpretar as medidas de cobertura e complexidade. A usabilidade exige fluxos compreensíveis e verificações de acessibilidade que vão além da inspeção visual.
 
 ## 2.2 Verificação e validação no projeto
-A verificação compara a implementação com contratos: um cliente não pode administrar obras, e reservas concorrentes não devem ultrapassar o estoque. A validação examina se os fluxos resolvem as necessidades do ateliê. A monografia registra uma sessão com a administradora, realizada com uma versão anterior às correções finais (Oliveira et al., 2026).
+A verificação compara a implementação com os contratos que restringem a administração de obras e limitam as reservas concorrentes ao estoque disponível. A validação examina se os fluxos resolvem as necessidades do ateliê. A monografia registra uma sessão com a administradora, realizada com uma versão anterior às correções finais (Oliveira et al., 2026).
 
-Um teste demonstra uma propriedade nas condições do ensaio; o retorno de uma participante descreve sua experiência. Essas evidências se complementam, mas não comprovam, isoladamente, disponibilidade contínua ou melhoria operacional após a publicação.
+Os testes funcionais verificam o comportamento especificado, como a recusa de uma operação sem permissão. Os não funcionais examinam propriedades como desempenho sob carga, segurança e acessibilidade. O teste de confirmação volta ao cenário que motivou uma correção para verificar se o problema foi resolvido. Já o teste de regressão procura efeitos indesejados da mudança em comportamentos que antes funcionavam (ISTQB, 2024).
+
+Um teste demonstra uma propriedade nas condições do ensaio. O retorno de uma participante descreve sua experiência. Essas evidências se complementam, mas não comprovam, isoladamente, disponibilidade contínua ou melhoria operacional após a publicação.
 
 ## 2.3 Níveis de teste
-A estratégia combina testes unitários, integração com PostgreSQL e testes de ponta a ponta. Reservas e agenda exigem banco real para avaliar concorrência. Os serviços simulados nos testes de interface limitam o alcance dos resultados.
+A estratégia combina testes unitários, integração com PostgreSQL e testes de ponta a ponta. O teste unitário verifica uma unidade de código ou um componente em isolamento. O de integração exercita a comunicação entre partes, como o módulo de reservas e o banco de dados. O teste de ponta a ponta (E2E, de *end-to-end*) percorre um fluxo do ponto de vista do usuário, da ação no navegador até um resultado observável. O Kolô usa Vitest para as duas primeiras camadas e Playwright para a terceira. Reservas e agenda exigem banco real para avaliar concorrência. Os serviços simulados nos testes de interface limitam o alcance dos resultados às integrações presentes no ensaio (ISTQB, 2024; Microsoft, [202-]a; Vitest, [202-]a).
+
+A pirâmide de testes organiza a automação com mais testes rápidos e focados na base e menos testes amplos no topo, onde há mais componentes envolvidos e maior custo de manutenção. A camada intermediária cobre as interações que um teste isolado deixaria de fora. A proporção entre camadas é uma orientação para distribuir custo e alcance. No Kolô, ela ajuda a decidir quais regras podem ser verificadas isoladamente, quais pedem integração com o banco e quais justificam um percurso completo no navegador (Cohn, 2010).
+
+No desenvolvimento orientado por testes (TDD), primeiro se escreve um teste que falha pelo motivo esperado. Em seguida se faz a menor alteração que o leva a passar e, por fim, se melhora a estrutura do código mantendo os testes verdes. A sequência é conhecida como vermelho, verde e refatoração (Beck, 2003). Um teste que já passa pode ampliar a cobertura de um comportamento existente ao exercitar um caso ainda ausente da suíte. As correções que seguiram o ciclo de TDD e o acréscimo de casos de integração estão distinguidos no [comparativo das melhorias](evidencias/COMPARATIVO.md) (Equipe Kolô, 2026f).
+
+A ISO/IEC/IEEE 29119-3:2021 apresenta modelos para a documentação de teste. O modelo adotado na APS prevê que o registro do caso reúna identificador, requisito, pré-condições, dados de entrada, passos e resultado esperado. O registro da execução deve acrescentar o resultado obtido, o status e a referência ao teste automatizado, quando aplicável. O resultado esperado vem do requisito e orienta a comparação com o que foi observado (ISO; IEC; IEEE, 2021a).
+
+A partição de equivalência e a análise de valor-limite são técnicas de projeto de testes tratadas na ISO/IEC/IEEE 29119-4:2021. A primeira divide os dados em grupos para os quais se espera o mesmo comportamento e escolhe representantes de cada grupo pertinente. A segunda se concentra nos pontos de transição entre partições ordenadas e nos valores vizinhos. Por exemplo, ao pedir quantidade positiva de uma obra, pode-se separar quantidades que cabem no estoque disponível das que o excedem. Exercitar o estoque disponível e uma unidade a mais verifica a transição entre aceitar o pedido e recusá-lo (Equipe Kolô, 2026a; ISO; IEC; IEEE, 2021b; ISTQB, 2024).
 
 ## 2.4 Concorrência e idempotência
 
+Há concorrência quando operações progridem no mesmo intervalo e podem disputar um recurso, como a última unidade de uma obra ou um horário na agenda. Um invariante é uma condição que deve continuar válida após as operações, como o limite de estoque. Uma operação atômica agrupa as alterações em uma transação que é confirmada por inteiro ou desfeita. Na agenda, uma restrição no banco impede a gravação de horários sobrepostos para o mesmo artista (Equipe Kolô, 2026a, 2026d).
+
 A reserva de estoque é modelada como operação atômica. O código ordena identificadores e bloqueia os registros envolvidos antes de calcular a disponibilidade. O estoque livre considera a quantidade existente e as reservas ativas de outras sessões. O objetivo é evitar que duas compras se apoiem na mesma unidade disponível (Equipe Kolô, 2026d).
 
-No recebimento de pagamentos, idempotência significa que repetir uma notificação não deve repetir o efeito de negócio. A implementação associa a verificação de assinatura à consulta do pagamento no gateway e ao registro de eventos. O resultado do navegador não é usado como prova de quitação. A análise considera a baixa única de estoque e a manutenção de transições válidas como propriedades verificáveis.
+Um *webhook* é uma notificação HTTP que um serviço envia a outro em resposta a um evento. No recebimento de pagamentos, idempotência significa que repetir uma notificação não deve repetir o efeito de negócio. A implementação associa a verificação de assinatura à consulta do pagamento no gateway e ao registro de eventos. O resultado do navegador não é usado como prova de quitação. A análise considera a baixa única de estoque e a manutenção de transições válidas como propriedades verificáveis (Equipe Kolô, 2026a, 2026d).
 
 ## 2.5 Desempenho e acessibilidade
 
-O requisito RNF13 estabelece Lighthouse de pelo menos 90 pontos e LCP inferior a 2,5 segundos no catálogo e na ficha da obra. O LCP representa, para esta avaliação, o instante em que o maior elemento de conteúdo é apresentado. A comparação só é interpretável quando as condições do ensaio são registradas; o projeto informa mediana de três rodadas em simulação móvel de rede 4G (Equipe Kolô, 2026b).
+Um teste de carga mede o comportamento do sistema sob um volume de trabalho definido. No k6, cada usuário virtual (VU) executa o roteiro de requisições do cenário. O percentil 95 (p95) é a duração abaixo da qual, ou igual à qual, ficam aproximadamente 95% dos tempos medidos. A taxa de falha HTTP é a proporção de requisições que o k6 classifica como falhas. Já um *check* é uma verificação booleana definida no roteiro, como verificar se a resposta do checkout indica que o pedido foi criado (Grafana Labs, [202-]). O roteiro de carga avalia duração e taxa de falha nas páginas de leitura, e duração e proporção de *checks* bem-sucedidos na finalização do checkout. A rajada concentra tentativas em um intervalo curto. Na APS, ela força a disputa pela mesma unidade. O roteiro incrementa o contador de pedidos recusados sempre que falta o redirecionamento esperado para a página do pedido. Esse contador agrupa respostas de causas distintas. A recusa prevista por falta de estoque é um resultado válido da operação. A verificação da regra usa o item de pedido persistido no banco para conferir se a quantidade respeitou o estoque disponível. Os roteiros e resultados das duas rodadas estão descritos no [registro da linha de base](evidencias/BASELINE.md) e no [comparativo](evidencias/COMPARATIVO.md) (Equipe Kolô, 2026f, 2026h).
 
-A varredura com axe-core cobre verificações automatizáveis e os testes de largura identificam transbordamento horizontal. O próprio código filtra impactos críticos e sérios e deixa resultados inconclusivos fora desse gate. Por isso, ausência de falhas nesse conjunto não equivale à conformidade integral de acessibilidade. Teclado, foco e avaliação com pessoas permanecem necessários.
+O Lighthouse mede o desempenho da página no navegador e reúne os indicadores em uma pontuação ponderada. O *Largest Contentful Paint* (LCP) mede o tempo desde o início do carregamento até a renderização do maior conteúdo elegível visível na tela. O *First Contentful Paint* (FCP) mede quanto tempo decorre até aparecer o primeiro texto, imagem ou outro conteúdo da página. O *Total Blocking Time* (TBT) soma, no intervalo de medição, as parcelas das tarefas que excedem 50 ms na linha de execução principal. O *Cumulative Layout Shift* (CLS) mede a instabilidade visual causada por deslocamentos inesperados de elementos (Clark, 2020; Google, 2019a, 2019b).
+
+O requisito RNF13 estabelece Lighthouse de pelo menos 90 pontos e LCP inferior a 2,5 segundos no catálogo e na ficha da obra. A comparação só é interpretável quando as condições do ensaio são registradas. O projeto informa mediana de três rodadas em simulação móvel de rede 4G (Equipe Kolô, 2026b).
+
+Responsividade é a adaptação da interface a diferentes larguras de tela. Os testes de largura identificam transbordamento horizontal. Acessibilidade diz respeito à possibilidade de perceber e operar a interface com diferentes capacidades e formas de interação. A varredura com axe-core cobre verificações automatizáveis, como a presença de nome acessível em controles (Deque Systems, [202-]). O próprio código filtra impactos críticos e sérios e deixa resultados inconclusivos fora desse gate. Por isso, ausência de falhas nesse conjunto não equivale à conformidade integral de acessibilidade. Teclado, foco e avaliação com pessoas permanecem necessários.
 
 ## 2.6 Rastreabilidade e melhoria contínua
 
-Rastreabilidade liga requisito, teste, execução e evidência. A contagem da suíte não mede cobertura de código. O ciclo de melhoria adotado consiste em identificar o risco, definir um critério, aplicar a mudança e repetir a medição nas mesmas condições.
+Rastreabilidade liga requisito, teste, execução e evidência. A integração contínua (CI) automatiza verificações como análise estática, checagem de tipos e testes a partir de mudanças no repositório. Taxa de aprovação é a proporção de casos executados que passaram. Cobertura de linhas é a proporção de linhas executáveis percorridas. Cobertura de ramos é a proporção de alternativas do fluxo de controle exercitadas, como os dois resultados de uma condição. Uma suíte pode executar muitas vezes os mesmos caminhos. Assim, contagem, aprovação e cobertura respondem a perguntas diferentes, e cobertura alta ainda depende da qualidade das verificações. Na APS, o relatório de cobertura do Vitest reúne as execuções de testes unitários e de integração (ISTQB, 2024; Vitest, [202-]a).
+
+A complexidade ciclomática de McCabe mede o número de caminhos linearmente independentes no grafo de fluxo de controle. Uma função de fluxo linear começa com complexidade um. Em estruturas simples, uma decisão binária acrescenta um caminho independente. O ESLint operacionaliza essa medida com a regra `complexity`, que conta também construções da linguagem capazes de desviar o fluxo. A complexidade sinaliza quanto esforço pode ser necessário para entender ou exercitar uma função. O tamanho do arquivo, medido em linhas, é um indicador separado (ESLint, [202-]; McCabe, 1976).
+
+Uma suíte também pode apresentar sinais de manutenção difícil, como testes duplicados ou dependentes do relógio real. Um teste instável (*flaky*) alterna entre aprovação e falha sem mudança correspondente no código avaliado (Microsoft, [202-]b). Controlar o relógio permite reproduzir o limite de expiração com o mesmo instante em todas as execuções (Vitest, [202-]b).
+
+O ciclo de melhoria adotado consiste em identificar o risco, definir um critério, aplicar a mudança e repetir a medição nas mesmas condições. A linha de base (*baseline*) é a rodada inicial, usada como ponto de comparação. A rodada posterior verifica se a métrica atingiu a meta e se o comportamento antes aprovado continua funcionando. A revisão avaliada, o ambiente e os relatórios de cada rodada permitem interpretar diferenças e separar uma mudança observada de variações do ensaio, como registrado na [linha de base](evidencias/BASELINE.md) e no [comparativo](evidencias/COMPARATIVO.md) (Equipe Kolô, 2026f, 2026h).
+
+## 2.7 Segurança de aplicações web
+
+O *Open Worldwide Application Security Project* (OWASP) publica o OWASP Top 10 para orientar a atenção aos riscos mais relevantes em aplicações web, como falhas de controle de acesso e de configuração (OWASP, 2025). Autenticação verifica a identidade de quem solicita uma operação. Autorização verifica se essa identidade pode realizá-la, inclusive sobre o recurso específico. Em um ataque de falsificação de requisição entre sites (*Cross-Site Request Forgery*, CSRF), o navegador de uma pessoa autenticada é induzido a enviar uma ação que ela não solicitou (OWASP, [202-]).
+
+Cabeçalhos de resposta HTTP comunicam políticas ao navegador. A *Content Security Policy* (CSP) define quais recursos o navegador pode carregar ou executar. Um *nonce* de uso único em uma resposta pode autorizar os scripts marcados com esse valor (W3C, 2026). `Permissions-Policy` restringe recursos do navegador, como a câmera, e `X-Content-Type-Options: nosniff` impede que ele tente deduzir outro tipo de conteúdo em contextos como scripts e folhas de estilo. O cabeçalho `X-Powered-By` identifica a tecnologia do servidor (MDN Web Docs, 2026a). Nos formulários, o envio por GET inclui os campos na URL e pode expô-los no histórico ou em registros. O envio por POST coloca esses campos no corpo da requisição (MDN Web Docs, 2026b).
+
+O Zed Attack Proxy (ZAP) inspeciona o tráfego de aplicações web. A varredura passiva do modo *Baseline Scan* usa um rastreador para descobrir páginas e examina as mensagens HTTP observadas, sem executar ataques ativos. Cada alerta indica um problema potencial e informa o risco e a confiança da detecção. Um alerta é classificado como falso positivo quando a análise demonstra que o problema apontado não se aplica à resposta ou ao fluxo avaliado. Um alerta inconclusivo permanece pendente de validação. As conclusões valem para as rotas e condições alcançadas pelo rastreador (ZAP, [202-]a, [202-]b).
+
+A auditoria com `npm audit` compara as dependências do projeto com avisos de segurança conhecidos no registro consultado (npm, 2026). Ela inclui dependências diretas, declaradas pelo projeto, e transitivas, trazidas por outros pacotes. A severidade do aviso orienta a análise, que ainda precisa verificar se o caminho afetado é alcançável no Kolô. Os relatórios de dependências e os alertas do ZAP são evidências complementares, reunidas no [registro da linha de base](evidencias/BASELINE.md) e no [comparativo das melhorias](evidencias/COMPARATIVO.md) (Equipe Kolô, 2026f, 2026h).
 
 # 3 METODOLOGIA
 
@@ -382,21 +420,83 @@ Na formação acadêmica, o caso permite relacionar engenharia de requisitos, ba
 
 # REFERÊNCIAS
 
-BIBLIOTECA DA UNIVERSIDADE PAULISTA. Guia de normalização para apresentação de trabalhos acadêmicos da Universidade Paulista: ABNT. São Paulo: UNIP, 2025. Disponível em: https://www.unip.br/servicos/biblioteca/assets/download/manual_de_normalizacao_abnt.pdf. Acesso em: 26 out. 2026.
+BASILI, Victor R.; CALDIERA, Gianluigi; ROMBACH, H. Dieter. The Goal Question Metric approach. In: MARCINIAK, John J. (ed.). **Encyclopedia of Software Engineering**. New York: John Wiley & Sons, 1994. p. 528–532. Disponível em: <https://www.cs.umd.edu/~basili/publications/technical/T89.pdf>. Acesso em: 8 nov. 2026.
 
-EQUIPE KOLÔ. Escopo e Stack do projeto Kolô. Versão 2.2, atualização de 18 out. 2026. 2026a. Documento técnico local: tcc-2/docs/ESCOPO-E-STACK.md.
+BECK, Kent. **Test-driven development**: by example. Boston: Addison-Wesley, 2003. Disponível em: <https://ptgmedia.pearsoncmg.com/images/9780321146533/samplepages/0321146530.pdf>. Acesso em: 8 nov. 2026.
 
-EQUIPE KOLÔ. Sprint 2. 2026b. Registro técnico local: tcc-2/docs/Sprint-2.md. Seções dos PBIs 45 a 48.
+BIBLIOTECA DA UNIVERSIDADE PAULISTA. **Guia de normalização para apresentação de trabalhos acadêmicos da Universidade Paulista**: ABNT. São Paulo: UNIP, 2025. Disponível em: https://www.unip.br/servicos/biblioteca/assets/download/manual_de_normalizacao_abnt.pdf. Acesso em: 26 out. 2026.
 
-EQUIPE KOLÔ. Sprint 3 Pós entrega da monografia. 2026c. Registro técnico local: tcc-2/docs/SPRINT-3.md.
+CLARK, Connor. **What's new in Lighthouse 6.0**. Chrome for Developers. [S. l.], 2020. Disponível em: <https://developer.chrome.com/blog/lighthouse-6-0>. Acesso em: 8 nov. 2026.
 
-EQUIPE KOLÔ. Código-fonte da plataforma Kolô. 2026d. Revisão a94ad02bc90bf4945ded28b7c1b70960abc71b90. Disponível no repositório: https://github.com/caioalves19/tcc-2/tree/a94ad02bc90bf4945ded28b7c1b70960abc71b90. Cópia local consultada em: 26 out. 2026.
+COHN, Mike. **Succeeding with Agile**: software development using Scrum. 1. ed. Upper Saddle River: Addison-Wesley, 2010. Disponível em: <https://www.informit.com/store/succeeding-with-agile-software-development-using-scrum-9780321579362>. Acesso em: 8 nov. 2026.
 
-EQUIPE KOLÔ. Diagrama Entidade Relacionamento. 2026e. Documento técnico local: tcc-2/docs/DER.md.
+DEQUE SYSTEMS. **axe-core**: accessibility engine for automated Web UI testing. [S. l.], [202-]. Disponível em: <https://github.com/dequelabs/axe-core>. Acesso em: 8 nov. 2026.
 
-OLIVEIRA, Caio Scorsoni Martins et al. Sistema web para ateliê e estúdio de tatuagem. Campinas: Universidade Paulista, 2026. Trabalho de Conclusão de Curso. Documento local: tcc-2/docs/tcc-2.docx.
+EQUIPE KOLÔ. **Escopo e Stack do projeto Kolô**. Versão 2.2, atualização de 18 out. 2026. 2026a. Documento técnico local: tcc-2/docs/ESCOPO-E-STACK.md.
 
-UNIVERSIDADE PAULISTA. Avaliação E Melhoria Da Qualidade Em Sistemas De Software. APS Atividades Práticas Supervisionadas, 7º e 8º semestre, 2026/2. Campinas, 2026. Enunciado local convertido em 2026_2\_CC_SI_8.md.
+EQUIPE KOLÔ. **Sprint 2**. 2026b. Registro técnico local: tcc-2/docs/Sprint-2.md. Seções dos PBIs 45 a 48.
+
+EQUIPE KOLÔ. **Sprint 3 Pós entrega da monografia**. 2026c. Registro técnico local: tcc-2/docs/SPRINT-3.md.
+
+EQUIPE KOLÔ. **Código-fonte da plataforma Kolô**. 2026d. Revisão a94ad02bc90bf4945ded28b7c1b70960abc71b90. Disponível no repositório: https://github.com/caioalves19/tcc-2/tree/a94ad02bc90bf4945ded28b7c1b70960abc71b90. Cópia local consultada em: 26 out. 2026.
+
+EQUIPE KOLÔ. **Diagrama Entidade Relacionamento**. 2026e. Documento técnico local: tcc-2/docs/DER.md.
+
+EQUIPE KOLÔ. **Antes e depois das melhorias**. 6–7 nov. 2026f. Registro técnico do repositório tcc-2, revisão 85e385a, arquivo `docs/aps/evidencias/COMPARATIVO.md`.
+
+EQUIPE KOLÔ. **APS**: avaliação e melhoria da qualidade (Kolô). 6 nov. 2026g. Plano técnico do repositório tcc-2, revisão 85e385a, arquivo `docs/aps/PLANO.md`.
+
+EQUIPE KOLÔ. **Baseline de qualidade**. 6 nov. 2026h. Registro técnico do repositório tcc-2, revisão 85e385a, arquivo `docs/aps/evidencias/BASELINE.md`.
+
+ESLINT. **complexity**. ESLint Documentation. [S. l.], [202-]. Disponível em: <https://eslint.org/docs/latest/rules/complexity>. Acesso em: 8 nov. 2026.
+
+GOOGLE. **Lighthouse performance scoring**. Chrome for Developers. [S. l.], 19 set. 2019a. Disponível em: <https://developer.chrome.com/docs/lighthouse/performance/performance-scoring>. Acesso em: 8 nov. 2026.
+
+GOOGLE. **Total Blocking Time**. Chrome for Developers. [S. l.], 9 out. 2019b. Disponível em: <https://developer.chrome.com/docs/lighthouse/performance/lighthouse-total-blocking-time>. Acesso em: 8 nov. 2026.
+
+GRAFANA LABS. **Built-in metrics**. Grafana k6 Documentation. [S. l.], [202-]. Disponível em: <https://grafana.com/docs/k6/latest/using-k6/metrics/reference/>. Acesso em: 8 nov. 2026.
+
+INTERNATIONAL ORGANIZATION FOR STANDARDIZATION (ISO); INTERNATIONAL ELECTROTECHNICAL COMMISSION (IEC). **ISO/IEC 25010:2011**: Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — System and software quality models. 1. ed. Genebra: ISO, 2011. Disponível em: <https://www.iso.org/standard/35733.html>. Acesso em: 8 nov. 2026.
+
+INTERNATIONAL ORGANIZATION FOR STANDARDIZATION (ISO); INTERNATIONAL ELECTROTECHNICAL COMMISSION (IEC). **ISO/IEC 25010:2023**: Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — Product quality model. 2. ed. Genebra: ISO, 2023a. Disponível em: <https://www.iso.org/standard/78176.html>. Acesso em: 8 nov. 2026.
+
+INTERNATIONAL ORGANIZATION FOR STANDARDIZATION (ISO); INTERNATIONAL ELECTROTECHNICAL COMMISSION (IEC). **ISO/IEC 25019:2023**: Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — Quality-in-use model. 1. ed. Genebra: ISO, 2023b. Disponível em: <https://www.iso.org/standard/78177.html>. Acesso em: 8 nov. 2026.
+
+INTERNATIONAL ORGANIZATION FOR STANDARDIZATION (ISO); INTERNATIONAL ELECTROTECHNICAL COMMISSION (IEC); INSTITUTE OF ELECTRICAL AND ELECTRONICS ENGINEERS (IEEE). **ISO/IEC/IEEE 29119-3:2021**: Software and systems engineering — Software testing — Part 3: Test documentation. 2. ed. Genebra: ISO, 2021a. Disponível em: <https://www.iso.org/standard/79429.html>. Acesso em: 8 nov. 2026.
+
+INTERNATIONAL ORGANIZATION FOR STANDARDIZATION (ISO); INTERNATIONAL ELECTROTECHNICAL COMMISSION (IEC); INSTITUTE OF ELECTRICAL AND ELECTRONICS ENGINEERS (IEEE). **ISO/IEC/IEEE 29119-4:2021**: Software and systems engineering — Software testing — Part 4: Test techniques. 2. ed. Genebra: ISO, 2021b. Disponível em: <https://www.iso.org/standard/79430.html>. Acesso em: 8 nov. 2026.
+
+INTERNATIONAL SOFTWARE TESTING QUALIFICATIONS BOARD (ISTQB). **Certified Tester**: Foundation Level syllabus. Versão 4.0.1. [S. l.]: ISTQB, 2024. Disponível em: <https://istqb.org/wp-content/uploads/2024/11/ISTQB_CTFL_Syllabus_v4.0.1.pdf>. Acesso em: 8 nov. 2026.
+
+MCCABE, Thomas J. A complexity measure. **IEEE Transactions on Software Engineering**, [S. l.], v. SE-2, n. 4, p. 308–320, dez. 1976. DOI: 10.1109/TSE.1976.233837. Disponível em: <https://doi.org/10.1109/TSE.1976.233837>. Acesso em: 8 nov. 2026.
+
+MDN WEB DOCS. **HTTP headers**. [S. l.], 21 out. 2026a. Disponível em: <https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers>. Acesso em: 8 nov. 2026.
+
+MDN WEB DOCS. **The Form element**. [S. l.], 14 out. 2026b. Disponível em: <https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/form>. Acesso em: 8 nov. 2026.
+
+MICROSOFT. **Installation**. Playwright. [S. l.], [202-]a. Disponível em: <https://playwright.dev/docs/intro>. Acesso em: 8 nov. 2026.
+
+MICROSOFT. **Retries**. Playwright. [S. l.], [202-]b. Disponível em: <https://playwright.dev/docs/test-retries>. Acesso em: 8 nov. 2026.
+
+NPM. **npm-audit**. npm Docs. [S. l.], 18 mar. 2026. Disponível em: <https://docs.npmjs.com/cli/v11/commands/npm-audit/>. Acesso em: 8 nov. 2026.
+
+OLIVEIRA, Caio Scorsoni Martins et al. **Sistema web para ateliê e estúdio de tatuagem**. 2026. Trabalho de Conclusão de Curso (Bacharelado em Ciência da Computação) – Universidade Paulista, Campinas, 2026. Documento local: `docs/tcc-2.docx`.
+
+OPEN WORLDWIDE APPLICATION SECURITY PROJECT (OWASP). **Cross-site request forgery prevention**. OWASP Cheat Sheet Series. [S. l.], [202-]. Disponível em: <https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html>. Acesso em: 8 nov. 2026.
+
+OPEN WORLDWIDE APPLICATION SECURITY PROJECT (OWASP). **OWASP Top 10:2025**. [S. l.], 2025. Disponível em: <https://top10.owasp.org/2025/>. Acesso em: 8 nov. 2026.
+
+UNIVERSIDADE PAULISTA. **Avaliação E Melhoria Da Qualidade Em Sistemas De Software**. APS Atividades Práticas Supervisionadas, 7º e 8º semestre, 2026/2. Campinas, 2026. Enunciado local convertido em 2026_2\_CC_SI_8.md.
+
+VITEST. **Coverage**. Vitest Documentation. [S. l.], [202-]a. Disponível em: <https://vitest.dev/guide/coverage.html>. Acesso em: 8 nov. 2026.
+
+VITEST. **Mocking Dates**. Vitest Documentation. [S. l.], [202-]b. Disponível em: <https://vitest.dev/guide/mocking/dates>. Acesso em: 8 nov. 2026.
+
+W3C. **Content Security Policy Level 3**. W3C Working Draft. [S. l.], 27 out. 2026. Disponível em: <https://www.w3.org/TR/2026/WD-CSP3-20261027/>. Acesso em: 8 nov. 2026.
+
+ZAP. **Alerts**. ZAP Documentation. [S. l.], [202-]a. Disponível em: <https://www.zaproxy.org/docs/desktop/start/features/alerts/>. Acesso em: 8 nov. 2026.
+
+ZAP. **ZAP baseline scan**. ZAP Documentation. [S. l.], [202-]b. Disponível em: <https://www.zaproxy.org/docs/docker/baseline-scan/>. Acesso em: 8 nov. 2026.
 
 # APÊNDICE A IDENTIFICAÇÃO DO CÓDIGO E DAS EVIDÊNCIAS
 
