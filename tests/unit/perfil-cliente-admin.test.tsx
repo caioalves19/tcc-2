@@ -45,7 +45,36 @@ const CLIENTE: ClienteAdmin = {
     },
   ],
   totalGastoCentavos: 960000,
+  totalPedidos: 2,
+  paginaPedidos: 1,
+  totalPaginasPedidos: 1,
 };
+
+it("RF30 a contagem usa o total e a paginação fica no caminho do cliente", () => {
+  render(<PerfilClienteAdmin cliente={{ ...CLIENTE, totalPedidos: 21, totalPaginasPedidos: 2 }} />);
+  expect(screen.getByText("21 pedidos")).toBeDefined();
+  expect(screen.getByRole("link", { name: "2" }).getAttribute("href")).toBe(
+    `/admin/clientes/${CLIENTE.id}?pagina=2`,
+  );
+});
+
+it("RF30 página de pedidos além do fim oferece voltar à primeira", () => {
+  render(
+    <PerfilClienteAdmin
+      cliente={{
+        ...CLIENTE,
+        pedidos: [],
+        totalPedidos: 21,
+        paginaPedidos: 9,
+        totalPaginasPedidos: 2,
+      }}
+    />,
+  );
+  expect(screen.queryByText("Nenhuma compra.")).toBeNull();
+  expect(screen.getByRole("link", { name: "Ir para a primeira página" }).getAttribute("href")).toBe(
+    `/admin/clientes/${CLIENTE.id}`,
+  );
+});
 
 it("RF30 mostra os dados, o endereço e volta para a lista de clientes", () => {
   render(<PerfilClienteAdmin cliente={CLIENTE} />);

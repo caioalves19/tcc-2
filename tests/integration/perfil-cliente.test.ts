@@ -195,6 +195,32 @@ it("RF30 o histórico traz todos os pedidos do cliente, e só os dele, do mais r
   expect(semCompras).toMatchObject({ ok: true, dados: { pedidos: [], totalGastoCentavos: 0 } });
 });
 
+it("RF30 os pedidos do perfil vêm de 20 em 20, e o total gasto soma todos", async () => {
+  const { lerClienteAdmin } = await import("../../src/modules/customers");
+  await db.query('TRUNCATE "order" CASCADE');
+  for (let i = 1; i <= 21; i++)
+    await pedido(maria, {
+      numero: `20260801-PAG${String(i).padStart(3, "0")}`,
+      situacao: "PAGO",
+      criadoEm: `2026-08-${String(i).padStart(2, "0")}T15:00:00Z`,
+      pagamentos: ["APROVADO"],
+    });
+
+  const primeira = await lerClienteAdmin(maria.userId, admin, new Date(), "1");
+  const segunda = await lerClienteAdmin(maria.userId, admin, new Date(), "2");
+  if (!primeira.ok || !segunda.ok) throw new Error("leitura recusada");
+  expect(primeira.dados.pedidos).toHaveLength(20);
+  expect(primeira.dados).toMatchObject({
+    totalPedidos: 21,
+    paginaPedidos: 1,
+    totalPaginasPedidos: 2,
+    // 21 pedidos de R$ 9.600,00: a página 1 sozinha daria 19.200.000.
+    totalGastoCentavos: 20160000,
+  });
+  expect(segunda.dados.pedidos.map((p) => p.numero)).toEqual(["20260801-PAG001"]);
+  expect(segunda.dados.totalGastoCentavos).toBe(20160000);
+}, 60_000);
+
 it("RF30 pagina de 20 em 20, sem repetir cliente entre as páginas", async () => {
   const { listarClientesAdmin } = await import("../../src/modules/customers");
   for (let i = 1; i <= 21; i++)

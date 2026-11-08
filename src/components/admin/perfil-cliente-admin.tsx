@@ -2,6 +2,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { TITULO_SECAO } from "@/components/conta/partes-pedido";
 import { dataDoPedido, EtiquetaSituacao } from "@/components/conta/situacao-pedido";
+import { Paginacao } from "@/components/ui/paginacao";
 import { formatarPreco } from "@/modules/catalog/cliente";
 import type { ClienteAdmin } from "@/modules/customers";
 
@@ -16,7 +17,8 @@ const SITUACAO_CONTA: Record<ClienteAdmin["situacao"], string> = {
 // RF30 (PBI-38): perfil unificado do cliente para o ADMIN (lerClienteAdmin). Só consulta: as
 // ações sobre cada pedido ficam no detalhe dele, em /admin/pedidos.
 export function PerfilClienteAdmin({ cliente }: { cliente: ClienteAdmin }) {
-  const { endereco, pedidos } = cliente;
+  const { endereco, pedidos, totalPedidos } = cliente;
+  const caminho = `/admin/clientes/${cliente.id}`;
   return (
     <>
       <a
@@ -43,12 +45,16 @@ export function PerfilClienteAdmin({ cliente }: { cliente: ClienteAdmin }) {
           <p className="font-display text-lg">
             Total gasto: {formatarPreco(cliente.totalGastoCentavos)}
           </p>
-          {pedidos.length === 0 ? (
+          {totalPedidos === 0 ? (
             <p>Nenhuma compra.</p>
+          ) : pedidos.length === 0 ? (
+            <a href={caminho} className={LINK}>
+              Ir para a primeira página
+            </a>
           ) : (
             <>
               <p className="text-nota">
-                {pedidos.length === 1 ? "1 pedido" : `${pedidos.length} pedidos`}
+                {totalPedidos === 1 ? "1 pedido" : `${totalPedidos} pedidos`}
               </p>
               <ul aria-label="Pedidos do cliente" className="grid gap-3">
                 {pedidos.map((pedido) => (
@@ -77,6 +83,11 @@ export function PerfilClienteAdmin({ cliente }: { cliente: ClienteAdmin }) {
                   </li>
                 ))}
               </ul>
+              <Paginacao
+                caminho={caminho}
+                pagina={cliente.paginaPedidos}
+                totalPaginas={cliente.totalPaginasPedidos}
+              />
             </>
           )}
         </section>

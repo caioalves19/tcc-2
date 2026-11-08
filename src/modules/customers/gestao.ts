@@ -1,7 +1,11 @@
 import type { Prisma, UserStatus } from "../../../generated/prisma/client";
 import { comoAdmin, ErroGestao } from "../artists/index";
 import type { DadosEndereco } from "../endereco/index";
-import { pedidosDoClienteAdmin, type PedidoDoClienteAdmin } from "../orders/index";
+import {
+  PEDIDOS_POR_PAGINA,
+  pedidosDoClienteAdmin,
+  type PedidoDoClienteAdmin,
+} from "../orders/index";
 import { totalGasto } from "./regras";
 import { CLIENTES_POR_PAGINA, schemaIdCliente, schemaListaClientes } from "./validacao";
 
@@ -75,14 +79,22 @@ export type ClienteAdmin = {
   excluido: boolean;
   // O único endereço de entrega da conta (RF05), como foi gravado; null se nunca cadastrou.
   endereco: DadosEndereco | null;
-  // Todos os pedidos, inclusive as tentativas sem pagamento ("NAO_CONCLUIDO").
+  // A página atual dos pedidos, inclusive as tentativas sem pagamento ("NAO_CONCLUIDO").
   pedidos: PedidoDoClienteAdmin[];
-  // Soma dos pedidos pagos (de Pago a Entregue), em centavos.
+  // Soma de todos os pedidos pagos (de Pago a Entregue), em centavos, não só os da página.
   totalGastoCentavos: number;
+  totalPedidos: number;
+  paginaPedidos: number;
+  totalPaginasPedidos: number;
 };
 
 // RF30: id fora do formato, inexistente ou de quem não é CLIENTE dá "nao_encontrado".
-export function lerClienteAdmin(id: unknown, cabecalhos: Headers, agora = new Date()) {
+export function lerClienteAdmin(
+  id: unknown,
+  cabecalhos: Headers,
+  agora = new Date(),
+  paginaPedida?: unknown,
+) {
   return comoAdmin(cabecalhos, async (tx): Promise<ClienteAdmin> => {
     const valido = schemaIdCliente.safeParse(id);
     const cliente = valido.success
@@ -103,6 +115,8 @@ export function lerClienteAdmin(id: unknown, cabecalhos: Headers, agora = new Da
     if (!cliente) throw new ErroGestao("nao_encontrado", "Cliente não encontrado.");
     const { address: endereco } = cliente;
     const pedidos = await pedidosDoClienteAdmin(tx, cliente.id, agora);
+    const paginaPedidos = schemaListaClientes.shape.pagina.parse(paginaPedida);
+    const inicio = (paginaPedidos - 1) * PEDIDOS_POR_PAGINA;
     return {
       id: cliente.id,
       nome: cliente.name,
@@ -122,8 +136,11 @@ export function lerClienteAdmin(id: unknown, cabecalhos: Headers, agora = new Da
         // Gravado por salvarEndereco, que só aceita as UFs de UFS.
         uf: endereco.state as DadosEndereco["uf"],
       },
-      pedidos,
+      pedidos: pedidos.slice(inicio, inicio + PEDIDOS_POR_PAGINA),
       totalGastoCentavos: totalGasto(pedidos),
+      totalPedidos: pedidos.length,
+      paginaPedidos,
+      totalPaginasPedidos: Math.ceil(pedidos.length / PEDIDOS_POR_PAGINA),
     };
   });
 }
