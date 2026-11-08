@@ -601,11 +601,101 @@ Tabela 2 Síntese do experimento de concorrência registrado
 Fonte Oliveira et al. (2026), seção 5.3. Experimento histórico, sem nova execução nesta análise.
 :::
 
-## 4.4 Desempenho e melhorias já registradas
-O catálogo não atingia inicialmente o requisito de desempenho: o registro informa 88 pontos e LCP de 3,92 s. A equipe identificou disputa de banda entre imagens da primeira linha carregadas antecipadamente. A correção manteve prioridade elevada somente na primeira imagem. Depois da alteração, a mediana de três rodadas foi de 97 pontos e LCP de 2,43 s (Equipe Kolô, 2026b).
+### 4.3.4 Manutenibilidade medida
+A cobertura da linha de base reúne os testes unitários e de integração numa só execução, com 848 testes aprovados. A cobertura de linhas foi de 92,46% (2849 de 3081) e a de ramos, de 87,39% (2115 de 2420), as duas acima das metas globais. Por módulo, a Tabela 3 mostra os três módulos de domínio que têm meta própria e os pontos mais baixos. Dois deles ficaram abaixo da meta de 90% de ramos: `payments`, com 88,5%, e `scheduling`, com 88,2%. O módulo `orders` atendeu com margem de 0,3 ponto. O ponto mais baixo é `src/app`, com 72,5% dos ramos. São as páginas e as ações do servidor, exercitadas sobretudo pelo E2E, que não entra na medição de cobertura (Equipe Kolô, 2026h).
 
 ::: {custom-style="Legenda"}
-Tabela 3 Comparação de desempenho documentada
+Tabela 3 Cobertura por módulo na linha de base
+:::
+
+| **Módulo**           | **Linhas** | **Ramos (cobertos/total)** | **Meta de ramos** | **Situação**     |
+|----------------------|------------|----------------------------|-------------------|------------------|
+| `modules/orders`     | 98,2%      | 90,3% (316/350)            | ≥ 90%             | Atende           |
+| `modules/payments`   | 97,0%      | 88,5% (185/209)            | ≥ 90%             | Não atende       |
+| `modules/scheduling` | 97,1%      | 88,2% (135/153)            | ≥ 90%             | Não atende       |
+| `modules/portfolio`  | 94,8%      | 84,9% (73/86)              | ≥ 70% (global)    | Atende           |
+| `lib`                | 92,9%      | 85,2% (144/169)            | ≥ 70% (global)    | Atende           |
+| `app`                | 68,8%      | 72,5% (145/200)            | ≥ 70% (global)    | Atende           |
+| Global               | 92,46%     | 87,39% (2115/2420)         | ≥ 70%             | Atende           |
+
+::: {custom-style="Legenda"}
+Fonte `cobertura-por-modulo.txt` e `coverage-summary.json` em `docs/aps/evidencias/baseline/`.
+:::
+
+A complexidade ciclomática foi medida em 989 funções de `src/`. A média foi de 2,53 e a mediana, de 1. Das funções, 876 ficaram entre 1 e 5 e 91 entre 6 e 10, ou seja, 97,8% dentro do limite. Outras 20 ficaram entre 11 e 20 e duas passaram de 20, o que deixa a meta sem atendimento. As mais complexas são componentes de tela que concentram o estado de formulários grandes: `GestaoObras`, com 26, `WizardAgendamento`, com 23, e `GestaoArtistas`, com 20. Entre as funções de domínio, as maiores são a leitura da agenda (18) e duas funções críticas de pagamento, `processarNotificacao` e `iniciarPagamento`, com 16 cada. Nenhum dos 224 arquivos de código de `src/` passou de 500 linhas, e o maior tem 437 (`complexidade.json` e `complexidade-distribuicao.json`; Equipe Kolô, 2026h).
+
+A própria suíte também foi examinada como código a manter, numa auditoria feita em 6 de novembro, antes das melhorias. Todos os requisitos funcionais P0 têm teste, não há teste ignorado nem focado, e não há duplicação real entre camadas. O Quadro 10 registra os sinais de manutenção difícil encontrados (Equipe Kolô, 2026g).
+
+::: {custom-style="Legenda"}
+Quadro 10 Sinais de manutenção difícil na suíte de testes
+:::
+
+| **Sinal**                     | **Onde**                                                      | **Efeito**                                                                     |
+|-------------------------------|---------------------------------------------------------------|--------------------------------------------------------------------------------|
+| Espera fixa de 5,5 s          | `exclusao-conta.test.ts`, linha 417                           | Espera o tempo-limite de 5 s da transação; custa 5,5 s em toda execução        |
+| Relógio real                  | Testes de expiração do *checkout* e da reserva                | O instante muda a cada execução; risco de resultado instável perto do limite   |
+| Teste copiado                 | Três casos RF08 iguais em `paginas-politicas.test.tsx`        | Uma mudança de regra exige três edições                                        |
+| Arquivo de teste grande       | `checkout.test.ts` (658 linhas) e `reserva.test.ts` (555)     | Mais difícil de navegar; a meta de 500 linhas vale só para `src/`              |
+| Arquivo lento                 | `seed-fundacao.test.ts` (20,9 s) e `wizard-agendamento.test.ts` (17,9 s) | Concentram o tempo da integração, que roda os arquivos em paralelo   |
+
+::: {custom-style="Legenda"}
+Fonte Auditoria da suíte registrada em Equipe Kolô (2026g) e tempos de `integracao.json` em `docs/aps/evidencias/baseline/`.
+:::
+
+Nenhum desses sinais causou falha nas rodadas medidas. Eles aparecem como pontos críticos de baixa prioridade na seção 4.6.1. A remoção de testes só seria defensável em um caso de infraestrutura e num caso redundante de configuração, o que não muda a leitura da suíte, que é enxuta.
+
+## 4.4 Desempenho e melhorias já registradas
+A Tabela 4 confronta a linha de base com cada meta do plano (Quadro 5). Das quinze métricas medidas, onze atenderam à meta e quatro não: os ramos de `payments` e `scheduling`, a complexidade por função e o `npm audit`. O Lighthouse entra como evidência do TCC. As medidas de desempenho e de confiabilidade sob carga atenderam com folga. As seções seguintes detalham cada grupo, e os pontos que não atenderam viram pontos críticos na seção 4.6.1 (Equipe Kolô, 2026h).
+
+::: {custom-style="Legenda"}
+Tabela 4 Linha de base contra as metas do plano
+:::
+
+| **ID** | **Métrica**                                     | **Meta**                       | **Linha de base**                       | **Situação**    |
+|--------|-------------------------------------------------|--------------------------------|-----------------------------------------|-----------------|
+| G1     | Cobertura de linhas                             | ≥ 80%                          | 92,46%                                  | Atende          |
+| G1     | Cobertura de ramos global                       | ≥ 70%                          | 87,39%                                  | Atende          |
+| G1     | Ramos em `orders`                               | ≥ 90%                          | 90,3%                                   | Atende          |
+| G1     | Ramos em `payments`                             | ≥ 90%                          | 88,5%                                   | Não atende      |
+| G1     | Ramos em `scheduling`                           | ≥ 90%                          | 88,2%                                   | Não atende      |
+| G2     | Complexidade por função                         | ≤ 10 em todas                  | 22 funções acima; máximo 26             | Não atende      |
+| G2     | Tamanho de arquivo em `src/`                    | ≤ 500 linhas                   | Nenhum acima; máximo 437                | Atende          |
+| G3     | p95 do catálogo                                 | \< 500 ms                      | 163 ms                                  | Atende          |
+| G3     | p95 da ficha da obra                            | \< 500 ms                      | 212 ms                                  | Atende          |
+| G3     | p95 da reserva do *checkout*                    | \< 1 s                         | 446 ms                                  | Atende          |
+| G3     | Taxa de erro                                    | \< 1%                          | 0% em 9504 requisições                  | Atende          |
+| G4     | Vendas acima do estoque na rajada               | Zero                           | Zero: 1 pedido criado e 29 recusados    | Atende          |
+| G5     | `npm audit` alta e crítica                      | Zero                           | 2 críticas e 2 altas                    | Não atende      |
+| G5     | ZAP *High*                                      | Zero; *Medium* analisado       | Zero *High*; 1 *Medium* analisado       | Atende          |
+| G6     | axe-core, violações críticas                    | Zero                           | Zero, no E2E em 320 e 1440 px           | Atende          |
+| G6     | Lighthouse, LCP e pontuação                     | \< 2,5 s; ≥ 90                 | Não medido; TCC: 2,43 s e 97 no catálogo | Evidência do TCC |
+
+::: {custom-style="Legenda"}
+Fonte Equipe Kolô (2026h), com as saídas brutas em `docs/aps/evidencias/baseline/`; Lighthouse de Equipe Kolô (2026b).
+:::
+
+O teste de carga manteve 20 usuários virtuais na leitura e 5 no *checkout* durante 3 min, com 9504 requisições e nenhuma falha. Todas as 8856 verificações de resposta passaram, entre elas a criação do pedido em cada iteração do *checkout*. A Tabela 5 mostra a distribuição dos tempos. O p95 ficou abaixo da metade do limite nos três grupos. O p99, que não tem meta, também ficou abaixo dos limites do p95. A reserva é a operação mais lenta, como esperado: abre uma transação, trava as linhas das obras e grava reserva e pedido (`k6-carga.txt`; Equipe Kolô, 2026h).
+
+::: {custom-style="Legenda"}
+Tabela 5 Tempos de resposta sob carga na linha de base
+:::
+
+| **Grupo de requisições**  | **Mediana** | **p90**  | **p95**  | **p99**  | **Máximo** | **Meta do p95** |
+|---------------------------|-------------|----------|----------|----------|------------|-----------------|
+| Catálogo                  | 72 ms       | 145 ms   | 163 ms   | 221 ms   | 385 ms     | \< 500 ms       |
+| Ficha da obra             | 91 ms       | 182 ms   | 212 ms   | 281 ms   | 498 ms     | \< 500 ms       |
+| Reserva do *checkout*     | 156 ms      | 387 ms   | 446 ms   | 532 ms   | 615 ms     | \< 1 s          |
+
+::: {custom-style="Legenda"}
+Fonte `k6-carga.txt` em `docs/aps/evidencias/baseline/`. Uma execução, *build* de produção local.
+:::
+
+Na rajada, 30 clientes já cadastrados, com a mesma obra de estoque 1 no carrinho, finalizaram a compra no mesmo instante. Exatamente um pedido foi criado e 29 foram recusados como indisponíveis. O banco ficou com um único item de pedido para a obra, e as 120 requisições não tiveram falha HTTP. As 120 requisições da rajada, que incluem cadastro e carrinho, levaram de 0,3 s a 1,7 s (p95 de 1,5 s). A rajada não tem meta de tempo, e esses números servem só de referência, porque concentram 30 finalizações no mesmo instante, todas disputando a mesma trava. Esse resultado repete, por HTTP e contra o *build* de produção, a propriedade verificada no caso CT02 e no experimento da monografia (`k6-rajada.txt`; Equipe Kolô, 2026h).
+
+O Lighthouse não foi executado de novo nesta APS. O resultado do TCC continua como referência para o RNF13. O catálogo não atingia inicialmente o requisito: o registro informa 88 pontos e LCP de 3,92 s. A equipe identificou que as imagens da primeira linha, carregadas antecipadamente, disputavam a banda. A correção manteve a prioridade elevada só na primeira imagem. Depois da alteração, a mediana de três rodadas foi de 97 pontos e LCP de 2,43 s (Equipe Kolô, 2026b).
+
+::: {custom-style="Legenda"}
+Tabela 6 Comparação de desempenho documentada
 :::
 
 | **Indicador**         | **Catálogo antes** | **Catálogo depois** | **Ficha da obra** |
@@ -638,12 +728,61 @@ Fonte Captura já disponível em docs/telas/atelie. Imagem ilustrativa da interf
 :::
 
 ## 4.5 Acessibilidade e segurança
-A Sprint 2 registra varredura de 35 telas nas larguras de 320, 768, 1440 e 1920 px. O axe-core é executado em 320 e 1440 px. A documentação descreve correções em nomes acessíveis de botões de ordenação no portfólio e quebra de texto em ações do pedido administrativo. O fechamento informa lista de exceções vazia no conjunto verificado. A revisão também identificou alvo de toque de 44 px, corrigido para pelo menos 48 px e acompanhado de teste.
+A Sprint 2 registra varredura de 35 telas nas larguras de 320, 768, 1440 e 1920 px. O axe-core é executado em 320 e 1440 px. A documentação descreve correções em nomes acessíveis de botões de ordenação no portfólio e quebra de texto em ações do pedido administrativo. O fechamento informa lista de exceções vazia no conjunto verificado. A revisão também identificou alvo de toque de 44 px, corrigido para pelo menos 48 px e acompanhado de teste (Equipe Kolô, 2026b).
 
-O resultado é parcial em relação ao RNF21: teclado e foco permaneceram pendentes. A varredura verifica regras automáticas e os impactos selecionados, sem garantir a experiência de usuários com deficiência. A inspeção do teste confirma que resultados inconclusivos não entram no gate. Esse limite deve acompanhar qualquer afirmação sobre acessibilidade.
+Nesta APS, a mesma varredura rodou dentro do E2E nas duas rodadas e passou em ambas. O *gate* falha diante de qualquer violação de impacto crítico ou sério nas regras WCAG 2.0 e 2.1, níveis A e AA (`e2e-resumo.json`). O resultado é parcial em relação ao RNF21: teclado e foco permaneceram pendentes. A varredura verifica regras automáticas e os impactos selecionados, sem garantir a experiência de usuários com deficiência. A inspeção do teste confirma que resultados inconclusivos não entram no *gate*. Esse limite deve acompanhar qualquer afirmação sobre acessibilidade.
+
+### 4.5.1 Dependências
+A auditoria da linha de base encontrou 17 avisos: 2 críticos, 2 altos, 8 moderados e 5 baixos. O Quadro 11 mostra os que pesam na meta e os que afetam dependências declaradas pelo projeto.
 
 ::: {custom-style="Legenda"}
-Quadro 10 Evidências históricas de segurança e seus limites
+Quadro 11 Avisos do npm audit na linha de base
+:::
+
+| **Pacote**                   | **Severidade** | **Dependência**           | **Problema registrado**                                    | **Correção**                  |
+|------------------------------|----------------|---------------------------|------------------------------------------------------------|-------------------------------|
+| `next`                       | Crítica        | Direta, produção          | Execução remota no otimizador de imagens com SVG; negação de serviço em Server Actions | Versão nova disponível |
+| `better-auth`                | Crítica        | Direta, produção          | Limite de taxa contornável sob concorrência, via adaptador | Versão nova disponível        |
+| `zod`                        | Alta           | Direta, produção          | Consumo de memória em coleções grandes                     | Versão nova disponível        |
+| `undici`                     | Alta           | Transitiva                | Aviso no cliente HTTP do Node.js                           | Versão nova disponível        |
+| `typescript-eslint` e pacotes | Moderada      | Direta, desenvolvimento   | Avisos em pacotes de análise estática                      | Troca de versão principal     |
+| `fast-uri`, `react-email`, `deepmerge` e outros | Moderada e baixa | Transitivas e uma direta | Avisos menores                      | Parcial                       |
+
+::: {custom-style="Legenda"}
+Fonte `npm-audit.json` e `npm-audit.txt` em `docs/aps/evidencias/baseline/`; Equipe Kolô (2026h).
+:::
+
+O dado mais relevante é a mudança no tempo. No fechamento da Sprint 2, em 18 de outubro, a mesma auditoria tinha zero avisos. As versões não mudaram desde então, mas avisos novos foram publicados para elas. O RNF02 é, portanto, um requisito que perde a validade sozinho: atendido numa data, deixa de ser atendido sem nenhuma alteração no código. Isso justifica repetir a auditoria em cada entrega e automatizá-la na CI (npm, 2026; Equipe Kolô, 2026b). Os três pacotes diretos de produção têm correção disponível. A atualização foi deixada como proposta, e não implementada, porque troca o *framework* e a biblioteca de autenticação às vésperas da banca do TCC (seção 4.6.2).
+
+### 4.5.2 Varredura do ZAP
+A varredura passiva contra o *build* local avaliou 68 regras. Nenhuma falhou, 56 passaram sem alerta e 12 emitiram alerta, que o ZAP classifica por risco e por confiança. Não houve alerta *High*. O Quadro 12 lê cada alerta de risco *Medium* e *Low* e os informativos com consequência prática, separando o problema real, o artefato do ambiente de teste e o falso positivo (ZAP, [202-]a, [202-]b).
+
+::: {custom-style="Legenda"}
+Quadro 12 Leitura crítica dos alertas do ZAP na linha de base
+:::
+
+| **Risco** | **Alerta (regra)**                        | **Onde**                                  | **Leitura**                                                                                              | **Classificação** |
+|-----------|-------------------------------------------|-------------------------------------------|----------------------------------------------------------------------------------------------------------|-------------------|
+| *Medium*  | CSP ausente (10038)                       | `/robots.txt`, `/sitemap.xml`, página 404 | O filtro do `proxy.ts` ignora caminhos com ponto, e essas respostas saem sem nenhum cabeçalho de segurança | Problema real    |
+| *Low*     | `X-Content-Type-Options` ausente (10021)  | Arquivos estáticos de `/_next/static/`    | Mesma causa: os estáticos ficam fora do `proxy.ts`                                                       | Problema real     |
+| *Low*     | `X-Powered-By` exposto (10037)            | Todas as respostas                        | O Next.js anuncia o *framework*; a opção que desliga o cabeçalho não estava ativa                        | Problema real     |
+| *Low*     | `Permissions-Policy` ausente (10063)      | Todas as páginas                          | Cabeçalho não definido; sem ele, recursos como câmera e geolocalização não ficam explicitamente negados  | Problema real     |
+| *Low*     | COEP, COOP e CORP ausentes (90004)        | Páginas e estáticos                       | Isolamento entre origens não configurado; ativá-lo exige revisar o *iframe* do Turnstile                 | Melhoria possível |
+| *Low*     | Divulgação de erro da aplicação (90022)   | `/_next/image`                            | Resposta 500 porque o R2 falso aponta para um endereço inexistente                                       | Artefato do ambiente |
+| *Low*     | Redirecionamento grande (10044)           | `/conta` sem sessão                       | O redirecionamento para o *login* leva o corpo da página no formato do React, sem dado da conta         | Falso positivo    |
+| Info      | Informação sensível na URL (10024)        | `/login`, `/cadastro`, `/contato`, `/esqueci-senha` | O rastreador sem JavaScript envia os formulários antes da hidratação, por GET, com a senha na URL | Problema real |
+| Info      | Atributo controlado pelo usuário (10031)  | `?ordem=` no catálogo e filtros da galeria | O valor aparece num atributo, mas o React o escapa                                                      | Falso positivo provável |
+
+::: {custom-style="Legenda"}
+Fonte `zap/zap-baseline.json` e `zap/zap-baseline.txt` em `docs/aps/evidencias/baseline/`; leitura elaborada pelos autores a partir do código.
+:::
+
+O único *Medium* e três dos *Low* têm a mesma causa. O `proxy.ts` aplica os cabeçalhos só às rotas de página, e o que não passa por ele sai sem proteção. Por isso o achado foi tratado na causa, e não alerta por alerta. O alerta informativo sobre a URL é o mais sério na prática, embora o ZAP o classifique como informativo. Um usuário que envie o formulário antes de o JavaScript carregar, numa conexão lenta, expõe a senha no histórico do navegador e nos *logs* de servidores intermediários. Esses dois achados deram origem às melhorias M2 e M3. O HSTS e o `upgrade-insecure-requests` não foram avaliados, porque só têm efeito sob HTTPS (seção 3.5.1).
+
+As evidências históricas de segurança registradas na Sprint 2 continuam válidas no que mostram, com os limites do Quadro 13.
+
+::: {custom-style="Legenda"}
+Quadro 13 Evidências históricas de segurança e seus limites
 :::
 
 | **Controle**          | **Evidência registrada**                               | **Limite**                                           |
@@ -651,20 +790,33 @@ Quadro 10 Evidências históricas de segurança e seus limites
 | Assinatura de webhook | Aviso sem assinatura recebe HTTP 401                   | Revalidar com o gateway pelo endereço publicado      |
 | Permissões            | Ação administrativa repetida por cliente foi recusada  | Não substitui revisão de todas as operações          |
 | CSRF e entradas       | Origem externa recusada; entrada inválida rejeitada    | Roteiro aplicado ao ambiente local de testes         |
-| Dependências          | Audit com zero vulnerabilidades no fechamento de 18/10 | Resultado histórico; requer nova consulta na entrega |
+| Dependências          | Audit com zero vulnerabilidades no fechamento de 18/10 | Superado: a linha de base de 6/11 encontrou 2 críticas e 2 altas |
 | Cabeçalhos e CSP      | Nonce por requisição e cabeçalhos inspecionados        | Nota pública e HTTPS dependem da implantação         |
 
 ::: {custom-style="Legenda"}
-Fonte Equipe Kolô (2026b), PBI 45. Nenhuma nova varredura de segurança foi executada neste relatório.
+Fonte Equipe Kolô (2026b), PBI 45. As varreduras desta APS estão nos Quadros 11 e 12.
 :::
 
 A ausência de anamnese no esquema é coerente com o escopo de minimização de dados do projeto. Isso não é apresentado como certificação de conformidade jurídica. A análise limita-se aos contratos e à estrutura de dados inspecionados.
 
 ## 4.6 Análise crítica e plano de melhoria
+### 4.6.1 Pontos críticos da linha de base
+Cada métrica fora da meta e cada alerta classificado como problema real virou um ponto crítico. A lista abaixo está em ordem de gravidade e indica a evidência bruta de cada ponto, em `docs/aps/evidencias/baseline/`.
+
+1. **PC1 — Dependências vulneráveis.** Duas críticas e duas altas, três delas em dependências diretas de produção: `next`, `better-auth` e `zod` (`npm-audit.json`; seção 4.5.1).
+2. **PC2 — Senha na URL antes da hidratação.** Os formulários de *login*, cadastro, recuperação e contato não declaram método e, sem JavaScript, enviam por GET (`zap/zap-baseline.json`, regra 10024; seção 4.5.2).
+3. **PC3 — Respostas sem cabeçalhos de segurança.** `robots.txt`, `sitemap.xml`, a página 404 e os estáticos ficam fora do `proxy.ts`. Há ainda `X-Powered-By` exposto e `Permissions-Policy` ausente (`zap/zap-baseline.json`, regras 10038, 10021, 10037 e 10063; seção 4.5.2).
+4. **PC4 — Ramos não exercitados em pagamento e agenda.** `payments` tem 88,5% e `scheduling` tem 88,2%, abaixo da meta de 90% (`cobertura-por-modulo.txt`; seção 4.3.4).
+5. **PC5 — Funções acima da complexidade 10.** São 22, duas delas acima de 20, concentradas em componentes de formulário e em dois pontos do pagamento (`complexidade.json`; seção 4.3.4).
+6. **PC6 — Manutenção da suíte.** Há uma espera fixa de 5,5 s, relógio real nos testes de expiração e testes copiados (Quadro 10; seção 4.3.4).
+
+O isolamento entre origens (COEP, COOP e CORP) e os cabeçalhos de `/_next/image` ficaram fora da lista. Eles são melhorias possíveis, e não falhas contra uma meta do plano.
+
+### 4.6.2 Plano de melhoria
 As melhorias já registradas atacam falhas concretas de desempenho, nomes acessíveis, transbordamento e tamanho de botões. O próximo ciclo deve concentrar-se em lacunas de evidência e operação, antes de ampliar funcionalidades. A priorização abaixo é uma proposta desta avaliação; não representa trabalho já executado nem atribuição individual acordada.
 
 ::: {custom-style="Legenda"}
-Quadro 11 Melhorias propostas e critérios de encerramento
+Quadro 14 Melhorias propostas e critérios de encerramento
 :::
 
 | **Prioridade e ação**                 | **Justificativa**                                 | **Critério de aceite**                                                                      |
@@ -685,7 +837,7 @@ Fonte Propostas elaboradas com base nas pendências das Sprints 2 e 3 e na monog
 Cada ação deve gerar um registro com problema observado, requisito afetado, alteração, teste que demonstra o defeito, teste após a correção e evidência final. A versão da aplicação precisa ser identificada para que a comparação tenha significado. Em caso de falha, preserva-se o resultado e abre-se nova tarefa; a tentativa posterior não deve apagar o histórico.
 
 ::: {custom-style="Legenda"}
-Quadro 12 Modelo de registro para o próximo ciclo
+Quadro 15 Modelo de registro para o próximo ciclo
 :::
 
 | **Campo**        | **Conteúdo a registrar**                                |
@@ -702,7 +854,7 @@ Fonte Modelo proposto nesta avaliação. Não preenchido com execuções fictíc
 :::
 
 ## 4.8 Manutenibilidade e código completo
-A tipagem estrita, as validações por esquema, os módulos com APIs públicas e a integração contínua compõem o processo de manutenção definido no repositório. A presença desses controles facilita detectar regressões, mas não fornece, por si só, uma métrica de esforço de manutenção. Não foram inventados índices de complexidade, cobertura de código ou tempo médio de correção.
+A tipagem estrita, as validações por esquema, os módulos com APIs públicas e a integração contínua compõem o processo de manutenção definido no repositório. A presença desses controles facilita detectar regressões, mas não fornece, por si só, uma métrica de esforço de manutenção. As métricas medidas nesta APS, cobertura, complexidade, tamanho de arquivo e saúde da suíte, estão na seção 4.3.4. O tempo médio de correção não foi medido, por falta de registro histórico confiável.
 
 A codificação completa permanece no repositório do projeto, identificado no Apêndice A por endereço e revisão. Este documento apresenta a arquitetura, o modelo de avaliação e um trecho integral representativo do controle de assinatura. A consulta ou entrega do código completo deve usar o repositório identificado; este arquivo Word não contém a transcrição de todos os arquivos do sistema.
 
@@ -807,7 +959,7 @@ Repositório de origem: https://github.com/caioalves19/tcc-2. Revisão local ins
 Consulta da codificação completa na revisão: https://github.com/caioalves19/tcc-2/tree/a94ad02bc90bf4945ded28b7c1b70960abc71b90
 
 ::: {custom-style="Legenda"}
-Quadro 13 Localização dos materiais para conferência
+Quadro 16 Localização dos materiais para conferência
 :::
 
 | **Material**           | **Caminho relativo a tcc-2**              |
