@@ -195,3 +195,15 @@ it("PBI-43 cartão que entra em análise durante o cancelamento do Pix: o pedido
     reservas: 1,
   });
 });
+
+// APS (qualidade): pedido inexistente, ramo que a suíte ainda não exercitava.
+it("PBI-43 pedido que não existe é recusado sem chamar o Mercado Pago", async () => {
+  const { cancelarPedido } = await import("../../src/modules/payments");
+  const gateway = gatewayDeCancelamento();
+
+  expect(
+    await cancelarPedido({ numero: "20261012-NAOEX1" }, cenario.contas.admin, { gateway }),
+  ).toMatchObject({ ok: false, erro: "nao_encontrado" });
+
+  expect(gateway.cancelados).toEqual([]);
+});

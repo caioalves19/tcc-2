@@ -37,6 +37,7 @@ Os 4 blocos são obrigatórios **antes de codar**. Quem digita pode ser o humano
 | `npm test` | unit + integração (CI) |
 | `npm run test:unit` | Vitest sem Postgres |
 | `npm run test:integration` | Vitest + Postgres (quando existir) |
+| `npm run test:coverage` | Cobertura (unit + integração, Postgres local); fora da CI — APS |
 | `npm run test:e2e` | Playwright |
 | `npm run build` | build de produção |
 

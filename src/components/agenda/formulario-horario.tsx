@@ -114,6 +114,7 @@ export function FormularioHorario({
   const id = (campo: string) => `${prefixo}-${campo}`;
   return (
     <form
+      method="post"
       onSubmit={(evento) => void salvar(evento)}
       noValidate
       className="grid gap-4 rounded-card border-2 border-neutro-grafite bg-[var(--kolo-superficie)] p-5 text-[var(--kolo-superficie-texto)] sm:grid-cols-2"

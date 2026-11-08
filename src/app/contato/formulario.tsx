@@ -70,7 +70,7 @@ export function FormularioContato() {
   return (
     <>
       <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="lazyOnload" />
-      <form noValidate onSubmit={handleSubmit(enviar)} className="grid gap-5">
+      <form method="post" noValidate onSubmit={handleSubmit(enviar)} className="grid gap-5">
         <Campo
           id="nome"
           rotulo="Nome"

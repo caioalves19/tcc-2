@@ -53,6 +53,7 @@ export function FormularioTrocaSenha({
   }
   return (
     <form
+      method="post"
       noValidate
       onChange={() => setSucesso(false)}
       onSubmit={(evento) => {

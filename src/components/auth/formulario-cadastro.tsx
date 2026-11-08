@@ -52,7 +52,7 @@ export function FormularioCadastro({
   }
 
   return (
-    <form noValidate onSubmit={handleSubmit(enviar)} className="grid gap-5">
+    <form method="post" noValidate onSubmit={handleSubmit(enviar)} className="grid gap-5">
       {CAMPOS.map((campo) => (
         <Campo
           key={campo.nome}
