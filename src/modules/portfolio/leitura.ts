@@ -1,6 +1,11 @@
+import { z } from "zod";
 import { chaveMiniatura, urlPublica } from "../media/index";
 import { comoEquipe } from "./acesso";
 import { id } from "./validacao";
+
+const TRABALHOS_POR_PAGINA = 20;
+// Vem da URL (?pagina=...): qualquer valor fora do esperado volta à primeira página.
+const schemaPagina = z.coerce.number().int().min(1).max(1_000_000).catch(1);
 
 export type TrabalhoPortfolio = {
   id: string;
@@ -19,9 +24,12 @@ export type PortfolioGestao = {
   artistas: { id: string; nome: string }[];
   estilos: { id: string; nome: string }[];
   trabalhos: TrabalhoPortfolio[];
+  total: number;
+  pagina: number;
+  totalPaginas: number;
 };
 
-export function lerPortfolio(cabecalhos: Headers, artista?: unknown) {
+export function lerPortfolio(cabecalhos: Headers, artista?: unknown, paginaPedida?: unknown) {
   return comoEquipe(cabecalhos, async (tx, equipe): Promise<PortfolioGestao> => {
     const artistas =
       equipe.papel === "ADMIN"
@@ -44,11 +52,15 @@ export function lerPortfolio(cabecalhos: Headers, artista?: unknown) {
       id: e.id,
       nome: e.name,
     }));
+    const pagina = schemaPagina.parse(paginaPedida);
+    const total = artistaId ? await tx.portfolioItem.count({ where: { artistId: artistaId } }) : 0;
     const trabalhos = artistaId
       ? await tx.portfolioItem.findMany({
           where: { artistId: artistaId },
           include: { styles: true },
           orderBy: [{ order: "asc" }, { id: "asc" }],
+          skip: (pagina - 1) * TRABALHOS_POR_PAGINA,
+          take: TRABALHOS_POR_PAGINA,
         })
       : [];
     return {
@@ -56,6 +68,9 @@ export function lerPortfolio(cabecalhos: Headers, artista?: unknown) {
       artistaId,
       artistas,
       estilos,
+      total,
+      pagina,
+      totalPaginas: Math.ceil(total / TRABALHOS_POR_PAGINA),
       trabalhos: trabalhos.map((t) => ({
         id: t.id,
         titulo: t.title,

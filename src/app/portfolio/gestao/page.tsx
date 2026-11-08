@@ -16,12 +16,14 @@ export const metadata: Metadata = { title: "Gestão do portfólio · Kolô" };
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
 export default async function PaginaPortfolio({ searchParams }: Props) {
-  const { artista } = await searchParams;
+  const { artista, pagina } = await searchParams;
   const resultado = await lerPortfolio(
     await headers(),
     Array.isArray(artista) ? artista[0] : artista,
+    Array.isArray(pagina) ? pagina[0] : pagina,
   );
-  if (!resultado.ok && resultado.erro === "nao_autenticado") redirect(urlDeLogin("/portfolio/gestao"));
+  if (!resultado.ok && resultado.erro === "nao_autenticado")
+    redirect(urlDeLogin("/portfolio/gestao"));
   return (
     <section className="mx-auto w-full max-w-pagina px-margem py-12 md:px-margem-desktop md:py-16">
       {resultado.ok ? (

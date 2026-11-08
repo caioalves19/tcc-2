@@ -30,6 +30,7 @@ const acoes = () => ({
   solicitar: vi.fn(),
   processar: vi.fn(),
 });
+const paginaUnica = { total: 2, pagina: 1, totalPaginas: 1 };
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -45,6 +46,8 @@ it("RF19: artista cadastra com upload, estilos e região, sem seletor de artista
       artistas={[]}
       estilos={[{ id: "floral", nome: "Floral" }]}
       trabalhos={[]}
+      {...paginaUnica}
+      total={0}
       {...funcs}
     />,
   );
@@ -93,6 +96,7 @@ it("RF19: lista, edita, move e confirma remoção; erro preserva o formulário",
       artistas={[]}
       estilos={[{ id: "floral", nome: "Floral" }]}
       trabalhos={[trabalho("a", "Rosa"), trabalho("b", "Lírio")]}
+      {...paginaUnica}
       {...funcs}
     />,
   );
@@ -126,6 +130,60 @@ it("RF19: lista, edita, move e confirma remoção; erro preserva o formulário",
   expect(funcs.remover).toHaveBeenCalledWith("a");
 });
 
+const desabilitado = (nome: string) =>
+  (screen.getByRole("button", { name: nome }) as HTMLButtonElement).disabled;
+
+it("nas bordas da página os botões de mover só travam no primeiro e no último geral", () => {
+  const props = { papel: "ADMIN" as const, artistaId: "ana", estilos: [], ...acoes() };
+  const artistas = [{ id: "ana", nome: "Ana" }];
+  const { rerender } = render(
+    <GestaoPortfolio
+      {...props}
+      artistas={artistas}
+      trabalhos={[trabalho("a", "Rosa"), trabalho("b", "Lírio")]}
+      total={3}
+      pagina={1}
+      totalPaginas={2}
+    />,
+  );
+  expect(desabilitado("Mover para cima: Rosa")).toBe(true);
+  expect(desabilitado("Mover para baixo: Lírio")).toBe(false);
+  expect(screen.getByRole("link", { name: "2" }).getAttribute("href")).toBe(
+    "/portfolio/gestao?artista=ana&pagina=2",
+  );
+
+  rerender(
+    <GestaoPortfolio
+      {...props}
+      artistas={artistas}
+      trabalhos={[trabalho("c", "Ipê")]}
+      total={3}
+      pagina={2}
+      totalPaginas={2}
+    />,
+  );
+  expect(desabilitado("Mover para cima: Ipê")).toBe(false);
+  expect(desabilitado("Mover para baixo: Ipê")).toBe(true);
+});
+
+it("página além do fim oferece voltar à primeira", () => {
+  render(
+    <GestaoPortfolio
+      papel="ARTISTA"
+      artistaId="ana"
+      artistas={[]}
+      estilos={[]}
+      trabalhos={[]}
+      total={3}
+      pagina={9}
+      totalPaginas={1}
+      {...acoes()}
+    />,
+  );
+  expect(screen.queryByText("Nenhum trabalho cadastrado.")).toBeNull();
+  expect(screen.getByRole("link", { name: "Ir para a primeira página" })).toBeDefined();
+});
+
 it("RF19: ADMIN escolhe artista antes de cadastrar e filtro usa a URL da gestão", () => {
   render(
     <GestaoPortfolio
@@ -137,6 +195,8 @@ it("RF19: ADMIN escolhe artista antes de cadastrar e filtro usa a URL da gestão
       ]}
       estilos={[]}
       trabalhos={[]}
+      {...paginaUnica}
+      total={0}
       {...acoes()}
     />,
   );

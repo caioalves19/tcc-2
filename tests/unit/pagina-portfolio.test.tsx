@@ -42,10 +42,19 @@ it("RN10: visitante vai ao login e acesso proibido mostra recusa sem formulário
 it("RF19: carrega filtro da URL e entrega a tela da gestão", async () => {
   mocks.ler.mockResolvedValueOnce({
     ok: true,
-    dados: { papel: "ARTISTA", artistaId: "ana", artistas: [], estilos: [], trabalhos: [] },
+    dados: {
+      papel: "ARTISTA",
+      artistaId: "ana",
+      artistas: [],
+      estilos: [],
+      trabalhos: [],
+      total: 0,
+      pagina: 2,
+      totalPaginas: 0,
+    },
   });
-  render(await PaginaPortfolio(busca({ artista: ["ana", "bia"] })));
-  expect(mocks.ler).toHaveBeenCalledWith(mocks.headers, "ana");
+  render(await PaginaPortfolio(busca({ artista: ["ana", "bia"], pagina: "2" })));
+  expect(mocks.ler).toHaveBeenCalledWith(mocks.headers, "ana", "2");
   expect(screen.getByRole("heading", { level: 1, name: "Gestão do portfólio" })).toBeDefined();
   expect(screen.getByLabelText("Título")).toBeDefined();
 });

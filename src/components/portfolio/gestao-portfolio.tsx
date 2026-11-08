@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { Paginacao } from "@/components/ui/paginacao";
 import { classeCampo, useGestao } from "@/components/admin/formulario";
 import type { PortfolioGestao, ResultadoPortfolio } from "@/modules/portfolio";
 import { FormularioTrabalho, type AcoesFormulario } from "./formulario-trabalho";
@@ -19,10 +20,18 @@ export function GestaoPortfolio({
   artistaId,
   estilos,
   trabalhos,
+  total,
+  pagina,
+  totalPaginas,
   mover,
   remover,
   ...acoes
 }: Props) {
+  // A ordem é a do artista inteiro: as bordas da página não travam a troca com o vizinho.
+  const primeiroGeral = (indice: number) => pagina === 1 && indice === 0;
+  const ultimoGeral = (indice: number) =>
+    pagina === totalPaginas && indice === trabalhos.length - 1;
+  const parametros = { artista: papel === "ADMIN" ? (artistaId ?? undefined) : undefined };
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const editando = trabalhos.find((t) => t.id === editandoId);
   const gestao = useGestao();
@@ -72,32 +81,46 @@ export function GestaoPortfolio({
             Trabalhos cadastrados
           </h2>
           {gestao.feedback}
-          {trabalhos.length === 0 && <p>Nenhum trabalho cadastrado.</p>}
-          <ul className="grid gap-4">
+          {total === 0 && <p>Nenhum trabalho cadastrado.</p>}
+          {total > 0 && trabalhos.length === 0 && (
+            <a
+              href={
+                parametros.artista
+                  ? `/portfolio/gestao?artista=${parametros.artista}`
+                  : "/portfolio/gestao"
+              }
+              className="underline underline-offset-4"
+            >
+              Ir para a primeira página
+            </a>
+          )}
+          <ul className="grid gap-3">
             {trabalhos.map((t, indice) => (
               <li
                 key={t.id}
-                className="min-w-0 rounded-campo border-2 border-[var(--kolo-contorno)] p-4"
+                className="flex min-w-0 flex-wrap items-center gap-3 rounded-campo border-2 border-[var(--kolo-contorno)] p-3"
               >
                 <Image
                   src={t.miniaturaUrl}
                   alt={t.titulo}
-                  width={400}
-                  height={400}
-                  sizes="(max-width: 1023px) 90vw, 40vw"
-                  className="mb-3 aspect-square w-full rounded-campo object-contain"
+                  width={64}
+                  height={64}
+                  sizes="64px"
+                  className="size-16 shrink-0 rounded-campo object-cover"
                 />
-                <h3 className="break-words font-semibold">{t.titulo}</h3>
-                {t.destaque && <p className="text-nota font-semibold">Em destaque</p>}
-                {t.regiaoCorpo && <p className="break-words text-nota">{t.regiaoCorpo}</p>}
-                <p className="break-words text-nota">
-                  {estilos
-                    .filter((e) => t.estilos.includes(e.id))
-                    .map((e) => e.nome)
-                    .join(" · ")}
-                </p>
-                {t.descricao && <p className="break-words text-nota">{t.descricao}</p>}
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="min-w-0 flex-1 basis-40">
+                  <h3 className="break-words font-semibold">{t.titulo}</h3>
+                  <p className="break-words text-nota">
+                    {[
+                      t.destaque ? "Em destaque" : null,
+                      t.regiaoCorpo,
+                      ...estilos.filter((e) => t.estilos.includes(e.id)).map((e) => e.nome),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
                   <Button
                     type="button"
                     size="sm"
@@ -115,7 +138,7 @@ export function GestaoPortfolio({
                     type="button"
                     size="sm"
                     variant="contorno"
-                    disabled={gestao.pendente || indice === 0}
+                    disabled={gestao.pendente || primeiroGeral(indice)}
                     aria-label={`Mover para cima: ${t.titulo}`}
                     onClick={() =>
                       void gestao.executar(
@@ -125,13 +148,13 @@ export function GestaoPortfolio({
                       )
                     }
                   >
-                    Mover para cima
+                    Subir
                   </Button>
                   <Button
                     type="button"
                     size="sm"
                     variant="contorno"
-                    disabled={gestao.pendente || indice === trabalhos.length - 1}
+                    disabled={gestao.pendente || ultimoGeral(indice)}
                     aria-label={`Mover para baixo: ${t.titulo}`}
                     onClick={() =>
                       void gestao.executar(
@@ -141,7 +164,7 @@ export function GestaoPortfolio({
                       )
                     }
                   >
-                    Mover para baixo
+                    Descer
                   </Button>
                   <Button
                     type="button"
@@ -166,6 +189,12 @@ export function GestaoPortfolio({
               </li>
             ))}
           </ul>
+          <Paginacao
+            caminho="/portfolio/gestao"
+            parametros={parametros}
+            pagina={pagina}
+            totalPaginas={totalPaginas}
+          />
         </section>
       </div>
     </div>
