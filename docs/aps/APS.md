@@ -77,42 +77,46 @@ Documento elaborado a partir dos arquivos disponíveis na pasta TCC em 26 de out
 # 1 INTRODUÇÃO
 
 ## 1.1 Contexto e escolha do sistema
-O Kolô Ateliê & Estúdio reúne comercialização de arte e atendimento para tatuagem em um mesmo empreendimento. A especificação registra um contexto de controle manual de vendas e negociações de agendamento por mensagens. A plataforma web foi escolhida como objeto de avaliação porque concentra regras cujo descumprimento afeta diretamente a operação: venda de peças com estoque reduzido, confirmação de pagamentos, autorização por perfil e conflitos na agenda (Equipe Kolô, 2026a).
+Esta APS trata da avaliação e melhoria da qualidade de software na plataforma web Kolô. O Kolô Ateliê & Estúdio reúne comercialização de arte e atendimento para tatuagem em um mesmo empreendimento. A especificação registra um contexto de controle manual de vendas e negociações de agendamento por mensagens (Equipe Kolô, 2026a). O sistema foi desenvolvido no TCC para um cliente real, o ateliê, cuja administradora participou de uma sessão de validação assistida registrada na monografia (Oliveira et al., 2026).
 
-O sistema oferece catálogo de obras em duas dimensões, carrinho, checkout integrado ao Mercado Pago, portfólio de tatuagens e um assistente em etapas que prepara uma mensagem para o WhatsApp. O contato pelo assistente não cria uma solicitação persistida nem reserva um horário. O horário é cadastrado posteriormente pelo artista ou administrador. A avaliação respeita esses limites para evitar tratar uma decisão de escopo como defeito.
+O sistema oferece catálogo de obras em duas dimensões, carrinho, checkout integrado ao Mercado Pago, portfólio de tatuagens e um assistente em etapas que prepara uma mensagem para o WhatsApp. O contato pelo assistente não cria uma solicitação persistida nem reserva um horário. O horário é cadastrado posteriormente pelo artista ou administrador (Equipe Kolô, 2026a).
 
 ## 1.2 Problema de avaliação
-A presença de funcionalidades e testes não demonstra, por si só, que os requisitos de qualidade foram atendidos na versão entregue. É necessário relacionar cada requisito a um procedimento de verificação, a uma evidência e ao ambiente no qual o resultado foi obtido. A questão que orienta este estudo é: em que medida os mecanismos e resultados documentados do Kolô sustentam sua confiabilidade, eficiência, manutenibilidade e usabilidade, e quais verificações ainda são necessárias?
+A presença de funcionalidades e testes não demonstra, por si só, que os requisitos de qualidade foram atendidos na versão avaliada. É necessário relacionar cada requisito a um procedimento de verificação, a uma evidência e ao ambiente no qual o resultado foi obtido. Em que medida os testes e as medições sustentam a confiabilidade, a eficiência, a manutenibilidade, a usabilidade e a segurança do Kolô? Que melhorias e verificações ainda são necessárias?
 
 ## 1.3 Justificativa
-Uma venda acima do estoque pode exigir estorno e comprometer a confiança do cliente. Uma notificação de pagamento processada duas vezes pode afetar saldos e estoque. Uma barreira de interface pode impedir a conclusão de uma compra. Esses riscos tornam o projeto adequado à aplicação prática do tema da APS e permitem avaliar qualidade por comportamentos observáveis.
+O Kolô reúne riscos de comércio eletrônico e de atendimento em um mesmo sistema. O ateliê vende principalmente peças únicas. Se dois pedidos disputarem a última unidade e ambos forem pagos, o ateliê pode ter de estornar um deles, o que compromete a confiança do cliente. No fluxo de pagamento, uma notificação processada duas vezes pode levar a uma baixa de estoque indevida. O sistema também trata dados pessoais, como telefone e endereço de entrega, o que torna relevante verificar a proteção das informações e as permissões de acesso. Uma barreira de interface pode impedir a conclusão de uma compra ou o contato com o estúdio (Equipe Kolô, 2026a).
+
+A especificação já define critérios de verificação para requisitos não funcionais. O RNF02 prevê uma auditoria de dependências sem vulnerabilidades altas ou críticas, e o RNF13 estabelece limites de tempo de carregamento e de pontuação do Lighthouse para o catálogo e a ficha da obra. Esses critérios permitem comparar as evidências com as exigências do projeto (Equipe Kolô, 2026a).
 
 ## 1.4 Objetivos e escopo
 ### 1.4.1 Objetivo geral
 
-Avaliar a qualidade da plataforma Kolô a partir de requisitos e evidências do projeto e propor melhorias que possam ser verificadas por métricas, testes e registros de execução.
+Avaliar a qualidade da plataforma Kolô e propor melhorias em sua confiabilidade, eficiência, manutenibilidade e usabilidade por meio de práticas de qualidade, testes e métricas verificáveis.
 
 ### 1.4.2 Objetivos específicos
 
--   Caracterizar o sistema e justificar sua seleção para análise.
+1. Caracterizar o sistema e justificar sua seleção a partir dos riscos da operação do ateliê.
+2. Identificar e documentar requisitos de qualidade, associando-os a riscos e procedimentos de verificação.
+3. Definir um plano de qualidade com procedimentos, métricas, ferramentas e critérios de aceite.
+4. Executar testes funcionais e não funcionais para medir a qualidade nas condições definidas no plano.
+5. Registrar e analisar os resultados em relação às metas, identificando pontos críticos e oportunidades de melhoria.
+6. Propor melhorias com base nas medições e verificar novamente as métricas afetadas pelas mudanças implementadas.
+7. Documentar o processo e refletir sobre sua contribuição para a formação acadêmica e para a prática profissional.
 
--   Relacionar requisitos de qualidade a riscos e procedimentos de avaliação.
-
--   Definir um plano de qualidade com métricas, ferramentas e critérios de aceite.
-
--   Analisar os registros de testes funcionais e não funcionais disponíveis.
-
--   Identificar melhorias já aplicadas e limitações ainda presentes.
-
--   Propor ações de melhoria priorizadas e critérios para uma nova rodada de avaliação.
-
--   Documentar o processo e sua contribuição à formação acadêmica.
+A introdução caracteriza o sistema e justifica sua escolha. A revisão teórica e a metodologia fundamentam os requisitos e o [plano de qualidade](PLANO.md). O desenvolvimento reúne as execuções, os resultados, a análise dos pontos críticos e as melhorias. As conclusões retomam as propostas, as limitações e a contribuição do processo para a formação acadêmica.
 
 ### 1.4.3 Delimitação do estudo
 
-A análise abrange o repositório tcc-2 e os documentos locais, incluindo a monografia existente. Não foram executados novos testes da aplicação para produzir este relatório. As versões de bibliotecas mencionadas descrevem a configuração local do projeto. O escopo não inclui visualizador 3D, motor automático de horários, API oficial do WhatsApp ou coleta de dados clínicos.
+A visão geral do repositório tcc-2 abrange as páginas e os módulos de negócio em `src/`, o esquema de dados em `prisma/`, as suítes em `tests/` e a integração contínua em `.github/workflows/`. A avaliação transversal considera cobertura de testes, complexidade e auditoria de dependências. A análise aprofunda três fluxos:
 
-O relatório é um trabalho de APS sobre o sistema desenvolvido no TCC. Por isso, mantém a estrutura exigida no enunciado, mas concentra a discussão em qualidade e melhoria. A monografia é utilizada como fonte de evidências e contexto, sem presumir que todos os resultados históricos descrevam a revisão atual.
+- **Catálogo e ficha da obra.** O carregamento das imagens e a apresentação da obra em telas móveis influenciam o acesso ao acervo e o início da compra.
+- **Carrinho, checkout e webhook.** A disputa pela última unidade em estoque e a repetição de notificações do Mercado Pago exercitam a consistência entre reserva, pagamento e baixa de estoque.
+- **Assistente de agendamento.** O envio ao WhatsApp depende de validação dos dados e da montagem da mensagem com as preferências do usuário. A preferência enviada é usada na conversa, e o artista ou administrador cadastra depois o horário combinado.
+
+A APS combina a documentação do TCC com novas execuções locais de testes unitários, de integração e de ponta a ponta, além de medições de cobertura, complexidade, carga e segurança. O [baseline da APS](evidencias/BASELINE.md) registra a primeira medição contra as metas definidas no plano. O [comparativo das melhorias](evidencias/COMPARATIVO.md) registra as mudanças nos testes de integração, no envio dos formulários e nos cabeçalhos de segurança, com as medições antes e depois. A monografia fornece o contexto do projeto e evidências históricas identificadas pela fonte (Oliveira et al., 2026).
+
+As novas medições foram realizadas em ambiente local, com PostgreSQL em contêiner e serviços externos simulados nos ensaios de carga e na varredura de segurança. A avaliação em produção fica para depois da publicação. O escopo funcional do estudo se restringe aos fluxos implementados, com catálogo em duas dimensões e agendamento iniciado por mensagem.
 
 # 2 REVISÃO TEÓRICA
 
