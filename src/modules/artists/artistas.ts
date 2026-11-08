@@ -1,7 +1,7 @@
 import { hashPassword } from "better-auth/crypto";
 import type { Prisma } from "../../../generated/prisma/client";
 import { comoAdmin, ErroGestao, validar } from "./acesso";
-import { ITENS_POR_PAGINA, lerPagina, totalDePaginas } from "./paginacao";
+import { lerPagina, totalDePaginas } from "./paginacao";
 import { schemaNovoArtista, schemaEditarArtista, schemaId } from "./validacao";
 
 async function validarEstilos(tx: Prisma.TransactionClient, estilos: string[]) {
@@ -58,6 +58,7 @@ export function criarArtista(entrada: unknown, cabecalhos: Headers) {
     return { id: artista.id };
   });
 }
+const ARTISTAS_POR_PAGINA = 12;
 const INCLUI_ARTISTA = { user: true, styles: true } satisfies Prisma.ArtistInclude;
 
 function artistaDoAdmin(artista: Prisma.ArtistGetPayload<{ include: typeof INCLUI_ARTISTA }>) {
@@ -94,14 +95,14 @@ export function listarArtistasPaginados(entrada: unknown, cabecalhos: Headers) {
       include: INCLUI_ARTISTA,
       // O id desempata, para um artista não repetir nem sumir entre as páginas.
       orderBy: [{ user: { name: "asc" } }, { id: "asc" }],
-      skip: (pagina - 1) * ITENS_POR_PAGINA,
-      take: ITENS_POR_PAGINA,
+      skip: (pagina - 1) * ARTISTAS_POR_PAGINA,
+      take: ARTISTAS_POR_PAGINA,
     });
     return {
       artistas: artistas.map(artistaDoAdmin),
       total,
       pagina,
-      totalPaginas: totalDePaginas(total),
+      totalPaginas: totalDePaginas(total, ARTISTAS_POR_PAGINA),
     };
   });
 }

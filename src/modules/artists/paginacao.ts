@@ -11,6 +11,6 @@ export function lerPagina(entrada: unknown): number {
   return schemaEntrada.parse(typeof entrada === "object" && entrada !== null ? entrada : {}).pagina;
 }
 
-export function totalDePaginas(total: number): number {
-  return Math.ceil(total / ITENS_POR_PAGINA);
+export function totalDePaginas(total: number, porPagina = ITENS_POR_PAGINA): number {
+  return Math.ceil(total / porPagina);
 }

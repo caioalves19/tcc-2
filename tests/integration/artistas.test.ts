@@ -276,7 +276,7 @@ it("RF28 edita artista e estilos; impede exclusões vinculadas e preserva conta 
   expect(await excluirArtista(ana.id, admin)).toMatchObject({ ok: false, erro: "nao_encontrado" });
 });
 
-it("lista 20 artistas por página, sem repetir, e só ADMIN acessa", async () => {
+it("lista 12 artistas por página, sem repetir, e só ADMIN acessa", async () => {
   const { criarArtista, listarArtistasPaginados } = await import("../../src/modules/artists");
   const inicio = await listarArtistasPaginados({}, admin);
   if (!inicio.ok) throw new Error(inicio.mensagem);
@@ -299,8 +299,8 @@ it("lista 20 artistas por página, sem repetir, e só ADMIN acessa", async () =>
   const primeira = await listarArtistasPaginados({ pagina: "1" }, admin);
   const segunda = await listarArtistasPaginados({ pagina: "2" }, admin);
   if (!primeira.ok || !segunda.ok) throw new Error("leitura recusada");
-  expect(primeira.dados).toMatchObject({ total, pagina: 1, totalPaginas: Math.ceil(total / 20) });
-  expect(primeira.dados.artistas).toHaveLength(20);
+  expect(primeira.dados).toMatchObject({ total, pagina: 1, totalPaginas: Math.ceil(total / 12) });
+  expect(primeira.dados.artistas).toHaveLength(12);
   const juntos = [...primeira.dados.artistas, ...segunda.dados.artistas].map((a) => a.id);
   expect(new Set(juntos).size).toBe(total);
   expect(await listarArtistasPaginados({}, cliente)).toMatchObject({ ok: false, erro: "proibido" });
