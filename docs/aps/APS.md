@@ -188,38 +188,67 @@ A auditoria com `npm audit` compara as dependências do projeto com avisos de se
 # 3 METODOLOGIA
 
 ## 3.1 Procedimento e materiais
-Foi realizada análise documental aplicada ao projeto. O enunciado da APS define a estrutura e os objetivos acadêmicos; o escopo versão 2.2 fornece os requisitos; o DER e o esquema Prisma descrevem os dados; o código e os testes indicam os mecanismos implementados; os registros da Sprint 2 e a monografia fornecem os resultados históricos. A Sprint 3 contextualiza pendências posteriores à entrega da monografia.
+A avaliação combina dois procedimentos. O primeiro é a análise documental. O enunciado da APS define a estrutura e os objetivos acadêmicos. O escopo versão 2.2 fornece os requisitos, e o DER e o esquema Prisma descrevem os dados. O código e os testes indicam os mecanismos implementados, enquanto os registros da Sprint 2 e a monografia trazem os resultados históricos. A Sprint 3 contextualiza as pendências posteriores à entrega da monografia. Nessa análise foram identificados os fluxos de maior risco e os requisitos associados. Também se conferiu a presença de implementação e testes, e os resultados foram transcritos com atribuição à fonte. Divergências entre documentos foram preservadas como limitações de rastreabilidade.
 
-O procedimento consistiu em identificar os fluxos de maior risco, localizar requisitos associados, conferir a presença de implementação e testes, transcrever resultados com atribuição à fonte e propor ações quando faltavam evidências. Divergências entre documentos foram preservadas como limitações de rastreabilidade. A análise da configuração não equivale à execução da ferramenta configurada.
+O segundo procedimento é a medição local, em duas rodadas e com as mesmas ferramentas e comandos. A linha de base mede a revisão `b3587b3`, a da `main` no início da APS, acrescida apenas da configuração de medição da APS. A nova medição mede a revisão `51bb1b8`, que contém as três melhorias. As duas rodadas foram executadas em 6 e 7 de novembro de 2026 na mesma máquina, e as saídas brutas ficaram em `docs/aps/evidencias/baseline/` e `docs/aps/evidencias/depois/` (Equipe Kolô, 2026f, 2026h).
 
 ::: {custom-style="Legenda"}
 Quadro 1 Fontes e função na avaliação
 :::
 
-| **Fonte local**        | **Uso**                                                   |
-|------------------------|-----------------------------------------------------------|
-| 2026_2\_CC_SI_8.md     | Estrutura e tema da APS                                   |
-| docs/ESCOPO-E-STACK.md | RF01 a RF32, RNF01 a RNF24 e regras RN01 a RN12           |
-| docs/tcc-2.docx        | Contexto, autoria e resultados consolidados na monografia |
-| docs/Sprint-2.md       | Resultados de testes, correções e pendências por entrega  |
-| src/ e tests/          | Inspeção de mecanismos e casos de teste presentes         |
-| docs/SPRINT-3.md       | Pendências de reprodução dos dados de demonstração        |
+| **Fonte local**          | **Uso**                                                    |
+|--------------------------|------------------------------------------------------------|
+| 2026_2\_CC_SI_8.md       | Estrutura e tema da APS                                    |
+| docs/ESCOPO-E-STACK.md   | RF01 a RF32, RNF01 a RNF24 e regras RN01 a RN12            |
+| docs/tcc-2.docx          | Contexto, autoria e resultados consolidados na monografia  |
+| docs/Sprint-2.md         | Resultados históricos de testes, Lighthouse e dependências |
+| docs/SPRINT-3.md         | Pendências de reprodução dos dados de demonstração         |
+| src/ e tests/            | Inspeção de mecanismos e casos de teste presentes          |
+| docs/aps/PLANO.md        | Metas e decisões fixadas antes da medição                  |
+| tests/carga/             | Roteiros de carga e rajada e servidor de medição           |
+| docs/aps/evidencias/     | Saídas brutas da linha de base e da nova medição           |
 
 ::: {custom-style="Legenda"}
-Fonte Elaborado a partir dos arquivos locais do projeto em 26 out. 2026.
+Fonte Elaborado a partir dos arquivos locais do projeto em 26 out. e 8 nov. 2026.
+:::
+
+O Quadro 2 lista as ferramentas, as versões usadas nas duas rodadas e as métricas do plano que cada uma produz. As versões dos pacotes são as instaladas pelo `package-lock.json` do repositório. As das imagens de contêiner vêm do comando executado ou do próprio relatório.
+
+::: {custom-style="Legenda"}
+Quadro 2 Ferramentas, versões e métricas produzidas
+:::
+
+| **Ferramenta**                      | **Versão**                  | **Uso na avaliação**                                            | **Métrica** |
+|-------------------------------------|-----------------------------|-----------------------------------------------------------------|-------------|
+| Vitest e `@vitest/coverage-v8`      | 4.1.12                      | Testes unitários e de integração; cobertura de linhas e ramos   | G1          |
+| Playwright (`@playwright/test`)     | 1.64.1                      | Testes E2E contra o *build* de produção, de 320 a 1920 px        | RNF20       |
+| axe-core (`@axe-core/playwright`)   | 4.14                        | Varredura de acessibilidade dentro do E2E, em 320 e 1440 px     | G6          |
+| ESLint, regra `complexity`          | 9.39.5                      | Complexidade ciclomática por função, limiar 10                  | G2          |
+| `wc -l`                             | —                           | Linhas por arquivo `.ts` e `.tsx` em `src/`                     | G2          |
+| k6 (imagem `grafana/k6`)            | 1.3.0                       | Carga com usuários virtuais e rajada concorrente                | G3, G4      |
+| OWASP ZAP (imagem `zaproxy:stable`) | 2.17.0                      | Varredura passiva *baseline* contra o app local                 | G5          |
+| `npm audit`                         | npm 11.19.0                 | Vulnerabilidades conhecidas nas dependências                    | G5          |
+| Lighthouse                          | 12.8.2                      | Medição do TCC, não repetida (mediana de três rodadas)          | G6          |
+| TypeScript (`tsc --noEmit`)         | 5.9.3                       | Checagem de tipos, condição para comparar rodadas               | —           |
+| Next.js, Node.js e PostgreSQL       | 16.3.8; 24.20.0; 17         | Sistema avaliado, ambiente de execução e banco                  | —           |
+
+::: {custom-style="Legenda"}
+Fonte Elaborado pelos autores a partir de `package-lock.json`, dos comandos e dos relatórios em `docs/aps/evidencias/` e de Equipe Kolô (2026b).
 :::
 
 ## 3.2 Critérios de classificação
-As evidências são classificadas como resultado histórico documentado, mecanismo inspecionado ou verificação pendente. Uma proposta é explicitamente apresentada como ação futura. Não se atribuem datas de execução, métricas de cobertura, aprovação do cliente ou resultados de produção ausentes nas fontes.
+Cada evidência citada recebe uma de quatro classificações. É **medida nesta APS** quando há arquivo correspondente em `docs/aps/evidencias/`, na linha de base, na nova medição ou em ambas. É **resultado histórico** quando vem da monografia ou dos registros das sprints, citada com a fonte e sem presumir que descreva a revisão atual. É **mecanismo inspecionado** quando o código ou a configuração foi lido, sem execução da ferramenta correspondente. Por fim, fica **fora do escopo** quando depende do ambiente publicado e por isso não pode ser medida localmente. Propostas aparecem sempre como ação futura. Na coluna de tratamento do Quadro 3, "Medido" e "Suíte" correspondem a medida nesta APS, porque as suítes foram reexecutadas nas duas rodadas. "Evidência do TCC" corresponde a resultado histórico ou mecanismo inspecionado, e "Parcial" indica que só parte do critério do requisito foi verificada.
+
+Três regras orientam a comparação. Nenhum número entra no documento sem arquivo de evidência ou fonte citada. Uma rodada só é comparada com outra quando *lint*, checagem de tipos e todas as suítes passaram nela. As medidas de tempo são comparadas apenas entre rodadas feitas na mesma máquina e com o mesmo roteiro. Não se atribuem aprovação do cliente nem resultados de produção ausentes nas fontes.
 
 ## 3.3 Plano de qualidade e métricas
 O plano de qualidade tem três partes: a classificação dos requisitos não funcionais nas características da ISO/IEC 25010:2011, o desdobramento das características escolhidas em objetivos, perguntas e métricas pelo método GQM e o processo que liga a medição às melhorias. Segundo o [plano da APS](PLANO.md), as metas foram fixadas na sessão de decisões de 6 de novembro de 2026, antes da primeira rodada de medição, para que o resultado não influenciasse o limite com o qual seria comparado (Basili; Caldiera; Rombach, 1994; Equipe Kolô, 2026g; ISO; IEC, 2011).
 
 ### 3.3.1 Requisitos de qualidade
-O escopo do Kolô define 24 requisitos não funcionais, cada um com um critério de verificação. O Quadro 2 classifica cada RNF por característica e subcaracterística da ISO/IEC 25010:2011 e indica como ele é tratado nesta APS. Um requisito pode ser medido nesta avaliação, apoiar-se em evidência registrada no TCC ou ficar fora do escopo por depender do ambiente publicado. Quando o requisito sustenta mais de uma característica, a principal aparece primeiro.
+O escopo do Kolô define 24 requisitos não funcionais, cada um com um critério de verificação. O Quadro 3 classifica cada RNF por característica e subcaracterística da ISO/IEC 25010:2011 e indica como ele é tratado nesta APS. Um requisito pode ser medido nesta avaliação, apoiar-se em evidência registrada no TCC ou ficar fora do escopo por depender do ambiente publicado. Quando o requisito sustenta mais de uma característica, a principal aparece primeiro.
 
 ::: {custom-style="Legenda"}
-Quadro 2 Requisitos não funcionais do Kolô na ISO/IEC 25010:2011
+Quadro 3 Requisitos não funcionais do Kolô na ISO/IEC 25010:2011
 :::
 
 | **RNF** | **Requisito (resumo)**                                  | **Característica e subcaracterística**                    | **Tratamento nesta APS**                              |
@@ -258,10 +287,10 @@ As regras de negócio completam o quadro na confiabilidade. O limite de estoque 
 A ISO/IEC 25010:2011 não tem característica própria de privacidade. Os requisitos de coleta mínima, ausência de dado clínico e anonimização (RNF17 a RNF19) foram classificados em confidencialidade. Compatibilidade não recebeu requisito no escopo; a única integração crítica, o *gateway* de pagamento, é tratada pelo RNF11 (ISO; IEC, 2011).
 
 ### 3.3.2 Objetivos, perguntas e métricas
-O Quadro 3 apresenta os objetivos e as perguntas do plano. As características escolhidas cobrem os três fluxos aprofundados e os requisitos que podem ser medidos sem o ambiente publicado. O Quadro 4 traz as métricas, as ferramentas e as metas de cada pergunta, com os mesmos limites usados na linha de base e na nova medição (Equipe Kolô, 2026f, 2026g, 2026h).
+O Quadro 4 apresenta os objetivos e as perguntas do plano. As características escolhidas cobrem os três fluxos aprofundados e os requisitos que podem ser medidos sem o ambiente publicado. O Quadro 5 traz as métricas, as ferramentas e as metas de cada pergunta, com os mesmos limites usados na linha de base e na nova medição (Equipe Kolô, 2026f, 2026g, 2026h).
 
 ::: {custom-style="Legenda"}
-Quadro 3 Objetivos e perguntas do plano GQM
+Quadro 4 Objetivos e perguntas do plano GQM
 :::
 
 | **ID** | **Característica**                  | **Objetivo**                                                                           | **Pergunta**                                                                                           |
@@ -278,7 +307,7 @@ Fonte Elaborado pelos autores a partir de Equipe Kolô (2026g), segundo Basili, 
 :::
 
 ::: {custom-style="Legenda"}
-Quadro 4 Métricas, ferramentas e metas
+Quadro 5 Métricas, ferramentas e metas
 :::
 
 | **ID** | **Métrica**                                                     | **Ferramenta**                                  | **Meta**                                                  |
@@ -305,7 +334,7 @@ As metas de G6 vêm do escopo do projeto (RNF13 e RNF21). O Lighthouse não foi 
 A avaliação seguiu um ciclo de cinco etapas, com o registro de cada uma em `docs/aps/evidencias/`:
 
 1. **Plano.** Requisitos classificados, perguntas e metas registrados no [plano da APS](PLANO.md) antes de qualquer medição.
-2. **Linha de base.** Todas as métricas do Quadro 4, exceto o Lighthouse, medidas numa mesma revisão do código, na mesma máquina, com os comandos e as saídas brutas guardados no [registro da linha de base](evidencias/BASELINE.md).
+2. **Linha de base.** Todas as métricas do Quadro 5, exceto o Lighthouse, medidas numa mesma revisão do código, na mesma máquina, com os comandos e as saídas brutas guardados no [registro da linha de base](evidencias/BASELINE.md).
 3. **Pontos críticos.** Cada métrica fora da meta e cada alerta de segurança a analisar viram um ponto crítico. A lista resultante é o insumo da escolha das melhorias.
 4. **Melhoria.** Os pontos críticos foram ordenados por risco de mudança às vésperas da banca do TCC. O plano previa apenas testes novos ou refatoração coberta pela suíte. Dois pontos de segurança apontados pelo ZAP foram aceitos como exceção, por serem mudanças pequenas de configuração cobertas por testes unitários e pela suíte E2E. Os pontos escolhidos foram implementados por TDD: um teste que falha pelo motivo esperado, a menor alteração que o faz passar e a repetição até cobrir o comportamento. Quando a melhoria só acrescenta testes a comportamento já existente, não há etapa vermelha. Antes da nova medição, um revisor que não escreveu o código analisou o *diff*, e os ajustes que ele pediu entraram na mesma rodada.
 5. **Nova medição.** Os mesmos comandos, na mesma máquina, sobre a revisão com as melhorias. O [comparativo das melhorias](evidencias/COMPARATIVO.md) põe antes e depois lado a lado na mesma métrica. Nas medidas de tempo, uma variação pequena é lida como ausência de regressão, não como ganho, porque o ensaio local tem ruído.
@@ -316,7 +345,7 @@ Cada rodada registra a revisão do código, a data, o ambiente, o comando, o res
 
 ## 3.4 Roteiro de testes funcionais e não funcionais
 ::: {custom-style="Legenda"}
-Quadro 5 Casos prioritários para reexecução
+Quadro 6 Casos prioritários para reexecução
 :::
 
 | **Caso**       | **Entrada ou ação**                                               | **Resultado esperado**                                         |
@@ -335,7 +364,67 @@ Fonte Elaborado a partir de RF06, RF12 a RF25, RF32 e RN01 a RN12.
 :::
 
 ## 3.5 Repetibilidade
-Os scripts disponíveis incluem npm test, npm run test:integration e npm run test:e2e, além de lint, typecheck e build. As suítes com banco utilizam ambientes de teste. A reprodução exige dependências, migrações e dados apropriados; a Sprint 3 registra que o povoamento dos dados de demonstração ainda precisa ser consolidado. Nenhum segredo ou arquivo de ambiente foi incorporado a este documento.
+
+### 3.5.1 Ambiente de medição
+As duas rodadas foram executadas no mesmo *notebook* com Windows 11, com processador Intel Core i7-1165G7 e 16 GB de memória. O registro da linha de base anota o sistema operacional e as versões, e o processador e a memória foram informados pelo grupo. O ambiente usava Node.js 24.20.0 e Docker 29.8.2, com o PostgreSQL 17 no contêiner definido em `docker-compose.yml`. As suítes de integração e a cobertura usam esse banco real, sem simulação da camada de dados, porque reserva, agenda e *webhook* dependem de transações e restrições do PostgreSQL.
+
+O k6 e o ZAP medem o *build* de produção (`next build`), servido pelo roteiro `tests/carga/servidor.ts` na porta 3100. O roteiro recria a cada subida um banco descartável, com o mesmo preparo do E2E e duas obras próprias da carga, uma delas de estoque unitário para a rajada. Os serviços externos são substituídos por dublês carregados no processo do servidor: o Mercado Pago responde localmente, e o armazenamento de imagens R2 grava numa pasta temporária. Os segredos são gerados aleatoriamente a cada subida. Em nenhum momento as medições apontam para o banco de desenvolvimento ou para serviços reais. O k6 e o ZAP rodam em contêineres na mesma máquina e acessam o servidor pelo endereço do *host*.
+
+O ambiente tem limitações que restringem a leitura dos resultados:
+
+- Gerador de carga e servidor dividem o mesmo processador. O p95 mede o sistema nessa condição, não num servidor dedicado, e por isso diferenças pequenas entre rodadas são tratadas como ruído.
+- Cada métrica de carga foi medida uma vez por rodada, sem repetição para estimar variância.
+- O banco de medição tem só os dados mínimos do E2E. O catálogo é muito menor que o de uso real.
+- O servidor responde em HTTP, sem TLS. Cabeçalhos que só valem sob HTTPS, como o HSTS, não são avaliados.
+- Os dublês não reproduzem a latência do *gateway* de pagamento. O R2 falso aponta para um endereço inexistente, o que faz `/_next/image` responder com erro.
+- O Lighthouse do TCC foi medido em outro ambiente, contra o banco de desenvolvimento e as fotos reais do armazenamento de teste (Equipe Kolô, 2026b).
+
+### 3.5.2 Procedimento de reprodução
+O Quadro 7 associa cada medição à sua pré-condição, ao comando e ao arquivo de saída. Os comandos rodam na raiz do repositório, num terminal POSIX. No Git Bash do Windows, os comandos `docker run` precisam do prefixo `MSYS_NO_PATHCONV=1`, para que os caminhos do contêiner não sejam convertidos em caminhos do Windows. O ZAP grava o relatório em `zap/`, na raiz, e o arquivo é copiado depois para a pasta da rodada em `docs/aps/evidencias/`. Nenhum segredo ou arquivo de ambiente foi incorporado a este documento nem às evidências.
+
+::: {custom-style="Legenda"}
+Quadro 7 Procedimento de reprodução por medição
+:::
+
+| **Medição**                   | **Pré-condição**                                | **Comando**                                           | **Saída em `evidencias/`**              |
+|-------------------------------|-------------------------------------------------|-------------------------------------------------------|-----------------------------------------|
+| *Lint* e tipos                | Dependências instaladas                         | `npm run lint`; `npm run typecheck`                   | `lint.txt`, `typecheck.txt`             |
+| Testes unitários              | —                                               | `npm run test:unit`                                   | `unit.json`, `unit.txt`                 |
+| Testes de integração          | `docker compose up -d`                          | `npm run test:integration`                            | `integracao.json`, `integracao.txt`     |
+| Cobertura (G1)                | `docker compose up -d`                          | `npm run test:coverage`                               | `coverage-summary.json`, `cobertura-por-modulo.txt` |
+| E2E e axe-core (G6)           | `docker compose up -d`; `npm run build`         | `npm run test:e2e`                                    | `e2e.json`, `e2e-resumo.json`           |
+| Complexidade (G2)             | —                                               | ESLint com a regra `complexity` (comando 1)           | `complexidade.json`                     |
+| Tamanho de arquivo (G2)       | —                                               | Contagem de linhas (comando 2)                        | `BASELINE.md`                           |
+| Dependências (G5)             | —                                               | `npm audit --json`                                    | `npm-audit.json`, `npm-audit.txt`       |
+| Carga (G3)                    | Servidor de medição no ar (comando 3)           | k6 com `carga.js` (comando 4)                         | `k6-carga.json`, `k6-carga.txt`         |
+| Rajada (G4)                   | Servidor recém-subido, banco recriado           | k6 com `rajada.js` (comando 5)                        | `k6-rajada.json`, `k6-rajada.txt`       |
+| ZAP (G5)                      | Servidor de medição no ar                       | ZAP *baseline* (comando 6)                            | `zap/`                                  |
+| Lighthouse (G6)               | Não repetido nesta APS                          | Procedimento registrado na Sprint 2                   | Equipe Kolô (2026b)                     |
+
+::: {custom-style="Legenda"}
+Fonte Elaborado pelos autores a partir de Equipe Kolô (2026h) e dos roteiros em `tests/carga/`.
+:::
+
+Os comandos numerados no Quadro 7 são os seguintes:
+
+```bash
+# 1. complexidade por função (limiar 10)
+npx eslint src --rule '{"complexity":["warn",10]}' -f json -o complexidade.json
+# 2. linhas por arquivo de código em src/
+find src -type f \( -name "*.ts" -o -name "*.tsx" \) | xargs wc -l
+# 3. build de produção e servidor de medição (banco descartável e dublês)
+npm run build && npx tsx tests/carga/servidor.ts
+# 4. carga: 20 usuários virtuais na leitura e 5 no checkout, 3 min em regime
+docker run --rm -v "$PWD:/repo" -w /repo/tests/carga grafana/k6:1.3.0 run carga.js
+# 5. rajada: 30 clientes finalizam a compra da mesma obra de estoque 1 no mesmo instante
+docker run --rm -v "$PWD:/repo" -w /repo/tests/carga grafana/k6:1.3.0 run \
+  -e N=30 -e DISPARO=$(( $(date +%s) * 1000 + 60000 )) rajada.js
+# 6. varredura passiva do ZAP contra o servidor de medição
+docker run --rm -v "$PWD/zap:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+  -t http://host.docker.internal:3100 -m 3 -J zap-baseline.json -r zap-baseline.html -I
+```
+
+O roteiro de carga sobe até 20 usuários virtuais em catálogo e ficha da obra e até 5 no *checkout*. Ele leva 30 s para subir, mantém 3 min em regime e leva 15 s para descer. A rajada consome a única unidade da obra disputada. Para repeti-la, é preciso subir o servidor de novo, o que recria o banco. Em cada rodada, o resultado de `npm run lint`, `npm run typecheck` e das suítes é registrado em `_execucao.txt`. Assim fica visível que a rodada atende à condição de comparação da seção 3.2.
 
 # 4 DESENVOLVIMENTO
 
@@ -421,7 +510,7 @@ A Sprint 2 registra varredura de 35 telas nas larguras de 320, 768, 1440 e 1920 
 O resultado é parcial em relação ao RNF21: teclado e foco permaneceram pendentes. A varredura verifica regras automáticas e os impactos selecionados, sem garantir a experiência de usuários com deficiência. A inspeção do teste confirma que resultados inconclusivos não entram no gate. Esse limite deve acompanhar qualquer afirmação sobre acessibilidade.
 
 ::: {custom-style="Legenda"}
-Quadro 6 Evidências históricas de segurança e seus limites
+Quadro 8 Evidências históricas de segurança e seus limites
 :::
 
 | **Controle**          | **Evidência registrada**                               | **Limite**                                           |
@@ -442,7 +531,7 @@ A ausência de anamnese no esquema é coerente com o escopo de minimização de 
 As melhorias já registradas atacam falhas concretas de desempenho, nomes acessíveis, transbordamento e tamanho de botões. O próximo ciclo deve concentrar-se em lacunas de evidência e operação, antes de ampliar funcionalidades. A priorização abaixo é uma proposta desta avaliação; não representa trabalho já executado nem atribuição individual acordada.
 
 ::: {custom-style="Legenda"}
-Quadro 7 Melhorias propostas e critérios de encerramento
+Quadro 9 Melhorias propostas e critérios de encerramento
 :::
 
 | **Prioridade e ação**                 | **Justificativa**                                 | **Critério de aceite**                                                                      |
@@ -463,7 +552,7 @@ Fonte Propostas elaboradas com base nas pendências das Sprints 2 e 3 e na monog
 Cada ação deve gerar um registro com problema observado, requisito afetado, alteração, teste que demonstra o defeito, teste após a correção e evidência final. A versão da aplicação precisa ser identificada para que a comparação tenha significado. Em caso de falha, preserva-se o resultado e abre-se nova tarefa; a tentativa posterior não deve apagar o histórico.
 
 ::: {custom-style="Legenda"}
-Quadro 8 Modelo de registro para o próximo ciclo
+Quadro 10 Modelo de registro para o próximo ciclo
 :::
 
 | **Campo**        | **Conteúdo a registrar**                                |
@@ -585,7 +674,7 @@ Repositório de origem: https://github.com/caioalves19/tcc-2. Revisão local ins
 Consulta da codificação completa na revisão: https://github.com/caioalves19/tcc-2/tree/a94ad02bc90bf4945ded28b7c1b70960abc71b90
 
 ::: {custom-style="Legenda"}
-Quadro 9 Localização dos materiais para conferência
+Quadro 11 Localização dos materiais para conferência
 :::
 
 | **Material**           | **Caminho relativo a tcc-2**              |
