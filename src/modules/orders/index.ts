@@ -51,8 +51,8 @@ export type {
 } from "./checkout";
 export { lerPedido } from "./pedido";
 export type { PedidoResumo, SituacaoPedido } from "./pedido";
-export { lerMeuPedido, listarMeusPedidos } from "./acompanhamento";
-export type { PedidoDaLista, PedidoDetalhado } from "./acompanhamento";
+export { lerMeuPedido, listarMeusPedidos, listarMeusPedidosPaginados } from "./acompanhamento";
+export type { PaginaMeusPedidos, PedidoDaLista, PedidoDetalhado } from "./acompanhamento";
 export {
   contarPedidosPorFiltro,
   lerPedidoAdmin,

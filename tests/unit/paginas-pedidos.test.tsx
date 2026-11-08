@@ -19,7 +19,7 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/lib/auth", () => ({ sessaoDaRequisicao: mocks.sessao }));
 vi.mock("@/modules/orders", () => ({
-  listarMeusPedidos: mocks.listar,
+  listarMeusPedidosPaginados: mocks.listar,
   lerMeuPedido: mocks.ler,
 }));
 
@@ -31,22 +31,41 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+const naPagina2 = { searchParams: Promise.resolve({ pagina: "2" }) };
+
+it("RF16 página além do fim oferece voltar à primeira, sem dizer que não há pedidos", async () => {
+  mocks.listar.mockResolvedValueOnce({ pedidos: [], total: 21, pagina: 9, totalPaginas: 2 });
+  render(await PaginaPedidos(naPagina2));
+  expect(screen.queryByText("Você ainda não tem pedidos.")).toBeNull();
+  expect(screen.getByRole("link", { name: "Ir para a primeira página" }).getAttribute("href")).toBe(
+    "/conta/pedidos",
+  );
+});
+
 it("RF16/RN01 a lista exige login e mostra os pedidos da sessão", async () => {
   mocks.listar.mockResolvedValueOnce(null);
-  await expect(PaginaPedidos()).rejects.toThrow("redirect:/login?destino=%2Fconta%2Fpedidos");
+  await expect(PaginaPedidos(naPagina2)).rejects.toThrow(
+    "redirect:/login?destino=%2Fconta%2Fpedidos",
+  );
 
-  mocks.listar.mockResolvedValueOnce([
-    {
-      numero: "20260910-PAGO22",
-      criadoEm: new Date("2026-09-10T15:00:00Z"),
-      situacao: "PAGO",
-      modalidade: "RETIRADA",
-      totalCentavos: 960000,
-      unidades: 2,
-    },
-  ]);
-  render(await PaginaPedidos());
-  expect(mocks.listar).toHaveBeenLastCalledWith({ cabecalhos: mocks.headers });
+  mocks.listar.mockResolvedValueOnce({
+    pedidos: [
+      {
+        numero: "20260910-PAGO22",
+        criadoEm: new Date("2026-09-10T15:00:00Z"),
+        situacao: "PAGO",
+        modalidade: "RETIRADA",
+        totalCentavos: 960000,
+        unidades: 2,
+      },
+    ],
+    total: 21,
+    pagina: 2,
+    totalPaginas: 2,
+  });
+  render(await PaginaPedidos(naPagina2));
+  expect(mocks.listar).toHaveBeenLastCalledWith({ cabecalhos: mocks.headers }, { pagina: "2" });
+  expect(screen.getByRole("link", { name: "1" }).getAttribute("href")).toBe("/conta/pedidos");
   expect(screen.getByRole("link", { name: "Pedido 20260910-PAGO22" })).toBeDefined();
   expect(metadataLista.title).toBe("Meus pedidos · Kolô");
 });

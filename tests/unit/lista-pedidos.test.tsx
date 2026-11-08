@@ -26,6 +26,9 @@ it("RF16 lista cada pedido com data, situação, total e itens, levando ao detal
           unidades: 1,
         },
       ]}
+      total={2}
+      pagina={1}
+      totalPaginas={1}
     />,
   );
   expect(screen.getByRole("heading", { level: 1, name: "Meus pedidos" })).toBeDefined();
@@ -49,7 +52,7 @@ it("RF16 lista cada pedido com data, situação, total e itens, levando ao detal
 });
 
 it("RF16 sem pedidos, avisa e leva ao catálogo", () => {
-  render(<ListaPedidos pedidos={[]} />);
+  render(<ListaPedidos pedidos={[]} total={0} pagina={1} totalPaginas={0} />);
   expect(screen.queryByRole("list")).toBeNull();
   expect(screen.getByText("Você ainda não tem pedidos.")).toBeDefined();
   expect(screen.getByRole("link", { name: "Ver obras" }).getAttribute("href")).toBe("/obras");
