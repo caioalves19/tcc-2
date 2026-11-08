@@ -48,6 +48,7 @@ export function FormularioExclusaoConta({
   const erroConfirmo = errors.confirmo?.message;
   return (
     <form
+      method="post"
       noValidate
       onSubmit={(evento) => void handleSubmit(enviar)(evento)}
       className="grid gap-5"

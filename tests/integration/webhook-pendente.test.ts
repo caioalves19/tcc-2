@@ -2,6 +2,7 @@ import { expect, it, vi } from "vitest";
 import {
   cenarioWebhook,
   AGORA,
+  RESERVA_ATE,
   SEGREDO,
   PIX_PENDENTE,
   notificacao,
@@ -170,4 +171,100 @@ it("RN06 Pix pago depois dos 10 minutos usa a reserva prorrogada e confirma o pe
   expect(final).toMatchObject({ situacao: "PAGO", pagoEm: umaHoraDepois, estoque: 0, reservas: 0 });
   expect(final.pagamentos).toMatchObject([{ metodo: "PIX", situacao: "APROVADO" }]);
   expect(await vencimentoDaReserva(cliente.sessaoId)).toEqual([]);
+});
+
+// APS (qualidade): ramos do RN06/PBI-43 que a suíte ainda não exercitava.
+it("RN06 cartão em análise fica pendente sem prorrogar a reserva: só Pix e boleto seguram a obra", async () => {
+  const { processarNotificacao } = await import("../../src/modules/payments");
+  const { obra, cliente } = await pedidoPendente(
+    "t7-analise",
+    "20261011-ANALI1",
+    "analise@pbi28.test",
+  );
+  const gateway = gatewayDeTeste({
+    "700041": pagamentoMp("700041", "20261011-ANALI1", {
+      status: "in_process",
+      status_detail: "pending_contingency",
+      date_approved: null,
+    }),
+  });
+
+  expect(
+    await processarNotificacao(notificacao("700041"), { gateway, segredo: SEGREDO, agora: AGORA }),
+  ).toEqual({ status: 200 });
+
+  const final = await estado("20261011-ANALI1", obra);
+  expect(final).toMatchObject({ situacao: "PENDENTE", estoque: 2, reservas: 1 });
+  expect(final.pagamentos).toMatchObject([
+    { id_externo: "700041", metodo: "CARTAO", situacao: "PENDENTE" },
+  ]);
+  expect(await vencimentoDaReserva(cliente.sessaoId)).toEqual([new Date(RESERVA_ATE)]);
+});
+
+it("PBI-43 Pix que expira com outro Pix do pedido em aberto não cancela o pedido", async () => {
+  const { processarNotificacao } = await import("../../src/modules/payments");
+  const { obra } = await pedidoPendente("t7-dois-pix", "20261011-DOISP1", "doispix@pbi28.test");
+  const gateway = gatewayDeTeste({
+    "700042": pagamentoMp("700042", "20261011-DOISP1", PIX_PENDENTE),
+    "700043": pagamentoMp("700043", "20261011-DOISP1", PIX_PENDENTE),
+  });
+  const opcoes = { gateway, segredo: SEGREDO, agora: AGORA };
+  await processarNotificacao(notificacao("700042"), opcoes);
+  await processarNotificacao(notificacao("700043"), opcoes);
+  gateway.trocar(
+    "700042",
+    pagamentoMp("700042", "20261011-DOISP1", {
+      ...PIX_PENDENTE,
+      status: "cancelled",
+      status_detail: "expired",
+    }),
+  );
+
+  expect(
+    await processarNotificacao(notificacao("700042"), {
+      ...opcoes,
+      agora: new Date("2026-10-12T15:01:00.000Z"),
+    }),
+  ).toEqual({ status: 200 });
+
+  const final = await estado("20261011-DOISP1", obra);
+  expect(final).toMatchObject({ situacao: "PENDENTE", estoque: 2 });
+  expect(final.pagamentos).toMatchObject([
+    { id_externo: "700042", situacao: "RECUSADO" },
+    { id_externo: "700043", situacao: "PENDENTE" },
+  ]);
+});
+
+it("PBI-43 Pix de outra tentativa que expira depois do pedido pago não mexe no pedido", async () => {
+  const { processarNotificacao } = await import("../../src/modules/payments");
+  const { obra } = await pedidoPendente("t7-pago-pix", "20261011-PAGOP1", "pagopix@pbi28.test");
+  const gateway = gatewayDeTeste({
+    "700044": pagamentoMp("700044", "20261011-PAGOP1"),
+    "700045": pagamentoMp("700045", "20261011-PAGOP1", PIX_PENDENTE),
+  });
+  const opcoes = { gateway, segredo: SEGREDO, agora: AGORA };
+  await processarNotificacao(notificacao("700044"), opcoes);
+  await processarNotificacao(notificacao("700045"), opcoes);
+  gateway.trocar(
+    "700045",
+    pagamentoMp("700045", "20261011-PAGOP1", {
+      ...PIX_PENDENTE,
+      status: "cancelled",
+      status_detail: "expired",
+    }),
+  );
+
+  expect(
+    await processarNotificacao(notificacao("700045"), {
+      ...opcoes,
+      agora: new Date("2026-10-12T15:01:00.000Z"),
+    }),
+  ).toEqual({ status: 200 });
+
+  const final = await estado("20261011-PAGOP1", obra);
+  expect(final).toMatchObject({ situacao: "PAGO", estoque: 0 });
+  expect(final.pagamentos).toMatchObject([
+    { id_externo: "700044", situacao: "APROVADO" },
+    { id_externo: "700045", situacao: "RECUSADO" },
+  ]);
 });

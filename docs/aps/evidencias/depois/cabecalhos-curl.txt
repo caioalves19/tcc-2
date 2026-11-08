@@ -1,0 +1,41 @@
+### /
+HTTP/1.1 200 OK
+content-security-policy: default-src 'self'; script-src 'self' 'nonce-7BjHmekFSA7h2ysP17FUnw==' 'strict-dynamic'; style-src 'self' 'nonce-7BjHmekFSA7h2ysP17FUnw=='; style-src-attr 'unsafe-inline'; img-src 'self' data: https://imagens-carga.invalid; connect-src 'self' https://conta-ficticia-e2e.r2.cloudflarestorage.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+permissions-policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+referrer-policy: strict-origin-when-cross-origin
+x-content-type-options: nosniff
+x-frame-options: DENY
+### /robots.txt
+HTTP/1.1 404 Not Found
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+X-Frame-Options: DENY
+Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+### /sitemap.xml
+HTTP/1.1 404 Not Found
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+X-Frame-Options: DENY
+Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+### /marca/atelie-selo.svg
+HTTP/1.1 200 OK
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+X-Frame-Options: DENY
+Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+### /nao.existe
+HTTP/1.1 404 Not Found
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+X-Frame-Options: DENY
+Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+### static
+HTTP/1.1 200 OK
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()

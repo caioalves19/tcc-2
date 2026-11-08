@@ -50,6 +50,7 @@ export function FormularioPerfil({
   }
   return (
     <form
+      method="post"
       noValidate
       onChange={() => setSucesso(false)}
       onSubmit={(evento) => {

@@ -376,3 +376,21 @@ it("PBI-42 pagamento visto já estornado não conclui o pedido pago sem unidade 
     { idExterno: "740001", situacao: "ESTORNADO", acaoEstorno: null },
   ]);
 });
+
+// APS (qualidade): pagamento inexistente, ramo que a suíte ainda não exercitava.
+it("PBI-43 pagamento que não é do pedido é recusado sem chamar o Mercado Pago", async () => {
+  const { estornarPagamento } = await import("../../src/modules/payments");
+  const { obra } = await pedidoPago("e9-inexistente", "20261012-E9INE1");
+  const gateway = gatewayDeEstorno();
+
+  expect(
+    await estornarPagamento(
+      { numero: "20261012-E9INE1", idExterno: "mp-nao-existe" },
+      cenario.contas.admin,
+      { gateway },
+    ),
+  ).toMatchObject({ ok: false, erro: "nao_encontrado" });
+
+  expect(gateway.estornos).toEqual([]);
+  expect(await estado("20261012-E9INE1", obra)).toMatchObject({ situacao: "PAGO", estoque: 0 });
+});

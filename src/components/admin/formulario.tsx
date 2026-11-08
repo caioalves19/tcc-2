@@ -97,6 +97,7 @@ export function FormularioAdmin({
 }) {
   return (
     <form
+      method="post"
       onSubmit={(evento) => {
         evento.preventDefault();
         const form = evento.currentTarget;

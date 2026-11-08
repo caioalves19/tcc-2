@@ -1,0 +1,183 @@
+
+> kolo@0.0.0 test:coverage
+> vitest run --config vitest.coverage.config.ts --coverage
+
+
+ RUN  v4.1.12 <repo>
+      Coverage enabled with v8
+
+(node:18976) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:31952) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:13848) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:34544) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:28600) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:32020) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Not implemented: navigation to another Document
+
+ Test Files  164 passed (164)
+      Tests  848 passed (848)
+   Start at  20:47:17
+   Duration  265.84s (transform 12.59s, setup 0ms, import 296.24s, tests 1148.40s, environment 274.98s)
+
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   92.06 |    87.39 |   92.82 |   92.46 |                   
+ src               |   94.11 |       50 |     100 |   93.75 |                   
+  ...umentation.ts |    87.5 |       50 |     100 |    87.5 | 4                 
+ src/app           |   37.03 |    33.33 |      50 |   37.03 |                   
+  layout.tsx       |       0 |        0 |       0 |       0 | 18-70             
+ src/app/admin     |   31.42 |    66.66 |   18.18 |   28.12 |                   
+  actions.ts       |       0 |        0 |       0 |       0 | 1-62              
+ ...admin/artistas |       0 |        0 |       0 |       0 |                   
+  page.tsx         |       0 |        0 |       0 |       0 | 7-13              
+ .../admin/estilos |       0 |        0 |       0 |       0 |                   
+  page.tsx         |       0 |        0 |       0 |       0 | 7-8               
+ ...pp/admin/obras |       0 |        0 |       0 |       0 |                   
+  actions.ts       |       0 |        0 |       0 |       0 | 1-49              
+  page.tsx         |       0 |        0 |       0 |       0 | 18-37             
+ ...app/admin/tags |       0 |        0 |       0 |       0 |                   
+  page.tsx         |       0 |        0 |       0 |       0 | 7-8               
+ ...pp/agendamento |       0 |        0 |       0 |       0 |                   
+  actions.ts       |       0 |      100 |       0 |       0 | 1-7               
+  page.tsx         |       0 |        0 |       0 |       0 | 7-11              
+ src/app/cadastro  |    62.5 |       50 |      50 |    62.5 |                   
+  actions.ts       |   83.33 |       50 |     100 |   83.33 | 15                
+  page.tsx         |       0 |      100 |       0 |       0 | 7-12              
+ src/app/carrinho  |   76.92 |    58.82 |   66.66 |   76.19 |                   
+  actions.ts       |   76.92 |    71.42 |      60 |      80 | 36-40             
+  cookie.ts        |     100 |    83.33 |     100 |     100 | 29                
+  page.tsx         |       0 |        0 |       0 |       0 | 8-15              
+ src/app/conta     |   60.86 |       60 |      40 |   63.15 |                   
+  actions.ts       |   43.75 |    33.33 |      25 |   46.15 | 18-30             
+ src/app/contato   |      75 |       70 |     100 |      75 |                   
+  formulario.tsx   |   70.83 |    66.66 |     100 |   70.83 | 51-55,58-59       
+ .../esqueci-senha |       0 |      100 |       0 |       0 |                   
+  actions.ts       |       0 |      100 |       0 |       0 | 1-12              
+  page.tsx         |       0 |      100 |       0 |       0 | 7-12              
+ src/app/imagens   |       0 |      100 |       0 |       0 |                   
+  actions.ts       |       0 |      100 |       0 |       0 | 1-12              
+ src/app/login     |   58.33 |       50 |   33.33 |   58.33 |                   
+  actions.ts       |   77.77 |      100 |      50 |   77.77 | 25-26             
+  page.tsx         |       0 |        0 |       0 |       0 | 7-18              
+ ...rtfolio/gestao |     100 |    91.66 |     100 |     100 |                   
+  page.tsx         |     100 |       90 |     100 |     100 | 28                
+ ...edefinir-senha |      50 |    33.33 |      50 |      50 |                   
+  actions.ts       |      20 |        0 |       0 |      20 | 11-16             
+  page.tsx         |     100 |       50 |     100 |     100 | 28                
+ ...mponents/admin |   91.39 |    85.41 |   88.88 |   92.15 |                   
+  ...no-pedido.tsx |     100 |    96.55 |     100 |     100 | 42                
+  formulario.tsx   |   92.85 |      100 |     100 |    92.3 | 73-74             
+  ...-artistas.tsx |   58.06 |    57.89 |      50 |      60 | 74,176-237        
+  ...gens-obra.tsx |   94.11 |    81.81 |   88.88 |   96.29 | 172               
+  gestao-obras.tsx |    92.5 |     85.1 |   94.11 |   94.59 | 246-247           
+  ...axonomias.tsx |   78.94 |    68.18 |      80 |   83.33 | 64-65,118         
+  ...tes-admin.tsx |     100 |    84.21 |     100 |     100 | 9,12,55           
+  ...dos-admin.tsx |     100 |       96 |     100 |     100 | 89                
+  pedido-admin.tsx |     100 |     87.5 |     100 |     100 | 114-122           
+  ...nte-admin.tsx |     100 |    92.85 |     100 |     100 | 51                
+ ...ponents/agenda |   94.04 |    91.66 |   97.05 |   93.42 |                   
+  ...da-semana.tsx |   93.02 |    90.38 |   93.33 |    92.1 | 65-66,146         
+  ...o-horario.tsx |   95.12 |    93.75 |     100 |   94.73 | 107-108           
+ ...omponents/auth |   79.59 |    62.29 |      90 |   80.13 |                   
+  ...-cadastro.tsx |      75 |       25 |     100 |      75 | 47-49             
+  ...-endereco.tsx |   26.31 |       10 |      25 |   26.31 | 34-49,55-58       
+  ...sao-conta.tsx |   83.33 |       80 |     100 |   88.23 | 36-37             
+  ...rio-login.tsx |     100 |       50 |     100 |     100 | 41                
+  ...cuperacao.tsx |    87.5 |       50 |     100 |    87.5 | 44-45             
+  ...definicao.tsx |   83.33 |    57.14 |     100 |   83.33 | 68-70             
+  ...oca-senha.tsx |   76.19 |       75 |     100 |   76.19 | 40-41,45-51       
+ ...ponents/layout |     100 |    96.96 |     100 |     100 |                   
+  cabecalho.tsx    |     100 |    96.29 |     100 |     100 | 121               
+ ...omponents/loja |   94.32 |    93.54 |     100 |   93.89 |                   
+  ...-carrinho.tsx |   83.33 |      100 |     100 |   83.33 | 35-37             
+  card-obra.tsx    |     100 |    94.73 |     100 |     100 | 30                
+  ...o-compras.tsx |   86.95 |    80.76 |     100 |      85 | 52-55             
+  ...ut-compra.tsx |    91.3 |    95.83 |     100 |    90.9 | 53-54             
+  ...-checkout.tsx |     100 |       90 |     100 |     100 | 74,147-169        
+ ...mponents/media |     100 |     90.9 |     100 |     100 |                   
+  ...ad-imagem.tsx |     100 |     90.9 |     100 |     100 | 47,86             
+ ...ents/politicas |   96.55 |    91.66 |     100 |     100 |                   
+  ...-politica.tsx |   96.55 |    91.66 |     100 |     100 | 53                
+ ...ents/portfolio |   92.75 |    93.33 |   88.23 |   93.65 |                   
+  ...-trabalho.tsx |   97.14 |    97.22 |     100 |     100 | 52                
+  ...tatuagens.tsx |     100 |    89.28 |     100 |     100 | 55,82,101         
+  ...portfolio.tsx |   83.33 |     92.3 |   76.47 |   81.81 | 67,137-139        
+ ...nts/scheduling |    96.2 |    96.55 |     100 |   97.26 |                   
+  ...endamento.tsx |    96.2 |    96.55 |     100 |   97.26 | 134-135           
+ src/lib           |   96.72 |    90.19 |   95.45 |   96.49 |                   
+  database-url.ts  |      80 |       75 |     100 |      80 | 8                 
+  fuso.ts          |     100 |    94.44 |     100 |     100 | 45                
+  requisicao.ts    |     100 |    66.66 |     100 |     100 | 5                 
+  tarefas.ts       |   83.33 |        0 |      50 |   83.33 | 11                
+ src/lib/auth      |   91.17 |    82.35 |     100 |    90.9 |                   
+  index.ts         |   91.17 |    82.35 |     100 |    90.9 | ...91,300,310,376 
+ src/lib/email     |   90.69 |    72.22 |      90 |   90.69 |                   
+  enviador.ts      |      75 |       75 |      75 |      75 | 24-34             
+  envio.ts         |     100 |       70 |     100 |     100 | 15,56-59          
+ ...odules/artists |   96.24 |    89.33 |   95.23 |   97.47 |                   
+  acesso.ts        |   90.62 |    78.26 |   85.71 |   92.59 | 40,67             
+  artistas.ts      |   95.83 |    86.36 |   93.75 |   97.72 | 115               
+ ...odules/catalog |   98.96 |    89.16 |     100 |   98.87 |                   
+  imagens.ts       |   97.01 |    80.55 |     100 |   96.82 | 26,33             
+  obras.ts         |     100 |    96.66 |     100 |     100 | 149               
+  publico.ts       |     100 |    81.81 |     100 |     100 | 51,86,153         
+  regras.ts        |     100 |       95 |     100 |     100 | 23                
+ ...odules/contact |   94.59 |    93.75 |     100 |   94.59 |                   
+  turnstile.ts     |   84.61 |     87.5 |     100 |   84.61 | 24,34             
+ ...ules/customers |   95.83 |    90.69 |     100 |   98.46 |                   
+  exclusao.ts      |   94.23 |    89.28 |     100 |   97.82 | 163               
+  gestao.ts        |     100 |     92.3 |     100 |     100 | 33                
+ ...dules/identity |   98.11 |    92.85 |     100 |   98.11 |                   
+  index.ts         |   94.44 |       90 |     100 |   94.44 | 116               
+ src/modules/media |    95.2 |    91.57 |      90 |   96.22 |                   
+  assinatura.ts    |     100 |    86.66 |     100 |     100 | 34,79             
+  autorizacao.ts   |   94.11 |    95.45 |     100 |     100 | 23                
+  miniatura.ts     |     100 |    94.73 |     100 |     100 | 59                
+  processamento.ts |     100 |    85.71 |     100 |     100 | 17,45             
+  r2.ts            |   76.19 |       80 |      75 |   77.77 | 64-65,72-77       
+ ...modules/orders |   97.26 |    90.28 |     100 |    98.2 |                   
+  carrinho.ts      |   96.42 |    77.27 |     100 |   97.46 | 45,80             
+  checkout.ts      |   97.46 |     92.3 |     100 |    98.5 | 300               
+  gestao.ts        |     100 |       95 |     100 |     100 | 182,307           
+  juntar.ts        |   86.36 |    78.57 |     100 |   85.71 | 35,56-60          
+  regras.ts        |     100 |    97.91 |     100 |     100 | 181               
+  reserva.ts       |   97.14 |    92.42 |     100 |   97.64 | 81,232            
+  transicoes.ts    |   91.42 |    71.42 |     100 |     100 | 24-68             
+ ...dules/payments |   93.98 |    88.51 |     100 |   96.95 |                   
+  assinatura.ts    |     100 |       50 |     100 |     100 | 25                
+  cancelamento.ts  |   90.24 |    83.33 |     100 |   94.59 | 41-42             
+  estorno.ts       |   90.47 |     90.9 |     100 |    92.3 | 87-88,142         
+  mercado-pago.ts  |   96.55 |      100 |     100 |   96.15 | 18                
+  pagamento.ts     |   95.65 |    80.76 |     100 |     100 | 46,78-79,91       
+  webhook.ts       |   93.61 |    86.66 |     100 |   98.66 | 213               
+ ...ules/portfolio |   95.27 |    84.88 |     100 |   94.78 |                   
+  acesso.ts        |   79.31 |    72.72 |     100 |   76.92 | 24,49-62          
+  leitura.ts       |     100 |       80 |     100 |     100 | 40-47             
+  publico.ts       |     100 |    77.77 |     100 |     100 | 83-90             
+ ...odules/reports |     100 |    87.87 |     100 |     100 |                   
+  periodo.ts       |     100 |     90.9 |     100 |     100 | 39-40             
+  relatorio.ts     |     100 |       80 |     100 |     100 | 78-89             
+ ...les/scheduling |   95.89 |    88.23 |     100 |    97.1 |                   
+  ...da-leitura.ts |   96.42 |    83.33 |     100 |     100 | 51-55             
+  agenda-regras.ts |     100 |    83.33 |     100 |     100 | 10                
+  agenda.ts        |   96.61 |    89.21 |     100 |   98.07 | 52,176            
+  servico.ts       |   84.21 |    83.33 |     100 |   82.35 | 35,49,62          
+  validacao.ts     |     100 |    93.33 |     100 |     100 | 43                
+ ...dules/settings |     100 |    83.33 |     100 |     100 |                   
+  site.ts          |     100 |       50 |     100 |     100 | 22                
+-------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 92.06% ( 3122/3391 )
+Branches     : 87.39% ( 2115/2420 )
+Functions    : 92.82% ( 918/989 )
+Lines        : 92.46% ( 2849/3081 )
+================================================================================
