@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { buttonVariants } from "@/components/ui/button";
+import { Paginacao } from "@/components/ui/paginacao";
 import type { GaleriaPublica } from "@/modules/portfolio";
 
 export function GaleriaTatuagens({
@@ -8,8 +9,20 @@ export function GaleriaTatuagens({
   estilos,
   regioes,
   filtros,
+  total,
+  pagina,
+  totalPaginas,
   baseImagens,
 }: GaleriaPublica & { baseImagens: string | null }) {
+  const parametros = {
+    artista: filtros.artista,
+    estilo: filtros.estilo,
+    regiao: filtros.regiao,
+    busca: filtros.busca,
+  };
+  const primeiraPagina = new URLSearchParams(
+    Object.entries(parametros).filter((par): par is [string, string] => Boolean(par[1])),
+  ).toString();
   const base = baseImagens?.replace(/\/+$/, "");
   // RF18 (PBI-37): com busca ou filtro ativo, mostra a contagem e o caminho para limpar tudo.
   const filtrado = Boolean(filtros.artista || filtros.estilo || filtros.regiao);
@@ -72,16 +85,21 @@ export function GaleriaTatuagens({
           </a>
         )}
       </form>
-      {trabalhos.length === 0 ? (
+      {total === 0 ? (
         <p className="mt-8" role="status">
           {ativo ? vazio : "Ainda não há tatuagens cadastradas."}
         </p>
+      ) : trabalhos.length === 0 ? (
+        <a
+          href={primeiraPagina ? `/tatuagens?${primeiraPagina}` : "/tatuagens"}
+          className={`mt-8 ${buttonVariants({ variant: "contorno" })}`}
+        >
+          Ir para a primeira página
+        </a>
       ) : (
         ativo && (
           <p className="mt-6 text-nota" role="status">
-            {trabalhos.length === 1
-              ? "1 trabalho encontrado"
-              : `${trabalhos.length} trabalhos encontrados`}
+            {total === 1 ? "1 trabalho encontrado" : `${total} trabalhos encontrados`}
           </p>
         )
       )}
@@ -117,6 +135,12 @@ export function GaleriaTatuagens({
           </article>
         ))}
       </div>
+      <Paginacao
+        caminho="/tatuagens"
+        parametros={parametros}
+        pagina={pagina}
+        totalPaginas={totalPaginas}
+      />
     </>
   );
 }

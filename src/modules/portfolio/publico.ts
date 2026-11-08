@@ -7,7 +7,10 @@ const filtrosSchema = z.object({
   estilo: z.uuid().optional().catch(undefined),
   regiao: z.string().trim().min(1).max(100).optional().catch(undefined),
   busca: z.string().catch(""),
+  pagina: z.coerce.number().int().min(1).max(1_000_000).catch(1),
 });
+
+const TRABALHOS_POR_PAGINA = 12;
 
 // RF18 (PBI-37): ids dos trabalhos com todas as palavras no título, na descrição, na região, nos
 // estilos ou no nome do artista; sem acento e por começo de palavra, com a configuração kolo_busca
@@ -34,23 +37,28 @@ export async function listarGaleria(
     estilo?: unknown;
     regiao?: unknown;
     busca?: unknown;
+    pagina?: unknown;
   } = {},
 ) {
-  const { busca, ...demais } = filtrosSchema.parse(entrada);
+  const { busca, pagina, ...demais } = filtrosSchema.parse(entrada);
   const palavras = palavrasDaBusca(busca);
   // A busca volta limpa (só as palavras que valem), para o formulário mostrar o que foi usado.
   const filtros = { ...demais, busca: palavras.join(" ") };
   const db = obterPrisma();
   const visivel = { artist: { user: { deletedAt: null } } };
-  const [trabalhos, artistas, estilos, regioes] = await Promise.all([
+  const onde = {
+    ...visivel,
+    artistId: filtros.artista,
+    ...(palavras.length > 0 ? { id: { in: await idsDaBusca(palavras) } } : {}),
+    bodyRegion: filtros.regiao,
+    ...(filtros.estilo ? { styles: { some: { tattooStyleId: filtros.estilo } } } : {}),
+  };
+  const [total, trabalhos, artistas, estilos, regioes] = await Promise.all([
+    db.portfolioItem.count({ where: onde }),
     db.portfolioItem.findMany({
-      where: {
-        ...visivel,
-        artistId: filtros.artista,
-        ...(palavras.length > 0 ? { id: { in: await idsDaBusca(palavras) } } : {}),
-        bodyRegion: filtros.regiao,
-        ...(filtros.estilo ? { styles: { some: { tattooStyleId: filtros.estilo } } } : {}),
-      },
+      where: onde,
+      skip: (pagina - 1) * TRABALHOS_POR_PAGINA,
+      take: TRABALHOS_POR_PAGINA,
       include: {
         artist: { select: { user: { select: { name: true } } } },
         styles: { include: { tattooStyle: true }, orderBy: { tattooStyle: { name: "asc" } } },
@@ -76,6 +84,9 @@ export async function listarGaleria(
   ]);
   return {
     filtros,
+    total,
+    pagina,
+    totalPaginas: Math.ceil(total / TRABALHOS_POR_PAGINA),
     trabalhos: trabalhos.map((t) => ({
       id: t.id,
       titulo: t.title,
