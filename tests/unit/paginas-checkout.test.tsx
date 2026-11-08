@@ -49,7 +49,7 @@ const ENDERECO = {
 
 it("RN01 visitante vai para o login e carrinho vazio volta ao carrinho", async () => {
   mocks.resumo.mockResolvedValueOnce({ ok: false, erro: "nao_autenticado", mensagem: "Entre." });
-  await expect(PaginaCheckout()).rejects.toThrow("redirect:/login");
+  await expect(PaginaCheckout()).rejects.toThrow("redirect:/login?destino=%2Fcheckout");
   expect(mocks.resumo).toHaveBeenCalledWith(
     expect.objectContaining({ cabecalhos: mocks.headers, tokenVisitante: null }),
   );

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AgendaSemana } from "@/components/agenda/agenda-semana";
+import { urlDeLogin } from "@/modules/identity";
 import { lerAgenda } from "@/modules/scheduling";
 import { cadastrarHorarioAcao, editarHorarioAcao, mudarSituacaoHorarioAcao } from "./actions";
 
@@ -21,7 +22,7 @@ export default async function PaginaAgenda({ searchParams }: Props) {
     semana: primeiro(semana),
     artista: primeiro(artista),
   });
-  if (!agenda.ok && agenda.erro === "nao_autenticado") redirect("/login");
+  if (!agenda.ok && agenda.erro === "nao_autenticado") redirect(urlDeLogin("/agenda"));
   return (
     <section className="mx-auto w-full max-w-pagina px-margem py-12 md:px-margem-desktop md:py-16">
       {agenda.ok ? (

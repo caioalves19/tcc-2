@@ -35,7 +35,7 @@ it("RF11 ao entrar, junta o carrinho do visitante ao da conta e apaga o cookie",
   mocks.cookie.get.mockReturnValue({ value: "token-visitante" });
   mocks.juntar.mockResolvedValue({ ok: true, dados: undefined });
 
-  await expect(entrarAcao(login)).rejects.toThrow("redirect:/");
+  await expect(entrarAcao(undefined, login)).rejects.toThrow("redirect:/");
   expect(mocks.cookie.get).toHaveBeenCalledWith("kolo_carrinho");
   expect(mocks.juntar).toHaveBeenCalledWith("sessao-1", "token-visitante");
   expect(mocks.cookie.delete).toHaveBeenCalledWith("kolo_carrinho");
@@ -53,15 +53,34 @@ it("RF11 ao se cadastrar, também junta o carrinho do visitante", async () => {
   expect(mocks.cookie.delete).toHaveBeenCalledWith("kolo_carrinho");
 });
 
+it("volta à página de origem depois de juntar o carrinho", async () => {
+  mocks.entrar.mockResolvedValue({ ok: true, token: "sessao-4" });
+  mocks.cookie.get.mockReturnValue({ value: "token-visitante" });
+  mocks.juntar.mockResolvedValue({ ok: true, dados: undefined });
+
+  await expect(entrarAcao("/checkout", login)).rejects.toThrow("redirect:/checkout");
+  expect(mocks.juntar).toHaveBeenCalledWith("sessao-4", "token-visitante");
+});
+
+it.each(["https://evil.com", "//evil.com", "/\\evil.com"])(
+  "destino forjado %s termina na home",
+  async (forjado) => {
+    mocks.entrar.mockResolvedValue({ ok: true, token: "sessao-5" });
+    mocks.cookie.get.mockReturnValue(undefined);
+
+    await expect(entrarAcao(forjado, login)).rejects.toThrow(/^redirect:\/$/);
+  },
+);
+
 it("sem cookie não junta nada; login recusado não toca no carrinho", async () => {
   mocks.entrar.mockResolvedValue({ ok: true, token: "sessao-3" });
   mocks.cookie.get.mockReturnValue(undefined);
-  await expect(entrarAcao(login)).rejects.toThrow("redirect:/");
+  await expect(entrarAcao(undefined, login)).rejects.toThrow("redirect:/");
   expect(mocks.juntar).not.toHaveBeenCalled();
 
   mocks.entrar.mockResolvedValue({ ok: false, erro: "credenciais" });
   mocks.cookie.get.mockReturnValue({ value: "token-visitante" });
-  expect(await entrarAcao(login)).toEqual({ ok: false, erro: "credenciais" });
+  expect(await entrarAcao(undefined, login)).toEqual({ ok: false, erro: "credenciais" });
   expect(mocks.juntar).not.toHaveBeenCalled();
   expect(mocks.cookie.delete).not.toHaveBeenCalled();
 });

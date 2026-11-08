@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { DetalhePedido } from "@/components/conta/detalhe-pedido";
 import { sessaoDaRequisicao } from "@/lib/auth";
+import { urlDeLogin } from "@/modules/identity";
 import { lerMeuPedido } from "@/modules/orders";
 
 export const metadata: Metadata = { title: "Pedido · Kolô" };
@@ -14,7 +15,7 @@ export default async function PaginaPedido({ params }: { params: Promise<{ numer
   const cabecalhos = await headers();
   const pedido = await lerMeuPedido(numero, { cabecalhos });
   if (!pedido) {
-    if (!(await sessaoDaRequisicao(cabecalhos))) redirect("/login");
+    if (!(await sessaoDaRequisicao(cabecalhos))) redirect(urlDeLogin(`/conta/pedidos/${numero}`));
     notFound();
   }
   return (

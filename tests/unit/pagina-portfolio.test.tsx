@@ -31,7 +31,9 @@ const busca = (valores: Record<string, string | string[]>) => ({
 });
 it("RN10: visitante vai ao login e acesso proibido mostra recusa sem formulário", async () => {
   mocks.ler.mockResolvedValueOnce({ ok: false, erro: "nao_autenticado", mensagem: "Entre." });
-  await expect(PaginaPortfolio(busca({}))).rejects.toThrow("redirect:/login");
+  await expect(PaginaPortfolio(busca({}))).rejects.toThrow(
+    "redirect:/login?destino=%2Fportfolio%2Fgestao",
+  );
   mocks.ler.mockResolvedValueOnce({ ok: false, erro: "proibido", mensagem: "Só equipe." });
   render(await PaginaPortfolio(busca({})));
   expect(screen.getByRole("alert").textContent).toBe("Só equipe.");

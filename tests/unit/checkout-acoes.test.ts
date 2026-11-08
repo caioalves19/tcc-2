@@ -57,7 +57,7 @@ it("RN01 sem sessão leva ao login", async () => {
     mensagem: "Entre na sua conta para comprar.",
   });
   await expect(finalizarCompraAcao({ modalidade: "RETIRADA" })).rejects.toThrow(
-    "NEXT_REDIRECT /login",
+    "NEXT_REDIRECT /login?destino=%2Fcheckout",
   );
 });
 

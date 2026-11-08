@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { perfilDaRequisicao } from "@/lib/auth";
 import { enderecoDaRequisicao } from "@/lib/endereco";
 import { ENDERECO_VAZIO } from "@/modules/endereco";
+import { urlDeLogin } from "@/modules/identity";
 import { FormularioEndereco } from "@/components/auth/formulario-endereco";
 import { FormularioExclusaoConta } from "@/components/auth/formulario-exclusao-conta";
 import { FormularioPerfil } from "@/components/auth/formulario-perfil";
@@ -21,7 +22,7 @@ export const metadata: Metadata = { title: "Minha conta · Kolô" };
 export default async function PaginaConta() {
   const cabecalhos = await headers();
   const perfil = await perfilDaRequisicao(cabecalhos);
-  if (perfil === null) redirect("/login");
+  if (perfil === null) redirect(urlDeLogin("/conta"));
   const endereco = await enderecoDaRequisicao(cabecalhos);
   return (
     <section className="mx-auto w-full max-w-md px-margem py-16 md:py-24">

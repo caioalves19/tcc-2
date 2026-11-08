@@ -33,7 +33,7 @@ afterEach(() => {
 
 it("RF16/RN01 a lista exige login e mostra os pedidos da sessão", async () => {
   mocks.listar.mockResolvedValueOnce(null);
-  await expect(PaginaPedidos()).rejects.toThrow("redirect:/login");
+  await expect(PaginaPedidos()).rejects.toThrow("redirect:/login?destino=%2Fconta%2Fpedidos");
 
   mocks.listar.mockResolvedValueOnce([
     {
@@ -91,6 +91,6 @@ it("RF16 visitante que abre um pedido vai para o login, sem saber se o pedido ex
   mocks.sessao.mockResolvedValueOnce(null);
   await expect(
     PaginaPedido({ params: Promise.resolve({ numero: "20260902-CARLA2" }) }),
-  ).rejects.toThrow("redirect:/login");
+  ).rejects.toThrow("redirect:/login?destino=%2Fconta%2Fpedidos%2F20260902-CARLA2");
   expect(mocks.sessao).toHaveBeenCalledWith(mocks.headers);
 });

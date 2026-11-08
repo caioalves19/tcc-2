@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { GestaoPortfolio } from "@/components/portfolio/gestao-portfolio";
+import { urlDeLogin } from "@/modules/identity";
 import { lerPortfolio } from "@/modules/portfolio";
 import { solicitarUploadAcao, processarImagemAcao } from "@/app/imagens/actions";
 import {
@@ -20,7 +21,7 @@ export default async function PaginaPortfolio({ searchParams }: Props) {
     await headers(),
     Array.isArray(artista) ? artista[0] : artista,
   );
-  if (!resultado.ok && resultado.erro === "nao_autenticado") redirect("/login");
+  if (!resultado.ok && resultado.erro === "nao_autenticado") redirect(urlDeLogin("/portfolio/gestao"));
   return (
     <section className="mx-auto w-full max-w-pagina px-margem py-12 md:px-margem-desktop md:py-16">
       {resultado.ok ? (

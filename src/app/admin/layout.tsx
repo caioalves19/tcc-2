@@ -3,10 +3,11 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { MenuAdmin } from "@/components/admin/menu-admin";
 import { verificarAcessoAdmin } from "@/modules/artists";
+import { urlDeLogin } from "@/modules/identity";
 
 export default async function LayoutAdmin({ children }: { children: ReactNode }) {
   const acesso = await verificarAcessoAdmin(await headers());
-  if (!acesso.ok && acesso.erro === "nao_autenticado") redirect("/login");
+  if (!acesso.ok && acesso.erro === "nao_autenticado") redirect(urlDeLogin("/admin"));
   if (!acesso.ok)
     return (
       <section className="mx-auto max-w-pagina px-margem py-12">
