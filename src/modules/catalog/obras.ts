@@ -115,7 +115,7 @@ export async function excluirObra(
   return { ok: true, dados: { modo: excluida.dados.modo } };
 }
 
-const OBRAS_ADMIN_POR_PAGINA = 20;
+const OBRAS_ADMIN_POR_PAGINA = 12;
 // Vêm da URL (?pagina=...&editar=...): qualquer valor fora do esperado volta ao padrão.
 const schemaListaObras = z.object({
   pagina: z.coerce.number().int().min(1).max(1_000_000).catch(1),

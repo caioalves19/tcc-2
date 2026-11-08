@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { GestaoObras } from "../../src/components/admin/gestao-obras";
 
 const roteador = vi.hoisted(() => ({ refresh: vi.fn(), replace: vi.fn() }));
@@ -9,6 +9,9 @@ vi.mock("next/navigation", () => ({
   useRouter: () => roteador,
   unstable_rethrow: vi.fn(),
 }));
+beforeEach(() => {
+  Element.prototype.scrollIntoView = vi.fn();
+});
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -70,6 +73,7 @@ function montar(
 
 async function preencherECriar() {
   const usuario = userEvent.setup();
+  await usuario.click(screen.getByRole("button", { name: "Nova obra" }));
   await usuario.type(screen.getByLabelText("Título"), "Nova");
   await usuario.type(screen.getByLabelText("Slug"), "nova");
   await usuario.selectOptions(screen.getByLabelText("Artista"), "artista-1");
@@ -83,6 +87,26 @@ it("criar com a lista cheia pede a obra nova pela URL, na mesma página", async 
   await waitFor(() =>
     expect(roteador.replace).toHaveBeenCalledWith("/admin/obras?pagina=2&editar=nova"),
   );
+});
+
+it("depois de criar, o painel continua aberto no modo edição para receber as imagens", async () => {
+  montar([{ ...publicada, id: "nova", titulo: "Nova" }]);
+  await preencherECriar();
+  expect(await screen.findByRole("heading", { name: "Editar obra" })).toBeDefined();
+});
+
+it("o cadastro abre pelo botão, fecha ao cancelar e Editar leva o foco ao painel", async () => {
+  const usuario = userEvent.setup();
+  montar();
+  expect(screen.queryByLabelText("Título")).toBeNull();
+  await usuario.click(screen.getByRole("button", { name: "Nova obra" }));
+  expect(document.activeElement).toBe(screen.getByLabelText("Título"));
+  await usuario.click(screen.getByRole("button", { name: "Cancelar" }));
+  expect(screen.queryByLabelText("Título")).toBeNull();
+
+  await usuario.click(screen.getByRole("button", { name: "Editar Metrópole em chamas" }));
+  expect(document.activeElement).toBe(screen.getByLabelText("Título"));
+  expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
 });
 
 it("abre o editor da obra que veio pela URL, mesmo fora da página", () => {
@@ -105,6 +129,7 @@ it("mostra a paginação e, além do fim, oferece voltar à primeira", () => {
 it("RF26/RN02 cadastra obra com preço em reais, estoque padrão 1, artista e tags", async () => {
   const usuario = userEvent.setup();
   const { criar } = montar([]);
+  await usuario.click(screen.getByRole("button", { name: "Nova obra" }));
   expect(screen.getByRole("heading", { name: "Cadastrar obra" })).toBeDefined();
   expect((screen.getByLabelText("Estoque") as HTMLInputElement).value).toBe("1");
 

@@ -273,7 +273,7 @@ it("RF26 com carrinho ou pedido, faz exclusão lógica e preserva o histórico",
   ).toEqual([]);
 });
 
-it("lista 20 obras por página, sem repetir, e carrega a obra em edição mesmo fora da página", async () => {
+it("lista 12 obras por página, sem repetir, e carrega a obra em edição mesmo fora da página", async () => {
   const { listarObras } = await import("../../src/modules/catalog");
   const inicio = await listarObras(admin);
   if (!inicio.ok) throw new Error(inicio.mensagem);
@@ -288,9 +288,9 @@ it("lista 20 obras por página, sem repetir, e carrega a obra em edição mesmo 
   expect(primeira.dados).toMatchObject({
     total: existentes + 21,
     pagina: 1,
-    totalPaginas: Math.ceil((existentes + 21) / 20),
+    totalPaginas: Math.ceil((existentes + 21) / 12),
   });
-  expect(primeira.dados.obras).toHaveLength(20);
+  expect(primeira.dados.obras).toHaveLength(12);
   expect(primeira.dados.obras.map((o) => o.id)).not.toContain(ids[20]);
   expect(primeira.dados.emEdicao?.id).toBe(ids[20]);
   expect(segunda.dados.emEdicao).toBeNull();

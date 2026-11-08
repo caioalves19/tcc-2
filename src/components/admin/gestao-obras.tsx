@@ -13,7 +13,14 @@ import {
   slugDoTitulo,
   type SituacaoObra,
 } from "@/modules/catalog/cliente";
-import { CampoAdmin, FormularioAdmin, classeCampo, texto, useGestao } from "./formulario";
+import {
+  CampoAdmin,
+  FormularioAdmin,
+  classeCampo,
+  texto,
+  useGestao,
+  usePainelAberto,
+} from "./formulario";
 import { GestaoImagensObra, type AcoesImagemObra } from "./gestao-imagens-obra";
 
 export type ImagemObra = {
@@ -86,194 +93,212 @@ export function GestaoObras({
   const gestao = useGestao();
   const router = useRouter();
   const base = acoesImagem?.baseImagens?.replace(/\/+$/, "") ?? null;
+  const [nova, setNova] = useState(false);
+  const painel = usePainelAberto(editando?.id ?? (nova ? "nova" : null));
   return (
-    <div className="grid gap-8 lg:grid-cols-2">
-      <section aria-labelledby="formulario-titulo" className="min-w-0">
-        <h2 id="formulario-titulo" className="mb-4 font-display text-xl">
-          {editando ? "Editar obra" : "Cadastrar obra"}
-        </h2>
-        {gestao.feedback}
-        <FormularioAdmin
-          key={editando?.id ?? "nova"}
-          pendente={gestao.pendente}
-          enviar={(dados, form) => {
-            const ficha = {
-              titulo: texto(dados, "titulo"),
-              slug: texto(dados, "slug"),
-              artistaId: texto(dados, "artistaId"),
-              preco: texto(dados, "preco"),
-              estoque: texto(dados, "estoque"),
-              tecnica: texto(dados, "tecnica"),
-              dimensoes: texto(dados, "dimensoes"),
-              ano: texto(dados, "ano"),
-              descricao: texto(dados, "descricao"),
-              destaque: dados.get("destaque") === "on",
-              tags: dados
-                .getAll("tags")
-                .filter((valor): valor is string => typeof valor === "string"),
-            };
-            if (editando) {
-              const publicada = texto(dados, "situacao") === "publicada";
-              void gestao.executar(
-                () => editar({ ...ficha, id: editando.id, publicada }),
-                () => undefined,
-                "Obra salva.",
-              );
-              return;
-            }
-            let criada: string | null = null;
-            void gestao.executar(
-              async () => {
-                const resultado = await criar(ficha);
-                if (resultado.ok) criada = resultado.dados.id;
-                return resultado;
-              },
-              () => {
-                form.reset();
-                // Abre a obra recém-criada para receber as imagens.
-                setEditandoId(criada);
-                // Ela pode cair em outra página: a URL garante que o servidor a entregue.
-                const consulta = new URLSearchParams();
-                if (pagina > 1) consulta.set("pagina", String(pagina));
-                if (criada) consulta.set("editar", criada);
-                router.replace(`/admin/obras?${consulta.toString()}`);
-              },
-              "Obra cadastrada como rascunho. Agora adicione as imagens.",
-            );
-          }}
-        >
-          <CampoAdmin nome="titulo" rotulo="Título" valor={editando?.titulo} obrigatorio />
-          <CampoAdmin nome="slug" rotulo="Slug" valor={editando?.slug} obrigatorio />
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              variant="contorno"
-              size="sm"
-              onClick={(evento) => {
-                const campos = evento.currentTarget.form?.elements;
-                const titulo = campos?.namedItem("titulo");
-                const slug = campos?.namedItem("slug");
-                if (titulo instanceof HTMLInputElement && slug instanceof HTMLInputElement)
-                  slug.value = slugDoTitulo(titulo.value);
+    <div className="grid gap-8">
+      {gestao.feedback}
+      {!nova && !editando && (
+        <div>
+          <Button
+            type="button"
+            onClick={() => {
+              setNova(true);
+              gestao.limpar();
+            }}
+          >
+            Nova obra
+          </Button>
+        </div>
+      )}
+      {(nova || editando) && (
+        <div ref={painel} className="max-w-2xl scroll-mt-24">
+          <section aria-labelledby="formulario-titulo" className="min-w-0">
+            <h2 id="formulario-titulo" className="mb-4 font-display text-xl">
+              {editando ? "Editar obra" : "Cadastrar obra"}
+            </h2>
+            <FormularioAdmin
+              key={editando?.id ?? "nova"}
+              pendente={gestao.pendente}
+              enviar={(dados, form) => {
+                const ficha = {
+                  titulo: texto(dados, "titulo"),
+                  slug: texto(dados, "slug"),
+                  artistaId: texto(dados, "artistaId"),
+                  preco: texto(dados, "preco"),
+                  estoque: texto(dados, "estoque"),
+                  tecnica: texto(dados, "tecnica"),
+                  dimensoes: texto(dados, "dimensoes"),
+                  ano: texto(dados, "ano"),
+                  descricao: texto(dados, "descricao"),
+                  destaque: dados.get("destaque") === "on",
+                  tags: dados
+                    .getAll("tags")
+                    .filter((valor): valor is string => typeof valor === "string"),
+                };
+                if (editando) {
+                  const publicada = texto(dados, "situacao") === "publicada";
+                  void gestao.executar(
+                    () => editar({ ...ficha, id: editando.id, publicada }),
+                    () => undefined,
+                    "Obra salva.",
+                  );
+                  return;
+                }
+                let criada: string | null = null;
+                void gestao.executar(
+                  async () => {
+                    const resultado = await criar(ficha);
+                    if (resultado.ok) criada = resultado.dados.id;
+                    return resultado;
+                  },
+                  () => {
+                    form.reset();
+                    // Abre a obra recém-criada para receber as imagens.
+                    setEditandoId(criada);
+                    // Ela pode cair em outra página: a URL garante que o servidor a entregue.
+                    const consulta = new URLSearchParams();
+                    if (pagina > 1) consulta.set("pagina", String(pagina));
+                    if (criada) consulta.set("editar", criada);
+                    router.replace(`/admin/obras?${consulta.toString()}`);
+                  },
+                  "Obra cadastrada como rascunho. Agora adicione as imagens.",
+                );
               }}
             >
-              Gerar slug pelo título
-            </Button>
-            <p className="text-nota">
-              Letras minúsculas, números e hífens, como metropole-em-chamas.
-            </p>
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="artistaId" className="text-nota font-semibold">
-              Artista
-            </label>
-            <select
-              id="artistaId"
-              name="artistaId"
-              defaultValue={editando?.artistaId ?? ""}
-              required
-              className={classeCampo}
-            >
-              <option value="">Selecione o artista</option>
-              {artistas.map((artista) => (
-                <option key={artista.id} value={artista.id}>
-                  {artista.nome}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="grid gap-2">
-            <label htmlFor="preco" className="text-nota font-semibold">
-              Preço (R$)
-            </label>
-            <input
-              id="preco"
-              name="preco"
-              inputMode="decimal"
-              placeholder="1.234,56"
-              defaultValue={editando ? centavosParaTexto(editando.precoCentavos) : ""}
-              required
-              className={classeCampo}
-            />
-          </div>
-          <CampoAdmin
-            nome="estoque"
-            rotulo="Estoque"
-            tipo="number"
-            valor={String(editando?.estoque ?? 1)}
-            obrigatorio
-          />
-          <p className="text-nota">A maioria das obras é peça única: estoque 1.</p>
-          <CampoAdmin nome="tecnica" rotulo="Técnica" valor={editando?.tecnica} />
-          <CampoAdmin nome="dimensoes" rotulo="Dimensões" valor={editando?.dimensoes} />
-          <CampoAdmin
-            nome="ano"
-            rotulo="Ano"
-            tipo="number"
-            valor={editando && editando.ano !== null ? String(editando.ano) : ""}
-          />
-          <CampoAdmin nome="descricao" rotulo="Descrição" valor={editando?.descricao} longo />
-          <fieldset className="grid gap-2">
-            <legend className="mb-2 text-nota font-semibold">Tags</legend>
-            {tags.length === 0 && <p className="text-nota">Cadastre tags em Tags.</p>}
-            {tags.map((tag) => (
-              <label key={tag.id} className="flex items-center gap-2">
+              <CampoAdmin nome="titulo" rotulo="Título" valor={editando?.titulo} obrigatorio />
+              <CampoAdmin nome="slug" rotulo="Slug" valor={editando?.slug} obrigatorio />
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  type="button"
+                  variant="contorno"
+                  size="sm"
+                  onClick={(evento) => {
+                    const campos = evento.currentTarget.form?.elements;
+                    const titulo = campos?.namedItem("titulo");
+                    const slug = campos?.namedItem("slug");
+                    if (titulo instanceof HTMLInputElement && slug instanceof HTMLInputElement)
+                      slug.value = slugDoTitulo(titulo.value);
+                  }}
+                >
+                  Gerar slug pelo título
+                </Button>
+                <p className="text-nota">
+                  Letras minúsculas, números e hífens, como metropole-em-chamas.
+                </p>
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="artistaId" className="text-nota font-semibold">
+                  Artista
+                </label>
+                <select
+                  id="artistaId"
+                  name="artistaId"
+                  defaultValue={editando?.artistaId ?? ""}
+                  required
+                  className={classeCampo}
+                >
+                  <option value="">Selecione o artista</option>
+                  {artistas.map((artista) => (
+                    <option key={artista.id} value={artista.id}>
+                      {artista.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="preco" className="text-nota font-semibold">
+                  Preço (R$)
+                </label>
+                <input
+                  id="preco"
+                  name="preco"
+                  inputMode="decimal"
+                  placeholder="1.234,56"
+                  defaultValue={editando ? centavosParaTexto(editando.precoCentavos) : ""}
+                  required
+                  className={classeCampo}
+                />
+              </div>
+              <CampoAdmin
+                nome="estoque"
+                rotulo="Estoque"
+                tipo="number"
+                valor={String(editando?.estoque ?? 1)}
+                obrigatorio
+              />
+              <p className="text-nota">A maioria das obras é peça única: estoque 1.</p>
+              <CampoAdmin nome="tecnica" rotulo="Técnica" valor={editando?.tecnica} />
+              <CampoAdmin nome="dimensoes" rotulo="Dimensões" valor={editando?.dimensoes} />
+              <CampoAdmin
+                nome="ano"
+                rotulo="Ano"
+                tipo="number"
+                valor={editando && editando.ano !== null ? String(editando.ano) : ""}
+              />
+              <CampoAdmin nome="descricao" rotulo="Descrição" valor={editando?.descricao} longo />
+              <fieldset className="grid gap-2">
+                <legend className="mb-2 text-nota font-semibold">Tags</legend>
+                {tags.length === 0 && <p className="text-nota">Cadastre tags em Tags.</p>}
+                {tags.map((tag) => (
+                  <label key={tag.id} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      name="tags"
+                      value={tag.id}
+                      defaultChecked={editando?.tags.includes(tag.id)}
+                      className="size-4 focus-visible:ring-3 focus-visible:ring-ring/50"
+                    />
+                    {tag.nome}
+                  </label>
+                ))}
+              </fieldset>
+              <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  name="tags"
-                  value={tag.id}
-                  defaultChecked={editando?.tags.includes(tag.id)}
+                  name="destaque"
+                  defaultChecked={editando?.destaque}
                   className="size-4 focus-visible:ring-3 focus-visible:ring-ring/50"
                 />
-                {tag.nome}
+                Destacar na home
               </label>
-            ))}
-          </fieldset>
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              name="destaque"
-              defaultChecked={editando?.destaque}
-              className="size-4 focus-visible:ring-3 focus-visible:ring-ring/50"
-            />
-            Destacar na home
-          </label>
-          {editando && (
-            <div className="grid gap-2">
-              <label htmlFor="situacao" className="text-nota font-semibold">
-                Situação
-              </label>
-              <select
-                id="situacao"
-                name="situacao"
-                defaultValue={editando.situacao === "RASCUNHO" ? "rascunho" : "publicada"}
-                className={classeCampo}
+              {editando && (
+                <div className="grid gap-2">
+                  <label htmlFor="situacao" className="text-nota font-semibold">
+                    Situação
+                  </label>
+                  <select
+                    id="situacao"
+                    name="situacao"
+                    defaultValue={editando.situacao === "RASCUNHO" ? "rascunho" : "publicada"}
+                    className={classeCampo}
+                  >
+                    <option value="rascunho">Rascunho</option>
+                    <option value="publicada">Publicada</option>
+                  </select>
+                  <p className="text-nota">
+                    Publicar exige pelo menos uma imagem. Publicada fica disponível com estoque
+                    acima de 0 e esgotada com estoque 0.
+                  </p>
+                </div>
+              )}
+              <Button type="submit">{gestao.pendente ? "Salvando…" : "Salvar obra"}</Button>
+              <Button
+                type="button"
+                variant="contorno"
+                onClick={() => {
+                  setNova(false);
+                  setEditandoId(null);
+                  gestao.limpar();
+                }}
               >
-                <option value="rascunho">Rascunho</option>
-                <option value="publicada">Publicada</option>
-              </select>
-              <p className="text-nota">
-                Publicar exige pelo menos uma imagem. Publicada fica disponível com estoque acima de
-                0 e esgotada com estoque 0.
-              </p>
-            </div>
-          )}
-          <Button type="submit">{gestao.pendente ? "Salvando…" : "Salvar obra"}</Button>
-          {editando && (
-            <Button
-              type="button"
-              variant="contorno"
-              onClick={() => {
-                setEditandoId(null);
-                gestao.limpar();
-              }}
-            >
-              Cancelar edição
-            </Button>
-          )}
-        </FormularioAdmin>
-        {editando && acoesImagem && <GestaoImagensObra obra={editando} {...acoesImagem} />}
-      </section>
+                {editando ? "Cancelar edição" : "Cancelar"}
+              </Button>
+            </FormularioAdmin>
+            {editando && acoesImagem && <GestaoImagensObra obra={editando} {...acoesImagem} />}
+          </section>
+        </div>
+      )}
       <section aria-labelledby="lista-titulo" className="min-w-0">
         <h2 id="lista-titulo" className="mb-4 font-display text-xl">
           Obras cadastradas
@@ -285,25 +310,25 @@ export function GestaoObras({
             Ir para a primeira página
           </a>
         ) : (
-          <ul aria-labelledby="lista-titulo" className="grid gap-3">
+          <ul aria-labelledby="lista-titulo" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {registros.map((obra) => {
               const capa = obra.imagens.find((imagem) => imagem.principal) ?? obra.imagens[0];
               return (
                 <li
                   key={obra.id}
-                  className="flex min-w-0 flex-wrap items-center gap-3 rounded-campo border-2 border-[var(--kolo-contorno)] p-3"
+                  className="flex min-w-0 flex-col gap-3 rounded-campo border-2 border-[var(--kolo-contorno)] p-3"
                 >
                   {base && capa && (
                     <Image
                       src={`${base}/${capa.chaveMiniatura}`}
                       alt=""
-                      width={64}
-                      height={64}
-                      sizes="64px"
-                      className="size-16 shrink-0 rounded-campo object-cover"
+                      width={320}
+                      height={320}
+                      sizes="(min-width: 1024px) 22vw, 45vw"
+                      className="aspect-square w-full rounded-campo object-cover"
                     />
                   )}
-                  <div className="min-w-0 flex-1 basis-40">
+                  <div className="min-w-0 flex-1">
                     <p className="break-words font-semibold">{obra.titulo}</p>
                     <p className="break-words text-nota">
                       {obra.artistaNome} · {ROTULO_SITUACAO[obra.situacao]}
@@ -322,6 +347,7 @@ export function GestaoObras({
                       disabled={gestao.pendente}
                       aria-label={`Editar ${obra.titulo}`}
                       onClick={() => {
+                        setNova(false);
                         setEditandoId(obra.id);
                         gestao.limpar();
                       }}
