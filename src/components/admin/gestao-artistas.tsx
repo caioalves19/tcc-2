@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Paginacao } from "@/components/ui/paginacao";
 import type { EntradaArtista, EntradaEditarArtista, ResultadoGestao } from "@/modules/artists";
 import { CampoAdmin, FormularioAdmin, classeCampo, texto, useGestao } from "./formulario";
 
@@ -19,13 +20,26 @@ type Artista = {
 };
 type Props = {
   registros: Artista[];
+  total: number;
+  pagina: number;
+  totalPaginas: number;
   contas: { id: string; name: string; email: string }[];
   estilos: { id: string; nome: string }[];
   criar: (entrada: EntradaArtista) => Promise<ResultadoGestao<unknown>>;
   editar: (entrada: EntradaEditarArtista) => Promise<ResultadoGestao<unknown>>;
   excluir: (id: string) => Promise<ResultadoGestao<unknown>>;
 };
-export function GestaoArtistas({ registros, contas, estilos, criar, editar, excluir }: Props) {
+export function GestaoArtistas({
+  registros,
+  total,
+  pagina,
+  totalPaginas,
+  contas,
+  estilos,
+  criar,
+  editar,
+  excluir,
+}: Props) {
   const [editando, setEditando] = useState<Artista | null>(null);
   const [modo, setModo] = useState<"novo" | "existente">("novo");
   const gestao = useGestao();
@@ -186,30 +200,36 @@ export function GestaoArtistas({ registros, contas, estilos, criar, editar, excl
         <h2 id="lista-titulo" className="mb-4 font-display text-xl">
           Artistas cadastrados
         </h2>
-        {registros.length === 0 ? (
+        {total === 0 ? (
           <p>Nenhum artista cadastrado.</p>
+        ) : registros.length === 0 ? (
+          <a href="/admin/artistas" className="underline underline-offset-4">
+            Ir para a primeira página
+          </a>
         ) : (
           <ul className="grid gap-3">
             {registros.map((artista) => (
               <li
                 key={artista.id}
-                className="rounded-campo border-2 border-[var(--kolo-contorno)] p-4"
+                className="flex min-w-0 flex-wrap items-center gap-3 rounded-campo border-2 border-[var(--kolo-contorno)] p-3"
               >
-                <p className="break-words font-semibold">{artista.nome}</p>
-                <p className="break-words text-nota">
-                  {artista.email} · {artista.slug}
-                </p>
-                <p className="text-nota">
-                  Estilos:{" "}
-                  {estilos
-                    .filter((estilo) => artista.estilos.includes(estilo.id))
-                    .map((estilo) => estilo.nome)
-                    .join(", ") || "Nenhum"}
-                </p>
-                {artista.bio && <p className="break-words text-nota">{artista.bio}</p>}
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="min-w-0 flex-1 basis-40">
+                  <p className="break-words font-semibold">{artista.nome}</p>
+                  <p className="break-words text-nota">
+                    {artista.email} · {artista.slug}
+                  </p>
+                  <p className="text-nota">
+                    Estilos:{" "}
+                    {estilos
+                      .filter((estilo) => artista.estilos.includes(estilo.id))
+                      .map((estilo) => estilo.nome)
+                      .join(", ") || "Nenhum"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
                   <Button
                     type="button"
+                    size="sm"
                     variant="contorno"
                     disabled={gestao.pendente}
                     aria-label={`Editar ${artista.nome}`}
@@ -222,6 +242,7 @@ export function GestaoArtistas({ registros, contas, estilos, criar, editar, excl
                   </Button>
                   <Button
                     type="button"
+                    size="sm"
                     variant="contorno"
                     disabled={gestao.pendente}
                     aria-label={`Excluir ${artista.nome}`}
@@ -247,6 +268,7 @@ export function GestaoArtistas({ registros, contas, estilos, criar, editar, excl
             ))}
           </ul>
         )}
+        <Paginacao caminho="/admin/artistas" pagina={pagina} totalPaginas={totalPaginas} />
       </section>
     </div>
   );

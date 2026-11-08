@@ -9,6 +9,7 @@ export type {
 export {
   criarArtista,
   listarArtistas,
+  listarArtistasPaginados,
   listarContasDisponiveis,
   editarArtista,
   excluirArtista,

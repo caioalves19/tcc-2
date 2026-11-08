@@ -12,6 +12,17 @@ afterEach(cleanup);
 // Testes com muitas interações de userEvent: sozinhos levam ~2 s, mas com a suíte inteira em
 // paralelo passam dos 5 s padrão em máquinas mais lentas.
 vi.setConfig({ testTimeout: 15_000 });
+const semAcao = { contas: [], estilos: [], criar: vi.fn(), editar: vi.fn(), excluir: vi.fn() };
+it("pagina a lista e, além do fim, oferece voltar à primeira", () => {
+  render(<GestaoArtistas {...semAcao} registros={[]} total={21} pagina={9} totalPaginas={2} />);
+  expect(screen.queryByText("Nenhum artista cadastrado.")).toBeNull();
+  expect(screen.getByRole("link", { name: "Ir para a primeira página" }).getAttribute("href")).toBe(
+    "/admin/artistas",
+  );
+  expect(screen.getByRole("link", { name: "2" }).getAttribute("href")).toBe(
+    "/admin/artistas?pagina=2",
+  );
+});
 it("RF28 oferece nova conta e conta existente com seleção de estilos e sem transmitir senha ao vincular", async () => {
   const usuario = userEvent.setup();
   const criar = vi.fn().mockResolvedValue({ ok: true, dados: { id: "artista-1" } });
@@ -25,6 +36,9 @@ it("RF28 oferece nova conta e conta existente com seleção de estilos e sem tra
       criar={criar}
       editar={editar}
       excluir={excluir}
+      total={0}
+      pagina={1}
+      totalPaginas={0}
     />,
   );
   await usuario.type(screen.getByLabelText("Nome"), "Ana");

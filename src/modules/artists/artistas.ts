@@ -1,6 +1,7 @@
 import { hashPassword } from "better-auth/crypto";
 import type { Prisma } from "../../../generated/prisma/client";
 import { comoAdmin, ErroGestao, validar } from "./acesso";
+import { ITENS_POR_PAGINA, lerPagina, totalDePaginas } from "./paginacao";
 import { schemaNovoArtista, schemaEditarArtista, schemaId } from "./validacao";
 
 async function validarEstilos(tx: Prisma.TransactionClient, estilos: string[]) {
@@ -57,24 +58,51 @@ export function criarArtista(entrada: unknown, cabecalhos: Headers) {
     return { id: artista.id };
   });
 }
+const INCLUI_ARTISTA = { user: true, styles: true } satisfies Prisma.ArtistInclude;
+
+function artistaDoAdmin(artista: Prisma.ArtistGetPayload<{ include: typeof INCLUI_ARTISTA }>) {
+  return {
+    id: artista.id,
+    userId: artista.userId,
+    nome: artista.user.name,
+    email: artista.user.email,
+    telefone: artista.user.phone ?? "",
+    slug: artista.slug,
+    bio: artista.bio,
+    avatarUrl: artista.avatarUrl,
+    instagram: artista.instagram,
+    estilos: artista.styles.map((estilo) => estilo.tattooStyleId),
+  };
+}
+
+// Lista inteira, para os seletores de artista (as opções não podem ser cortadas por página).
 export function listarArtistas(cabecalhos: Headers) {
   return comoAdmin(cabecalhos, async (tx) => {
     const artistas = await tx.artist.findMany({
-      include: { user: true, styles: true },
+      include: INCLUI_ARTISTA,
       orderBy: { user: { name: "asc" } },
     });
-    return artistas.map((artista) => ({
-      id: artista.id,
-      userId: artista.userId,
-      nome: artista.user.name,
-      email: artista.user.email,
-      telefone: artista.user.phone ?? "",
-      slug: artista.slug,
-      bio: artista.bio,
-      avatarUrl: artista.avatarUrl,
-      instagram: artista.instagram,
-      estilos: artista.styles.map((estilo) => estilo.tattooStyleId),
-    }));
+    return artistas.map(artistaDoAdmin);
+  });
+}
+
+export function listarArtistasPaginados(entrada: unknown, cabecalhos: Headers) {
+  return comoAdmin(cabecalhos, async (tx) => {
+    const pagina = lerPagina(entrada);
+    const total = await tx.artist.count();
+    const artistas = await tx.artist.findMany({
+      include: INCLUI_ARTISTA,
+      // O id desempata, para um artista não repetir nem sumir entre as páginas.
+      orderBy: [{ user: { name: "asc" } }, { id: "asc" }],
+      skip: (pagina - 1) * ITENS_POR_PAGINA,
+      take: ITENS_POR_PAGINA,
+    });
+    return {
+      artistas: artistas.map(artistaDoAdmin),
+      total,
+      pagina,
+      totalPaginas: totalDePaginas(total),
+    };
   });
 }
 

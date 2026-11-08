@@ -1,12 +1,21 @@
 import { headers } from "next/headers";
-import { listarArtistas, listarContasDisponiveis, listarTaxonomias } from "@/modules/artists";
+import {
+  listarArtistasPaginados,
+  listarContasDisponiveis,
+  listarTaxonomias,
+} from "@/modules/artists";
 import { GestaoArtistas } from "@/components/admin/gestao-artistas";
 import { criarArtistaAcao, editarArtistaAcao, excluirArtistaAcao } from "../actions";
 
-export default async function PaginaArtistas() {
+export default async function PaginaArtistas({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { pagina } = await searchParams;
   const cabecalhos = await headers();
   const [artistas, contas, estilos] = await Promise.all([
-    listarArtistas(cabecalhos),
+    listarArtistasPaginados({ pagina: Array.isArray(pagina) ? pagina[0] : pagina }, cabecalhos),
     listarContasDisponiveis(cabecalhos),
     listarTaxonomias("estilos", cabecalhos),
   ]);
@@ -21,7 +30,10 @@ export default async function PaginaArtistas() {
         <p role="alert">{estilos.mensagem}</p>
       ) : (
         <GestaoArtistas
-          registros={artistas.dados}
+          registros={artistas.dados.artistas}
+          total={artistas.dados.total}
+          pagina={artistas.dados.pagina}
+          totalPaginas={artistas.dados.totalPaginas}
           contas={contas.dados}
           estilos={estilos.dados}
           criar={criarArtistaAcao}
