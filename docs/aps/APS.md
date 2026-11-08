@@ -190,7 +190,7 @@ A auditoria com `npm audit` compara as dependências do projeto com avisos de se
 ## 3.1 Procedimento e materiais
 A avaliação combina dois procedimentos. O primeiro é a análise documental. O enunciado da APS define a estrutura e os objetivos acadêmicos. O escopo versão 2.2 fornece os requisitos, e o DER e o esquema Prisma descrevem os dados. O código e os testes indicam os mecanismos implementados, enquanto os registros da Sprint 2 e a monografia trazem os resultados históricos. A Sprint 3 contextualiza as pendências posteriores à entrega da monografia. Nessa análise foram identificados os fluxos de maior risco e os requisitos associados. Também se conferiu a presença de implementação e testes, e os resultados foram transcritos com atribuição à fonte. Divergências entre documentos foram preservadas como limitações de rastreabilidade.
 
-O segundo procedimento é a medição local, em duas rodadas e com as mesmas ferramentas e comandos. A linha de base mede a revisão `b3587b3`, a da `main` no início da APS, acrescida apenas da configuração de medição da APS. A nova medição mede a revisão `51bb1b8`, que contém as três melhorias. As duas rodadas foram executadas em 6 e 7 de novembro de 2026 na mesma máquina, e as saídas brutas ficaram em `docs/aps/evidencias/baseline/` e `docs/aps/evidencias/depois/` (Equipe Kolô, 2026f, 2026h).
+O segundo procedimento é a medição local, em duas rodadas e com as mesmas ferramentas e comandos. A linha de base mede a revisão `b3587b3`, de 19 de outubro, a última da `main` que alterou o código do sistema antes da APS, acrescida apenas da configuração de medição. Depois dela, a `main` só recebeu documentação, ajustes da CI e imagens de demonstração. A nova medição mede a revisão `51bb1b8`, que contém as três melhorias. As duas rodadas foram executadas em 6 e 7 de novembro de 2026 na mesma máquina, e as saídas brutas ficaram em `docs/aps/evidencias/baseline/` e `docs/aps/evidencias/depois/` (Equipe Kolô, 2026f, 2026h).
 
 ::: {custom-style="Legenda"}
 Quadro 1 Fontes e função na avaliação
@@ -480,6 +480,64 @@ Figura 3 Sequência da compra, do pagamento e da confirmação
 Fonte Elaborado pelos autores a partir do código (Equipe Kolô, 2026d) e das regras RN02 a RN07 e RNF11 (Equipe Kolô, 2026a).
 :::
 
+O Código 1 mostra a trava da reserva. As linhas das obras são travadas sempre na mesma ordem, pelo identificador, para que dois carrinhos com as mesmas obras em ordem diferente não se bloqueiem. Só depois da trava o estoque livre é calculado. O Código 2 mostra o início do tratamento do aviso: o evento é gravado com identificador único, e um aviso já visto termina ali, sem efeito.
+
+::: {custom-style="Legenda"}
+Código 1 Trava das obras e contagem das reservas ativas
+:::
+
+```ts
+// RN04: trava as linhas das obras, sempre na mesma ordem (id), para não haver deadlock, e conta
+// as unidades presas em reservas ativas de outras sessões (todas, se a sessão não existe mais).
+async function travarObras(tx: Tx, ids: string[], sessaoId: string | null, agora: Date) {
+  await tx.$queryRaw`SELECT id FROM artwork WHERE id = ANY(${ids}::uuid[]) ORDER BY id FOR UPDATE`;
+  const obras = await tx.artwork.findMany({ where: { id: { in: ids } } });
+  const reservadas = await tx.artworkReservation.groupBy({
+    by: ["artworkId"],
+    where: {
+      artworkId: { in: ids },
+      expiresAt: { gt: agora },
+      ...(sessaoId ? { sessionId: { not: sessaoId } } : {}),
+    },
+    _sum: { quantity: true },
+  });
+  const ocupadas = (id: string) => reservadas.find((r) => r.artworkId === id)?._sum.quantity ?? 0;
+  return { obras, ocupadas };
+```
+
+::: {custom-style="Legenda"}
+Fonte `src/modules/orders/reserva.ts`, linhas 41 a 56, na revisão `51bb1b8` (Equipe Kolô, 2026d).
+:::
+
+::: {custom-style="Legenda"}
+Código 2 Registro idempotente do aviso de pagamento
+:::
+
+```ts
+async function aplicar(
+  tx: Tx,
+  pagamento: PagamentoLido,
+  dono: Dono,
+  idEvento: string,
+  agora: Date,
+) {
+  // RNF11: aviso já visto não faz nada. Um reenvio simultâneo espera aqui o primeiro terminar a
+  // transação; se o primeiro foi desfeito, este processa no lugar dele.
+  const { count } = await tx.webhookEvent.createMany({
+    data: { eventId: idEvento, source: PROVEDOR, payload: pagamento.registro, processedAt: agora },
+    skipDuplicates: true,
+  });
+  if (count === 0) return;
+  // Mesma ordem de travas do checkout (usuário → pedido → sessão → obras): avisos do mesmo
+  // pedido, e um checkout da mesma conta, se enfileiram aqui.
+  await tx.$queryRaw`SELECT id FROM "user" WHERE id = ${dono.userId}::uuid FOR UPDATE`;
+  await tx.$queryRaw`SELECT id FROM "order" WHERE id = ${dono.id}::uuid FOR UPDATE`;
+```
+
+::: {custom-style="Legenda"}
+Fonte `src/modules/payments/webhook.ts`, linhas 140 a 157, na revisão `51bb1b8` (Equipe Kolô, 2026d).
+:::
+
 **Assistente de agendamento e agenda.** O assistente público percorre sete etapas, do nome aos três avisos obrigatórios: anamnese e termo de consentimento presenciais e declaração de maioridade (Figura 4). Na revisão, o servidor aplica o limite de taxa por IP e valida a preferência. A saída é um *link* `wa.me` com a mensagem pronta, que o próprio cliente envia. Nada do assistente é gravado. O horário só passa a existir quando o artista ou a administração o cadastra na agenda interna. Nesse cadastro, o banco recusa, por uma restrição de exclusão, dois horários sobrepostos do mesmo artista (Equipe Kolô, 2026a).
 
 ::: {custom-style="Legenda"}
@@ -490,6 +548,26 @@ Figura 4 Fluxo do assistente de agendamento e da agenda interna
 
 ::: {custom-style="Legenda"}
 Fonte Elaborado pelos autores a partir do código (Equipe Kolô, 2026d) e de RF20 a RF25 (Equipe Kolô, 2026a).
+:::
+
+A restrição da agenda fica no banco, e não só na aplicação (Código 3). O intervalo é fechado no início e aberto no fim, por isso um horário que termina às 17h e outro que começa às 17h não se sobrepõem. Horários excluídos ou cancelados não ocupam a agenda.
+
+::: {custom-style="Legenda"}
+Código 3 Restrição que impede horários sobrepostos do mesmo artista
+:::
+
+```sql
+ALTER TABLE "appointment"
+  ADD CONSTRAINT "appointment_no_overlap"
+  EXCLUDE USING gist (
+    "artist_id" WITH =,
+    tstzrange("inicia_em", "termina_em", '[)') WITH &&
+  )
+  WHERE ("excluido_em" IS NULL AND "situacao" <> 'CANCELADO');
+```
+
+::: {custom-style="Legenda"}
+Fonte `prisma/migrations/0001_init/migration.sql`, linhas 528 a 534, na revisão `51bb1b8` (Equipe Kolô, 2026d).
 :::
 
 ### 4.1.2 Ciclo de qualidade aplicado
@@ -940,7 +1018,49 @@ Fonte Modelo proposto nesta avaliação e aplicado em Equipe Kolô (2026f).
 ## 4.8 Manutenibilidade e código completo
 A tipagem estrita, as validações por esquema, os módulos com APIs públicas e a integração contínua compõem o processo de manutenção definido no repositório. A presença desses controles facilita detectar regressões, mas não fornece, por si só, uma métrica de esforço de manutenção. As métricas medidas nesta APS, cobertura, complexidade, tamanho de arquivo e saúde da suíte, estão na seção 4.3.4. O tempo médio de correção não foi medido, por falta de registro histórico confiável.
 
-A codificação completa permanece no repositório do projeto, identificado no Apêndice A por endereço e revisão. Este documento apresenta a arquitetura, o modelo de avaliação e um trecho integral representativo do controle de assinatura. A consulta ou entrega do código completo deve usar o repositório identificado; este arquivo Word não contém a transcrição de todos os arquivos do sistema.
+A integração contínua executa, em todo *pull request* e em todo *push* na `main`, a mesma sequência usada como condição de comparação nesta APS (Código 4). O *merge* fica bloqueado se qualquer etapa falhar (RNF22). A cobertura, a carga e a varredura do ZAP ficaram fora da CI por decisão do plano, porque dependem de execução longa ou do *build* local (Equipe Kolô, 2026g).
+
+::: {custom-style="Legenda"}
+Código 4 Etapas de verificação da integração contínua
+:::
+
+```yaml
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Integration tests
+        run: npm run test:integration
+        env:
+          DATABASE_URL: postgresql://kolo_user:kolo_password@localhost:5432/kolo_db
+
+      - name: Build
+        run: npm run build
+
+      # PBI-45: E2E contra o build acima, no Postgres de serviço (banco kolo_e2e descartável).
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tests
+        run: npm run test:e2e
+```
+
+::: {custom-style="Legenda"}
+Fonte `.github/workflows/ci.yml`, linhas 40 a 68, na revisão `51bb1b8` (Equipe Kolô, 2026d). A filtragem por tipo de mudança, que a `main` recebeu em paralelo, não faz parte da revisão avaliada.
+:::
+
+A codificação completa permanece no repositório do projeto, identificado no Apêndice A por endereço e revisão. No corpo, os Códigos 1 a 4 mostram os trechos do sistema discutidos na avaliação. O Apêndice B traz na íntegra o controle de assinatura do *webhook*, e o Apêndice C, todo o código escrito para esta APS. A consulta ao código completo do sistema deve usar o repositório na revisão identificada, porque este documento não transcreve todos os arquivos.
 
 A monografia e a Sprint 2 registram avanços de qualidade em desenvolvimento e testes. A inspeção desta versão também encontra relatórios administrativos já implementados, embora o briefing mais antigo os listasse como adiados. Para essa funcionalidade, prevalecem a atualização do RF32 no escopo, o PBI 48 e o módulo reports presente no código.
 
@@ -976,7 +1096,7 @@ EQUIPE KOLÔ. **Sprint 2**. 2026b. Registro técnico local: tcc-2/docs/Sprint-2.
 
 EQUIPE KOLÔ. **Sprint 3 Pós entrega da monografia**. 2026c. Registro técnico local: tcc-2/docs/SPRINT-3.md.
 
-EQUIPE KOLÔ. **Código-fonte da plataforma Kolô**. 2026d. Revisão a94ad02bc90bf4945ded28b7c1b70960abc71b90. Disponível no repositório: https://github.com/caioalves19/tcc-2/tree/a94ad02bc90bf4945ded28b7c1b70960abc71b90. Cópia local consultada em: 26 out. 2026.
+EQUIPE KOLÔ. **Código-fonte da plataforma Kolô**. 2026d. Revisão 51bb1b8681c9a3e3502952d6e57078c9c1591675. Disponível em: <https://github.com/caioalves19/tcc-2/tree/51bb1b8681c9a3e3502952d6e57078c9c1591675>. Acesso em: 8 nov. 2026.
 
 EQUIPE KOLÔ. **Diagrama Entidade Relacionamento**. 2026e. Documento técnico local: tcc-2/docs/DER.md.
 
@@ -1038,95 +1158,1097 @@ ZAP. **ZAP baseline scan**. ZAP Documentation. [S. l.], [202-]b. Disponível em:
 
 # APÊNDICE A IDENTIFICAÇÃO DO CÓDIGO E DAS EVIDÊNCIAS
 
-Repositório de origem: https://github.com/caioalves19/tcc-2. Revisão local inspecionada: a94ad02bc90bf4945ded28b7c1b70960abc71b90. O estado de trabalho estava sem alterações locais no momento da identificação. O endereço é derivado da configuração local; não foi verificada a disponibilidade externa do repositório.
+Repositório público: <https://github.com/caioalves19/tcc-2>. A avaliação usou duas revisões:
 
-Consulta da codificação completa na revisão: https://github.com/caioalves19/tcc-2/tree/a94ad02bc90bf4945ded28b7c1b70960abc71b90
+- **Linha de base:** `b3587b3f2453b375f2ec6958b6faa6d861a31793`, de 19 de outubro, a última da `main` que alterou o código do sistema antes da APS, acrescida só da configuração de medição.
+- **Revisão avaliada:** `51bb1b8681c9a3e3502952d6e57078c9c1591675`, com as melhorias M1 a M3, incorporada à `main` pelo *pull request* 103.
+
+Consulta da codificação completa na revisão avaliada: <https://github.com/caioalves19/tcc-2/tree/51bb1b8681c9a3e3502952d6e57078c9c1591675>.
+
+Os *commits* posteriores na `main`, como o das listas paginadas, não foram medidos e não fazem parte da avaliação. O texto deste documento e as evidências brutas ficam em `docs/aps/`, no mesmo repositório.
 
 ::: {custom-style="Legenda"}
 Quadro 17 Localização dos materiais para conferência
 :::
 
-| **Material**           | **Caminho relativo a tcc-2**              |
-|------------------------|-------------------------------------------|
-| Implementação          | src/                                      |
-| Esquema e migrações    | prisma/schema.prisma e prisma/migrations/ |
-| Testes unitários       | tests/unit/                               |
-| Testes de integração   | tests/integration/                        |
-| Fluxos E2E e varredura | tests/e2e/                                |
-| Pipeline de integração | .github/workflows/ci.yml                  |
-| Regras e arquitetura   | docs/ESCOPO-E-STACK.md e docs/DER.md      |
-| Resultados históricos  | docs/Sprint-2.md e docs/tcc-2.docx        |
-| Pendências posteriores | docs/SPRINT-3.md                          |
+| **Material**                       | **Caminho relativo à raiz do repositório**    |
+|------------------------------------|-----------------------------------------------|
+| Implementação                      | `src/`                                        |
+| Esquema e migrações                | `prisma/schema.prisma` e `prisma/migrations/` |
+| Testes unitários                   | `tests/unit/`                                 |
+| Testes de integração               | `tests/integration/`                          |
+| Fluxos E2E e varredura             | `tests/e2e/`                                  |
+| Carga e rajada                     | `tests/carga/`                                |
+| Configuração da cobertura          | `vitest.coverage.config.ts`                   |
+| Pipeline de integração             | `.github/workflows/ci.yml`                    |
+| Plano, linha de base e comparativo | `docs/aps/PLANO.md` e `docs/aps/evidencias/`  |
+| Regras e arquitetura               | `docs/ESCOPO-E-STACK.md` e `docs/DER.md`      |
+| Resultados históricos              | `docs/Sprint-2.md` e `docs/tcc-2.docx`        |
+| Pendências posteriores             | `docs/SPRINT-3.md`                            |
 
 ::: {custom-style="Legenda"}
-Fonte Inventário dos caminhos presentes na cópia local consultada.
+Fonte Inventário dos caminhos na revisão `51bb1b8`.
 :::
 
-Para entrega acadêmica, o código completo deve acompanhar o documento por acesso ao repositório ou por exportação da mesma revisão, conforme o procedimento adotado pela disciplina. Arquivos com credenciais, dependências instaladas e bancos de desenvolvimento não integram esse material. As fichas a seguir registram apenas identificação: carga horária e participação individual precisam ser preenchidas e conferidas pelos responsáveis.
+Arquivos com credenciais, dependências instaladas e bancos de desenvolvimento não integram esse material. O Apêndice C traz na íntegra o código produzido para esta APS.
+
+```{=openxml}
+<w:p><w:r><w:br w:type="page"/></w:r></w:p>
+```
 
 # APÊNDICE B CONTROLE DE ASSINATURA DO WEBHOOK
 
-Listagem integral do arquivo src/modules/payments/assinatura.ts na revisão identificada. O trecho mostra o uso do validador do SDK e o tratamento de recusa. A idempotência e as alterações transacionais pertencem a outros arquivos do módulo e devem ser consultadas no código completo.
+Listagem integral do arquivo `src/modules/payments/assinatura.ts` na revisão avaliada. O trecho mostra o uso do validador do SDK e o tratamento de recusa. A idempotência, que aparece no Código 2, e as alterações transacionais ficam em `src/modules/payments/webhook.ts`.
 
-import { InvalidWebhookSignatureError, WebhookSignatureValidator } from \"mercadopago\";
+```ts
+import { InvalidWebhookSignatureError, WebhookSignatureValidator } from "mercadopago";
 
 export type DadosAssinatura = {
-
-assinatura: string \| null;
-
-idRequisicao: string \| null;
-
-idDado: string \| null;
-
-segredo: string;
-
+  assinatura: string | null;
+  idRequisicao: string | null;
+  idDado: string | null;
+  segredo: string;
 };
 
 // RNF11: só processa a notificação que o Mercado Pago assinou (HMAC-SHA256 de id, request-id e
-
 // ts com o segredo do webhook). O validador oficial do SDK compara em tempo constante.
-
 export function assinaturaValida(dados: DadosAssinatura): boolean {
-
-try {
-
-WebhookSignatureValidator.validate({
-
-xSignature: dados.assinatura,
-
-xRequestId: dados.idRequisicao,
-
-dataId: dados.idDado,
-
-secret: dados.segredo,
-
-});
-
-return true;
-
-} catch (erro) {
-
-// O motivo e o x-request-id localizam o aviso no painel do Mercado Pago; nunca o segredo.
-
-console.warn(
-
-\"Assinatura do webhook recusada\",
-
-erro instanceof InvalidWebhookSignatureError ? erro.reason : \"erro desconhecido\",
-
-dados.idRequisicao,
-
-);
-
-return false;
-
+  try {
+    WebhookSignatureValidator.validate({
+      xSignature: dados.assinatura,
+      xRequestId: dados.idRequisicao,
+      dataId: dados.idDado,
+      secret: dados.segredo,
+    });
+    return true;
+  } catch (erro) {
+    // O motivo e o x-request-id localizam o aviso no painel do Mercado Pago; nunca o segredo.
+    console.warn(
+      "Assinatura do webhook recusada",
+      erro instanceof InvalidWebhookSignatureError ? erro.reason : "erro desconhecido",
+      dados.idRequisicao,
+    );
+    return false;
+  }
 }
-
-}
+```
 
 ::: {custom-style="Legenda"}
-Fonte Equipe Kolô (2026d). Código transcrito da cópia local, sem alteração de comportamento.
+Fonte Equipe Kolô (2026d), revisão `51bb1b8`, sem alteração.
 :::
+
+```{=openxml}
+<w:p><w:r><w:br w:type="page"/></w:r></w:p>
+```
+
+# APÊNDICE C CÓDIGO PRODUZIDO PARA A APS
+
+Este apêndice traz todo o código escrito para a avaliação, entre a linha de base (`b3587b3`) e a revisão avaliada (`51bb1b8`). Arquivos novos aparecem na íntegra. Arquivos já existentes aparecem só com a alteração, no formato *diff* do git: as linhas com `+` foram acrescentadas e as com `-`, removidas. A mesma listagem pode ser obtida com `git diff b3587b3 51bb1b8`. Ficaram de fora as instruções de agentes, os documentos e o `package-lock.json`.
+
+**C.1 Configuração da cobertura**
+
+**`vitest.coverage.config.ts`** (arquivo novo, íntegra)
+
+```ts
+import { fileURLToPath } from "node:url";
+
+import { defineConfig } from "vitest/config";
+
+// APS (qualidade): cobertura de unit + integração numa só execução. Precisa do Postgres local
+// (`docker compose up -d`), como `npm run test:integration`. Fora da CI.
+export default defineConfig({
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
+  },
+  test: {
+    globals: true,
+    environment: "node",
+    include: [
+      "src/**/*.{test,spec}.{ts,tsx}",
+      "tests/unit/**/*.{test,spec}.{ts,tsx}",
+      "tests/integration/**/*.{test,spec}.ts",
+    ],
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.d.ts"],
+      reporter: ["text", "json-summary", "json", "html"],
+      reportsDirectory: "coverage",
+    },
+  },
+});
+```
+
+**`package.json`** (alteração, formato *diff*)
+
+```diff
+diff --git a/package.json b/package.json
+index ac5ec9e..eb786b2 100644
+--- a/package.json
++++ b/package.json
+@@ -24,5 +24,6 @@
+     "db:seed": "prisma db seed",
+     "db:generate": "prisma generate",
+-    "postinstall": "prisma generate"
++    "postinstall": "prisma generate",
++    "test:coverage": "vitest run --config vitest.coverage.config.ts --coverage"
+   },
+   "devDependencies": {
+@@ -37,4 +38,5 @@
+     "@types/pg": "^8.23.1",
+     "@types/react": "19.2.18",
++    "@vitest/coverage-v8": "^4.1.12",
+     "eslint": "^9.33.0",
+     "globals": "^16.3.0",
+```
+
+**C.2 Carga e rajada com k6**
+
+**`tests/carga/dados.ts`** (arquivo novo, íntegra)
+
+```ts
+// APS (qualidade): dados fixos da carga, lidos pelo servidor (Node) e espelhados nos scripts k6.
+export const PORTA_CARGA = 3100;
+
+// Estoque alto: o checkout sob carga mede tempo de resposta sem esgotar.
+export const OBRA_CARGA = {
+  id: "00000000-0000-4000-9000-0000000000c1",
+  titulo: "Carga em Ocre",
+  slug: "carga-em-ocre",
+  precoCentavos: 15_000,
+};
+
+// Estoque 1: a rajada concorrente só pode reservar uma vez (RN de estoque único).
+export const OBRA_RAJADA = {
+  id: "00000000-0000-4000-9000-0000000000c2",
+  titulo: "Rajada em Vermelho",
+  slug: "rajada-em-vermelho",
+  precoCentavos: 25_000,
+};
+```
+
+**`tests/carga/servidor.ts`** (arquivo novo, íntegra)
+
+```ts
+// APS (qualidade): sobe o build de produção num banco descartável para o k6 e o OWASP ZAP.
+// Reaproveita o preparo do E2E (kolo_e2e + dublês do Mercado Pago e do R2) e acrescenta as duas
+// obras da carga. Nunca aponta para o banco de desenvolvimento. Fora da CI.
+//
+//   npm run build && npx tsx tests/carga/servidor.ts
+import { execSync, spawn } from "node:child_process";
+import { randomBytes } from "node:crypto";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import { Client } from "pg";
+
+import { ARTISTA, BANCO_E2E, R2_BUCKET_E2E, R2_CONTA_E2E } from "../e2e/dados";
+import { OBRA_CARGA, OBRA_RAJADA, PORTA_CARGA } from "./dados";
+
+const URL_BANCO = `postgresql://kolo_user:kolo_password@localhost:5432/${BANCO_E2E}`;
+const URL_APP = `http://localhost:${PORTA_CARGA}`;
+const segredo = () => randomBytes(32).toString("hex");
+
+const env: NodeJS.ProcessEnv = {
+  ...process.env,
+  NODE_ENV: "production",
+  NODE_OPTIONS: "--import ./tests/e2e/mercado-pago-falso.ts --import ./tests/e2e/r2-falso.ts",
+  // O preparo do E2E exige este sufixo antes de esvaziar a pasta.
+  E2E_R2_DIR: join(tmpdir(), "kolo-carga", "kolo-e2e-r2"),
+  E2E_SENHA_EQUIPE: segredo(),
+  DATABASE_URL: URL_BANCO,
+  BETTER_AUTH_SECRET: segredo(),
+  BETTER_AUTH_URL: URL_APP,
+  APP_URL: "https://kolo-carga.test",
+  MP_WEBHOOK_SECRET: segredo(),
+  RESEND_API_KEY: `re_${segredo()}`,
+  MP_ACCESS_TOKEN: `TEST-${segredo()}`,
+  R2_ACCOUNT_ID: R2_CONTA_E2E,
+  R2_BUCKET: R2_BUCKET_E2E,
+  R2_ACCESS_KEY_ID: segredo(),
+  R2_SECRET_ACCESS_KEY: segredo(),
+  R2_PUBLIC_URL: "https://imagens-carga.invalid",
+};
+
+const shell = process.platform === "win32" ? "cmd.exe" : "/bin/sh";
+execSync("npx tsx tests/e2e/preparar-banco.ts", { env, stdio: "inherit", shell });
+
+const db = new Client({ connectionString: URL_BANCO });
+await db.connect();
+for (const [obra, estoque] of [
+  [OBRA_CARGA, 100_000],
+  [OBRA_RAJADA, 1],
+] as const) {
+  await db.query(
+    `INSERT INTO artwork (id, artist_id, titulo, slug, preco_centavos, quantidade_estoque, situacao)
+     VALUES ($1, $2, $3, $4, $5, $6, 'DISPONIVEL')`,
+    [obra.id, ARTISTA.id, obra.titulo, obra.slug, obra.precoCentavos, estoque],
+  );
+}
+await db.end();
+
+// O binário do Next direto pelo Node (sem npx nem shell): um processo só, que morre junto.
+const servidor = spawn(
+  process.execPath,
+  ["node_modules/next/dist/bin/next", "start", "-p", String(PORTA_CARGA)],
+  { env, stdio: "inherit" },
+);
+for (const sinal of ["SIGINT", "SIGTERM"] as const) process.on(sinal, () => servidor.kill(sinal));
+process.on("exit", () => servidor.kill());
+servidor.on("exit", (codigo) => process.exit(codigo ?? 0));
+```
+
+**`tests/carga/comum.js`** (arquivo novo, íntegra)
+
+```js
+// APS (qualidade): utilitários dos scripts k6. Roda no k6 (não no Node); fora da CI.
+/* global __ENV, open -- globais do runtime do k6 */
+import http from "k6/http";
+
+export const BASE = __ENV.BASE_URL || "http://host.docker.internal:3100";
+
+// Espelho de tests/carga/dados.ts.
+export const OBRA_CARGA = { id: "00000000-0000-4000-9000-0000000000c1", slug: "carga-em-ocre" };
+export const OBRA_RAJADA = {
+  id: "00000000-0000-4000-9000-0000000000c2",
+  slug: "rajada-em-vermelho",
+};
+
+// As server actions do Next são chamadas por POST com o id do build no cabeçalho Next-Action.
+// O id muda a cada build; vem do manifest gerado pelo `npm run build`.
+const manifest = JSON.parse(open("../../.next/server/server-reference-manifest.json"));
+
+function idDaAcao(arquivo, nome) {
+  for (const [id, acao] of Object.entries(manifest.node)) {
+    if (acao.filename === arquivo && acao.exportedName === nome) return id;
+  }
+  throw new Error(`Server action não encontrada: ${arquivo}#${nome}`);
+}
+
+export const ACOES = {
+  cadastrar: { id: idDaAcao("src/app/cadastro/actions.ts", "cadastrar"), pagina: "/cadastro" },
+  adicionar: {
+    id: idDaAcao("src/app/carrinho/actions.ts", "adicionarAoCarrinhoAcao"),
+    pagina: "/carrinho",
+  },
+  endereco: { id: idDaAcao("src/app/conta/actions.ts", "salvarEnderecoAcao"), pagina: "/conta" },
+  finalizar: {
+    id: idDaAcao("src/app/checkout/actions.ts", "finalizarCompraAcao"),
+    pagina: "/checkout",
+  },
+};
+
+export function chamarAcao(acao, argumentos, params = {}) {
+  return http.post(`${BASE}${acao.pagina}`, JSON.stringify(argumentos), {
+    redirects: 0,
+    ...params,
+    headers: {
+      "Next-Action": acao.id,
+      "Content-Type": "text/plain;charset=UTF-8",
+      Accept: "text/x-component",
+      Origin: BASE,
+      ...(params.headers || {}),
+    },
+  });
+}
+
+const ENDERECO = {
+  destinatario: "Cliente Carga",
+  cep: "01310100",
+  logradouro: "Avenida Paulista",
+  numero: "1000",
+  bairro: "Bela Vista",
+  cidade: "São Paulo",
+  uf: "SP",
+};
+
+// Em produção o Better Auth grava o cookie como __Secure-…; Secure, o jar do k6 não o devolve
+// por http. O script guarda os cookies e os manda à mão no cabeçalho Cookie.
+function cabecalhoCookie(...respostas) {
+  const valores = {};
+  for (const resposta of respostas) {
+    for (const [nome, lista] of Object.entries(resposta.cookies)) {
+      if (lista.length > 0) valores[nome] = lista[0].value;
+    }
+  }
+  return Object.entries(valores)
+    .map(([nome, valor]) => `${nome}=${valor}`)
+    .join("; ");
+}
+
+// Cadastro + obra no carrinho, como o cliente faria pela tela. Devolve o Cookie da sessão.
+export function prepararCliente(rotulo, obraId) {
+  const email = `carga-${rotulo}-${Date.now()}-${Math.floor(Math.random() * 1e9)}@kolo.test`;
+  const cadastro = chamarAcao(
+    ACOES.cadastrar,
+    [{ nome: "Cliente Carga", email, telefone: "11987654321", senha: "SenhaCarga#2026" }],
+    { tags: { etapa: "cadastro" } },
+  );
+  const cookie = cabecalhoCookie(cadastro);
+  // RF05: o checkout pede um endereço na conta, mesmo para retirar no ateliê.
+  chamarAcao(ACOES.endereco, [ENDERECO], {
+    tags: { etapa: "endereco" },
+    headers: { Cookie: cookie },
+  });
+  const carrinho = chamarAcao(ACOES.adicionar, [obraId, 1], {
+    tags: { etapa: "carrinho" },
+    headers: { Cookie: cookie },
+  });
+  return { cadastro, carrinho, cookie };
+}
+
+// O redirect da action vem no cabeçalho X-Action-Redirect; a recusa vem no corpo.
+export function finalizar(cookie, tags) {
+  return chamarAcao(ACOES.finalizar, [{ modalidade: "RETIRADA" }], {
+    tags,
+    headers: { Cookie: cookie },
+  });
+}
+
+export function pedidoCriado(resposta) {
+  const destino = resposta.headers["X-Action-Redirect"] || resposta.headers["x-action-redirect"];
+  return typeof destino === "string" && /\/checkout\/\d{8}-[A-Z0-9]{6}/.test(destino);
+}
+```
+
+**`tests/carga/carga.js`** (arquivo novo, íntegra)
+
+```js
+// APS (qualidade): carga de ~20 usuários simultâneos em catálogo, ficha da obra e checkout.
+// Metas (docs/aps/PLANO.md): leitura p95 < 500 ms; checkout p95 < 1 s; erro < 1%.
+//
+//   docker run --rm -v "$PWD:/repo" -w /repo/tests/carga grafana/k6:1.3.0 run carga.js
+/* global __VU -- globais do runtime do k6 */
+import { check, sleep } from "k6";
+import http from "k6/http";
+
+import { BASE, OBRA_CARGA, finalizar, pedidoCriado, prepararCliente } from "./comum.js";
+
+export const options = {
+  scenarios: {
+    leitura: {
+      executor: "ramping-vus",
+      exec: "leitura",
+      stages: [
+        { duration: "30s", target: 20 },
+        { duration: "3m", target: 20 },
+        { duration: "15s", target: 0 },
+      ],
+    },
+    checkout: {
+      executor: "ramping-vus",
+      exec: "checkout",
+      stages: [
+        { duration: "30s", target: 5 },
+        { duration: "3m", target: 5 },
+        { duration: "15s", target: 0 },
+      ],
+    },
+  },
+  thresholds: {
+    "http_req_duration{pagina:catalogo}": ["p(95)<500"],
+    "http_req_duration{pagina:obra}": ["p(95)<500"],
+    "http_req_duration{etapa:finalizar}": ["p(95)<1000"],
+    "http_req_failed{scenario:leitura}": ["rate<0.01"],
+    "checks{etapa:finalizar}": ["rate>0.99"],
+  },
+  summaryTrendStats: ["avg", "min", "med", "p(90)", "p(95)", "p(99)", "max"],
+};
+
+export function leitura() {
+  const catalogo = http.get(`${BASE}/obras`, { tags: { pagina: "catalogo" } });
+  check(catalogo, { "catálogo 200": (r) => r.status === 200 });
+  const obra = http.get(`${BASE}/obras/${OBRA_CARGA.slug}`, { tags: { pagina: "obra" } });
+  check(obra, { "ficha 200": (r) => r.status === 200 });
+  sleep(1);
+}
+
+// Cada iteração é um cliente novo: cadastro → carrinho → finalizar (retirada no ateliê).
+export function checkout() {
+  const { cadastro, carrinho, cookie } = prepararCliente(`vu${__VU}`, OBRA_CARGA.id);
+  check(cadastro, { "cadastro aceito": (r) => r.status === 200 });
+  check(carrinho, { "carrinho 200": (r) => r.status === 200 });
+  const resposta = finalizar(cookie, { etapa: "finalizar" });
+  check(resposta, { "pedido criado": pedidoCriado }, { etapa: "finalizar" });
+  sleep(1);
+}
+```
+
+**`tests/carga/rajada.js`** (arquivo novo, íntegra)
+
+```js
+// APS (qualidade): rajada concorrente — N clientes finalizam a compra da MESMA obra de estoque 1
+// ao mesmo tempo. Meta: exatamente 1 pedido criado e N−1 recusados (RN de estoque único).
+// Rode com o banco recém-preparado (tests/carga/servidor.ts), uma vez por subida.
+//
+// DISPARO é o instante (ms desde a época) em que todos finalizam; dê folga para os cadastros.
+//   docker run --rm -v "$PWD:/repo" -w /repo/tests/carga grafana/k6:1.3.0 run -e N=30 \
+//     -e DISPARO=$(( $(date +%s) * 1000 + 60000 )) rajada.js
+/* global __ENV, __VU -- globais do runtime do k6 */
+import { check } from "k6";
+import { Counter } from "k6/metrics";
+
+import { OBRA_RAJADA, finalizar, pedidoCriado, prepararCliente } from "./comum.js";
+
+const N = Number(__ENV.N || 30);
+const DISPARO = Number(__ENV.DISPARO);
+if (!DISPARO) throw new Error("Defina -e DISPARO=<ms desde a época> (ver o cabeçalho).");
+const criados = new Counter("pedidos_criados");
+const recusados = new Counter("pedidos_recusados");
+
+export const options = {
+  scenarios: {
+    rajada: { executor: "per-vu-iterations", vus: N, iterations: 1, maxDuration: "2m" },
+  },
+  thresholds: {
+    pedidos_criados: ["count==1"],
+    pedidos_recusados: [`count==${N - 1}`],
+  },
+  summaryTrendStats: ["avg", "min", "med", "p(95)", "max"],
+};
+
+export default function () {
+  const { cookie } = prepararCliente(`rajada${__VU}`, OBRA_RAJADA.id);
+  // Barreira: todos os VUs disparam o checkout no mesmo instante (relógio de parede).
+  while (Date.now() < DISPARO) {
+    /* espera ativa até o instante combinado */
+  }
+  const resposta = finalizar(cookie, { etapa: "rajada" });
+  if (pedidoCriado(resposta)) criados.add(1);
+  else recusados.add(1);
+  check(resposta, { "resposta 2xx/3xx": (r) => r.status >= 200 && r.status < 400 });
+}
+```
+
+**C.3 Testes da melhoria M1**
+
+**Testes de integração acrescentados** (alteração, formato *diff*)
+
+```diff
+diff --git a/tests/integration/agenda.test.ts b/tests/integration/agenda.test.ts
+index e3bc508..41770e3 100644
+--- a/tests/integration/agenda.test.ts
++++ b/tests/integration/agenda.test.ts
+@@ -419,2 +419,46 @@ it("RF22/RN10 o admin vê todos os artistas e filtra; cliente e visitante não l
+   expect(await lerAgenda(new Headers(), {})).toMatchObject({ ok: false, erro: "nao_autenticado" });
+ });
++
++// APS (qualidade): ramos de RN10 e RF22 que a suíte ainda não exercitava.
++it("RN10 conta de artista inativada perde a agenda na hora, mesmo com sessão aberta", async () => {
++  const { lerAgenda } = await import("../../src/modules/scheduling");
++  await db.query("UPDATE \"user\" SET situacao = 'INATIVO' WHERE email = 'bia@pbi17.test'");
++  try {
++    expect(await lerAgenda(bia, {})).toMatchObject({ ok: false, erro: "proibido" });
++  } finally {
++    await db.query("UPDATE \"user\" SET situacao = 'ATIVO' WHERE email = 'bia@pbi17.test'");
++  }
++});
++
++it("RF22 semana que não vem como texto (?semana repetido) cai na semana atual", async () => {
++  const { lerAgenda } = await import("../../src/modules/scheduling");
++  const segunda = async (filtro: Record<string, unknown>) => {
++    const r = await lerAgenda(admin, filtro);
++    if (!r.ok) throw new Error(r.mensagem);
++    return r.dados.dias[0]?.data;
++  };
++  // A semana atual é lida antes e depois: o teste não falha se rodar na virada da semana.
++  const antes = await segunda({});
++  const repetida = await segunda({ semana: ["2026-10-14", "2026-10-21"] });
++  const depois = await segunda({});
++
++  expect([antes, depois]).toContain(repetida);
++  expect(repetida).not.toBe("2026-10-12");
++});
++
++it("RF22 o admin edita sem escolher artista e o horário continua com a artista original", async () => {
++  const { cadastrarHorario, editarHorario } = await import("../../src/modules/scheduling");
++  const criado = await cadastrarHorario(horario(), ana);
++  if (!criado.ok) throw new Error(criado.mensagem);
++  const { id } = criado.dados;
++
++  expect(await editarHorario({ id, ...horario({ nomeContato: "Lucas S." }) }, admin)).toMatchObject(
++    { ok: true },
++  );
++
++  const { rows } = await db.query("SELECT artist_id, nome_contato FROM appointment WHERE id = $1", [
++    id,
++  ]);
++  expect(rows).toEqual([{ artist_id: idAna, nome_contato: "Lucas S." }]);
++  expect(await editarHorario(null, admin)).toMatchObject({ ok: false, erro: "nao_encontrado" });
++});
+diff --git a/tests/integration/cancelamento.test.ts b/tests/integration/cancelamento.test.ts
+index b7f54f5..c37ee23 100644
+--- a/tests/integration/cancelamento.test.ts
++++ b/tests/integration/cancelamento.test.ts
+@@ -196,2 +196,14 @@ it("PBI-43 cartão que entra em análise durante o cancelamento do Pix: o pedido
+   });
+ });
++
++// APS (qualidade): pedido inexistente, ramo que a suíte ainda não exercitava.
++it("PBI-43 pedido que não existe é recusado sem chamar o Mercado Pago", async () => {
++  const { cancelarPedido } = await import("../../src/modules/payments");
++  const gateway = gatewayDeCancelamento();
++
++  expect(
++    await cancelarPedido({ numero: "20261012-NAOEX1" }, cenario.contas.admin, { gateway }),
++  ).toMatchObject({ ok: false, erro: "nao_encontrado" });
++
++  expect(gateway.cancelados).toEqual([]);
++});
+diff --git a/tests/integration/estorno.test.ts b/tests/integration/estorno.test.ts
+index 9c2fb33..c603dcf 100644
+--- a/tests/integration/estorno.test.ts
++++ b/tests/integration/estorno.test.ts
+@@ -377,2 +377,20 @@ it("PBI-42 pagamento visto já estornado não conclui o pedido pago sem unidade
+   ]);
+ });
++
++// APS (qualidade): pagamento inexistente, ramo que a suíte ainda não exercitava.
++it("PBI-43 pagamento que não é do pedido é recusado sem chamar o Mercado Pago", async () => {
++  const { estornarPagamento } = await import("../../src/modules/payments");
++  const { obra } = await pedidoPago("e9-inexistente", "20261012-E9INE1");
++  const gateway = gatewayDeEstorno();
++
++  expect(
++    await estornarPagamento(
++      { numero: "20261012-E9INE1", idExterno: "mp-nao-existe" },
++      cenario.contas.admin,
++      { gateway },
++    ),
++  ).toMatchObject({ ok: false, erro: "nao_encontrado" });
++
++  expect(gateway.estornos).toEqual([]);
++  expect(await estado("20261012-E9INE1", obra)).toMatchObject({ situacao: "PAGO", estoque: 0 });
++});
+diff --git a/tests/integration/webhook-pendente.test.ts b/tests/integration/webhook-pendente.test.ts
+index 8137b93..6dc3fc9 100644
+--- a/tests/integration/webhook-pendente.test.ts
++++ b/tests/integration/webhook-pendente.test.ts
+@@ -3,4 +3,5 @@ import {
+   cenarioWebhook,
+   AGORA,
++  RESERVA_ATE,
+   SEGREDO,
+   PIX_PENDENTE,
+@@ -172,2 +173,98 @@ it("RN06 Pix pago depois dos 10 minutos usa a reserva prorrogada e confirma o pe
+   expect(await vencimentoDaReserva(cliente.sessaoId)).toEqual([]);
+ });
++
++// APS (qualidade): ramos do RN06/PBI-43 que a suíte ainda não exercitava.
++it("RN06 cartão em análise fica pendente sem prorrogar a reserva: só Pix e boleto seguram a obra", async () => {
++  const { processarNotificacao } = await import("../../src/modules/payments");
++  const { obra, cliente } = await pedidoPendente(
++    "t7-analise",
++    "20261011-ANALI1",
++    "analise@pbi28.test",
++  );
++  const gateway = gatewayDeTeste({
++    "700041": pagamentoMp("700041", "20261011-ANALI1", {
++      status: "in_process",
++      status_detail: "pending_contingency",
++      date_approved: null,
++    }),
++  });
++
++  expect(
++    await processarNotificacao(notificacao("700041"), { gateway, segredo: SEGREDO, agora: AGORA }),
++  ).toEqual({ status: 200 });
++
++  const final = await estado("20261011-ANALI1", obra);
++  expect(final).toMatchObject({ situacao: "PENDENTE", estoque: 2, reservas: 1 });
++  expect(final.pagamentos).toMatchObject([
++    { id_externo: "700041", metodo: "CARTAO", situacao: "PENDENTE" },
++  ]);
++  expect(await vencimentoDaReserva(cliente.sessaoId)).toEqual([new Date(RESERVA_ATE)]);
++});
++
++it("PBI-43 Pix que expira com outro Pix do pedido em aberto não cancela o pedido", async () => {
++  const { processarNotificacao } = await import("../../src/modules/payments");
++  const { obra } = await pedidoPendente("t7-dois-pix", "20261011-DOISP1", "doispix@pbi28.test");
++  const gateway = gatewayDeTeste({
++    "700042": pagamentoMp("700042", "20261011-DOISP1", PIX_PENDENTE),
++    "700043": pagamentoMp("700043", "20261011-DOISP1", PIX_PENDENTE),
++  });
++  const opcoes = { gateway, segredo: SEGREDO, agora: AGORA };
++  await processarNotificacao(notificacao("700042"), opcoes);
++  await processarNotificacao(notificacao("700043"), opcoes);
++  gateway.trocar(
++    "700042",
++    pagamentoMp("700042", "20261011-DOISP1", {
++      ...PIX_PENDENTE,
++      status: "cancelled",
++      status_detail: "expired",
++    }),
++  );
++
++  expect(
++    await processarNotificacao(notificacao("700042"), {
++      ...opcoes,
++      agora: new Date("2026-10-12T15:01:00.000Z"),
++    }),
++  ).toEqual({ status: 200 });
++
++  const final = await estado("20261011-DOISP1", obra);
++  expect(final).toMatchObject({ situacao: "PENDENTE", estoque: 2 });
++  expect(final.pagamentos).toMatchObject([
++    { id_externo: "700042", situacao: "RECUSADO" },
++    { id_externo: "700043", situacao: "PENDENTE" },
++  ]);
++});
++
++it("PBI-43 Pix de outra tentativa que expira depois do pedido pago não mexe no pedido", async () => {
++  const { processarNotificacao } = await import("../../src/modules/payments");
++  const { obra } = await pedidoPendente("t7-pago-pix", "20261011-PAGOP1", "pagopix@pbi28.test");
++  const gateway = gatewayDeTeste({
++    "700044": pagamentoMp("700044", "20261011-PAGOP1"),
++    "700045": pagamentoMp("700045", "20261011-PAGOP1", PIX_PENDENTE),
++  });
++  const opcoes = { gateway, segredo: SEGREDO, agora: AGORA };
++  await processarNotificacao(notificacao("700044"), opcoes);
++  await processarNotificacao(notificacao("700045"), opcoes);
++  gateway.trocar(
++    "700045",
++    pagamentoMp("700045", "20261011-PAGOP1", {
++      ...PIX_PENDENTE,
++      status: "cancelled",
++      status_detail: "expired",
++    }),
++  );
++
++  expect(
++    await processarNotificacao(notificacao("700045"), {
++      ...opcoes,
++      agora: new Date("2026-10-12T15:01:00.000Z"),
++    }),
++  ).toEqual({ status: 200 });
++
++  const final = await estado("20261011-PAGOP1", obra);
++  expect(final).toMatchObject({ situacao: "PAGO", estoque: 0 });
++  expect(final.pagamentos).toMatchObject([
++    { id_externo: "700044", situacao: "APROVADO" },
++    { id_externo: "700045", situacao: "RECUSADO" },
++  ]);
++});
+diff --git a/tests/integration/wizard-agendamento.test.ts b/tests/integration/wizard-agendamento.test.ts
+index dbbd241..88fc036 100644
+--- a/tests/integration/wizard-agendamento.test.ts
++++ b/tests/integration/wizard-agendamento.test.ts
+@@ -188,2 +188,20 @@ it("o seed disponibiliza tamanhos iniciais sem duplicar ao repetir", async () =>
+   expect(tamanhos.rows).toEqual([{ nome: "Pequena" }, { nome: "Média" }, { nome: "Grande" }]);
+ }, 30_000);
++
++// APS (qualidade): o bloqueio também vale para a revisão, não só para a consulta de opções.
++it("RNF08 com o limite estourado, a revisão da preferência é recusada antes de validar", async () => {
++  const { createHash } = await import("node:crypto");
++  const { revisarPreferenciaWizard } = await import("../../src/modules/scheduling/index");
++  const chave = `wizard:${createHash("sha256").update("aps-limite-revisao").digest("hex")}`;
++  await db.query(
++    "INSERT INTO rate_limit (chave, tentativas, janela_inicio) VALUES ($1, 60, NOW())",
++    [chave],
++  );
++
++  expect(
++    await revisarPreferenciaWizard(
++      { nome: "inválido" },
++      new Headers({ "x-real-ip": "aps-limite-revisao" }),
++    ),
++  ).toEqual({ ok: false, mensagem: "Muitas tentativas. Tente novamente em 10 minutos." });
++});
+```
+
+**C.4 Melhoria M2, formulários por POST**
+
+**`tests/unit/formularios-post.test.tsx`** (arquivo novo, íntegra)
+
+```tsx
+// @vitest-environment jsdom
+import { cleanup, render } from "@testing-library/react";
+import type { ReactElement } from "react";
+import { afterEach, expect, it, vi } from "vitest";
+
+import { FormularioContato } from "@/app/contato/formulario";
+import { FormularioAdmin } from "@/components/admin/formulario";
+import { FormularioHorario } from "@/components/agenda/formulario-horario";
+import { WizardAgendamento } from "@/components/scheduling/wizard-agendamento";
+import { FormularioCadastro } from "@/components/auth/formulario-cadastro";
+import { FormularioEndereco } from "@/components/auth/formulario-endereco";
+import { FormularioExclusaoConta } from "@/components/auth/formulario-exclusao-conta";
+import { FormularioLogin } from "@/components/auth/formulario-login";
+import { FormularioPedidoRecuperacao } from "@/components/auth/formulario-pedido-recuperacao";
+import { FormularioPerfil } from "@/components/auth/formulario-perfil";
+import { FormularioRedefinicao } from "@/components/auth/formulario-redefinicao";
+import { FormularioTrocaSenha } from "@/components/auth/formulario-troca-senha";
+
+vi.mock("@/modules/contact/actions", () => ({ enviarContato: vi.fn() }));
+
+afterEach(cleanup);
+
+const acao = vi.fn();
+const endereco = {
+  destinatario: "Maria",
+  cep: "01310-100",
+  logradouro: "Avenida Paulista",
+  numero: "1000",
+  complemento: "",
+  bairro: "Bela Vista",
+  cidade: "São Paulo",
+  uf: "SP",
+};
+
+// RNF06/RNF12 (APS, achado do OWASP ZAP): sem method, o formulário enviado antes da hidratação
+// vira GET e põe senha e dados pessoais na URL (histórico, logs do servidor, Referer).
+it.each<[string, () => ReactElement]>([
+  ["login", () => <FormularioLogin acao={acao} />],
+  ["cadastro", () => <FormularioCadastro acao={acao} />],
+  ["pedido de recuperação", () => <FormularioPedidoRecuperacao acao={acao} />],
+  ["redefinição de senha", () => <FormularioRedefinicao token="abc" acao={acao} />],
+  ["troca de senha", () => <FormularioTrocaSenha acao={acao} />],
+  ["exclusão de conta", () => <FormularioExclusaoConta acao={acao} />],
+  [
+    "perfil",
+    () => <FormularioPerfil dados={{ nome: "Maria", telefone: "11987654321" }} acao={acao} />,
+  ],
+  ["endereço", () => <FormularioEndereco dados={endereco} acao={acao} />],
+  ["contato", () => <FormularioContato />],
+  [
+    "agendamento (wizard)",
+    () => (
+      <WizardAgendamento
+        opcoes={{
+          artistas: [{ id: "ana", nome: "Ana", estilos: [{ id: "fineline", nome: "Fineline" }] }],
+          tamanhos: [{ id: "pequena", nome: "Pequena" }],
+        }}
+        revisar={acao}
+      />
+    ),
+  ],
+  [
+    "horário da agenda",
+    () => (
+      <FormularioHorario
+        artistas={[]}
+        opcoes={{ estilos: [], tamanhos: [] }}
+        enviar={acao}
+        aoSalvar={acao}
+        aoCancelar={acao}
+      />
+    ),
+  ],
+  [
+    "cadastro do admin",
+    () => (
+      <FormularioAdmin pendente={false} enviar={acao}>
+        <input name="titulo" />
+      </FormularioAdmin>
+    ),
+  ],
+])("o formulário de %s envia por POST, nunca pela URL", (_nome, montar) => {
+  const { container } = render(montar());
+  const formulario = container.querySelector("form");
+
+  expect(formulario?.method).toBe("post");
+});
+```
+
+**Formulários** (alteração, formato *diff*)
+
+```diff
+diff --git a/src/app/contato/formulario.tsx b/src/app/contato/formulario.tsx
+index 265d9aa..f77401c 100644
+--- a/src/app/contato/formulario.tsx
++++ b/src/app/contato/formulario.tsx
+@@ -71,5 +71,5 @@ export function FormularioContato() {
+     <>
+       <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="lazyOnload" />
+-      <form noValidate onSubmit={handleSubmit(enviar)} className="grid gap-5">
++      <form method="post" noValidate onSubmit={handleSubmit(enviar)} className="grid gap-5">
+         <Campo
+           id="nome"
+diff --git a/src/components/admin/formulario.tsx b/src/components/admin/formulario.tsx
+index 87c9ea3..e403e57 100644
+--- a/src/components/admin/formulario.tsx
++++ b/src/components/admin/formulario.tsx
+@@ -98,4 +98,5 @@ export function FormularioAdmin({
+   return (
+     <form
++      method="post"
+       onSubmit={(evento) => {
+         evento.preventDefault();
+diff --git a/src/components/agenda/formulario-horario.tsx b/src/components/agenda/formulario-horario.tsx
+index d7ef641..9b1d3d4 100644
+--- a/src/components/agenda/formulario-horario.tsx
++++ b/src/components/agenda/formulario-horario.tsx
+@@ -115,4 +115,5 @@ export function FormularioHorario({
+   return (
+     <form
++      method="post"
+       onSubmit={(evento) => void salvar(evento)}
+       noValidate
+diff --git a/src/components/auth/formulario-cadastro.tsx b/src/components/auth/formulario-cadastro.tsx
+index a8e6614..d14a13c 100644
+--- a/src/components/auth/formulario-cadastro.tsx
++++ b/src/components/auth/formulario-cadastro.tsx
+@@ -53,5 +53,5 @@ export function FormularioCadastro({
+ 
+   return (
+-    <form noValidate onSubmit={handleSubmit(enviar)} className="grid gap-5">
++    <form method="post" noValidate onSubmit={handleSubmit(enviar)} className="grid gap-5">
+       {CAMPOS.map((campo) => (
+         <Campo
+diff --git a/src/components/auth/formulario-endereco.tsx b/src/components/auth/formulario-endereco.tsx
+index 6a110cd..b42c1b3 100644
+--- a/src/components/auth/formulario-endereco.tsx
++++ b/src/components/auth/formulario-endereco.tsx
+@@ -52,4 +52,5 @@ export function FormularioEndereco({
+   return (
+     <form
++      method="post"
+       noValidate
+       onChange={() => setSucesso(false)}
+diff --git a/src/components/auth/formulario-exclusao-conta.tsx b/src/components/auth/formulario-exclusao-conta.tsx
+index 02653b3..7be3d95 100644
+--- a/src/components/auth/formulario-exclusao-conta.tsx
++++ b/src/components/auth/formulario-exclusao-conta.tsx
+@@ -49,4 +49,5 @@ export function FormularioExclusaoConta({
+   return (
+     <form
++      method="post"
+       noValidate
+       onSubmit={(evento) => void handleSubmit(enviar)(evento)}
+diff --git a/src/components/auth/formulario-login.tsx b/src/components/auth/formulario-login.tsx
+index 5089d28..8ea9390 100644
+--- a/src/components/auth/formulario-login.tsx
++++ b/src/components/auth/formulario-login.tsx
+@@ -45,5 +45,5 @@ export function FormularioLogin({
+ 
+   return (
+-    <form noValidate onSubmit={handleSubmit(enviar)} className="grid gap-5">
++    <form method="post" noValidate onSubmit={handleSubmit(enviar)} className="grid gap-5">
+       <Campo
+         id="email"
+diff --git a/src/components/auth/formulario-pedido-recuperacao.tsx b/src/components/auth/formulario-pedido-recuperacao.tsx
+index 8c2539b..800bc73 100644
+--- a/src/components/auth/formulario-pedido-recuperacao.tsx
++++ b/src/components/auth/formulario-pedido-recuperacao.tsx
+@@ -56,5 +56,5 @@ export function FormularioPedidoRecuperacao({
+ 
+   return (
+-    <form noValidate onSubmit={handleSubmit(enviar)} className="grid gap-5">
++    <form method="post" noValidate onSubmit={handleSubmit(enviar)} className="grid gap-5">
+       <Campo
+         id="email"
+diff --git a/src/components/auth/formulario-perfil.tsx b/src/components/auth/formulario-perfil.tsx
+index 9f903f0..504b232 100644
+--- a/src/components/auth/formulario-perfil.tsx
++++ b/src/components/auth/formulario-perfil.tsx
+@@ -51,4 +51,5 @@ export function FormularioPerfil({
+   return (
+     <form
++      method="post"
+       noValidate
+       onChange={() => setSucesso(false)}
+diff --git a/src/components/auth/formulario-redefinicao.tsx b/src/components/auth/formulario-redefinicao.tsx
+index 7d52c10..af2f693 100644
+--- a/src/components/auth/formulario-redefinicao.tsx
++++ b/src/components/auth/formulario-redefinicao.tsx
+@@ -74,5 +74,5 @@ export function FormularioRedefinicao({
+ 
+   return (
+-    <form noValidate onSubmit={handleSubmit(enviar)} className="grid gap-5">
++    <form method="post" noValidate onSubmit={handleSubmit(enviar)} className="grid gap-5">
+       <Campo
+         id="senha"
+diff --git a/src/components/auth/formulario-troca-senha.tsx b/src/components/auth/formulario-troca-senha.tsx
+index a9bc9c8..d0d7eb1 100644
+--- a/src/components/auth/formulario-troca-senha.tsx
++++ b/src/components/auth/formulario-troca-senha.tsx
+@@ -54,4 +54,5 @@ export function FormularioTrocaSenha({
+   return (
+     <form
++      method="post"
+       noValidate
+       onChange={() => setSucesso(false)}
+diff --git a/src/components/scheduling/wizard-agendamento.tsx b/src/components/scheduling/wizard-agendamento.tsx
+index 1c636d5..068274f 100644
+--- a/src/components/scheduling/wizard-agendamento.tsx
++++ b/src/components/scheduling/wizard-agendamento.tsx
+@@ -232,5 +232,11 @@ export function WizardAgendamento({
+         </section>
+       ) : (
+-        <form noValidate onSubmit={avancar} aria-busy={ocupado} className="grid gap-5">
++        <form
++          method="post"
++          noValidate
++          onSubmit={avancar}
++          aria-busy={ocupado}
++          className="grid gap-5"
++        >
+           <h2 id="wizard-titulo" ref={titulo} tabIndex={-1} className={TITULO}>
+             {etapa + 1}. {ETAPAS[etapa]}
+```
+
+**C.5 Melhoria M3, cabeçalhos de segurança**
+
+**`src/lib/seguranca.ts` e `next.config.ts`** (alteração, formato *diff*)
+
+```diff
+diff --git a/next.config.ts b/next.config.ts
+index e1c1537..4aec4c6 100644
+--- a/next.config.ts
++++ b/next.config.ts
+@@ -1,4 +1,6 @@
+ import type { NextConfig } from "next";
+ 
++import { cabecalhosDeArquivo } from "./src/lib/seguranca";
++
+ // Libera o host público do R2 para o next/image (RNF14: formato moderno e tamanhos
+ // responsivos). Sem R2_PUBLIC_URL nenhuma imagem remota é aceita.
+@@ -21,6 +23,21 @@ function origensDeDesenvolvimento(): string[] {
+ const nextConfig: NextConfig = {
+   allowedDevOrigins: origensDeDesenvolvimento(),
++  // RNF07: a resposta não anuncia o framework.
++  poweredByHeader: false,
+   // O `next dev` registra os argumentos das Server Actions, e o login e o cadastro levam senha.
+   logging: { serverFunctions: false },
++  // RNF07: o proxy (src/proxy.ts) pula todo caminho com ponto (robots.txt, sitemap.xml,
++  // /_next/static, public); aqui esses caminhos recebem os cabeçalhos de segurança.
++  async headers() {
++    return [
++      {
++        source: "/:arquivo(.*\\..*)",
++        headers: Object.entries(cabecalhosDeArquivo(process.env)).map(([key, value]) => ({
++          key,
++          value,
++        })),
++      },
++    ];
++  },
+   images: {
+     formats: ["image/avif", "image/webp"],
+diff --git a/src/lib/seguranca.ts b/src/lib/seguranca.ts
+index afd3862..f5ccaa8 100644
+--- a/src/lib/seguranca.ts
++++ b/src/lib/seguranca.ts
+@@ -15,7 +15,11 @@ export type CabecalhosDeSeguranca = {
+   "Referrer-Policy": string;
+   "X-Frame-Options": string;
++  "Permissions-Policy": string;
+   "Strict-Transport-Security"?: string;
+ };
+ 
++// RNF07: recursos do navegador que o site não usa ficam desligados para qualquer script.
++const PERMISSOES = "camera=(), microphone=(), geolocation=(), payment=(), usb=()";
++
+ // RNF05: CSP estrita por nonce. O proxy gera um nonce novo a cada requisição e o Next o aplica
+ // aos próprios scripts; 'strict-dynamic' libera o que esses scripts carregarem (ex.: Turnstile).
+@@ -57,5 +61,17 @@ export function cabecalhosDeSeguranca(nonce: string, ambiente: Ambiente): Cabeca
+     "Referrer-Policy": "strict-origin-when-cross-origin",
+     "X-Frame-Options": "DENY",
++    "Permissions-Policy": PERMISSOES,
+     ...(producao ? { "Strict-Transport-Security": "max-age=31536000" } : {}),
+   };
+ }
++
++// RNF07: robots.txt, sitemap.xml, /_next/static e o public ficam fora do proxy (sem nonce). Nenhum é
++// página, então a CSP não libera nada; o resto repete os cabeçalhos das páginas.
++export function cabecalhosDeArquivo(ambiente: Ambiente): CabecalhosDeSeguranca {
++  return {
++    ...cabecalhosDeSeguranca("", ambiente),
++    // form-action, base-uri e frame-ancestors não herdam do default-src.
++    "Content-Security-Policy":
++      "default-src 'none'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'",
++  };
++}
+```
+
+**`tests/unit/next-config.test.ts`** (arquivo novo, íntegra)
+
+```ts
+import { expect, it } from "vitest";
+
+import nextConfig from "../../next.config";
+
+// RNF07 (APS, achado do OWASP ZAP): a resposta não anuncia o framework (X-Powered-By: Next.js).
+it("RNF07 o servidor não manda o cabeçalho X-Powered-By", () => {
+  expect(nextConfig.poweredByHeader).toBe(false);
+});
+
+// RNF07: o proxy (src/proxy.ts) pula caminhos com ponto; o next.config cobre exatamente esses.
+it("RNF07 o next.config aplica os cabeçalhos de arquivo a todo caminho com ponto", async () => {
+  const regras = (await nextConfig.headers?.()) ?? [];
+  const arquivos = regras.find((regra) => regra.source === "/:arquivo(.*\\..*)");
+
+  expect(arquivos?.headers).toEqual(
+    expect.arrayContaining([
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "X-Frame-Options", value: "DENY" },
+    ]),
+  );
+});
+```
+
+**`tests/unit/seguranca.test.ts`** (alteração, formato *diff*)
+
+```diff
+diff --git a/tests/unit/seguranca.test.ts b/tests/unit/seguranca.test.ts
+index edfe6e8..f5104e2 100644
+--- a/tests/unit/seguranca.test.ts
++++ b/tests/unit/seguranca.test.ts
+@@ -1,5 +1,5 @@
+ import { expect, it } from "vitest";
+ 
+-import { cabecalhosDeSeguranca } from "../../src/lib/seguranca";
++import { cabecalhosDeArquivo, cabecalhosDeSeguranca } from "../../src/lib/seguranca";
+ 
+ // Lê uma diretiva da CSP ("script-src 'self' ...") e devolve as fontes, sem o nome.
+@@ -107,2 +107,41 @@ it("RNF07 HSTS e upgrade-insecure-requests só em produção", () => {
+   expect(diretiva(dev["Content-Security-Policy"], "upgrade-insecure-requests")).toBeUndefined();
+ });
++
++// RNF07 (APS, achado do OWASP ZAP): o site não usa câmera, microfone nem localização; nenhum
++// script, nem de terceiro (Turnstile), pode pedir esses recursos ao navegador.
++it("RNF07 a Permissions-Policy desliga câmera, microfone e localização", () => {
++  const politica = cabecalhosDeSeguranca("abc123", { NODE_ENV: "production" })[
++    "Permissions-Policy"
++  ];
++
++  expect(politica?.split(",").map((p) => p.trim())).toEqual(
++    expect.arrayContaining(["camera=()", "microphone=()", "geolocation=()"]),
++  );
++});
++
++// RNF07 (APS, achado do OWASP ZAP): robots.txt, sitemap.xml, /_next/static e os arquivos do public
++// ficam fora do matcher do proxy (sem nonce); recebem os mesmos cabeçalhos e uma CSP que não executa
++// nada, porque nenhum deles é uma página.
++it("RNF07 arquivos fora do proxy recebem nosniff, DENY, Permissions-Policy e CSP sem execução", () => {
++  const cabecalhos = cabecalhosDeArquivo({ NODE_ENV: "production" });
++
++  expect(cabecalhos).toMatchObject({
++    "X-Content-Type-Options": "nosniff",
++    "X-Frame-Options": "DENY",
++    "Referrer-Policy": "strict-origin-when-cross-origin",
++    "Strict-Transport-Security": "max-age=31536000",
++  });
++  expect(cabecalhos["Permissions-Policy"]).toContain("camera=()");
++  const csp = cabecalhos["Content-Security-Policy"];
++  expect(diretiva(csp, "default-src")).toEqual(["'none'"]);
++  // Estas três não herdam do default-src (achado 10055 do ZAP na segunda rodada).
++  expect(diretiva(csp, "frame-ancestors")).toEqual(["'none'"]);
++  expect(diretiva(csp, "form-action")).toEqual(["'none'"]);
++  expect(diretiva(csp, "base-uri")).toEqual(["'none'"]);
++});
++
++it("RNF01 fora de produção os arquivos não recebem HSTS (localhost por http)", () => {
++  expect(cabecalhosDeArquivo({ NODE_ENV: "development" })).not.toHaveProperty(
++    "Strict-Transport-Security",
++  );
++});
+```
+
 
 # ANEXO A FICHA INDIVIDUAL DE ATIVIDADES
 
