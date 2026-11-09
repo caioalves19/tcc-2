@@ -9,6 +9,8 @@
 | `PLANO.md` | Decisões, metas e cronograma da avaliação |
 | `evidencias/` | Baseline, antes/depois e saídas brutas das ferramentas |
 | `ferramentas/verificar-docx.py` | Confere o .docx gerado contra a versão de 26/10 |
+| `ferramentas/ajustar-codigo-docx.py` | Dá aos blocos de código do .docx fonte monoespaçada, espaçamento simples e quebra de linha |
+| `ferramentas/renderizar-diagramas.mjs` | Gera os PNG de `midia/diagramas/` a partir dos SVG (Chromium do Playwright) |
 
 Spec e tickets: issue #89 e sub-issues.
 
@@ -18,7 +20,12 @@ Na raiz do repositório (pandoc ≥ 2.12):
 
 ```bash
 pandoc docs/aps/APS.md -o docs/aps/APS-gerado.docx --reference-doc=docs/aps/APS_Kolo_Qualidade.docx --resource-path=docs/aps
+python docs/aps/ferramentas/ajustar-codigo-docx.py docs/aps/APS-gerado.docx
 ```
+
+O segundo comando é necessário porque o modelo de 26/10 não tem estilo de código: sem ele, os trechos de código saem
+em Arial 12, com espaçamento 1,5 e sem quebra de linha. Depois de editar um SVG em `midia/diagramas/`, gere os PNG de
+novo com `node docs/aps/ferramentas/renderizar-diagramas.mjs`.
 
 O `APS-gerado.docx` fica fora do git. Ao abrir no Word, clique com o botão direito no sumário e escolha
 **Atualizar campo → Atualizar o índice inteiro**: o sumário é um campo automático, gerado a partir dos títulos.
@@ -36,7 +43,7 @@ decisão do grupo.
 
 ## Convenções do `APS.md`
 
-- Legendas (`Tabela N`, `Quadro N`, `Figura N`, `Fonte …`) ficam num bloco `::: {custom-style="Legenda"}` para sair com
+- Legendas (`Tabela N`, `Quadro N`, `Figura N`, `Código N`, `Fonte …`) ficam num bloco `::: {custom-style="Legenda"}` para sair com
   o estilo de legenda do modelo.
 - Quebra de página e o campo de sumário são blocos ```` ```{=openxml} ```` (só valem no .docx).
 - Número novo no texto aponta para um arquivo em `evidencias/`.
