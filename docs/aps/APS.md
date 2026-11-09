@@ -67,7 +67,7 @@ Palavras-chave: Qualidade de software; Testes de software; Comércio eletrônico
 ```
 
 ```{=openxml}
-<w:p><w:r><w:br w:type="page"/></w:r></w:p>
+<w:p><w:pPr><w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1701" w:right="1134" w:bottom="1134" w:left="1701" w:header="1134" w:footer="720" w:gutter="0"/></w:sectPr></w:pPr></w:p>
 ```
 
 # 1 INTRODUÇÃO
@@ -215,7 +215,7 @@ Quadro 2 Ferramentas, versões e métricas produzidas
 :::
 
 | **Ferramenta**                      | **Versão**                  | **Uso na avaliação**                                            | **Métrica** |
-|-------------------------------------|-----------------------------|-----------------------------------------------------------------|-------------|
+|----------------------------------|----------------------------|-------------------------------------------------------------|-----------------|
 | Vitest e `@vitest/coverage-v8`      | 4.1.12                      | Testes unitários e de integração; cobertura de linhas e ramos   | G1          |
 | Playwright (`@playwright/test`)     | 1.64.1                      | Testes E2E contra o *build* de produção, de 320 a 1920 px        | RNF20       |
 | axe-core (`@axe-core/playwright`)   | 4.14                        | Varredura de acessibilidade dentro do E2E, em 320 e 1440 px     | G6          |
@@ -248,7 +248,7 @@ Quadro 3 Requisitos não funcionais do Kolô na ISO/IEC 25010:2011
 :::
 
 | **RNF** | **Requisito (resumo)**                                  | **Característica e subcaracterística**                    | **Tratamento nesta APS**                              |
-|---------|---------------------------------------------------------|-----------------------------------------------------------|-------------------------------------------------------|
+|--------------|------------------------------------------|-------------------------------------------|----------------------------------------|
 | RNF01   | Tráfego em HTTPS com certificado válido                 | Segurança: confidencialidade, integridade                 | Fora do escopo: depende do deploy                     |
 | RNF02   | Dependências com suporte de segurança                   | Segurança: integridade                                    | Medido: `npm audit` (G5)                              |
 | RNF03   | Senha só como *hash* com derivação lenta e *salt*       | Segurança: confidencialidade                              | Evidência do TCC: inspeção do banco                   |
@@ -290,7 +290,7 @@ Quadro 4 Objetivos e perguntas do plano GQM
 :::
 
 | **ID** | **Característica**                  | **Objetivo**                                                                           | **Pergunta**                                                                                           |
-|--------|-------------------------------------|----------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
+|---------|----------------------------------|---------------------------------------------|----------------------------------------------------|
 | G1     | Manutenibilidade: testabilidade     | Avaliar quanto do código a suíte automatizada exercita                                 | Que parte das linhas e dos ramos é percorrida pelos testes, sobretudo em pedidos, pagamentos e agenda? |
 | G2     | Manutenibilidade: analisabilidade   | Avaliar se as unidades de código são pequenas o bastante para entender e alterar       | Quais funções e arquivos excedem os limites de complexidade e de tamanho?                              |
 | G3     | Eficiência: comportamento temporal  | Avaliar o tempo de resposta dos fluxos de compra sob carga simultânea                  | Catálogo, ficha da obra e reserva do *checkout* respondem dentro do limite com cerca de 20 usuários virtuais? |
@@ -307,7 +307,7 @@ Quadro 5 Métricas, ferramentas e metas
 :::
 
 | **ID** | **Métrica**                                                     | **Ferramenta**                                  | **Meta**                                                  |
-|--------|-----------------------------------------------------------------|-------------------------------------------------|-----------------------------------------------------------|
+|---------|-------------------------------------------------|-------------------------------------|---------------------------------------------|
 | G1     | Cobertura de linhas, testes unitários e de integração juntos    | Vitest com cobertura v8                         | ≥ 80% global                                              |
 | G1     | Cobertura de ramos                                              | Vitest com cobertura v8                         | ≥ 70% global; ≥ 90% em `orders`, `payments` e `scheduling` |
 | G2     | Complexidade ciclomática por função                             | ESLint, regra `complexity`                      | ≤ 10                                                      |
@@ -349,7 +349,7 @@ Quadro 6 Casos de teste formalizados por fluxo e técnica
 :::
 
 | **ID** | **Requisito**  | **Fluxo**              | **Técnica e classes ou limites**                                                  |
-|--------|----------------|------------------------|-----------------------------------------------------------------------------------|
+|------------|---------------------|------------------------|-----------------------------------------------------------------------------------|
 | CT01   | RN02, RN03     | Compra                 | Valor-limite: pedido igual e acima do estoque livre                               |
 | CT02   | RN04           | Compra                 | Partição: disputa simultânea por peça única                                       |
 | CT03   | RN03           | Compra                 | Valor-limite: 10 min da reserva, 1 ms antes e 1 ms depois                         |
@@ -393,7 +393,7 @@ Quadro 7 Procedimento de reprodução por medição
 :::
 
 | **Medição**                   | **Pré-condição**                                | **Comando**                                           | **Saída em `evidencias/`**              |
-|-------------------------------|-------------------------------------------------|-------------------------------------------------------|-----------------------------------------|
+|--------------------------|------------------------------------|-----------------------------------------|--------------------------------------|
 | *Lint* e tipos                | Dependências instaladas                         | `npm run lint`; `npm run typecheck`                   | `lint.txt`, `typecheck.txt`             |
 | Testes unitários              | —                                               | `npm run test:unit`                                   | `unit.json`, `unit.txt`                 |
 | Testes de integração          | `docker compose up -d`                          | `npm run test:integration`                            | `integracao.json`, `integracao.txt`     |
@@ -592,7 +592,7 @@ Tabela 1 Suítes automatizadas na linha de base e na nova medição
 :::
 
 | **Camada**                  | **Arquivos** | **Testes (antes → depois)** | **Aprovação** | **Tempo (antes → depois)** |
-|-----------------------------|--------------|-----------------------------|---------------|----------------------------|
+|----------------------------------|-------------------|----------------------------------|---------------------|---------------------------------|
 | Unitária (Vitest)           | 122 → 124    | 562 → 579                   | 100% nas duas | 93,8 s → 89,3 s            |
 | Integração (Vitest, Postgres real) | 42 → 42 | 286 → 295                 | 100% nas duas | 142,4 s → 136,0 s          |
 | E2E (Playwright, *build* de produção) | 7 → 7 | 44 → 44                 | 100% nas duas | 121,8 s → 124,9 s          |
@@ -614,7 +614,7 @@ Quadro 8 Especificação dos casos de teste
 :::
 
 | **ID** | **Pré-condição**                                          | **Passos e entrada**                                                                                   | **Resultado esperado**                                                        |
-|--------|-----------------------------------------------------------|--------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+|------------|-------------------------------|-------------------------------------------------------|------------------------------------------|
 | CT01   | Obra com estoque 3; outra sessão reservou 2               | Segunda sessão reserva 2 unidades; depois, 1 unidade                                                   | 2 recusado como indisponível; 1 aceito; estoque continua 3 até o pagamento    |
 | CT02   | Obra de estoque 1 no carrinho de dois clientes            | Os dois finalizam a compra ao mesmo tempo                                                              | Um pedido pendente criado; o outro recusado como indisponível                 |
 | CT03   | Sessão A reservou a obra de estoque 1 no instante T0      | Sessão B reserva em T0 + 10 min − 1 ms e em T0 + 10 min + 1 ms                                         | Recusada antes do vencimento; aceita depois                                   |
@@ -637,7 +637,7 @@ Quadro 9 Resultado obtido e teste automatizado de cada caso
 :::
 
 | **ID** | **Resultado obtido**                           | **Situação** | **Teste automatizado (arquivo em `tests/`)**                                            |
-|--------|------------------------------------------------|--------------|-----------------------------------------------------------------------------------------|
+|------------|--------------------------------------|-------------------|-----------------------------------------------------------------------|
 | CT01   | Conforme o esperado                            | Aprovado     | `integration/reserva.test.ts`: reserva até o estoque livre                              |
 | CT02   | Conforme o esperado                            | Aprovado     | `integration/checkout.test.ts`: cliques simultâneos e peça única                        |
 | CT03   | Conforme o esperado                            | Aprovado     | `integration/reserva.test.ts`: a reserva vence em 10 minutos                            |
@@ -726,7 +726,7 @@ Tabela 4 Linha de base contra as metas do plano
 :::
 
 | **ID** | **Métrica**                                     | **Meta**                       | **Linha de base**                       | **Situação**    |
-|--------|-------------------------------------------------|--------------------------------|-----------------------------------------|-----------------|
+|---------|---------------------------------------------|-----------------------------|-------------------------------------|---------------------|
 | G1     | Cobertura de linhas                             | ≥ 80%                          | 92,46%                                  | Atende          |
 | G1     | Cobertura de ramos global                       | ≥ 70%                          | 87,39%                                  | Atende          |
 | G1     | Ramos em `orders`                               | ≥ 90%                          | 90,3%                                   | Atende          |
@@ -814,7 +814,7 @@ Quadro 11 Avisos do npm audit na linha de base
 :::
 
 | **Pacote**                   | **Severidade** | **Dependência**           | **Problema registrado**                                    | **Correção**                  |
-|------------------------------|----------------|---------------------------|------------------------------------------------------------|-------------------------------|
+|----------------------------|----------------------|-------------------------------|------------------------------------|----------------------|
 | `next`                       | Crítica        | Direta, produção          | Execução remota no otimizador de imagens com SVG; negação de serviço em Server Actions | Versão nova disponível |
 | `better-auth`                | Crítica        | Direta, produção          | Limite de taxa contornável sob concorrência, via adaptador | Versão nova disponível        |
 | `zod`                        | Alta           | Direta, produção          | Consumo de memória em coleções grandes                     | Versão nova disponível        |
@@ -836,7 +836,7 @@ Quadro 12 Leitura crítica dos alertas do ZAP na linha de base
 :::
 
 | **Risco** | **Alerta (regra)**                        | **Onde**                                  | **Leitura**                                                                                              | **Classificação** |
-|-----------|-------------------------------------------|-------------------------------------------|----------------------------------------------------------------------------------------------------------|-------------------|
+|---------------|-----------------------------------|------------------------|--------------------------------------|----------------------------|
 | *Medium*  | CSP ausente (10038)                       | `/robots.txt`, `/sitemap.xml`, página 404 | O filtro do `proxy.ts` ignora caminhos com ponto, e essas respostas saem sem nenhum cabeçalho de segurança | Problema real    |
 | *Low*     | `X-Content-Type-Options` ausente (10021)  | Arquivos estáticos de `/_next/static/`    | Mesma causa: os estáticos ficam fora do `proxy.ts`                                                       | Problema real     |
 | *Low*     | `X-Powered-By` exposto (10037)            | Todas as respostas                        | O Next.js anuncia o *framework*; a opção que desliga o cabeçalho não estava ativa                        | Problema real     |
@@ -860,7 +860,7 @@ Quadro 13 Evidências históricas de segurança e seus limites
 :::
 
 | **Controle**          | **Evidência registrada**                               | **Limite**                                           |
-|-----------------------|--------------------------------------------------------|------------------------------------------------------|
+|--------------------------|----------------------------------------------------------|--------------------------------------------------------|
 | Assinatura de webhook | Aviso sem assinatura recebe HTTP 401                   | Revalidar com o gateway pelo endereço publicado      |
 | Permissões            | Ação administrativa repetida por cliente foi recusada  | Não substitui revisão de todas as operações          |
 | CSRF e entradas       | Origem externa recusada; entrada inválida rejeitada    | Roteiro aplicado ao ambiente local de testes         |
@@ -894,7 +894,7 @@ Quadro 14 Decisão sobre cada ponto crítico
 :::
 
 | **Ponto crítico**                      | **Decisão**        | **Justificativa**                                                                            |
-|----------------------------------------|--------------------|----------------------------------------------------------------------------------------------|
+|------------------------------------|-------------------|-------------------------------------------------------------------------------------|
 | PC1 Dependências vulneráveis           | Proposta P1        | A correção troca a versão do Next.js e da biblioteca de autenticação; o risco de regressão às vésperas da banca supera o ganho local |
 | PC2 Senha na URL antes da hidratação   | Melhoria M2        | Um atributo por formulário, coberto por teste; não muda o envio depois da hidratação        |
 | PC3 Respostas sem cabeçalhos           | Melhoria M3        | Configuração do servidor, coberta por teste; não altera nenhuma página                       |
@@ -913,7 +913,7 @@ Quadro 15 Propostas não implementadas
 :::
 
 | **Proposta**                                    | **Motivo de não implementar agora**                                   | **Próximo passo e critério de aceite**                                                                  |
-|-------------------------------------------------|-----------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+|-------------------------------|--------------------------------------------|-----------------------------------------------------------------|
 | P1 Atualizar `next`, `better-auth` e `zod`      | Troca de *framework* e de autenticação antes da banca                 | Atualizar logo após a banca; `npm audit` sem alta nem crítica, com lint, tipos e as três suítes verdes  |
 | P2 Quebrar `GestaoObras`, `WizardAgendamento` e `GestaoArtistas` | Refatoração ampla da interface, com risco de regressão visual | Extrair subcomponentes por etapa ou seção; nenhuma função acima de 20, e o E2E sem regressão           |
 | P3 Cabeçalhos em `/_next/image`; COOP e CORP    | O otimizador não passa pelo `proxy.ts`; COEP exige revisar o Turnstile | Cabeçalhos aplicados na configuração do Next.js; ZAP sem os alertas 90004 e o Turnstile funcionando    |
@@ -1209,10 +1209,6 @@ Fonte Inventário dos caminhos na revisão `51bb1b8`.
 
 Arquivos com credenciais, dependências instaladas e bancos de desenvolvimento não integram esse material. O Apêndice C traz na íntegra o código produzido para esta APS.
 
-```{=openxml}
-<w:p><w:r><w:br w:type="page"/></w:r></w:p>
-```
-
 # APÊNDICE B CONTROLE DE ASSINATURA DO WEBHOOK
 
 Listagem integral do arquivo `src/modules/payments/assinatura.ts` na revisão avaliada. O trecho mostra o uso do validador do SDK e o tratamento de recusa. A idempotência, que aparece no Código 2, e as alterações transacionais ficam em `src/modules/payments/webhook.ts`.
@@ -1253,10 +1249,6 @@ export function assinaturaValida(dados: DadosAssinatura): boolean {
 ::: {custom-style="Legenda"}
 Fonte Equipe Kolô (2026d), revisão `51bb1b8`, sem alteração.
 :::
-
-```{=openxml}
-<w:p><w:r><w:br w:type="page"/></w:r></w:p>
-```
 
 # APÊNDICE C CÓDIGO PRODUZIDO PARA A APS
 
@@ -2286,7 +2278,7 @@ Trabalho: Avaliação e melhoria da qualidade de software na plataforma Kolô
 Registro de atividades efetivamente realizadas
 
 | **Data** | **Descrição da atividade** | **Total de horas** | **Assinatura do aluno** | **Horas atribuídas** | **Assinatura do professor** |
-|----------|----------------------------|--------------------|-------------------------|----------------------|-----------------------------|
+|------------|-----------------------------|---------------------|--------------------------|-----------------------|------------------------------|
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
@@ -2329,7 +2321,7 @@ Trabalho: Avaliação e melhoria da qualidade de software na plataforma Kolô
 Registro de atividades efetivamente realizadas
 
 | **Data** | **Descrição da atividade** | **Total de horas** | **Assinatura do aluno** | **Horas atribuídas** | **Assinatura do professor** |
-|----------|----------------------------|--------------------|-------------------------|----------------------|-----------------------------|
+|------------|-----------------------------|---------------------|--------------------------|-----------------------|------------------------------|
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
@@ -2372,7 +2364,7 @@ Trabalho: Avaliação e melhoria da qualidade de software na plataforma Kolô
 Registro de atividades efetivamente realizadas
 
 | **Data** | **Descrição da atividade** | **Total de horas** | **Assinatura do aluno** | **Horas atribuídas** | **Assinatura do professor** |
-|----------|----------------------------|--------------------|-------------------------|----------------------|-----------------------------|
+|------------|-----------------------------|---------------------|--------------------------|-----------------------|------------------------------|
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
@@ -2415,7 +2407,7 @@ Trabalho: Avaliação e melhoria da qualidade de software na plataforma Kolô
 Registro de atividades efetivamente realizadas
 
 | **Data** | **Descrição da atividade** | **Total de horas** | **Assinatura do aluno** | **Horas atribuídas** | **Assinatura do professor** |
-|----------|----------------------------|--------------------|-------------------------|----------------------|-----------------------------|
+|------------|-----------------------------|---------------------|--------------------------|-----------------------|------------------------------|
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
@@ -2458,7 +2450,7 @@ Trabalho: Avaliação e melhoria da qualidade de software na plataforma Kolô
 Registro de atividades efetivamente realizadas
 
 | **Data** | **Descrição da atividade** | **Total de horas** | **Assinatura do aluno** | **Horas atribuídas** | **Assinatura do professor** |
-|----------|----------------------------|--------------------|-------------------------|----------------------|-----------------------------|
+|------------|-----------------------------|---------------------|--------------------------|-----------------------|------------------------------|
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
