@@ -52,13 +52,9 @@ CAMPINAS
 
 **RESUMO**
 
-Este trabalho avalia a qualidade da plataforma web Kolô Ateliê & Estúdio, desenvolvida para exposição e comercialização de obras de arte e apoio ao agendamento de tatuagens. O objetivo é relacionar requisitos, processos e evidências técnicas para identificar riscos e propor melhorias verificáveis. Adota-se um estudo aplicado baseado na análise documental da monografia, da especificação do projeto, do código-fonte e dos registros de desenvolvimento. A avaliação considera testes unitários, testes de integração com PostgreSQL, testes de ponta a ponta, auditorias de desempenho e verificações automatizadas de acessibilidade. Os registros do projeto indicam controle transacional de reservas de estoque, tratamento idempotente de notificações de pagamento e melhorias de interface e carregamento de imagens. A mediana documentada do Lighthouse passou de 88 para 97 pontos no catálogo, com redução do LCP de 3,92 para 2,43 segundos. Permanecem limitações relativas à navegação por teclado, à validação no ambiente publicado, à restauração de backups e à consolidação das evidências na mesma revisão do sistema. Os dados apresentados são resultados históricos das fontes consultadas e não representam uma nova execução das suítes. Conclui-se que o projeto reúne mecanismos relevantes de qualidade em ambiente de desenvolvimento e testes, mas a comprovação operacional depende da implantação e de uma rodada final de validação. Propõe-se um plano de melhoria com prioridades, métricas e critérios de aceite.
+Este trabalho avalia a qualidade da plataforma web Kolô Ateliê & Estúdio, desenvolvida no Trabalho de Conclusão de Curso do grupo para a venda de obras de arte e o apoio ao agendamento de tatuagens, e propõe melhorias com base nos resultados. O objetivo é verificar em que medida testes e medições sustentam a confiabilidade, a eficiência, a manutenibilidade, a usabilidade e a segurança do sistema. O método classifica os 24 requisitos não funcionais do projeto na ISO/IEC 25010:2011, desdobra as características escolhidas em objetivos, perguntas e métricas pelo método GQM e fixa as metas antes da medição. Duas rodadas locais, com as mesmas ferramentas, mediram o sistema antes e depois das melhorias, por meio de testes unitários, de integração com PostgreSQL e de ponta a ponta, cobertura, complexidade ciclomática, carga, rajada concorrente, auditoria de dependências e varredura de segurança. Na linha de base, onze das quinze métricas medidas atenderam à meta: a rajada de 30 compras simultâneas da mesma peça criou um único pedido, e o percentil 95 dos tempos de resposta ficou abaixo da metade dos limites. Foram implementadas três melhorias de baixo risco: testes novos de pagamento e agenda, envio de formulários por POST e cabeçalhos de segurança nas respostas antes descobertas. Na segunda rodada, os 918 testes passaram, os ramos dos módulos de pagamento e de agenda superaram a meta de 90% e os alertas de baixo risco da varredura caíram de oito para cinco. Seguem fora da meta as 22 funções acima da complexidade 10 e os avisos críticos e altos das dependências, registrados como propostas com critério de aceite. Conclui-se que o Kolô atende à maior parte das metas nas condições locais avaliadas e que repetir a medição depois de cada correção torna a melhoria verificável. A comprovação em produção, a navegação por teclado e a restauração de *backup* permanecem pendentes.
 
 Palavras-chave: Qualidade de software; Testes de software; Comércio eletrônico; Confiabilidade; Kolô.
-
-**Delimitação desta versão**
-
-Documento elaborado a partir dos arquivos disponíveis na pasta TCC em 26 de outubro de 2026. As atividades e conclusões seguem o tema da APS; os resultados são atribuídos às respectivas fontes. Campos individuais de RA, carga horária e assinatura permanecem sem preenchimento por dependerem de comprovação dos integrantes.
 
 ```{=openxml}
 <w:p><w:r><w:br w:type="page"/></w:r></w:p>
@@ -71,7 +67,7 @@ Documento elaborado a partir dos arquivos disponíveis na pasta TCC em 26 de out
 ```
 
 ```{=openxml}
-<w:p><w:r><w:br w:type="page"/></w:r></w:p>
+<w:p><w:pPr><w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1701" w:right="1134" w:bottom="1134" w:left="1701" w:header="1134" w:footer="720" w:gutter="0"/></w:sectPr></w:pPr></w:p>
 ```
 
 # 1 INTRODUÇÃO
@@ -99,9 +95,9 @@ Avaliar a qualidade da plataforma Kolô e propor melhorias em sua confiabilidade
 1. Caracterizar o sistema e justificar sua seleção a partir dos riscos da operação do ateliê.
 2. Identificar e documentar requisitos de qualidade, associando-os a riscos e procedimentos de verificação.
 3. Definir um plano de qualidade com procedimentos, métricas, ferramentas e critérios de aceite.
-4. Executar testes funcionais e não funcionais nas condições definidas no [plano de qualidade](PLANO.md).
-5. Registrar e analisar os resultados em relação às metas, identificando pontos críticos e oportunidades de melhoria com base no [baseline da APS](evidencias/BASELINE.md).
-6. Propor melhorias com base nas medições e verificar novamente as métricas afetadas pelas mudanças implementadas, com registro no [comparativo das melhorias](evidencias/COMPARATIVO.md).
+4. Executar testes funcionais e não funcionais nas condições definidas no plano de qualidade (Equipe Kolô, 2026g).
+5. Registrar e analisar os resultados em relação às metas, identificando pontos críticos e oportunidades de melhoria com base na linha de base da APS (Equipe Kolô, 2026h).
+6. Propor melhorias com base nas medições e verificar novamente as métricas afetadas pelas mudanças implementadas, com registro no comparativo das melhorias (Equipe Kolô, 2026f).
 7. Documentar o processo e refletir sobre sua contribuição para a formação acadêmica e para a prática profissional.
 
 ### 1.4.3 Delimitação do estudo
@@ -112,7 +108,7 @@ A visão geral do repositório tcc-2 abrange as páginas e os módulos de negóc
 - **Carrinho, checkout e webhook.** A disputa pela última unidade em estoque e a repetição de notificações do Mercado Pago exercitam a consistência entre reserva, pagamento e baixa de estoque.
 - **Assistente de agendamento.** Um link incorreto para o WhatsApp pode impedir que o cliente inicie o contato pelo assistente. Se a mensagem omitir ou alterar a preferência de data ou horário, o cliente pode precisar informá-la novamente na conversa.
 
-Os registros da APS no repositório documentam execuções locais de testes unitários, de integração e de ponta a ponta, além de medições de cobertura, complexidade, carga e segurança. Nesta versão do relatório, o desenvolvimento e as conclusões discutem os resultados históricos atribuídos às respectivas fontes do TCC, entre elas a monografia (Oliveira et al., 2026).
+A avaliação combina medições novas, executadas localmente em duas rodadas, com resultados históricos do TCC, atribuídos às respectivas fontes, entre elas a monografia (Oliveira et al., 2026). As medições abrangem testes unitários, de integração e de ponta a ponta, cobertura, complexidade, carga e segurança, e a seção 3.2 define como cada evidência é classificada.
 
 As novas medições foram realizadas em ambiente local, com PostgreSQL em contêiner e serviços externos simulados nos ensaios de carga e na varredura de segurança. A avaliação em produção fica para depois da publicação. O catálogo apresenta as obras em duas dimensões. A integração com o WhatsApp se limita ao link direto com mensagem pré-preenchida. O artista ou administrador cadastra manualmente o horário combinado, e a coleta de dados de anamnese ocorre presencialmente no estúdio (Equipe Kolô, 2026a).
 
@@ -125,7 +121,7 @@ A ISO/IEC 25010:2011 distingue qualidade do produto, observada nas propriedades 
 
 [^iso25010]: A ISO/IEC 25010:2023 substituiu a edição de 2011 e trata do modelo de qualidade do produto, agora com nove características. A qualidade em uso passou a ter norma própria, a ISO/IEC 25019:2023. Nesta APS, a classificação dos requisitos e a leitura das métricas seguem a edição de 2011 adotada no plano (ISO; IEC, 2023a, 2023b).
 
-O método Goal–Question–Metric (GQM) parte de um objetivo de avaliação, formula perguntas que permitem julgar seu atendimento e escolhe métricas capazes de respondê-las. Para avaliar a eficiência do catálogo, por exemplo, a pergunta pode ser quanto demora a resposta sob a carga prevista. A métrica é a duração das requisições no percentil 95 e a meta é o limite com o qual esse valor será comparado (Basili; Caldiera; Rombach, 1994). No [plano da APS](PLANO.md), os limites foram estabelecidos antes da medição (Equipe Kolô, 2026g).
+O método Goal–Question–Metric (GQM) parte de um objetivo de avaliação, formula perguntas que permitem julgar seu atendimento e escolhe métricas capazes de respondê-las. Para avaliar a eficiência do catálogo, por exemplo, a pergunta pode ser quanto demora a resposta sob a carga prevista. A métrica é a duração das requisições no percentil 95 e a meta é o limite com o qual esse valor será comparado (Basili; Caldiera; Rombach, 1994). No plano da APS, os limites foram estabelecidos antes da medição (Equipe Kolô, 2026g).
 
 A confiabilidade é observada na preservação de invariantes do domínio e no tratamento de falhas e repetições. A eficiência é examinada pela duração das requisições sob carga e pelos indicadores de carregamento das páginas. A manutenibilidade envolve a facilidade de analisar, alterar e testar o produto. Na APS, a separação de módulos, a tipagem, as validações e os controles de integração ajudam a interpretar as medidas de cobertura e complexidade. A usabilidade exige fluxos compreensíveis e verificações de acessibilidade que vão além da inspeção visual.
 
@@ -141,7 +137,7 @@ A estratégia combina testes unitários, integração com PostgreSQL e testes de
 
 A pirâmide de testes organiza a automação com mais testes rápidos e focados na base e menos testes amplos no topo, onde há mais componentes envolvidos e maior custo de manutenção. A camada intermediária cobre as interações que um teste isolado deixaria de fora. A proporção entre camadas é uma orientação para distribuir custo e alcance. No Kolô, ela ajuda a decidir quais regras podem ser verificadas isoladamente, quais pedem integração com o banco e quais justificam um percurso completo no navegador (Cohn, 2010).
 
-No desenvolvimento orientado por testes (TDD), primeiro se escreve um teste que falha pelo motivo esperado. Em seguida se faz a menor alteração que o leva a passar e, por fim, se melhora a estrutura do código mantendo os testes verdes. A sequência é conhecida como vermelho, verde e refatoração (Beck, 2003). Um teste que já passa pode ampliar a cobertura de um comportamento existente ao exercitar um caso ainda ausente da suíte. As correções que seguiram o ciclo de TDD e o acréscimo de casos de integração estão distinguidos no [comparativo das melhorias](evidencias/COMPARATIVO.md) (Equipe Kolô, 2026f).
+No desenvolvimento orientado por testes (TDD), primeiro se escreve um teste que falha pelo motivo esperado. Em seguida se faz a menor alteração que o leva a passar e, por fim, se melhora a estrutura do código mantendo os testes verdes. A sequência é conhecida como vermelho, verde e refatoração (Beck, 2003). Um teste que já passa pode ampliar a cobertura de um comportamento existente ao exercitar um caso ainda ausente da suíte. As correções que seguiram o ciclo de TDD e o acréscimo de casos de integração estão distinguidos no comparativo das melhorias (Equipe Kolô, 2026f).
 
 A ISO/IEC/IEEE 29119-3:2021 apresenta modelos para a documentação de teste. O modelo adotado na APS prevê que o registro do caso reúna identificador, requisito, pré-condições, dados de entrada, passos e resultado esperado. O registro da execução deve acrescentar o resultado obtido, o status e a referência ao teste automatizado, quando aplicável. O resultado esperado vem do requisito e orienta a comparação com o que foi observado (ISO; IEC; IEEE, 2021a).
 
@@ -157,7 +153,7 @@ Um *webhook* é uma notificação HTTP que um serviço envia a outro em resposta
 
 ## 2.5 Desempenho e acessibilidade
 
-Um teste de carga mede o comportamento do sistema sob um volume de trabalho definido. No k6, cada usuário virtual (VU) executa o roteiro de requisições do cenário. O percentil 95 (p95) é a duração abaixo da qual, ou igual à qual, ficam aproximadamente 95% dos tempos medidos. A taxa de falha HTTP é a proporção de requisições que o k6 classifica como falhas. Já um *check* é uma verificação booleana definida no roteiro, como verificar se a resposta do checkout indica que o pedido foi criado (Grafana Labs, [202-]). O roteiro de carga avalia duração e taxa de falha nas páginas de leitura, e duração e proporção de *checks* bem-sucedidos na finalização do checkout. A rajada concentra tentativas em um intervalo curto. Na APS, ela força a disputa pela mesma unidade. O roteiro incrementa o contador de pedidos recusados sempre que falta o redirecionamento esperado para a página do pedido. Esse contador agrupa respostas de causas distintas. A recusa prevista por falta de estoque é um resultado válido da operação. A verificação da regra usa o item de pedido persistido no banco para conferir se a quantidade respeitou o estoque disponível. Os roteiros e resultados das duas rodadas estão descritos no [registro da linha de base](evidencias/BASELINE.md) e no [comparativo](evidencias/COMPARATIVO.md) (Equipe Kolô, 2026f, 2026h).
+Um teste de carga mede o comportamento do sistema sob um volume de trabalho definido. No k6, cada usuário virtual (VU) executa o roteiro de requisições do cenário. O percentil 95 (p95) é a duração abaixo da qual, ou igual à qual, ficam aproximadamente 95% dos tempos medidos. A taxa de falha HTTP é a proporção de requisições que o k6 classifica como falhas. Já um *check* é uma verificação booleana definida no roteiro, como verificar se a resposta do checkout indica que o pedido foi criado (Grafana Labs, [202-]). O roteiro de carga avalia duração e taxa de falha nas páginas de leitura, e duração e proporção de *checks* bem-sucedidos na finalização do checkout. A rajada concentra tentativas em um intervalo curto. Na APS, ela força a disputa pela mesma unidade. O roteiro incrementa o contador de pedidos recusados sempre que falta o redirecionamento esperado para a página do pedido. Esse contador agrupa respostas de causas distintas. A recusa prevista por falta de estoque é um resultado válido da operação. A verificação da regra usa o item de pedido persistido no banco para conferir se a quantidade respeitou o estoque disponível. Os roteiros e resultados das duas rodadas estão descritos no registro da linha de base e no comparativo (Equipe Kolô, 2026f, 2026h).
 
 O Lighthouse mede o desempenho da página no navegador e reúne os indicadores em uma pontuação ponderada. O *Largest Contentful Paint* (LCP) mede o tempo desde o início do carregamento até a renderização do maior conteúdo elegível visível na tela. O *First Contentful Paint* (FCP) mede quanto tempo decorre até aparecer o primeiro texto, imagem ou outro conteúdo da página. O *Total Blocking Time* (TBT) soma, no intervalo de medição, as parcelas das tarefas que excedem 50 ms na linha de execução principal. O *Cumulative Layout Shift* (CLS) mede a instabilidade visual causada por deslocamentos inesperados de elementos (Clark, 2020; Google, 2019a, 2019b).
 
@@ -173,7 +169,7 @@ A complexidade ciclomática de McCabe mede o número de caminhos linearmente ind
 
 Uma suíte também pode apresentar sinais de manutenção difícil, como testes duplicados ou dependentes do relógio real. Um teste instável (*flaky*) alterna entre aprovação e falha sem mudança correspondente no código avaliado (Microsoft, [202-]b). Controlar o relógio permite reproduzir o limite de expiração com o mesmo instante em todas as execuções (Vitest, [202-]b).
 
-O ciclo de melhoria adotado consiste em identificar o risco, definir um critério, aplicar a mudança e repetir a medição nas mesmas condições. A linha de base (*baseline*) é a rodada inicial, usada como ponto de comparação. A rodada posterior verifica se a métrica atingiu a meta e se o comportamento antes aprovado continua funcionando. A revisão avaliada, o ambiente e os relatórios de cada rodada permitem interpretar diferenças e separar uma mudança observada de variações do ensaio, como registrado na [linha de base](evidencias/BASELINE.md) e no [comparativo](evidencias/COMPARATIVO.md) (Equipe Kolô, 2026f, 2026h).
+O ciclo de melhoria adotado consiste em identificar o risco, definir um critério, aplicar a mudança e repetir a medição nas mesmas condições. A linha de base (*baseline*) é a rodada inicial, usada como ponto de comparação. A rodada posterior verifica se a métrica atingiu a meta e se o comportamento antes aprovado continua funcionando. A revisão avaliada, o ambiente e os relatórios de cada rodada permitem interpretar diferenças e separar uma mudança observada de variações do ensaio, como registrado na linha de base e no comparativo (Equipe Kolô, 2026f, 2026h).
 
 ## 2.7 Segurança de aplicações web
 
@@ -183,7 +179,7 @@ Cabeçalhos de resposta HTTP comunicam políticas ao navegador. A *Content Secur
 
 O Zed Attack Proxy (ZAP) inspeciona o tráfego de aplicações web. A varredura passiva do modo *Baseline Scan* usa um rastreador para descobrir páginas e examina as mensagens HTTP observadas, sem executar ataques ativos. Cada alerta indica um problema potencial e informa o risco e a confiança da detecção. Um alerta é classificado como falso positivo quando a análise demonstra que o problema apontado não se aplica à resposta ou ao fluxo avaliado. Um alerta inconclusivo permanece pendente de validação. As conclusões valem para as rotas e condições alcançadas pelo rastreador (ZAP, [202-]a, [202-]b).
 
-A auditoria com `npm audit` compara as dependências do projeto com avisos de segurança conhecidos no registro consultado (npm, 2026). Ela inclui dependências diretas, declaradas pelo projeto, e transitivas, trazidas por outros pacotes. A severidade do aviso orienta a análise, que ainda precisa verificar se o caminho afetado é alcançável no Kolô. Os relatórios de dependências e os alertas do ZAP são evidências complementares, reunidas no [registro da linha de base](evidencias/BASELINE.md) e no [comparativo das melhorias](evidencias/COMPARATIVO.md) (Equipe Kolô, 2026f, 2026h).
+A auditoria com `npm audit` compara as dependências do projeto com avisos de segurança conhecidos no registro consultado (npm, 2026). Ela inclui dependências diretas, declaradas pelo projeto, e transitivas, trazidas por outros pacotes. A severidade do aviso orienta a análise, que ainda precisa verificar se o caminho afetado é alcançável no Kolô. Os relatórios de dependências e os alertas do ZAP são evidências complementares, reunidas no registro da linha de base e no comparativo das melhorias (Equipe Kolô, 2026f, 2026h).
 
 # 3 METODOLOGIA
 
@@ -219,7 +215,7 @@ Quadro 2 Ferramentas, versões e métricas produzidas
 :::
 
 | **Ferramenta**                      | **Versão**                  | **Uso na avaliação**                                            | **Métrica** |
-|-------------------------------------|-----------------------------|-----------------------------------------------------------------|-------------|
+|----------------------------------|----------------------------|-------------------------------------------------------------|-----------------|
 | Vitest e `@vitest/coverage-v8`      | 4.1.12                      | Testes unitários e de integração; cobertura de linhas e ramos   | G1          |
 | Playwright (`@playwright/test`)     | 1.64.1                      | Testes E2E contra o *build* de produção, de 320 a 1920 px        | RNF20       |
 | axe-core (`@axe-core/playwright`)   | 4.14                        | Varredura de acessibilidade dentro do E2E, em 320 e 1440 px     | G6          |
@@ -242,7 +238,7 @@ Cada evidência citada recebe uma de quatro classificações. É **medida nesta 
 Três regras orientam a comparação. Nenhum número entra no documento sem arquivo de evidência ou fonte citada. Uma rodada só é comparada com outra quando *lint*, checagem de tipos e todas as suítes passaram nela. As medidas de tempo são comparadas apenas entre rodadas feitas na mesma máquina e com o mesmo roteiro. Não se atribuem aprovação do cliente nem resultados de produção ausentes nas fontes.
 
 ## 3.3 Plano de qualidade e métricas
-O plano de qualidade tem três partes: a classificação dos requisitos não funcionais nas características da ISO/IEC 25010:2011, o desdobramento das características escolhidas em objetivos, perguntas e métricas pelo método GQM e o processo que liga a medição às melhorias. Segundo o [plano da APS](PLANO.md), as metas foram fixadas na sessão de decisões de 6 de novembro de 2026, antes da primeira rodada de medição, para que o resultado não influenciasse o limite com o qual seria comparado (Basili; Caldiera; Rombach, 1994; Equipe Kolô, 2026g; ISO; IEC, 2011).
+O plano de qualidade tem três partes: a classificação dos requisitos não funcionais nas características da ISO/IEC 25010:2011, o desdobramento das características escolhidas em objetivos, perguntas e métricas pelo método GQM e o processo que liga a medição às melhorias. Segundo o plano da APS, as metas foram fixadas na sessão de decisões de 6 de novembro de 2026, antes da primeira rodada de medição, para que o resultado não influenciasse o limite com o qual seria comparado (Basili; Caldiera; Rombach, 1994; Equipe Kolô, 2026g; ISO; IEC, 2011).
 
 ### 3.3.1 Requisitos de qualidade
 O escopo do Kolô define 24 requisitos não funcionais, cada um com um critério de verificação. O Quadro 3 classifica cada RNF por característica e subcaracterística da ISO/IEC 25010:2011 e indica como ele é tratado nesta APS. Um requisito pode ser medido nesta avaliação, apoiar-se em evidência registrada no TCC ou ficar fora do escopo por depender do ambiente publicado. Quando o requisito sustenta mais de uma característica, a principal aparece primeiro.
@@ -252,7 +248,7 @@ Quadro 3 Requisitos não funcionais do Kolô na ISO/IEC 25010:2011
 :::
 
 | **RNF** | **Requisito (resumo)**                                  | **Característica e subcaracterística**                    | **Tratamento nesta APS**                              |
-|---------|---------------------------------------------------------|-----------------------------------------------------------|-------------------------------------------------------|
+|--------------|------------------------------------------|-------------------------------------------|----------------------------------------|
 | RNF01   | Tráfego em HTTPS com certificado válido                 | Segurança: confidencialidade, integridade                 | Fora do escopo: depende do deploy                     |
 | RNF02   | Dependências com suporte de segurança                   | Segurança: integridade                                    | Medido: `npm audit` (G5)                              |
 | RNF03   | Senha só como *hash* com derivação lenta e *salt*       | Segurança: confidencialidade                              | Evidência do TCC: inspeção do banco                   |
@@ -294,7 +290,7 @@ Quadro 4 Objetivos e perguntas do plano GQM
 :::
 
 | **ID** | **Característica**                  | **Objetivo**                                                                           | **Pergunta**                                                                                           |
-|--------|-------------------------------------|----------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
+|---------|----------------------------------|---------------------------------------------|----------------------------------------------------|
 | G1     | Manutenibilidade: testabilidade     | Avaliar quanto do código a suíte automatizada exercita                                 | Que parte das linhas e dos ramos é percorrida pelos testes, sobretudo em pedidos, pagamentos e agenda? |
 | G2     | Manutenibilidade: analisabilidade   | Avaliar se as unidades de código são pequenas o bastante para entender e alterar       | Quais funções e arquivos excedem os limites de complexidade e de tamanho?                              |
 | G3     | Eficiência: comportamento temporal  | Avaliar o tempo de resposta dos fluxos de compra sob carga simultânea                  | Catálogo, ficha da obra e reserva do *checkout* respondem dentro do limite com cerca de 20 usuários virtuais? |
@@ -311,7 +307,7 @@ Quadro 5 Métricas, ferramentas e metas
 :::
 
 | **ID** | **Métrica**                                                     | **Ferramenta**                                  | **Meta**                                                  |
-|--------|-----------------------------------------------------------------|-------------------------------------------------|-----------------------------------------------------------|
+|---------|-------------------------------------------------|-------------------------------------|---------------------------------------------|
 | G1     | Cobertura de linhas, testes unitários e de integração juntos    | Vitest com cobertura v8                         | ≥ 80% global                                              |
 | G1     | Cobertura de ramos                                              | Vitest com cobertura v8                         | ≥ 70% global; ≥ 90% em `orders`, `payments` e `scheduling` |
 | G2     | Complexidade ciclomática por função                             | ESLint, regra `complexity`                      | ≤ 10                                                      |
@@ -333,11 +329,11 @@ As metas de G6 vêm do escopo do projeto (RNF13 e RNF21). O Lighthouse não foi 
 ### 3.3.3 Processo de qualidade
 A avaliação seguiu um ciclo de cinco etapas, com o registro de cada uma em `docs/aps/evidencias/`:
 
-1. **Plano.** Requisitos classificados, perguntas e metas registrados no [plano da APS](PLANO.md) antes de qualquer medição.
-2. **Linha de base.** Todas as métricas do Quadro 5, exceto o Lighthouse, medidas numa mesma revisão do código, na mesma máquina, com os comandos e as saídas brutas guardados no [registro da linha de base](evidencias/BASELINE.md).
+1. **Plano.** Requisitos classificados, perguntas e metas registrados no plano da APS (Equipe Kolô, 2026g) antes de qualquer medição.
+2. **Linha de base.** Todas as métricas do Quadro 5, exceto o Lighthouse, medidas numa mesma revisão do código, na mesma máquina, com os comandos e as saídas brutas guardados no registro da linha de base (Equipe Kolô, 2026h).
 3. **Pontos críticos.** Cada métrica fora da meta e cada alerta de segurança a analisar viram um ponto crítico. A lista resultante é o insumo da escolha das melhorias.
 4. **Melhoria.** Os pontos críticos foram ordenados por risco de mudança às vésperas da banca do TCC. O plano previa apenas testes novos ou refatoração coberta pela suíte. Dois pontos de segurança apontados pelo ZAP foram aceitos como exceção, por serem mudanças pequenas de configuração cobertas por testes unitários e pela suíte E2E. Os pontos escolhidos foram implementados por TDD: um teste que falha pelo motivo esperado, a menor alteração que o faz passar e a repetição até cobrir o comportamento. Quando a melhoria só acrescenta testes a comportamento já existente, não há etapa vermelha. Antes da nova medição, um revisor que não escreveu o código analisou o *diff*, e os ajustes que ele pediu entraram na mesma rodada.
-5. **Nova medição.** Os mesmos comandos, na mesma máquina, sobre a revisão com as melhorias. O [comparativo das melhorias](evidencias/COMPARATIVO.md) põe antes e depois lado a lado na mesma métrica. Nas medidas de tempo, uma variação pequena é lida como ausência de regressão, não como ganho, porque o ensaio local tem ruído.
+5. **Nova medição.** Os mesmos comandos, na mesma máquina, sobre a revisão com as melhorias. O comparativo das melhorias (Equipe Kolô, 2026f) põe antes e depois lado a lado na mesma métrica. Nas medidas de tempo, uma variação pequena é lida como ausência de regressão, não como ganho, porque o ensaio local tem ruído.
 
 Pontos críticos não tratados ficam como propostas, com a justificativa de por que ficaram fora (seção 4.6). Uma rodada seguinte repetiria o ciclo a partir da etapa 2, sobre as métricas afetadas pelas mudanças (Beck, 2003; Equipe Kolô, 2026f, 2026h).
 
@@ -353,7 +349,7 @@ Quadro 6 Casos de teste formalizados por fluxo e técnica
 :::
 
 | **ID** | **Requisito**  | **Fluxo**              | **Técnica e classes ou limites**                                                  |
-|--------|----------------|------------------------|-----------------------------------------------------------------------------------|
+|------------|---------------------|------------------------|-----------------------------------------------------------------------------------|
 | CT01   | RN02, RN03     | Compra                 | Valor-limite: pedido igual e acima do estoque livre                               |
 | CT02   | RN04           | Compra                 | Partição: disputa simultânea por peça única                                       |
 | CT03   | RN03           | Compra                 | Valor-limite: 10 min da reserva, 1 ms antes e 1 ms depois                         |
@@ -397,7 +393,7 @@ Quadro 7 Procedimento de reprodução por medição
 :::
 
 | **Medição**                   | **Pré-condição**                                | **Comando**                                           | **Saída em `evidencias/`**              |
-|-------------------------------|-------------------------------------------------|-------------------------------------------------------|-----------------------------------------|
+|--------------------------|------------------------------------|-----------------------------------------|--------------------------------------|
 | *Lint* e tipos                | Dependências instaladas                         | `npm run lint`; `npm run typecheck`                   | `lint.txt`, `typecheck.txt`             |
 | Testes unitários              | —                                               | `npm run test:unit`                                   | `unit.json`, `unit.txt`                 |
 | Testes de integração          | `docker compose up -d`                          | `npm run test:integration`                            | `integracao.json`, `integracao.txt`     |
@@ -584,7 +580,7 @@ Fonte Elaborado pelos autores a partir de Equipe Kolô (2026f, 2026g, 2026h).
 :::
 
 ## 4.2 Modelo de dados e invariantes
-No comércio, artwork se relaciona a artwork_reservation, cart_item e order_item; order reúne itens e pagamentos. Na agenda, appointment vincula artista, intervalo e contato. As contas e sessões sustentam a identificação e o controle de acesso. O modelo utiliza valores monetários inteiros em centavos e datas armazenadas em UTC. O DER completo e o esquema estão identificados no Apêndice A.
+No comércio, artwork se relaciona a artwork_reservation, cart_item e order_item; order reúne itens e pagamentos. Na agenda, appointment vincula artista, intervalo e contato. As contas e sessões sustentam a identificação e o controle de acesso. O modelo utiliza valores monetários inteiros em centavos e datas armazenadas em UTC. O DER completo e o esquema estão identificados no Apêndice A (Equipe Kolô, 2026e).
 
 ## 4.3 Resultados de confiabilidade e testes
 
@@ -596,7 +592,7 @@ Tabela 1 Suítes automatizadas na linha de base e na nova medição
 :::
 
 | **Camada**                  | **Arquivos** | **Testes (antes → depois)** | **Aprovação** | **Tempo (antes → depois)** |
-|-----------------------------|--------------|-----------------------------|---------------|----------------------------|
+|----------------------------------|-------------------|----------------------------------|---------------------|---------------------------------|
 | Unitária (Vitest)           | 122 → 124    | 562 → 579                   | 100% nas duas | 93,8 s → 89,3 s            |
 | Integração (Vitest, Postgres real) | 42 → 42 | 286 → 295                 | 100% nas duas | 142,4 s → 136,0 s          |
 | E2E (Playwright, *build* de produção) | 7 → 7 | 44 → 44                 | 100% nas duas | 121,8 s → 124,9 s          |
@@ -618,7 +614,7 @@ Quadro 8 Especificação dos casos de teste
 :::
 
 | **ID** | **Pré-condição**                                          | **Passos e entrada**                                                                                   | **Resultado esperado**                                                        |
-|--------|-----------------------------------------------------------|--------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+|------------|-------------------------------|-------------------------------------------------------|------------------------------------------|
 | CT01   | Obra com estoque 3; outra sessão reservou 2               | Segunda sessão reserva 2 unidades; depois, 1 unidade                                                   | 2 recusado como indisponível; 1 aceito; estoque continua 3 até o pagamento    |
 | CT02   | Obra de estoque 1 no carrinho de dois clientes            | Os dois finalizam a compra ao mesmo tempo                                                              | Um pedido pendente criado; o outro recusado como indisponível                 |
 | CT03   | Sessão A reservou a obra de estoque 1 no instante T0      | Sessão B reserva em T0 + 10 min − 1 ms e em T0 + 10 min + 1 ms                                         | Recusada antes do vencimento; aceita depois                                   |
@@ -641,7 +637,7 @@ Quadro 9 Resultado obtido e teste automatizado de cada caso
 :::
 
 | **ID** | **Resultado obtido**                           | **Situação** | **Teste automatizado (arquivo em `tests/`)**                                            |
-|--------|------------------------------------------------|--------------|-----------------------------------------------------------------------------------------|
+|------------|--------------------------------------|-------------------|-----------------------------------------------------------------------|
 | CT01   | Conforme o esperado                            | Aprovado     | `integration/reserva.test.ts`: reserva até o estoque livre                              |
 | CT02   | Conforme o esperado                            | Aprovado     | `integration/checkout.test.ts`: cliques simultâneos e peça única                        |
 | CT03   | Conforme o esperado                            | Aprovado     | `integration/reserva.test.ts`: a reserva vence em 10 minutos                            |
@@ -730,7 +726,7 @@ Tabela 4 Linha de base contra as metas do plano
 :::
 
 | **ID** | **Métrica**                                     | **Meta**                       | **Linha de base**                       | **Situação**    |
-|--------|-------------------------------------------------|--------------------------------|-----------------------------------------|-----------------|
+|---------|---------------------------------------------|-----------------------------|-------------------------------------|---------------------|
 | G1     | Cobertura de linhas                             | ≥ 80%                          | 92,46%                                  | Atende          |
 | G1     | Cobertura de ramos global                       | ≥ 70%                          | 87,39%                                  | Atende          |
 | G1     | Ramos em `orders`                               | ≥ 90%                          | 90,3%                                   | Atende          |
@@ -818,7 +814,7 @@ Quadro 11 Avisos do npm audit na linha de base
 :::
 
 | **Pacote**                   | **Severidade** | **Dependência**           | **Problema registrado**                                    | **Correção**                  |
-|------------------------------|----------------|---------------------------|------------------------------------------------------------|-------------------------------|
+|----------------------------|----------------------|-------------------------------|------------------------------------|----------------------|
 | `next`                       | Crítica        | Direta, produção          | Execução remota no otimizador de imagens com SVG; negação de serviço em Server Actions | Versão nova disponível |
 | `better-auth`                | Crítica        | Direta, produção          | Limite de taxa contornável sob concorrência, via adaptador | Versão nova disponível        |
 | `zod`                        | Alta           | Direta, produção          | Consumo de memória em coleções grandes                     | Versão nova disponível        |
@@ -840,7 +836,7 @@ Quadro 12 Leitura crítica dos alertas do ZAP na linha de base
 :::
 
 | **Risco** | **Alerta (regra)**                        | **Onde**                                  | **Leitura**                                                                                              | **Classificação** |
-|-----------|-------------------------------------------|-------------------------------------------|----------------------------------------------------------------------------------------------------------|-------------------|
+|---------------|-----------------------------------|------------------------|--------------------------------------|----------------------------|
 | *Medium*  | CSP ausente (10038)                       | `/robots.txt`, `/sitemap.xml`, página 404 | O filtro do `proxy.ts` ignora caminhos com ponto, e essas respostas saem sem nenhum cabeçalho de segurança | Problema real    |
 | *Low*     | `X-Content-Type-Options` ausente (10021)  | Arquivos estáticos de `/_next/static/`    | Mesma causa: os estáticos ficam fora do `proxy.ts`                                                       | Problema real     |
 | *Low*     | `X-Powered-By` exposto (10037)            | Todas as respostas                        | O Next.js anuncia o *framework*; a opção que desliga o cabeçalho não estava ativa                        | Problema real     |
@@ -864,7 +860,7 @@ Quadro 13 Evidências históricas de segurança e seus limites
 :::
 
 | **Controle**          | **Evidência registrada**                               | **Limite**                                           |
-|-----------------------|--------------------------------------------------------|------------------------------------------------------|
+|--------------------------|----------------------------------------------------------|--------------------------------------------------------|
 | Assinatura de webhook | Aviso sem assinatura recebe HTTP 401                   | Revalidar com o gateway pelo endereço publicado      |
 | Permissões            | Ação administrativa repetida por cliente foi recusada  | Não substitui revisão de todas as operações          |
 | CSRF e entradas       | Origem externa recusada; entrada inválida rejeitada    | Roteiro aplicado ao ambiente local de testes         |
@@ -898,7 +894,7 @@ Quadro 14 Decisão sobre cada ponto crítico
 :::
 
 | **Ponto crítico**                      | **Decisão**        | **Justificativa**                                                                            |
-|----------------------------------------|--------------------|----------------------------------------------------------------------------------------------|
+|------------------------------------|-------------------|-------------------------------------------------------------------------------------|
 | PC1 Dependências vulneráveis           | Proposta P1        | A correção troca a versão do Next.js e da biblioteca de autenticação; o risco de regressão às vésperas da banca supera o ganho local |
 | PC2 Senha na URL antes da hidratação   | Melhoria M2        | Um atributo por formulário, coberto por teste; não muda o envio depois da hidratação        |
 | PC3 Respostas sem cabeçalhos           | Melhoria M3        | Configuração do servidor, coberta por teste; não altera nenhuma página                       |
@@ -917,7 +913,7 @@ Quadro 15 Propostas não implementadas
 :::
 
 | **Proposta**                                    | **Motivo de não implementar agora**                                   | **Próximo passo e critério de aceite**                                                                  |
-|-------------------------------------------------|-----------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+|-------------------------------|--------------------------------------------|-----------------------------------------------------------------|
 | P1 Atualizar `next`, `better-auth` e `zod`      | Troca de *framework* e de autenticação antes da banca                 | Atualizar logo após a banca; `npm audit` sem alta nem crítica, com lint, tipos e as três suítes verdes  |
 | P2 Quebrar `GestaoObras`, `WizardAgendamento` e `GestaoArtistas` | Refatoração ampla da interface, com risco de regressão visual | Extrair subcomponentes por etapa ou seção; nenhuma função acima de 20, e o E2E sem regressão           |
 | P3 Cabeçalhos em `/_next/image`; COOP e CORP    | O otimizador não passa pelo `proxy.ts`; COEP exige revisar o Turnstile | Cabeçalhos aplicados na configuração do Next.js; ZAP sem os alertas 90004 e o Turnstile funcionando    |
@@ -926,7 +922,7 @@ Quadro 15 Propostas não implementadas
 | P6 Teclado e foco                               | Exige roteiro manual por tarefa                                       | Compra, *login*, assistente e administração percorridos sem *mouse*, com foco e ordem documentados       |
 | P7 Medições após a publicação                   | Dependem do ambiente publicado                                        | SSL Labs e securityheaders.com com nota A; Lighthouse em três rodadas na VPS; compra no *sandbox* pela URL pública |
 | P8 Disponibilidade e *backup*                   | Dependem do ambiente publicado                                        | Reinício automático verificado; *dump* restaurado em ambiente isolado, com integridade e tempo registrados |
-| P9 Dados de demonstração reproduzíveis          | Pendência registrada na Sprint 3                                      | Clone limpo executa migração e povoamento e mostra catálogo e portfólio com imagens                     |
+| P9 Dados de demonstração reproduzíveis          | Pendência da Sprint 3 na revisão avaliada; o PBI 49 entrou na `main` depois dela | Clone limpo executa migração e povoamento e mostra catálogo e portfólio com imagens                     |
 
 ::: {custom-style="Legenda"}
 Fonte Elaborado pelos autores a partir de Equipe Kolô (2026b, 2026c, 2026f) e de Oliveira et al. (2026).
@@ -1066,23 +1062,44 @@ A monografia e a Sprint 2 registram avanços de qualidade em desenvolvimento e t
 
 # 5 CONCLUSÕES E RECOMENDAÇÕES
 
-A avaliação indica que a plataforma Kolô possui mecanismos de qualidade alinhados aos riscos do domínio e evidências históricas relevantes de testes. O controle de reserva busca impedir a venda além do estoque; o processamento de pagamento verifica autenticidade e repetição; as verificações de interface e desempenho levaram a correções documentadas. O catálogo atingiu as metas registradas após a priorização do carregamento de imagens.
+## 5.1 Síntese dos resultados
+Este trabalho investigou em que medida os testes e as medições sustentam a confiabilidade, a eficiência, a manutenibilidade, a usabilidade e a segurança do Kolô. Para isso, selecionou o sistema pelos riscos da operação do ateliê, classificou seus 24 requisitos não funcionais na ISO/IEC 25010:2011, definiu objetivos, perguntas e métricas pelo método GQM e fixou as metas antes da primeira medição. O alcance das conclusões é o das condições descritas na seção 3.5, e cada número novo corresponde a um arquivo de evidência (Equipe Kolô, 2026f, 2026g, 2026h).
 
-O objetivo deste trabalho foi atendido por meio da seleção e caracterização do sistema, organização dos requisitos de qualidade, definição de métricas, análise de resultados disponíveis e proposição de melhorias com critérios verificáveis. O alcance dessa conclusão é documental e restrito aos ambientes descritos nas fontes. Não houve reexecução das suítes nem comprovação de qualidade em produção nesta análise.
+Na linha de base, onze das quinze métricas medidas atenderam à meta, e os resultados mais fortes apareceram onde o risco do domínio é maior. Na rajada de 30 clientes disputando uma obra de estoque unitário, exatamente um pedido foi criado. O teste de carga fez 9504 requisições sem falha, com o percentil 95 abaixo da metade do limite nos três grupos. A cobertura chegou a 92,46% das linhas e 87,39% dos ramos. Ficaram fora da meta os ramos dos módulos `payments` e `scheduling`, a complexidade por função e a auditoria de dependências (seção 4.4).
 
-As limitações centrais são a ausência de uma rodada consolidada da revisão final, a verificação pendente de teclado e foco e a necessidade de comprovar integrações, disponibilidade e restauração no ambiente publicado. O retorno qualitativo da administradora registrado na monografia é relevante, mas não permite generalizar usabilidade nem calcular redução de tempo de atendimento.
+As três melhorias implementadas foram verificadas nas mesmas métricas que as motivaram. Os ramos de `payments` passaram de 88,5% para 91,9%, e os de `scheduling`, de 88,2% para 91,5%, ambos acima da meta. O envio dos formulários por POST eliminou o alerta de informação sensível na URL, e os novos cabeçalhos retiraram quatro alertas da varredura. A suíte cresceu de 892 para 918 testes, todos aprovados, os doze casos de teste formalizados passaram e as medidas de carga não tiveram regressão (seções 4.3 e 4.7).
 
-Recomenda-se executar primeiro as ações de prioridade alta do plano de melhoria e manter os resultados vinculados à mesma revisão. A ampliação dos testes de concorrência, o povoamento reproduzível da demonstração e a medição pública de desempenho devem acompanhar o fechamento. Novas funcionalidades podem ser reavaliadas após a consolidação dessas evidências.
+A avaliação indica, portanto, que o Kolô tem mecanismos de qualidade alinhados aos riscos do domínio e que a maior parte deles foi confirmada por medição na revisão avaliada. Ela não permite afirmar que todos os requisitos estão atendidos: a complexidade por função e a auditoria de dependências continuam fora da meta. O único alerta *Medium* restante da varredura foi analisado como falso positivo (seção 4.7.2).
 
-Na formação acadêmica, o caso permite relacionar engenharia de requisitos, banco de dados, testes, segurança e experiência de uso a problemas concretos. O aprendizado central é que qualidade exige critérios observáveis e comunicação precisa dos limites: um resultado local aprovado constitui evidência útil, mas sua validade deve permanecer ligada ao cenário em que foi obtido.
+## 5.2 Dificuldades
+A primeira dificuldade foi conciliar melhoria e estabilidade. As medições ocorreram às vésperas da banca do TCC, o que restringiu as mudanças aceitáveis. Por esse motivo, a atualização das dependências e a divisão das telas mais complexas ficaram como propostas, embora sejam necessárias para atingir metas do próprio plano (seção 4.6.2).
+
+A segunda foi consolidar números produzidos em momentos diferentes. A monografia, a Sprint 2 e a linha de base trazem contagens de testes distintas. A solução foi usar apenas os relatórios dos executores, na revisão identificada, e manter os valores anteriores como registro histórico (seção 4.3.1).
+
+A terceira foi interpretar resultados que mudam por causas externas ao trabalho ou pela própria correção. A auditoria de dependências tinha zero avisos em 18 de outubro e 17 em 6 de novembro, com as mesmas versões (seção 4.5.1). Na varredura, declarar o método POST nos formulários fez surgir um alerta novo, analisado como falso positivo (seção 4.7.2). A contagem de alertas, isoladamente, não indicaria se a segurança havia melhorado.
+
+## 5.3 Limitações
+As limitações estão detalhadas na seção 4.7.3. As medições foram locais, em um único *notebook*, com gerador de carga e servidor no mesmo processador e uma execução por rodada, de modo que pequenas diferenças de tempo são tratadas como ruído. Elas também antecedem a publicação do sistema: HTTPS, notas externas de segurança, disponibilidade, restauração de *backup* e integrações reais com o Mercado Pago e o R2 não foram avaliados, e os dublês verificam o contrato da integração, e não o serviço real.
+
+A acessibilidade foi verificada apenas por regras automáticas, com teclado e foco pendentes. O Lighthouse não foi repetido, e a varredura de segurança rodou em modo passivo. O sistema foi avaliado pela equipe que o desenvolveu, viés que a revisão independente do *diff* reduz, mas não elimina. O retorno qualitativo da administradora registrado na monografia é relevante, mas não permite generalizar a usabilidade nem calcular redução de tempo de atendimento.
+
+## 5.4 Recomendações e trabalhos futuros
+Recomenda-se priorizar, logo após a banca, a atualização de `next`, `better-auth` e `zod` e a inclusão da auditoria de dependências na CI (propostas P1 e P5), pois esses são os avisos de maior severidade e a correção tem critério de aceite objetivo. Em seguida, vêm a divisão dos componentes mais complexos (P2), o roteiro manual de teclado e foco (P6) e a estabilização da suíte com relógio controlado (P4).
+
+Com o sistema publicado, os trabalhos futuros incluem repetir as medições no ambiente real: notas externas de TLS e cabeçalhos, Lighthouse em três rodadas, compra no *sandbox* pelo endereço público, reinício automático e restauração de *backup* (P7 e P8). Os dados de demonstração reproduzíveis (P9) entraram na `main` depois da revisão avaliada, e falta confirmar seu critério de aceite em um clone limpo (Equipe Kolô, 2026c). A avaliação também pode avançar para varredura ativa de segurança, testes de usabilidade com participantes e repetições das medições de carga que permitam estimar a variância.
+
+## 5.5 Reflexão sobre a qualidade de software
+Na formação acadêmica, o caso permitiu relacionar engenharia de requisitos, banco de dados, testes, segurança e experiência de uso a problemas concretos de um cliente real. Conteúdos que costumam ser estudados separadamente aparecem aqui ligados: o bloqueio de linhas, a transação e o teste de integração respondem ao mesmo risco de vender duas vezes uma peça única. O exercício também evidenciou a diferença entre afirmar e demonstrar qualidade, pois um resultado só sustenta uma conclusão quando estão registrados o requisito, o critério, o ambiente e a revisão a que ele se refere.
+
+No contexto profissional, essas práticas têm consequência direta. No comércio eletrônico, uma falha de estoque ou de pagamento se traduz em estorno e em perda de confiança do cliente. A auditoria de dependências mostrou que qualidade não é um estado alcançado uma única vez, e sim uma verificação contínua, que precisa estar automatizada no processo de entrega. A decisão de não corrigir tudo às vésperas da banca ilustra outro aspecto da prática: qualidade também envolve avaliar o risco de mudar e registrar, com justificativa e critério de aceite, o que fica para depois.
+
+O aprendizado central é que qualidade exige critérios observáveis e comunicação precisa dos limites: um resultado local aprovado constitui evidência útil, mas sua validade deve permanecer ligada ao cenário em que foi obtido.
 
 # REFERÊNCIAS
 
 BASILI, Victor R.; CALDIERA, Gianluigi; ROMBACH, H. Dieter. The Goal Question Metric approach. In: MARCINIAK, John J. (ed.). **Encyclopedia of Software Engineering**. New York: John Wiley & Sons, 1994. p. 528–532. Disponível em: <https://www.cs.umd.edu/~basili/publications/technical/T89.pdf>. Acesso em: 8 nov. 2026.
 
 BECK, Kent. **Test-driven development**: by example. Boston: Addison-Wesley, 2003. Disponível em: <https://ptgmedia.pearsoncmg.com/images/9780321146533/samplepages/0321146530.pdf>. Acesso em: 8 nov. 2026.
-
-BIBLIOTECA DA UNIVERSIDADE PAULISTA. **Guia de normalização para apresentação de trabalhos acadêmicos da Universidade Paulista**: ABNT. São Paulo: UNIP, 2025. Disponível em: https://www.unip.br/servicos/biblioteca/assets/download/manual_de_normalizacao_abnt.pdf. Acesso em: 26 out. 2026.
 
 CLARK, Connor. **What's new in Lighthouse 6.0**. Chrome for Developers. [S. l.], 2020. Disponível em: <https://developer.chrome.com/blog/lighthouse-6-0>. Acesso em: 8 nov. 2026.
 
@@ -1192,10 +1209,6 @@ Fonte Inventário dos caminhos na revisão `51bb1b8`.
 
 Arquivos com credenciais, dependências instaladas e bancos de desenvolvimento não integram esse material. O Apêndice C traz na íntegra o código produzido para esta APS.
 
-```{=openxml}
-<w:p><w:r><w:br w:type="page"/></w:r></w:p>
-```
-
 # APÊNDICE B CONTROLE DE ASSINATURA DO WEBHOOK
 
 Listagem integral do arquivo `src/modules/payments/assinatura.ts` na revisão avaliada. O trecho mostra o uso do validador do SDK e o tratamento de recusa. A idempotência, que aparece no Código 2, e as alterações transacionais ficam em `src/modules/payments/webhook.ts`.
@@ -1236,10 +1249,6 @@ export function assinaturaValida(dados: DadosAssinatura): boolean {
 ::: {custom-style="Legenda"}
 Fonte Equipe Kolô (2026d), revisão `51bb1b8`, sem alteração.
 :::
-
-```{=openxml}
-<w:p><w:r><w:br w:type="page"/></w:r></w:p>
-```
 
 # APÊNDICE C CÓDIGO PRODUZIDO PARA A APS
 
@@ -2269,7 +2278,7 @@ Trabalho: Avaliação e melhoria da qualidade de software na plataforma Kolô
 Registro de atividades efetivamente realizadas
 
 | **Data** | **Descrição da atividade** | **Total de horas** | **Assinatura do aluno** | **Horas atribuídas** | **Assinatura do professor** |
-|----------|----------------------------|--------------------|-------------------------|----------------------|-----------------------------|
+|------------|-----------------------------|---------------------|--------------------------|-----------------------|------------------------------|
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
@@ -2312,7 +2321,7 @@ Trabalho: Avaliação e melhoria da qualidade de software na plataforma Kolô
 Registro de atividades efetivamente realizadas
 
 | **Data** | **Descrição da atividade** | **Total de horas** | **Assinatura do aluno** | **Horas atribuídas** | **Assinatura do professor** |
-|----------|----------------------------|--------------------|-------------------------|----------------------|-----------------------------|
+|------------|-----------------------------|---------------------|--------------------------|-----------------------|------------------------------|
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
@@ -2355,7 +2364,7 @@ Trabalho: Avaliação e melhoria da qualidade de software na plataforma Kolô
 Registro de atividades efetivamente realizadas
 
 | **Data** | **Descrição da atividade** | **Total de horas** | **Assinatura do aluno** | **Horas atribuídas** | **Assinatura do professor** |
-|----------|----------------------------|--------------------|-------------------------|----------------------|-----------------------------|
+|------------|-----------------------------|---------------------|--------------------------|-----------------------|------------------------------|
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
@@ -2398,7 +2407,7 @@ Trabalho: Avaliação e melhoria da qualidade de software na plataforma Kolô
 Registro de atividades efetivamente realizadas
 
 | **Data** | **Descrição da atividade** | **Total de horas** | **Assinatura do aluno** | **Horas atribuídas** | **Assinatura do professor** |
-|----------|----------------------------|--------------------|-------------------------|----------------------|-----------------------------|
+|------------|-----------------------------|---------------------|--------------------------|-----------------------|------------------------------|
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
@@ -2441,7 +2450,7 @@ Trabalho: Avaliação e melhoria da qualidade de software na plataforma Kolô
 Registro de atividades efetivamente realizadas
 
 | **Data** | **Descrição da atividade** | **Total de horas** | **Assinatura do aluno** | **Horas atribuídas** | **Assinatura do professor** |
-|----------|----------------------------|--------------------|-------------------------|----------------------|-----------------------------|
+|------------|-----------------------------|---------------------|--------------------------|-----------------------|------------------------------|
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
 |          |                            |                    |                         |                      |                             |
