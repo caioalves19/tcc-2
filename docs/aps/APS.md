@@ -95,9 +95,9 @@ Avaliar a qualidade da plataforma Kolô e propor melhorias em sua confiabilidade
 1. Caracterizar o sistema e justificar sua seleção a partir dos riscos da operação do ateliê.
 2. Identificar e documentar requisitos de qualidade, associando-os a riscos e procedimentos de verificação.
 3. Definir um plano de qualidade com procedimentos, métricas, ferramentas e critérios de aceite.
-4. Executar testes funcionais e não funcionais nas condições definidas no [plano de qualidade](PLANO.md).
-5. Registrar e analisar os resultados em relação às metas, identificando pontos críticos e oportunidades de melhoria com base no [baseline da APS](evidencias/BASELINE.md).
-6. Propor melhorias com base nas medições e verificar novamente as métricas afetadas pelas mudanças implementadas, com registro no [comparativo das melhorias](evidencias/COMPARATIVO.md).
+4. Executar testes funcionais e não funcionais nas condições definidas no plano de qualidade (Equipe Kolô, 2026g).
+5. Registrar e analisar os resultados em relação às metas, identificando pontos críticos e oportunidades de melhoria com base na linha de base da APS (Equipe Kolô, 2026h).
+6. Propor melhorias com base nas medições e verificar novamente as métricas afetadas pelas mudanças implementadas, com registro no comparativo das melhorias (Equipe Kolô, 2026f).
 7. Documentar o processo e refletir sobre sua contribuição para a formação acadêmica e para a prática profissional.
 
 ### 1.4.3 Delimitação do estudo
@@ -121,7 +121,7 @@ A ISO/IEC 25010:2011 distingue qualidade do produto, observada nas propriedades 
 
 [^iso25010]: A ISO/IEC 25010:2023 substituiu a edição de 2011 e trata do modelo de qualidade do produto, agora com nove características. A qualidade em uso passou a ter norma própria, a ISO/IEC 25019:2023. Nesta APS, a classificação dos requisitos e a leitura das métricas seguem a edição de 2011 adotada no plano (ISO; IEC, 2023a, 2023b).
 
-O método Goal–Question–Metric (GQM) parte de um objetivo de avaliação, formula perguntas que permitem julgar seu atendimento e escolhe métricas capazes de respondê-las. Para avaliar a eficiência do catálogo, por exemplo, a pergunta pode ser quanto demora a resposta sob a carga prevista. A métrica é a duração das requisições no percentil 95 e a meta é o limite com o qual esse valor será comparado (Basili; Caldiera; Rombach, 1994). No [plano da APS](PLANO.md), os limites foram estabelecidos antes da medição (Equipe Kolô, 2026g).
+O método Goal–Question–Metric (GQM) parte de um objetivo de avaliação, formula perguntas que permitem julgar seu atendimento e escolhe métricas capazes de respondê-las. Para avaliar a eficiência do catálogo, por exemplo, a pergunta pode ser quanto demora a resposta sob a carga prevista. A métrica é a duração das requisições no percentil 95 e a meta é o limite com o qual esse valor será comparado (Basili; Caldiera; Rombach, 1994). No plano da APS, os limites foram estabelecidos antes da medição (Equipe Kolô, 2026g).
 
 A confiabilidade é observada na preservação de invariantes do domínio e no tratamento de falhas e repetições. A eficiência é examinada pela duração das requisições sob carga e pelos indicadores de carregamento das páginas. A manutenibilidade envolve a facilidade de analisar, alterar e testar o produto. Na APS, a separação de módulos, a tipagem, as validações e os controles de integração ajudam a interpretar as medidas de cobertura e complexidade. A usabilidade exige fluxos compreensíveis e verificações de acessibilidade que vão além da inspeção visual.
 
@@ -137,7 +137,7 @@ A estratégia combina testes unitários, integração com PostgreSQL e testes de
 
 A pirâmide de testes organiza a automação com mais testes rápidos e focados na base e menos testes amplos no topo, onde há mais componentes envolvidos e maior custo de manutenção. A camada intermediária cobre as interações que um teste isolado deixaria de fora. A proporção entre camadas é uma orientação para distribuir custo e alcance. No Kolô, ela ajuda a decidir quais regras podem ser verificadas isoladamente, quais pedem integração com o banco e quais justificam um percurso completo no navegador (Cohn, 2010).
 
-No desenvolvimento orientado por testes (TDD), primeiro se escreve um teste que falha pelo motivo esperado. Em seguida se faz a menor alteração que o leva a passar e, por fim, se melhora a estrutura do código mantendo os testes verdes. A sequência é conhecida como vermelho, verde e refatoração (Beck, 2003). Um teste que já passa pode ampliar a cobertura de um comportamento existente ao exercitar um caso ainda ausente da suíte. As correções que seguiram o ciclo de TDD e o acréscimo de casos de integração estão distinguidos no [comparativo das melhorias](evidencias/COMPARATIVO.md) (Equipe Kolô, 2026f).
+No desenvolvimento orientado por testes (TDD), primeiro se escreve um teste que falha pelo motivo esperado. Em seguida se faz a menor alteração que o leva a passar e, por fim, se melhora a estrutura do código mantendo os testes verdes. A sequência é conhecida como vermelho, verde e refatoração (Beck, 2003). Um teste que já passa pode ampliar a cobertura de um comportamento existente ao exercitar um caso ainda ausente da suíte. As correções que seguiram o ciclo de TDD e o acréscimo de casos de integração estão distinguidos no comparativo das melhorias (Equipe Kolô, 2026f).
 
 A ISO/IEC/IEEE 29119-3:2021 apresenta modelos para a documentação de teste. O modelo adotado na APS prevê que o registro do caso reúna identificador, requisito, pré-condições, dados de entrada, passos e resultado esperado. O registro da execução deve acrescentar o resultado obtido, o status e a referência ao teste automatizado, quando aplicável. O resultado esperado vem do requisito e orienta a comparação com o que foi observado (ISO; IEC; IEEE, 2021a).
 
@@ -153,7 +153,7 @@ Um *webhook* é uma notificação HTTP que um serviço envia a outro em resposta
 
 ## 2.5 Desempenho e acessibilidade
 
-Um teste de carga mede o comportamento do sistema sob um volume de trabalho definido. No k6, cada usuário virtual (VU) executa o roteiro de requisições do cenário. O percentil 95 (p95) é a duração abaixo da qual, ou igual à qual, ficam aproximadamente 95% dos tempos medidos. A taxa de falha HTTP é a proporção de requisições que o k6 classifica como falhas. Já um *check* é uma verificação booleana definida no roteiro, como verificar se a resposta do checkout indica que o pedido foi criado (Grafana Labs, [202-]). O roteiro de carga avalia duração e taxa de falha nas páginas de leitura, e duração e proporção de *checks* bem-sucedidos na finalização do checkout. A rajada concentra tentativas em um intervalo curto. Na APS, ela força a disputa pela mesma unidade. O roteiro incrementa o contador de pedidos recusados sempre que falta o redirecionamento esperado para a página do pedido. Esse contador agrupa respostas de causas distintas. A recusa prevista por falta de estoque é um resultado válido da operação. A verificação da regra usa o item de pedido persistido no banco para conferir se a quantidade respeitou o estoque disponível. Os roteiros e resultados das duas rodadas estão descritos no [registro da linha de base](evidencias/BASELINE.md) e no [comparativo](evidencias/COMPARATIVO.md) (Equipe Kolô, 2026f, 2026h).
+Um teste de carga mede o comportamento do sistema sob um volume de trabalho definido. No k6, cada usuário virtual (VU) executa o roteiro de requisições do cenário. O percentil 95 (p95) é a duração abaixo da qual, ou igual à qual, ficam aproximadamente 95% dos tempos medidos. A taxa de falha HTTP é a proporção de requisições que o k6 classifica como falhas. Já um *check* é uma verificação booleana definida no roteiro, como verificar se a resposta do checkout indica que o pedido foi criado (Grafana Labs, [202-]). O roteiro de carga avalia duração e taxa de falha nas páginas de leitura, e duração e proporção de *checks* bem-sucedidos na finalização do checkout. A rajada concentra tentativas em um intervalo curto. Na APS, ela força a disputa pela mesma unidade. O roteiro incrementa o contador de pedidos recusados sempre que falta o redirecionamento esperado para a página do pedido. Esse contador agrupa respostas de causas distintas. A recusa prevista por falta de estoque é um resultado válido da operação. A verificação da regra usa o item de pedido persistido no banco para conferir se a quantidade respeitou o estoque disponível. Os roteiros e resultados das duas rodadas estão descritos no registro da linha de base e no comparativo (Equipe Kolô, 2026f, 2026h).
 
 O Lighthouse mede o desempenho da página no navegador e reúne os indicadores em uma pontuação ponderada. O *Largest Contentful Paint* (LCP) mede o tempo desde o início do carregamento até a renderização do maior conteúdo elegível visível na tela. O *First Contentful Paint* (FCP) mede quanto tempo decorre até aparecer o primeiro texto, imagem ou outro conteúdo da página. O *Total Blocking Time* (TBT) soma, no intervalo de medição, as parcelas das tarefas que excedem 50 ms na linha de execução principal. O *Cumulative Layout Shift* (CLS) mede a instabilidade visual causada por deslocamentos inesperados de elementos (Clark, 2020; Google, 2019a, 2019b).
 
@@ -169,7 +169,7 @@ A complexidade ciclomática de McCabe mede o número de caminhos linearmente ind
 
 Uma suíte também pode apresentar sinais de manutenção difícil, como testes duplicados ou dependentes do relógio real. Um teste instável (*flaky*) alterna entre aprovação e falha sem mudança correspondente no código avaliado (Microsoft, [202-]b). Controlar o relógio permite reproduzir o limite de expiração com o mesmo instante em todas as execuções (Vitest, [202-]b).
 
-O ciclo de melhoria adotado consiste em identificar o risco, definir um critério, aplicar a mudança e repetir a medição nas mesmas condições. A linha de base (*baseline*) é a rodada inicial, usada como ponto de comparação. A rodada posterior verifica se a métrica atingiu a meta e se o comportamento antes aprovado continua funcionando. A revisão avaliada, o ambiente e os relatórios de cada rodada permitem interpretar diferenças e separar uma mudança observada de variações do ensaio, como registrado na [linha de base](evidencias/BASELINE.md) e no [comparativo](evidencias/COMPARATIVO.md) (Equipe Kolô, 2026f, 2026h).
+O ciclo de melhoria adotado consiste em identificar o risco, definir um critério, aplicar a mudança e repetir a medição nas mesmas condições. A linha de base (*baseline*) é a rodada inicial, usada como ponto de comparação. A rodada posterior verifica se a métrica atingiu a meta e se o comportamento antes aprovado continua funcionando. A revisão avaliada, o ambiente e os relatórios de cada rodada permitem interpretar diferenças e separar uma mudança observada de variações do ensaio, como registrado na linha de base e no comparativo (Equipe Kolô, 2026f, 2026h).
 
 ## 2.7 Segurança de aplicações web
 
@@ -179,7 +179,7 @@ Cabeçalhos de resposta HTTP comunicam políticas ao navegador. A *Content Secur
 
 O Zed Attack Proxy (ZAP) inspeciona o tráfego de aplicações web. A varredura passiva do modo *Baseline Scan* usa um rastreador para descobrir páginas e examina as mensagens HTTP observadas, sem executar ataques ativos. Cada alerta indica um problema potencial e informa o risco e a confiança da detecção. Um alerta é classificado como falso positivo quando a análise demonstra que o problema apontado não se aplica à resposta ou ao fluxo avaliado. Um alerta inconclusivo permanece pendente de validação. As conclusões valem para as rotas e condições alcançadas pelo rastreador (ZAP, [202-]a, [202-]b).
 
-A auditoria com `npm audit` compara as dependências do projeto com avisos de segurança conhecidos no registro consultado (npm, 2026). Ela inclui dependências diretas, declaradas pelo projeto, e transitivas, trazidas por outros pacotes. A severidade do aviso orienta a análise, que ainda precisa verificar se o caminho afetado é alcançável no Kolô. Os relatórios de dependências e os alertas do ZAP são evidências complementares, reunidas no [registro da linha de base](evidencias/BASELINE.md) e no [comparativo das melhorias](evidencias/COMPARATIVO.md) (Equipe Kolô, 2026f, 2026h).
+A auditoria com `npm audit` compara as dependências do projeto com avisos de segurança conhecidos no registro consultado (npm, 2026). Ela inclui dependências diretas, declaradas pelo projeto, e transitivas, trazidas por outros pacotes. A severidade do aviso orienta a análise, que ainda precisa verificar se o caminho afetado é alcançável no Kolô. Os relatórios de dependências e os alertas do ZAP são evidências complementares, reunidas no registro da linha de base e no comparativo das melhorias (Equipe Kolô, 2026f, 2026h).
 
 # 3 METODOLOGIA
 
@@ -238,7 +238,7 @@ Cada evidência citada recebe uma de quatro classificações. É **medida nesta 
 Três regras orientam a comparação. Nenhum número entra no documento sem arquivo de evidência ou fonte citada. Uma rodada só é comparada com outra quando *lint*, checagem de tipos e todas as suítes passaram nela. As medidas de tempo são comparadas apenas entre rodadas feitas na mesma máquina e com o mesmo roteiro. Não se atribuem aprovação do cliente nem resultados de produção ausentes nas fontes.
 
 ## 3.3 Plano de qualidade e métricas
-O plano de qualidade tem três partes: a classificação dos requisitos não funcionais nas características da ISO/IEC 25010:2011, o desdobramento das características escolhidas em objetivos, perguntas e métricas pelo método GQM e o processo que liga a medição às melhorias. Segundo o [plano da APS](PLANO.md), as metas foram fixadas na sessão de decisões de 6 de novembro de 2026, antes da primeira rodada de medição, para que o resultado não influenciasse o limite com o qual seria comparado (Basili; Caldiera; Rombach, 1994; Equipe Kolô, 2026g; ISO; IEC, 2011).
+O plano de qualidade tem três partes: a classificação dos requisitos não funcionais nas características da ISO/IEC 25010:2011, o desdobramento das características escolhidas em objetivos, perguntas e métricas pelo método GQM e o processo que liga a medição às melhorias. Segundo o plano da APS, as metas foram fixadas na sessão de decisões de 6 de novembro de 2026, antes da primeira rodada de medição, para que o resultado não influenciasse o limite com o qual seria comparado (Basili; Caldiera; Rombach, 1994; Equipe Kolô, 2026g; ISO; IEC, 2011).
 
 ### 3.3.1 Requisitos de qualidade
 O escopo do Kolô define 24 requisitos não funcionais, cada um com um critério de verificação. O Quadro 3 classifica cada RNF por característica e subcaracterística da ISO/IEC 25010:2011 e indica como ele é tratado nesta APS. Um requisito pode ser medido nesta avaliação, apoiar-se em evidência registrada no TCC ou ficar fora do escopo por depender do ambiente publicado. Quando o requisito sustenta mais de uma característica, a principal aparece primeiro.
@@ -329,11 +329,11 @@ As metas de G6 vêm do escopo do projeto (RNF13 e RNF21). O Lighthouse não foi 
 ### 3.3.3 Processo de qualidade
 A avaliação seguiu um ciclo de cinco etapas, com o registro de cada uma em `docs/aps/evidencias/`:
 
-1. **Plano.** Requisitos classificados, perguntas e metas registrados no [plano da APS](PLANO.md) antes de qualquer medição.
-2. **Linha de base.** Todas as métricas do Quadro 5, exceto o Lighthouse, medidas numa mesma revisão do código, na mesma máquina, com os comandos e as saídas brutas guardados no [registro da linha de base](evidencias/BASELINE.md).
+1. **Plano.** Requisitos classificados, perguntas e metas registrados no plano da APS (Equipe Kolô, 2026g) antes de qualquer medição.
+2. **Linha de base.** Todas as métricas do Quadro 5, exceto o Lighthouse, medidas numa mesma revisão do código, na mesma máquina, com os comandos e as saídas brutas guardados no registro da linha de base (Equipe Kolô, 2026h).
 3. **Pontos críticos.** Cada métrica fora da meta e cada alerta de segurança a analisar viram um ponto crítico. A lista resultante é o insumo da escolha das melhorias.
 4. **Melhoria.** Os pontos críticos foram ordenados por risco de mudança às vésperas da banca do TCC. O plano previa apenas testes novos ou refatoração coberta pela suíte. Dois pontos de segurança apontados pelo ZAP foram aceitos como exceção, por serem mudanças pequenas de configuração cobertas por testes unitários e pela suíte E2E. Os pontos escolhidos foram implementados por TDD: um teste que falha pelo motivo esperado, a menor alteração que o faz passar e a repetição até cobrir o comportamento. Quando a melhoria só acrescenta testes a comportamento já existente, não há etapa vermelha. Antes da nova medição, um revisor que não escreveu o código analisou o *diff*, e os ajustes que ele pediu entraram na mesma rodada.
-5. **Nova medição.** Os mesmos comandos, na mesma máquina, sobre a revisão com as melhorias. O [comparativo das melhorias](evidencias/COMPARATIVO.md) põe antes e depois lado a lado na mesma métrica. Nas medidas de tempo, uma variação pequena é lida como ausência de regressão, não como ganho, porque o ensaio local tem ruído.
+5. **Nova medição.** Os mesmos comandos, na mesma máquina, sobre a revisão com as melhorias. O comparativo das melhorias (Equipe Kolô, 2026f) põe antes e depois lado a lado na mesma métrica. Nas medidas de tempo, uma variação pequena é lida como ausência de regressão, não como ganho, porque o ensaio local tem ruído.
 
 Pontos críticos não tratados ficam como propostas, com a justificativa de por que ficaram fora (seção 4.6). Uma rodada seguinte repetiria o ciclo a partir da etapa 2, sobre as métricas afetadas pelas mudanças (Beck, 2003; Equipe Kolô, 2026f, 2026h).
 
@@ -580,7 +580,7 @@ Fonte Elaborado pelos autores a partir de Equipe Kolô (2026f, 2026g, 2026h).
 :::
 
 ## 4.2 Modelo de dados e invariantes
-No comércio, artwork se relaciona a artwork_reservation, cart_item e order_item; order reúne itens e pagamentos. Na agenda, appointment vincula artista, intervalo e contato. As contas e sessões sustentam a identificação e o controle de acesso. O modelo utiliza valores monetários inteiros em centavos e datas armazenadas em UTC. O DER completo e o esquema estão identificados no Apêndice A.
+No comércio, artwork se relaciona a artwork_reservation, cart_item e order_item; order reúne itens e pagamentos. Na agenda, appointment vincula artista, intervalo e contato. As contas e sessões sustentam a identificação e o controle de acesso. O modelo utiliza valores monetários inteiros em centavos e datas armazenadas em UTC. O DER completo e o esquema estão identificados no Apêndice A (Equipe Kolô, 2026e).
 
 ## 4.3 Resultados de confiabilidade e testes
 
@@ -1100,8 +1100,6 @@ O aprendizado central é que qualidade exige critérios observáveis e comunica�
 BASILI, Victor R.; CALDIERA, Gianluigi; ROMBACH, H. Dieter. The Goal Question Metric approach. In: MARCINIAK, John J. (ed.). **Encyclopedia of Software Engineering**. New York: John Wiley & Sons, 1994. p. 528–532. Disponível em: <https://www.cs.umd.edu/~basili/publications/technical/T89.pdf>. Acesso em: 8 nov. 2026.
 
 BECK, Kent. **Test-driven development**: by example. Boston: Addison-Wesley, 2003. Disponível em: <https://ptgmedia.pearsoncmg.com/images/9780321146533/samplepages/0321146530.pdf>. Acesso em: 8 nov. 2026.
-
-BIBLIOTECA DA UNIVERSIDADE PAULISTA. **Guia de normalização para apresentação de trabalhos acadêmicos da Universidade Paulista**: ABNT. São Paulo: UNIP, 2025. Disponível em: https://www.unip.br/servicos/biblioteca/assets/download/manual_de_normalizacao_abnt.pdf. Acesso em: 26 out. 2026.
 
 CLARK, Connor. **What's new in Lighthouse 6.0**. Chrome for Developers. [S. l.], 2020. Disponível em: <https://developer.chrome.com/blog/lighthouse-6-0>. Acesso em: 8 nov. 2026.
 
