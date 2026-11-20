@@ -41,6 +41,14 @@ for servico in postgres app backup; do
   [ -z "$publicadas" ] && ok "$servico sem porta publicada" || falha "$servico publica: $publicadas"
 done
 
+echo "== 4b. Cada contêiner só com os segredos que usa (RNF12)"
+for variavel in R2_BACKUP_SECRET_ACCESS_KEY R2_BACKUP_ACCESS_KEY_ID POSTGRES_PASSWORD; do
+  "${C[@]}" exec -T app printenv "$variavel" >/dev/null 2>&1 && falha "app recebe $variavel" || ok "app sem $variavel"
+done
+for variavel in BETTER_AUTH_SECRET MP_ACCESS_TOKEN R2_SECRET_ACCESS_KEY RESEND_API_KEY; do
+  "${C[@]}" exec -T backup printenv "$variavel" >/dev/null 2>&1 && falha "backup recebe $variavel" || ok "backup sem $variavel"
+done
+
 echo "== 5. Backup e restauração (RNF16)"
 if "${C[@]}" exec -T backup backup.sh; then
   ok "backup gerado"

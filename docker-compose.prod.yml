@@ -29,9 +29,25 @@ services:
     image: kolo-app:${TAG:-latest}
     restart: unless-stopped
     init: true
-    env_file: .env.production
+    # Lista explícita, sem env_file: o app não recebe o token do backup nem a senha do Postgres
+    # (RNF12). Variável nova do app entra aqui e no .env.production.example.
     environment:
       DATABASE_URL: postgresql://kolo:${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD}@postgres:5432/kolo
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?defina BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?defina BETTER_AUTH_URL}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      APP_URL: ${APP_URL:?defina APP_URL}
+      MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN:-}
+      MP_WEBHOOK_SECRET: ${MP_WEBHOOK_SECRET:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_REMETENTE: ${EMAIL_REMETENTE:-}
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}
+      R2_BUCKET: ${R2_BUCKET:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL:-}
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
     expose:
       - "3000"
     depends_on:
