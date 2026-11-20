@@ -8,6 +8,8 @@ playwright-report/
 test-results/
 .env
 .env*.local
+# Segredos de produção da VPS (PBI-46); o modelo versionado é o .env.production.example
+.env.production
 *.log
 .DS_Store
 

@@ -1,0 +1,22 @@
+# Nada de segredo, saída de build ou dado local dentro da imagem (RNF12).
+.env
+.env.*
+!.env.example
+.git
+.github
+.next
+node_modules
+generated
+coverage
+playwright-report
+test-results
+public/seed
+docs
+# Testes e a configuração deles saem juntos: o `next build` checa os tipos de tudo que está no
+# tsconfig, e o playwright.config.ts importa de tests/e2e.
+tests
+playwright.config.ts
+vitest*.ts
+*.tsbuildinfo
+.claude
+.cursor
