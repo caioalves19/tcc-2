@@ -10,7 +10,10 @@ Pilha de produção: `docker-compose.prod.yml` com quatro contêineres.
 | `backup`   | `pg_dump` diário às 03:00, 7 dias na VPS + cópia no R2 `kolo-backups` | não             |
 
 Todos com `restart: unless-stopped` (RNF15). Os segredos ficam só no `.env.production` da VPS
-(RNF12); o modelo comentado é o [`.env.production.example`](../.env.production.example).
+(RNF12); o modelo comentado é o [`.env.production.example`](../.env.production.example). Cada
+contêiner recebe só as variáveis que usa: o app não vê o token do backup nem a senha do Postgres,
+e o backup não vê os segredos do app. **Variável nova do app** entra na lista `environment` do
+serviço `app` no `docker-compose.prod.yml`, além do `.env.production.example`.
 
 Atalho usado abaixo:
 
@@ -98,7 +101,8 @@ docker image ls kolo-app          # tags = commits publicados
 deploy/deploy.sh --voltar <tag>
 ```
 
-O rollback troca só o código. Migrações já aplicadas continuam no banco.
+O rollback troca só o código e marca a versão antiga como `latest`, para um `up` posterior não
+voltar à versão com problema. Migrações já aplicadas continuam no banco.
 
 ## 5. Backup e restauração (RNF16)
 

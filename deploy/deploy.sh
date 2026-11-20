@@ -16,7 +16,9 @@ if [ "${1:-}" = "--voltar" ]; then
   export TAG="$2"
   docker image inspect "kolo-app:$TAG" >/dev/null
   "${C[@]}" up -d --no-build app
-  echo "Rollback: app em kolo-app:$TAG."
+  # A latest passa a ser a versão do rollback: um `up` sem TAG depois não volta para a quebrada.
+  docker tag "kolo-app:$TAG" kolo-app:latest
+  echo "Rollback: app em kolo-app:$TAG (também marcada como latest)."
   exit 0
 fi
 
