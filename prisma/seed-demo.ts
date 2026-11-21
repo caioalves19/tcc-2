@@ -13,6 +13,9 @@ import { planoDoSeed, schemaSenhaNova } from "../src/modules/identity/index";
 import {
   ARTISTA_DEMO_ANTIGO,
   AVISO_DEMO,
+  ESTILOS_DEMO_ANTIGOS,
+  OBRAS_DEMO_ANTIGAS,
+  TATUAGENS_DEMO_ANTIGAS,
   artistasDemo,
   estilosDemo,
   obrasDemo,
@@ -50,10 +53,31 @@ async function darLogin(userId: string, variavel: string): Promise<void> {
   });
 }
 
+// A demonstração anterior tinha obras, tatuagens e estilos com imagem gerada por IA. Saem antes
+// dos estilos reais (o nome "Blackwork" é único). Obra presa a carrinho ou pedido (Restrict) não
+// é apagada: fica excluída e some do catálogo.
+async function tirarDemonstracaoDeIa(): Promise<void> {
+  const obras = await prisma.artwork.findMany({
+    where: { slug: { in: OBRAS_DEMO_ANTIGAS } },
+    include: { _count: { select: { cartItems: true, orderItems: true } } },
+  });
+  for (const obra of obras) {
+    if (obra._count.cartItems + obra._count.orderItems === 0) {
+      await prisma.artwork.delete({ where: { id: obra.id } });
+    } else if (!obra.deletedAt) {
+      await prisma.artwork.update({ where: { id: obra.id }, data: { deletedAt: new Date() } });
+    }
+  }
+  await prisma.portfolioItem.deleteMany({ where: { id: { in: TATUAGENS_DEMO_ANTIGAS } } });
+  await prisma.tattooStyle.deleteMany({ where: { slug: { in: ESTILOS_DEMO_ANTIGOS } } });
+}
+
 async function main(): Promise<void> {
   const slugExemplo = planoDoSeed().artista.slug;
   const exemplo = await prisma.artist.findUnique({ where: { slug: slugExemplo } });
   if (!exemplo) throw new Error("Rode npm run db:seed antes do db:seed:demo.");
+
+  await tirarDemonstracaoDeIa();
 
   for (const estilo of estilosDemo) {
     const dados = { name: estilo.nome, description: estilo.descricao };

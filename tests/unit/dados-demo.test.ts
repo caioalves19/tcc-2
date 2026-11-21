@@ -1,12 +1,15 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { expect, it } from "vitest";
 
 import {
   artistasDemo,
   estilosDemo,
-  obras,
   obrasDemo,
   tatuagens,
 } from "../../prisma/imagens-demo/catalogo";
+
+const PASTA = join(process.cwd(), "prisma", "imagens-demo", "imagens");
 
 // A vitrine mostra o pessoal do Kolô: quatro artistas, dos quais três tatuam (têm estilo).
 it("a demonstração traz os quatro artistas do Kolô, três deles tatuadores, cada um com o Instagram", () => {
@@ -16,11 +19,6 @@ it("a demonstração traz os quatro artistas do Kolô, três deles tatuadores, c
     { nome: 'Gustavo Henrique "Cogu"', instagram: "co.guh" },
     { nome: 'Laura Manoel "Pucca"', instagram: "pucca.ink" },
   ]);
-  expect(artistasDemo.filter((a) => a.estilos.length > 0).map((a) => a.nome)).toEqual([
-    "Melanie Schwark",
-    'Gustavo Henrique "Cogu"',
-    'Laura Manoel "Pucca"',
-  ]);
 
   const slugs = artistasDemo.map((artista) => artista.slug);
   for (const item of [...obrasDemo, ...tatuagens]) {
@@ -28,13 +26,36 @@ it("a demonstração traz os quatro artistas do Kolô, três deles tatuadores, c
   }
 });
 
-// PBI-49: popular.ts só liga a imagem a uma obra já cadastrada; o seed de demonstração precisa
-// cadastrar exatamente as obras que têm imagem.
-it("PBI-49 o seed de demonstração cadastra cada obra que tem imagem, sem repetir slug", () => {
-  const cadastradas = obrasDemo.map((obra) => obra.slug);
+// Estilos que cada tatuador trabalha, definidos com o estúdio.
+it("cada tatuador tem os estilos que trabalha e o Rafael nenhum", () => {
+  const nomes = new Map(estilosDemo.map((estilo) => [estilo.slug, estilo.nome]));
+  expect(
+    artistasDemo.map((a) => ({ nome: a.nome, estilos: a.estilos.map((s) => nomes.get(s)) })),
+  ).toEqual([
+    { nome: "Melanie Schwark", estilos: ["Blackwork", "Surrealismo"] },
+    { nome: "Rafael Lotufo", estilos: [] },
+    { nome: 'Gustavo Henrique "Cogu"', estilos: ["Blackwork", "Old school"] },
+    { nome: 'Laura Manoel "Pucca"', estilos: ["Lettering"] },
+  ]);
+});
 
-  expect(new Set(cadastradas).size).toBe(cadastradas.length);
-  expect([...cadastradas].sort()).toEqual(obras.map((imagem) => imagem.slug).sort());
+// Imagens reais: cada obra e tatuagem tem o arquivo (e a miniatura) e aponta para o post do
+// Instagram do próprio artista, de onde a foto veio com autorização.
+it("cada obra e tatuagem tem a imagem real e o post de origem no Instagram do artista", () => {
+  const instagram = new Map(artistasDemo.map((a) => [a.slug, a.instagram]));
+  const itens = [
+    ...obrasDemo.map((o) => ({ ...o, arquivo: `obras/${o.slug}` })),
+    ...tatuagens.map((t) => ({ ...t, arquivo: `tatuagens/${t.id}` })),
+  ];
+  for (const item of itens) {
+    expect(existsSync(join(PASTA, `${item.arquivo}.webp`)), item.titulo).toBe(true);
+    expect(existsSync(join(PASTA, `${item.arquivo}_thumb.webp`)), item.titulo).toBe(true);
+    expect(item.origem, item.titulo).toMatch(
+      new RegExp(`^https://www\\.instagram\\.com/${instagram.get(item.artistaSlug)}/p/[\\w-]+/$`),
+    );
+  }
+  expect(new Set(obrasDemo.map((o) => o.slug)).size).toBe(obrasDemo.length);
+  expect(new Set(tatuagens.map((t) => t.id)).size).toBe(tatuagens.length);
 });
 
 // RN07: centavos inteiros de R$ 1,00 a R$ 1.000.000,00. RN02: estoque de 0 a 999. RN11: a

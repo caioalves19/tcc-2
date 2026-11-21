@@ -1,26 +1,21 @@
-// Imagens ilustrativas geradas por IA (Pollinations.ai) para os dados de demonstração.
-// gerar.ts baixa cada prompt para imagens/; popular.ts publica os arquivos (R2 ou public/) e grava no banco.
-// Também traz o cadastro (artista, estilos, obras) que ../seed-demo.ts grava antes do popular.ts.
+// Dados de demonstração com o pessoal e o trabalho real do Kolô. As fotos vêm dos posts do
+// Instagram de cada artista (campo `origem`), usadas com autorização deles, e ficam em imagens/.
+// ../seed-demo.ts grava artistas, estilos e obras; popular.ts publica as imagens (R2 ou public/)
+// e grava as tatuagens. Preço e estoque das obras são fictícios.
 
-export type ImagemObra = {
-  slug: string; // slug da obra já cadastrada
-  textoAlternativo: string;
-  prompt: string;
+export type ArtistaDemo = {
+  email: string;
+  nome: string;
+  slug: string;
+  instagram: string;
+  estilos: string[];
+  // Senha de demonstração (só no .env, nunca no repositório); vazia = conta sem login.
+  variavelSenha: string;
 };
 
-export type Tatuagem = {
-  id: string; // fixo: repetir popular.ts não duplica
-  artistaSlug: string;
-  estiloSlug: string;
-  titulo: string;
-  descricao: string;
-  regiaoCorpo: string;
-  duracaoMinutos: number;
-  destaque: boolean;
-  prompt: string;
-};
+export type EstiloDemo = { slug: string; nome: string; descricao: string };
 
-// Cadastro que o seed de demonstração (prisma/seed-demo.ts) grava antes do popular.ts.
+// Cadastro que o seed de demonstração grava; a imagem é imagens/obras/<slug>.webp.
 export type ObraDemo = {
   slug: string;
   artistaSlug: string;
@@ -32,27 +27,28 @@ export type ObraDemo = {
   precoCentavos: number; // RN07
   estoque: number; // RN02; 0 deixa a obra esgotada (RN11)
   destaque: boolean;
+  textoAlternativo: string;
+  origem: string; // post do Instagram de onde veio a foto
 };
 
-export type EstiloDemo = { slug: string; nome: string; descricao: string };
-
-// PBI-49: as imagens são ilustrativas, não obras do acervo real.
-// Vai ao fim da descrição das obras (seed-demo.ts) e das tatuagens (popular.ts).
-export const AVISO_DEMO = "Demonstração: imagem ilustrativa gerada por IA, fora do acervo real.";
-
-// O pessoal do Kolô. Quem tem estilo tatua e aparece no agendamento (RF20); o Rafael é só
-// artista plástico. Contas sem senha (ninguém entra com elas) e sem bio até eles mandarem.
-// Enquanto as imagens reais não chegam, as ilustrativas abaixo ficam distribuídas entre eles.
-export type ArtistaDemo = {
-  email: string;
-  nome: string;
-  slug: string;
-  instagram: string;
-  estilos: string[];
-  // Senha de demonstração (só no .env, nunca no repositório); vazia = conta sem login.
-  variavelSenha: string;
+// Trabalho do portfólio; a imagem é imagens/tatuagens/<id>.webp.
+export type Tatuagem = {
+  id: string; // fixo: repetir popular.ts não duplica
+  artistaSlug: string;
+  estiloSlug: string;
+  titulo: string;
+  descricao: string;
+  regiaoCorpo: string;
+  duracaoMinutos: number; // fictícia
+  destaque: boolean;
+  origem: string;
 };
 
+// Vai ao fim da descrição das obras: as obras são reais, a venda não.
+export const AVISO_DEMO = "Demonstração: preço e disponibilidade fictícios.";
+
+// Quem tem estilo tatua e aparece no agendamento (RF20); o Rafael é só artista plástico. Sem bio
+// até eles mandarem um texto.
 export const artistasDemo: ArtistaDemo[] = [
   {
     email: "melanie@kolo.test",
@@ -60,7 +56,7 @@ export const artistasDemo: ArtistaDemo[] = [
     slug: "melanie-schwark",
     instagram: "melanfetamina",
     variavelSenha: "SEED_SENHA_MELANIE",
-    estilos: ["demo-traco-fino"],
+    estilos: ["blackwork", "surrealismo"],
   },
   {
     email: "rafael@kolo.test",
@@ -76,7 +72,7 @@ export const artistasDemo: ArtistaDemo[] = [
     slug: "cogu",
     instagram: "co.guh",
     variavelSenha: "SEED_SENHA_COGU",
-    estilos: ["demo-blackwork"],
+    estilos: ["blackwork", "old-school"],
   },
   {
     email: "pucca@kolo.test",
@@ -84,279 +80,269 @@ export const artistasDemo: ArtistaDemo[] = [
     slug: "pucca",
     instagram: "pucca.ink",
     variavelSenha: "SEED_SENHA_PUCCA",
-    estilos: ["demo-aquarela"],
+    estilos: ["lettering"],
   },
 ];
-
-// Demonstrações anteriores: o seed tira estes da vitrine.
-export const ARTISTA_DEMO_ANTIGO = "demo-marina-duarte";
 
 export const estilosDemo: EstiloDemo[] = [
+  { slug: "blackwork", nome: "Blackwork", descricao: "Preto sólido, contraste e traço marcado." },
   {
-    slug: "demo-traco-fino",
-    nome: "Traço fino",
-    descricao: "Linhas finas e delicadas, feitas com agulha única.",
+    slug: "surrealismo",
+    nome: "Surrealismo",
+    descricao: "Figuras e cenas oníricas, misturando o real e o imaginário.",
   },
   {
-    slug: "demo-aquarela",
-    nome: "Aquarela",
-    descricao: "Manchas e aguadas de cor que imitam a pintura em aquarela.",
+    slug: "old-school",
+    nome: "Old school",
+    descricao: "Contorno grosso e desenho direto da tatuagem tradicional.",
   },
-  {
-    slug: "demo-blackwork",
-    nome: "Blackwork",
-    descricao: "Preto sólido, geometria e pontilhismo.",
-  },
+  { slug: "lettering", nome: "Lettering", descricao: "Palavras e frases em letras desenhadas." },
 ];
+
+const MELANIE = "https://www.instagram.com/melanfetamina/p";
+const RAFAEL = "https://www.instagram.com/rafa.lotufo/p";
+const COGU = "https://www.instagram.com/co.guh/p";
+const PUCCA = "https://www.instagram.com/pucca.ink/p";
 
 export const obrasDemo: ObraDemo[] = [
   {
-    slug: "demo-estudo-de-maos",
+    slug: "melanie-cavalo",
     artistaSlug: "melanie-schwark",
-    titulo: "Estudo de mãos",
-    descricao: "Mãos em gestos diferentes, desenhadas a grafite.",
-    tecnica: "Grafite sobre papel",
-    dimensoes: "29,7 × 42 cm",
-    ano: 2024,
-    precoCentavos: 45_000,
-    estoque: 1,
-    destaque: false,
-  },
-  {
-    slug: "demo-noturno-em-azul",
-    artistaSlug: "rafael-lotufo",
-    titulo: "Noturno em azul",
-    descricao: "Telhados da cidade à noite, sob a lua cheia.",
+    titulo: "Cavalo",
+    descricao:
+      "Figura com cabeça de cavalo, de camiseta e jeans, ao lado de um cavalo de crina azul.",
     tecnica: "Acrílica sobre tela",
-    dimensoes: "60 × 80 cm",
+    dimensoes: "40 × 50 cm",
     ano: 2025,
     precoCentavos: 280_000,
     estoque: 1,
     destaque: true,
+    textoAlternativo:
+      "Pintura de uma figura com cabeça de cavalo, camiseta branca e jeans, ao lado de um cavalo escuro de crina azul.",
+    origem: `${MELANIE}/DPb6_gsjoFD/`,
   },
   {
-    slug: "demo-raizes",
-    artistaSlug: "rafael-lotufo",
-    titulo: "Raízes",
-    descricao: "Raízes entrelaçadas na terra vermelha, em empastes de ocre e marrom.",
-    tecnica: "Óleo sobre tela",
-    dimensoes: "70 × 100 cm",
-    ano: 2023,
-    precoCentavos: 420_000,
-    estoque: 0,
-    destaque: false,
-  },
-  {
-    slug: "demo-mare-baixa",
-    artistaSlug: "cogu",
-    titulo: "Maré baixa",
-    descricao: "Barcos de pesca na areia molhada, na luz da manhã.",
-    tecnica: "Óleo sobre tela",
-    dimensoes: "50 × 70 cm",
-    ano: 2024,
-    precoCentavos: 350_000,
-    estoque: 1,
-    destaque: true,
-  },
-  {
-    slug: "demo-serie-varandas",
+    slug: "melanie-o-fruto-proibido",
     artistaSlug: "melanie-schwark",
-    titulo: "Série Varandas",
-    descricao: "Varandas antigas com grades de ferro trabalhado, a nanquim.",
-    tecnica: "Nanquim sobre papel",
-    dimensoes: "21 × 29,7 cm",
-    ano: 2025,
-    precoCentavos: 32_000,
+    titulo: "O Fruto Proibido",
+    descricao: "Eva e a maçã mordida, numa releitura sobre conhecimento e livre-arbítrio.",
+    tecnica: "Ilustração sobre gravura",
+    dimensoes: "30 × 40 cm",
+    ano: 2026,
+    precoCentavos: 90_000,
     estoque: 3,
     destaque: false,
+    textoAlternativo:
+      "Ilustração em preto e branco de maçãs mordidas em forma de corpo, sobre gravura antiga de Eva.",
+    origem: `${MELANIE}/Dcln27Xlpsp/`,
   },
   {
-    slug: "demo-minhocao",
-    artistaSlug: "cogu",
-    titulo: "Minhocão",
-    descricao: "O Elevado ao entardecer, com gente caminhando sob o céu laranja.",
-    tecnica: "Aquarela sobre papel",
-    dimensoes: "30 × 40 cm",
-    ano: 2025,
+    slug: "melanie-estudo-cavalo-humano",
+    artistaSlug: "melanie-schwark",
+    titulo: "Estudo de anatomia Cavalo-Humano",
+    descricao:
+      "Esqueleto de uma criatura cavalo-humana desenhada para fazer sentido anatomicamente.",
+    tecnica: "Grafite sobre papel",
+    dimensoes: "29,7 × 42 cm",
+    ano: 2026,
     precoCentavos: 120_000,
     estoque: 1,
-    destaque: true,
+    destaque: false,
+    textoAlternativo:
+      "Desenho a grafite do esqueleto de uma criatura com corpo de cavalo e crânio humano, com anotações.",
+    origem: `${MELANIE}/DUI8QJtjtI7/`,
   },
   {
-    slug: "demo-feira-de-domingo",
-    artistaSlug: "pucca",
-    titulo: "Feira de domingo",
-    descricao: "Barracas de frutas com toldos listrados numa feira de rua.",
-    tecnica: "Aquarela sobre papel",
-    dimensoes: "30 × 40 cm",
-    ano: 2024,
-    precoCentavos: 98_000,
+    slug: "rafael-preterito",
+    artistaSlug: "rafael-lotufo",
+    titulo: "Pretérito",
+    descricao: "Jogador de futebol de colete laranja dominando a bola num campo de terra.",
+    tecnica: "Óleo sobre algodão",
+    dimensoes: "80 × 60 cm",
+    ano: 2026,
+    precoCentavos: 420_000,
+    estoque: 1,
+    destaque: true,
+    textoAlternativo:
+      "Pintura de um jogador de chapéu e colete laranja dominando a bola, sobre fundo laranja.",
+    origem: `${RAFAEL}/DbV1ASoxf9S/`,
+  },
+  {
+    slug: "rafael-eclipse",
+    artistaSlug: "rafael-lotufo",
+    titulo: "Eclipse",
+    descricao: "O carro verde-limão de corrida das telas, com o asfalto molhado refletindo a cor.",
+    tecnica: "Óleo sobre tela",
+    dimensoes: "100 × 60 cm",
+    ano: 2026,
+    precoCentavos: 380_000,
     estoque: 1,
     destaque: false,
+    textoAlternativo:
+      "Pintura de um carro esportivo verde-limão com detalhes azuis, num cavalete do ateliê.",
+    origem: `${RAFAEL}/Dfry1sIIGOc/`,
   },
   {
-    slug: "demo-avenida-paulista",
-    artistaSlug: "pucca",
-    titulo: "Avenida Paulista",
-    descricao: "Prédios, árvores e trânsito da avenida em aguadas soltas.",
-    tecnica: "Aquarela sobre papel",
-    dimensoes: "36 × 48 cm",
-    ano: 2025,
-    precoCentavos: 150_000,
-    estoque: 2,
+    slug: "rafael-sao-jorge",
+    artistaSlug: "rafael-lotufo",
+    titulo: "São Jorge",
+    descricao: "O santo guerreiro no cavalo branco, vencendo o dragão.",
+    tecnica: "Óleo sobre tela",
+    dimensoes: "50 × 40 cm",
+    ano: 2026,
+    precoCentavos: 240_000,
+    estoque: 1,
     destaque: false,
+    textoAlternativo:
+      "Pintura de São Jorge de armadura e capa vermelha, num cavalo branco sobre o dragão.",
+    origem: `${RAFAEL}/DU_Dn2YkZQU/`,
+  },
+  {
+    slug: "cogu-zoe",
+    artistaSlug: "cogu",
+    titulo: "Zoe",
+    descricao: "Retrato de uma pequena Boston terrier, feito sob encomenda.",
+    tecnica: "Acrílica sobre tela",
+    dimensoes: "30 × 40 cm",
+    ano: 2026,
+    precoCentavos: 120_000,
+    estoque: 0,
+    destaque: false,
+    textoAlternativo: "Pintura de uma Boston terrier preta e branca sentada, em tons de lilás.",
+    origem: `${COGU}/DdiIgvUDIBR/`,
   },
 ];
 
-const OBRA =
-  "the artwork photographed flat and straight on, filling the frame, no text, no signature";
-const TATUAGEM =
-  "professional tattoo portfolio photo, close-up of a healed tattoo on real skin, soft studio light, sharp focus, no text";
-
-export const obras: ImagemObra[] = [
-  {
-    slug: "demo-estudo-de-maos",
-    textoAlternativo: "Desenho a grafite de mãos em gestos diferentes sobre papel texturizado.",
-    prompt: `graphite pencil study of human hands in several gestures on textured cream paper, fine cross-hatching, sketchbook page, ${OBRA}`,
-  },
-  {
-    slug: "demo-noturno-em-azul",
-    textoAlternativo:
-      "Pintura em acrílica de telhados da cidade à noite em tons de azul, com a lua.",
-    prompt: `acrylic painting of Sao Paulo rooftops at night in deep blue tones, full moon, lit windows, expressive brushstrokes, ${OBRA}`,
-  },
-  {
-    slug: "demo-raizes",
-    textoAlternativo: "Pintura a óleo de raízes de árvore entrelaçadas na terra, em ocre e marrom.",
-    prompt: `oil painting on canvas of large intertwined tree roots gripping red earth, warm ochre and brown palette, thick impasto, ${OBRA}`,
-  },
-  {
-    slug: "demo-mare-baixa",
-    textoAlternativo:
-      "Pintura a óleo de praia na maré baixa, com barcos de pesca na areia molhada.",
-    prompt: `oil painting of a Brazilian beach at low tide, small wooden fishing boats resting on wet sand, soft morning light, ${OBRA}`,
-  },
-  {
-    slug: "demo-serie-varandas",
-    textoAlternativo: "Esboço a nanquim de varandas antigas com grades de ferro trabalhado.",
-    prompt: `loose india ink sketch of old colonial balconies with wrought iron railings and potted plants, pen lines on white paper, ${OBRA}`,
-  },
-  {
-    slug: "demo-minhocao",
-    textoAlternativo:
-      "Aquarela do Elevado Minhocão ao entardecer, com pessoas caminhando sob o céu laranja.",
-    prompt: `watercolor painting of the Minhocao elevated highway in Sao Paulo at sunset, people walking on it, warm orange sky, loose washes, ${OBRA}`,
-  },
-  {
-    slug: "demo-feira-de-domingo",
-    textoAlternativo: "Aquarela de feira de rua num domingo, com barracas coloridas de frutas.",
-    prompt: `watercolor painting of a Sunday street market in Sao Paulo, colorful fruit stalls with striped awnings, shoppers, loose washes, ${OBRA}`,
-  },
-  {
-    slug: "demo-avenida-paulista",
-    textoAlternativo: "Aquarela da Avenida Paulista com prédios altos, árvores e trânsito.",
-    prompt: `loose watercolor painting of Avenida Paulista in Sao Paulo, tall buildings, trees along the sidewalk, traffic, wet-on-wet sky, ${OBRA}`,
-  },
-];
+const tatuagem = (n: number) => `00000000-0000-4000-9100-${String(n).padStart(12, "0")}`;
 
 export const tatuagens: Tatuagem[] = [
   {
-    id: "00000000-0000-4000-9000-000000000001",
+    id: tatuagem(1),
     artistaSlug: "melanie-schwark",
-    estiloSlug: "demo-traco-fino",
-    titulo: "Ramo de oliveira",
-    descricao: "Ramo delicado em traço fino acompanhando o antebraço.",
+    estiloSlug: "blackwork",
+    titulo: "Cavalo empinado",
+    descricao: "Cavalo empinado com uma estrela no peito.",
+    regiaoCorpo: "Coxa",
+    duracaoMinutos: 240,
+    destaque: true,
+    origem: `${MELANIE}/DWzn7xgFpe9/`,
+  },
+  {
+    id: tatuagem(2),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "surrealismo",
+    titulo: "Lhama",
+    descricao: "Lhama mágica e ancestral, criada para representar raízes bolivianas.",
     regiaoCorpo: "Antebraço",
-    duracaoMinutos: 90,
-    destaque: true,
-    prompt: `fine line single needle tattoo of a slender olive branch along the inner forearm, ${TATUAGEM}`,
-  },
-  {
-    id: "00000000-0000-4000-9000-000000000002",
-    artistaSlug: "melanie-schwark",
-    estiloSlug: "demo-traco-fino",
-    titulo: "Constelação de Escorpião",
-    descricao: "Pontos e linhas finas formando a constelação.",
-    regiaoCorpo: "Clavícula",
-    duracaoMinutos: 45,
-    destaque: false,
-    prompt: `minimalist fine line tattoo of the Scorpius constellation with tiny dots below the collarbone, ${TATUAGEM}`,
-  },
-  {
-    id: "00000000-0000-4000-9000-000000000003",
-    artistaSlug: "melanie-schwark",
-    estiloSlug: "demo-traco-fino",
-    titulo: "Gato em linha contínua",
-    descricao: "Gato desenhado numa única linha, sem tirar a agulha.",
-    regiaoCorpo: "Tornozelo",
-    duracaoMinutos: 40,
-    destaque: false,
-    prompt: `fine line tattoo of a cat drawn in one continuous line on the outer ankle, ${TATUAGEM}`,
-  },
-  {
-    id: "00000000-0000-4000-9000-000000000004",
-    artistaSlug: "pucca",
-    estiloSlug: "demo-aquarela",
-    titulo: "Beija-flor",
-    descricao: "Beija-flor com manchas de aquarela em verde e azul.",
-    regiaoCorpo: "Ombro",
-    duracaoMinutos: 180,
-    destaque: true,
-    prompt: `watercolor style tattoo of a hummingbird with green and turquoise paint splashes on the shoulder, ${TATUAGEM}`,
-  },
-  {
-    id: "00000000-0000-4000-9000-000000000005",
-    artistaSlug: "pucca",
-    estiloSlug: "demo-aquarela",
-    titulo: "Ipê amarelo",
-    descricao: "Galho de ipê florido com respingos amarelos.",
-    regiaoCorpo: "Panturrilha",
-    duracaoMinutos: 150,
-    destaque: false,
-    prompt: `watercolor style tattoo of a yellow ipe tree branch in bloom with yellow paint drips on the calf, ${TATUAGEM}`,
-  },
-  {
-    id: "00000000-0000-4000-9000-000000000006",
-    artistaSlug: "pucca",
-    estiloSlug: "demo-aquarela",
-    titulo: "Carpa",
-    descricao: "Carpa em laranja e vermelho com aguadas suaves.",
-    regiaoCorpo: "Costela",
     duracaoMinutos: 210,
     destaque: false,
-    prompt: `watercolor style tattoo of an orange and red koi fish with soft color washes on the side ribs, ${TATUAGEM}`,
+    origem: `${MELANIE}/Da3j_qsFhdh/`,
   },
   {
-    id: "00000000-0000-4000-9000-000000000007",
-    artistaSlug: "cogu",
-    estiloSlug: "demo-blackwork",
-    titulo: "Mandala geométrica",
-    descricao: "Mandala em blackwork com pontilhismo entre as escápulas.",
-    regiaoCorpo: "Costas",
+    id: tatuagem(3),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Camaleão",
+    descricao: "Camaleão sobre um galho, com textura em traço preto.",
+    regiaoCorpo: "Coxa",
+    duracaoMinutos: 180,
+    destaque: false,
+    origem: `${MELANIE}/DUTw1O4j1pv/`,
+  },
+  {
+    id: tatuagem(4),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "surrealismo",
+    titulo: "Máscaras",
+    descricao: "Três máscaras entre cactos e folhagens.",
+    regiaoCorpo: "Ombro",
     duracaoMinutos: 300,
-    destaque: true,
-    prompt: `blackwork tattoo of a symmetrical geometric mandala with dotwork shading on the upper back between the shoulder blades, ${TATUAGEM}`,
+    destaque: false,
+    origem: `${MELANIE}/DUB3GOljzgo/`,
   },
   {
-    id: "00000000-0000-4000-9000-000000000008",
+    id: tatuagem(5),
     artistaSlug: "cogu",
-    estiloSlug: "demo-blackwork",
-    titulo: "Bracelete ornamental",
-    descricao: "Faixa ornamental em preto sólido ao redor do antebraço.",
+    estiloSlug: "blackwork",
+    titulo: "Lobo em pele de cordeiro",
+    descricao: "Lobo com pele de cordeiro, em preto e cinza.",
+    regiaoCorpo: "Costas",
+    duracaoMinutos: 240,
+    destaque: true,
+    origem: `${COGU}/DXxTIyZGKmN/`,
+  },
+  {
+    id: tatuagem(6),
+    artistaSlug: "cogu",
+    estiloSlug: "old-school",
+    titulo: "Cão bravo",
+    descricao: "Cão bravo saindo de uma porta em arco, desenho dos disponíveis.",
+    regiaoCorpo: "Braço",
+    duracaoMinutos: 150,
+    destaque: false,
+    origem: `${COGU}/DXh4tk0D39U/`,
+  },
+  {
+    id: tatuagem(7),
+    artistaSlug: "pucca",
+    estiloSlug: "lettering",
+    titulo: "Amor",
+    descricao: "Lettering com arabescos e uma estrela.",
+    regiaoCorpo: "Antebraço",
+    duracaoMinutos: 180,
+    destaque: true,
+    origem: `${PUCCA}/DV1LUFsDjaV/`,
+  },
+  {
+    id: tatuagem(8),
+    artistaSlug: "pucca",
+    estiloSlug: "lettering",
+    titulo: "Próspera",
+    descricao: "Palavra que carrega movimento, crescimento e intenção.",
+    regiaoCorpo: "Coxa",
+    duracaoMinutos: 120,
+    destaque: false,
+    origem: `${PUCCA}/DUlT9i2jtR2/`,
+  },
+  {
+    id: tatuagem(9),
+    artistaSlug: "pucca",
+    estiloSlug: "lettering",
+    titulo: "Kaizen",
+    descricao: "Kai e Zen: mudança, fluxo e evolução constante.",
     regiaoCorpo: "Antebraço",
     duracaoMinutos: 120,
     destaque: false,
-    prompt: `blackwork tattoo of an ornamental band with solid black filigree wrapping around the forearm, ${TATUAGEM}`,
+    origem: `${PUCCA}/DVghg-MDiNZ/`,
   },
   {
-    id: "00000000-0000-4000-9000-000000000009",
-    artistaSlug: "cogu",
-    estiloSlug: "demo-blackwork",
-    titulo: "Corvo",
-    descricao: "Corvo de asas abertas em preto sólido.",
+    id: tatuagem(10),
+    artistaSlug: "pucca",
+    estiloSlug: "lettering",
+    titulo: "Herege",
+    descricao: "Palavra que carrega ruptura, questionamento e coragem.",
     regiaoCorpo: "Coxa",
-    duracaoMinutos: 240,
+    duracaoMinutos: 120,
     destaque: false,
-    prompt: `bold blackwork tattoo of a raven with spread wings in solid black ink on the thigh, ${TATUAGEM}`,
+    origem: `${PUCCA}/DWSCkVQFHde/`,
   },
 ];
+
+// Demonstrações anteriores, que o seed tira do banco: a artista fictícia, as obras, tatuagens e
+// estilos com imagem gerada por IA.
+export const ARTISTA_DEMO_ANTIGO = "demo-marina-duarte";
+export const OBRAS_DEMO_ANTIGAS = [
+  "demo-estudo-de-maos",
+  "demo-noturno-em-azul",
+  "demo-raizes",
+  "demo-mare-baixa",
+  "demo-serie-varandas",
+  "demo-minhocao",
+  "demo-feira-de-domingo",
+  "demo-avenida-paulista",
+];
+export const TATUAGENS_DEMO_ANTIGAS = Array.from(
+  { length: 9 },
+  (_, i) => `00000000-0000-4000-9000-${String(i + 1).padStart(12, "0")}`,
+);
+export const ESTILOS_DEMO_ANTIGOS = ["demo-traco-fino", "demo-aquarela", "demo-blackwork"];

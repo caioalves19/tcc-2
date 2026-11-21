@@ -27,10 +27,10 @@ afterAll(async () => {
   await db.end();
 });
 
-// PBI-49: num banco novo o seed de demonstração cria os artistas, os estilos e as obras que o
-// popular.ts procura, e repetir o comando não duplica nada. Um banco com a demonstração antiga
-// (Marina Duarte, artista-exemplo com estilo) perde as duas na vitrine e as obras mudam de dono.
-it("PBI-49 db:seed:demo cadastra os artistas do Kolô, estilos e obras e pode rodar de novo", async () => {
+// PBI-49: num banco novo o seed de demonstração cria os artistas, os estilos e as obras reais
+// que o popular.ts procura, e repetir o comando não duplica nada. Um banco com a demonstração
+// antiga (Marina Duarte, obras, tatuagens e estilos de IA) fica só com o que é do Kolô.
+it("PBI-49 db:seed:demo cadastra os artistas do Kolô, estilos e obras e tira a demonstração de IA", async () => {
   const marina = await db.query<{ id: string }>(
     `INSERT INTO "user" (id, papel, nome, email, atualizado_em)
      VALUES (gen_random_uuid(), 'ARTISTA', 'Marina Duarte', 'marina.duarte@kolo.test', NOW())
@@ -54,6 +54,11 @@ it("PBI-49 db:seed:demo cadastra os artistas do Kolô, estilos e obras e pode ro
      SELECT a.id, s.id FROM artist a, tattoo_style s
      WHERE a.slug = 'artista-exemplo' AND s.slug = 'demo-blackwork'`,
   );
+  await db.query(
+    `INSERT INTO portfolio_item (id, artist_id, titulo, imagem_url, ordem)
+     SELECT '00000000-0000-4000-9000-000000000007', a.id, 'Mandala geométrica', 'portfolio/x.webp', 1
+     FROM artist a WHERE a.slug = 'artista-exemplo'`,
+  );
 
   rodar("npm run db:seed:demo");
   rodar("npm run db:seed:demo");
@@ -74,72 +79,69 @@ it("PBI-49 db:seed:demo cadastra os artistas do Kolô, estilos e obras e pode ro
   const estilos = await db.query<{ slug: string; artista: string }>(
     `SELECT s.slug, a.slug AS artista FROM tattoo_style s
      JOIN artist_style x ON x.tattoo_style_id = s.id JOIN artist a ON a.id = x.artist_id
-     ORDER BY s.slug`,
+     ORDER BY s.slug, a.slug`,
   );
   expect(estilos.rows).toEqual([
-    { slug: "demo-aquarela", artista: "pucca" },
-    { slug: "demo-blackwork", artista: "cogu" },
-    { slug: "demo-traco-fino", artista: "melanie-schwark" },
+    { slug: "blackwork", artista: "cogu" },
+    { slug: "blackwork", artista: "melanie-schwark" },
+    { slug: "lettering", artista: "pucca" },
+    { slug: "old-school", artista: "cogu" },
+    { slug: "surrealismo", artista: "melanie-schwark" },
   ]);
-
-  const minhocao = await db.query<{ artista: string }>(
-    `SELECT a.slug AS artista FROM artwork o JOIN artist a ON a.id = o.artist_id
-     WHERE o.slug = 'demo-minhocao'`,
+  const legado = await db.query(
+    `SELECT slug FROM artwork WHERE slug LIKE 'demo-%'
+     UNION ALL SELECT slug FROM tattoo_style WHERE slug LIKE 'demo-%'
+     UNION ALL SELECT id::text FROM portfolio_item`,
   );
-  expect(minhocao.rows).toEqual([{ artista: "cogu" }]);
+  expect(legado.rows).toEqual([]);
 
   const obras = await db.query<{ slug: string; situacao: string; estoque: number; aviso: boolean }>(
     `SELECT slug, situacao::text AS situacao, quantidade_estoque AS estoque,
-            descricao LIKE '%ilustrativa gerada por IA%' AS aviso
+            descricao LIKE '%preço e disponibilidade fictícios%' AS aviso
      FROM artwork ORDER BY slug`,
   );
-  expect(obras.rows).toHaveLength(8);
+  expect(obras.rows).toHaveLength(7);
   expect(obras.rows.every((obra) => obra.aviso)).toBe(true);
-  expect(obras.rows.find((obra) => obra.slug === "demo-raizes")).toMatchObject({
+  expect(obras.rows.find((obra) => obra.slug === "cogu-zoe")).toMatchObject({
     situacao: "ESGOTADA",
     estoque: 0,
   });
-  expect(obras.rows.filter((obra) => obra.situacao === "DISPONIVEL")).toHaveLength(7);
+  expect(obras.rows.filter((obra) => obra.situacao === "DISPONIVEL")).toHaveLength(6);
 }, 120_000);
 
 // PBI-49 (lacuna 1): com o seed de demonstração no banco, popular.ts liga todas as imagens. Com
 // R2_PUBLIC_URL relativa ele grava em public/<pasta>, sem R2.
-it("PBI-49 popular.ts liga uma imagem a cada obra e cria as 9 tatuagens, sem duplicar ao repetir", async () => {
+it("PBI-49 popular.ts liga uma imagem a cada obra e cria as 10 tatuagens, sem duplicar ao repetir", async () => {
   const pasta = join(process.cwd(), "public", PASTA_LOCAL);
   try {
     rodar("npm run db:seed:demo");
-    // Obra que mudou de dono (produção): a imagem antiga está na pasta do artista anterior.
+    // Obra cuja imagem antiga ficou na pasta de outro artista: a nova vira a principal.
     await db.query(
       `INSERT INTO artwork_image (id, artwork_id, url, ordem, principal)
-       SELECT gen_random_uuid(), id, 'obras/00000000-0000-4000-8000-0000000000aa/demo-minhocao.webp', 1, true
-       FROM artwork WHERE slug = 'demo-minhocao'`,
+       SELECT gen_random_uuid(), id, 'obras/00000000-0000-4000-8000-0000000000aa/rafael-eclipse.webp', 1, true
+       FROM artwork WHERE slug = 'rafael-eclipse'`,
     );
-    // Tatuagem que já estava no artista-exemplo (produção) e agora é do Cogu.
+    // Tatuagem que já estava com outro artista (artista-exemplo) e é da Pucca.
     await db.query(
       `INSERT INTO portfolio_item (id, artist_id, titulo, descricao, imagem_url, ordem)
-       SELECT '00000000-0000-4000-9000-000000000007', a.id, 'Mandala geométrica',
-              'Mandala em blackwork com pontilhismo entre as escápulas. Demonstração: imagem ilustrativa gerada por IA, fora do acervo real.',
-              'portfolio/' || a.id || '/00000000-0000-4000-9000-000000000007.webp', 1
+       SELECT '00000000-0000-4000-9100-000000000007', a.id, 'Amor', 'Antiga.',
+              'portfolio/' || a.id || '/00000000-0000-4000-9100-000000000007.webp', 1
        FROM artist a WHERE a.slug = 'artista-exemplo'`,
     );
     rodar("npx tsx prisma/imagens-demo/popular.ts", { R2_PUBLIC_URL: `/${PASTA_LOCAL}` });
-    const mandala = await db.query<{ artista: string; dono: boolean; estilos: string }>(
+    const amor = await db.query<{ artista: string; dono: boolean; estilos: string }>(
       `SELECT a.slug AS artista, p.imagem_url LIKE 'portfolio/' || a.id || '/%' AS dono,
               (SELECT string_agg(s.slug, ',') FROM portfolio_item_style x
                JOIN tattoo_style s ON s.id = x.tattoo_style_id WHERE x.portfolio_item_id = p.id) AS estilos
        FROM portfolio_item p JOIN artist a ON a.id = p.artist_id
-       WHERE p.id = '00000000-0000-4000-9000-000000000007'`,
+       WHERE p.id = '00000000-0000-4000-9100-000000000007'`,
     );
-    expect(mandala.rows).toEqual([{ artista: "cogu", dono: true, estilos: "demo-blackwork" }]);
+    expect(amor.rows).toEqual([{ artista: "pucca", dono: true, estilos: "lettering" }]);
     const doExemplo = await db.query(
       `SELECT 1 FROM portfolio_item p JOIN artist a ON a.id = p.artist_id
        WHERE a.slug = 'artista-exemplo'`,
     );
     expect(doExemplo.rows).toEqual([]);
-    // Banco que recebeu o popular.ts antes do aviso: repetir o script acrescenta o aviso.
-    await db.query(
-      "UPDATE portfolio_item SET descricao = 'Sem aviso.' WHERE id = '00000000-0000-4000-9000-000000000001'",
-    );
     rodar("npx tsx prisma/imagens-demo/popular.ts", { R2_PUBLIC_URL: `/${PASTA_LOCAL}` });
 
     const imagens = await db.query<{
@@ -151,18 +153,16 @@ it("PBI-49 popular.ts liga uma imagem a cada obra e cria as 9 tatuagens, sem dup
       `SELECT a.slug, i.principal, i.url, a.artist_id::text AS artista FROM artwork_image i
        JOIN artwork a ON a.id = i.artwork_id ORDER BY a.slug`,
     );
-    expect(imagens.rows).toHaveLength(8);
+    expect(imagens.rows).toHaveLength(7);
     expect(imagens.rows.every((imagem) => imagem.principal)).toBe(true);
     for (const imagem of imagens.rows) {
       expect(imagem.url, imagem.slug).toBe(`obras/${imagem.artista}/${imagem.slug}.webp`);
     }
 
-    const tatuagens = await db.query<{ total: string; avisos: string }>(
-      `SELECT count(*)::text AS total,
-              count(*) FILTER (WHERE descricao LIKE '%ilustrativa gerada por IA%')::text AS avisos
-       FROM portfolio_item`,
+    const tatuagens = await db.query<{ total: string }>(
+      "SELECT count(*)::text AS total FROM portfolio_item",
     );
-    expect(tatuagens.rows).toEqual([{ total: "9", avisos: "9" }]);
+    expect(tatuagens.rows).toEqual([{ total: "10" }]);
 
     const primeira = imagens.rows[0];
     if (!primeira) throw new Error("Nenhuma imagem gravada");
@@ -171,6 +171,29 @@ it("PBI-49 popular.ts liga uma imagem a cada obra e cria as 9 tatuagens, sem dup
     rmSync(pasta, { recursive: true, force: true });
   }
 }, 180_000);
+
+// Obra de IA que alguém pôs no carrinho ou comprou: o banco protege (Restrict). O seed não pode
+// parar; ela sai do catálogo como excluída, sem ser apagada.
+it("db:seed:demo tira do catálogo a obra de IA presa a um carrinho, sem falhar", async () => {
+  await db.query(
+    `INSERT INTO artwork (id, artist_id, slug, titulo, preco_centavos, quantidade_estoque, situacao)
+     SELECT gen_random_uuid(), a.id, 'demo-raizes', 'Raízes', 420000, 1, 'DISPONIVEL'
+     FROM artist a WHERE a.slug = 'artista-exemplo'`,
+  );
+  await db.query(
+    `WITH c AS (INSERT INTO cart (id, cookie_token, atualizado_em)
+                VALUES (gen_random_uuid(), 'carrinho-pbi49', NOW()) RETURNING id)
+     INSERT INTO cart_item (id, cart_id, artwork_id, quantidade)
+     SELECT gen_random_uuid(), c.id, o.id, 1 FROM c, artwork o WHERE o.slug = 'demo-raizes'`,
+  );
+
+  rodar("npm run db:seed:demo");
+
+  const raizes = await db.query<{ excluida: boolean }>(
+    "SELECT excluido_em IS NOT NULL AS excluida FROM artwork WHERE slug = 'demo-raizes'",
+  );
+  expect(raizes.rows).toEqual([{ excluida: true }]);
+}, 120_000);
 
 // A conta da Marina com histórico que o banco protege (e-mail enviado, pedido): o seed não pode
 // parar no meio. Ela sai da vitrine sem ser apagada.
@@ -188,7 +211,7 @@ it("PBI-49 db:seed:demo tira da vitrine a artista antiga que tem histórico, sem
   await db.query(
     `INSERT INTO artist_style (artist_id, tattoo_style_id)
      SELECT a.id, s.id FROM artist a, tattoo_style s
-     WHERE a.slug = 'demo-marina-duarte' AND s.slug = 'demo-aquarela'`,
+     WHERE a.slug = 'demo-marina-duarte' AND s.slug = 'lettering'`,
   );
   await db.query(
     `INSERT INTO email_log (id, user_id, destinatario, template, situacao)

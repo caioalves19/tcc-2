@@ -1,4 +1,4 @@
-// Sobe as imagens geradas por gerar.ts e liga ao banco: uma imagem principal por obra de
+// Sobe as fotos reais de imagens/ e liga ao banco: uma imagem principal por obra de
 // demonstração e as tatuagens do portfólio. Pode rodar de novo: nada é duplicado.
 // Uso: npx tsx prisma/imagens-demo/popular.ts
 // Com R2_PUBLIC_URL local (ex.: /seed), grava em public/seed/ em vez do R2.
@@ -12,7 +12,7 @@ import { PrismaClient } from "../../generated/prisma/client";
 import { databaseUrl } from "../../src/lib/database-url";
 import { armazenamentoR2, chaveMiniatura } from "../../src/modules/media/index";
 import type { Armazenamento } from "../../src/modules/media/index";
-import { AVISO_DEMO, obras, tatuagens } from "./catalogo";
+import { obrasDemo, tatuagens } from "./catalogo";
 
 const pool = new Pool({ connectionString: databaseUrl() });
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
@@ -45,7 +45,7 @@ async function enviar(arquivoLocal: string, chave: string): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  for (const imagem of obras) {
+  for (const imagem of obrasDemo) {
     const obra = await prisma.artwork.findUnique({
       where: { slug: imagem.slug },
       include: { images: true },
@@ -86,7 +86,7 @@ async function main(): Promise<void> {
     }
     const chave = `portfolio/${artista.id}/${t.id}.webp`;
     await enviar(`tatuagens/${t.id}.webp`, chave);
-    const descricao = `${t.descricao} ${AVISO_DEMO}`;
+    const descricao = t.descricao;
     const existente = await prisma.portfolioItem.findUnique({ where: { id: t.id } });
     if (existente && existente.artistId !== artista.id) {
       // Tatuagem que mudou de dono (artista-exemplo → Cogu): vai inteira para o novo artista.
@@ -108,13 +108,13 @@ async function main(): Promise<void> {
       continue;
     }
     if (existente) {
-      // Banco que recebeu este script antes do aviso de imagem ilustrativa (PBI-49).
+      // A descrição mudou no catálogo: o banco acompanha.
       if (existente.description !== descricao) {
         await prisma.portfolioItem.update({
           where: { id: t.id },
           data: { description: descricao },
         });
-        console.log(`~ tatuagem ${t.titulo} (aviso de demonstração)`);
+        console.log(`~ tatuagem ${t.titulo} (descrição)`);
         continue;
       }
       console.log(`= tatuagem ${t.titulo}`);
