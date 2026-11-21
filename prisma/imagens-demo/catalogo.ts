@@ -40,16 +40,50 @@ export type EstiloDemo = { slug: string; nome: string; descricao: string };
 // Vai ao fim da descrição das obras (seed-demo.ts) e das tatuagens (popular.ts).
 export const AVISO_DEMO = "Demonstração: imagem ilustrativa gerada por IA, fora do acervo real.";
 
-export const artistaDemo = {
-  email: "marina.duarte@kolo.test",
-  nome: "Marina Duarte",
-  slug: "demo-marina-duarte",
-  bio: "Artista fictícia de demonstração. Desenha em traço fino e aquarela, na pele e no papel.",
-  estilos: ["demo-traco-fino", "demo-aquarela"],
+// O pessoal do Kolô. Quem tem estilo tatua e aparece no agendamento (RF20); o Rafael é só
+// artista plástico. Contas sem senha (ninguém entra com elas) e sem bio até eles mandarem.
+// Enquanto as imagens reais não chegam, as ilustrativas abaixo ficam distribuídas entre eles.
+export type ArtistaDemo = {
+  email: string;
+  nome: string;
+  slug: string;
+  instagram: string;
+  estilos: string[];
 };
 
-// O artista-exemplo vem do prisma/seed.ts; aqui só ganha o estilo das tatuagens dele.
-export const estilosDoArtistaExemplo = ["demo-blackwork"];
+export const artistasDemo: ArtistaDemo[] = [
+  {
+    email: "melanie@kolo.test",
+    nome: "Melanie Schwark",
+    slug: "melanie-schwark",
+    instagram: "melanfetamina",
+    estilos: ["demo-traco-fino"],
+  },
+  {
+    email: "rafael@kolo.test",
+    nome: "Rafael Lotufo",
+    slug: "rafael-lotufo",
+    instagram: "rafa.lotufo",
+    estilos: [],
+  },
+  {
+    email: "cogu@kolo.test",
+    nome: 'Gustavo Henrique "Cogu"',
+    slug: "cogu",
+    instagram: "co.guh",
+    estilos: ["demo-blackwork"],
+  },
+  {
+    email: "pucca@kolo.test",
+    nome: 'Laura Manoel "Pucca"',
+    slug: "pucca",
+    instagram: "pucca.ink",
+    estilos: ["demo-aquarela"],
+  },
+];
+
+// Demonstrações anteriores: o seed tira estes da vitrine.
+export const ARTISTA_DEMO_ANTIGO = "demo-marina-duarte";
 
 export const estilosDemo: EstiloDemo[] = [
   {
@@ -72,7 +106,7 @@ export const estilosDemo: EstiloDemo[] = [
 export const obrasDemo: ObraDemo[] = [
   {
     slug: "demo-estudo-de-maos",
-    artistaSlug: "artista-exemplo",
+    artistaSlug: "melanie-schwark",
     titulo: "Estudo de mãos",
     descricao: "Mãos em gestos diferentes, desenhadas a grafite.",
     tecnica: "Grafite sobre papel",
@@ -84,7 +118,7 @@ export const obrasDemo: ObraDemo[] = [
   },
   {
     slug: "demo-noturno-em-azul",
-    artistaSlug: "artista-exemplo",
+    artistaSlug: "rafael-lotufo",
     titulo: "Noturno em azul",
     descricao: "Telhados da cidade à noite, sob a lua cheia.",
     tecnica: "Acrílica sobre tela",
@@ -96,7 +130,7 @@ export const obrasDemo: ObraDemo[] = [
   },
   {
     slug: "demo-raizes",
-    artistaSlug: "artista-exemplo",
+    artistaSlug: "rafael-lotufo",
     titulo: "Raízes",
     descricao: "Raízes entrelaçadas na terra vermelha, em empastes de ocre e marrom.",
     tecnica: "Óleo sobre tela",
@@ -108,7 +142,7 @@ export const obrasDemo: ObraDemo[] = [
   },
   {
     slug: "demo-mare-baixa",
-    artistaSlug: "artista-exemplo",
+    artistaSlug: "cogu",
     titulo: "Maré baixa",
     descricao: "Barcos de pesca na areia molhada, na luz da manhã.",
     tecnica: "Óleo sobre tela",
@@ -120,7 +154,7 @@ export const obrasDemo: ObraDemo[] = [
   },
   {
     slug: "demo-serie-varandas",
-    artistaSlug: "demo-marina-duarte",
+    artistaSlug: "melanie-schwark",
     titulo: "Série Varandas",
     descricao: "Varandas antigas com grades de ferro trabalhado, a nanquim.",
     tecnica: "Nanquim sobre papel",
@@ -132,7 +166,7 @@ export const obrasDemo: ObraDemo[] = [
   },
   {
     slug: "demo-minhocao",
-    artistaSlug: "demo-marina-duarte",
+    artistaSlug: "cogu",
     titulo: "Minhocão",
     descricao: "O Elevado ao entardecer, com gente caminhando sob o céu laranja.",
     tecnica: "Aquarela sobre papel",
@@ -144,7 +178,7 @@ export const obrasDemo: ObraDemo[] = [
   },
   {
     slug: "demo-feira-de-domingo",
-    artistaSlug: "demo-marina-duarte",
+    artistaSlug: "pucca",
     titulo: "Feira de domingo",
     descricao: "Barracas de frutas com toldos listrados numa feira de rua.",
     tecnica: "Aquarela sobre papel",
@@ -156,7 +190,7 @@ export const obrasDemo: ObraDemo[] = [
   },
   {
     slug: "demo-avenida-paulista",
-    artistaSlug: "demo-marina-duarte",
+    artistaSlug: "pucca",
     titulo: "Avenida Paulista",
     descricao: "Prédios, árvores e trânsito da avenida em aguadas soltas.",
     tecnica: "Aquarela sobre papel",
@@ -222,7 +256,7 @@ export const obras: ImagemObra[] = [
 export const tatuagens: Tatuagem[] = [
   {
     id: "00000000-0000-4000-9000-000000000001",
-    artistaSlug: "demo-marina-duarte",
+    artistaSlug: "melanie-schwark",
     estiloSlug: "demo-traco-fino",
     titulo: "Ramo de oliveira",
     descricao: "Ramo delicado em traço fino acompanhando o antebraço.",
@@ -233,7 +267,7 @@ export const tatuagens: Tatuagem[] = [
   },
   {
     id: "00000000-0000-4000-9000-000000000002",
-    artistaSlug: "demo-marina-duarte",
+    artistaSlug: "melanie-schwark",
     estiloSlug: "demo-traco-fino",
     titulo: "Constelação de Escorpião",
     descricao: "Pontos e linhas finas formando a constelação.",
@@ -244,7 +278,7 @@ export const tatuagens: Tatuagem[] = [
   },
   {
     id: "00000000-0000-4000-9000-000000000003",
-    artistaSlug: "demo-marina-duarte",
+    artistaSlug: "melanie-schwark",
     estiloSlug: "demo-traco-fino",
     titulo: "Gato em linha contínua",
     descricao: "Gato desenhado numa única linha, sem tirar a agulha.",
@@ -255,7 +289,7 @@ export const tatuagens: Tatuagem[] = [
   },
   {
     id: "00000000-0000-4000-9000-000000000004",
-    artistaSlug: "demo-marina-duarte",
+    artistaSlug: "pucca",
     estiloSlug: "demo-aquarela",
     titulo: "Beija-flor",
     descricao: "Beija-flor com manchas de aquarela em verde e azul.",
@@ -266,7 +300,7 @@ export const tatuagens: Tatuagem[] = [
   },
   {
     id: "00000000-0000-4000-9000-000000000005",
-    artistaSlug: "demo-marina-duarte",
+    artistaSlug: "pucca",
     estiloSlug: "demo-aquarela",
     titulo: "Ipê amarelo",
     descricao: "Galho de ipê florido com respingos amarelos.",
@@ -277,7 +311,7 @@ export const tatuagens: Tatuagem[] = [
   },
   {
     id: "00000000-0000-4000-9000-000000000006",
-    artistaSlug: "demo-marina-duarte",
+    artistaSlug: "pucca",
     estiloSlug: "demo-aquarela",
     titulo: "Carpa",
     descricao: "Carpa em laranja e vermelho com aguadas suaves.",
@@ -288,7 +322,7 @@ export const tatuagens: Tatuagem[] = [
   },
   {
     id: "00000000-0000-4000-9000-000000000007",
-    artistaSlug: "artista-exemplo",
+    artistaSlug: "cogu",
     estiloSlug: "demo-blackwork",
     titulo: "Mandala geométrica",
     descricao: "Mandala em blackwork com pontilhismo entre as escápulas.",
@@ -299,7 +333,7 @@ export const tatuagens: Tatuagem[] = [
   },
   {
     id: "00000000-0000-4000-9000-000000000008",
-    artistaSlug: "artista-exemplo",
+    artistaSlug: "cogu",
     estiloSlug: "demo-blackwork",
     titulo: "Bracelete ornamental",
     descricao: "Faixa ornamental em preto sólido ao redor do antebraço.",
@@ -310,7 +344,7 @@ export const tatuagens: Tatuagem[] = [
   },
   {
     id: "00000000-0000-4000-9000-000000000009",
-    artistaSlug: "artista-exemplo",
+    artistaSlug: "cogu",
     estiloSlug: "demo-blackwork",
     titulo: "Corvo",
     descricao: "Corvo de asas abertas em preto sólido.",

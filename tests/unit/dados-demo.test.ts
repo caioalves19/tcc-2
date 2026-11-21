@@ -1,13 +1,32 @@
 import { expect, it } from "vitest";
 
 import {
-  artistaDemo,
+  artistasDemo,
   estilosDemo,
-  estilosDoArtistaExemplo,
   obras,
   obrasDemo,
   tatuagens,
 } from "../../prisma/imagens-demo/catalogo";
+
+// A vitrine mostra o pessoal do Kolô: quatro artistas, dos quais três tatuam (têm estilo).
+it("a demonstração traz os quatro artistas do Kolô, três deles tatuadores, cada um com o Instagram", () => {
+  expect(artistasDemo.map(({ nome, instagram }) => ({ nome, instagram }))).toEqual([
+    { nome: "Melanie Schwark", instagram: "melanfetamina" },
+    { nome: "Rafael Lotufo", instagram: "rafa.lotufo" },
+    { nome: 'Gustavo Henrique "Cogu"', instagram: "co.guh" },
+    { nome: 'Laura Manoel "Pucca"', instagram: "pucca.ink" },
+  ]);
+  expect(artistasDemo.filter((a) => a.estilos.length > 0).map((a) => a.nome)).toEqual([
+    "Melanie Schwark",
+    'Gustavo Henrique "Cogu"',
+    'Laura Manoel "Pucca"',
+  ]);
+
+  const slugs = artistasDemo.map((artista) => artista.slug);
+  for (const item of [...obrasDemo, ...tatuagens]) {
+    expect(slugs, item.titulo).toContain(item.artistaSlug);
+  }
+});
 
 // PBI-49: popular.ts só liga a imagem a uma obra já cadastrada; o seed de demonstração precisa
 // cadastrar exatamente as obras que têm imagem.
@@ -33,10 +52,7 @@ it("PBI-49 as obras de demonstração respeitam preço, estoque e mostram uma es
 // popular.ts pula a tatuagem cujo artista ou estilo não existe; o artista também precisa
 // trabalhar com o estilo que aparece no portfólio dele.
 it("PBI-49 cada tatuagem aponta para um artista e um estilo que o seed cria e que andam juntos", () => {
-  const estilosPorArtista = new Map([
-    [artistaDemo.slug, artistaDemo.estilos],
-    ["artista-exemplo", estilosDoArtistaExemplo],
-  ]);
+  const estilosPorArtista = new Map(artistasDemo.map((a) => [a.slug, a.estilos]));
   const estilos = estilosDemo.map((estilo) => estilo.slug);
 
   for (const tatuagem of tatuagens) {

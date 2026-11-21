@@ -10,10 +10,10 @@ import { databaseUrl } from "../src/lib/database-url";
 import { situacaoPorEstoque } from "../src/modules/catalog/index";
 import { planoDoSeed } from "../src/modules/identity/index";
 import {
+  ARTISTA_DEMO_ANTIGO,
   AVISO_DEMO,
-  artistaDemo,
+  artistasDemo,
   estilosDemo,
-  estilosDoArtistaExemplo,
   obrasDemo,
 } from "./imagens-demo/catalogo";
 
@@ -45,23 +45,28 @@ async function main(): Promise<void> {
     });
   }
 
-  const usuario = await prisma.user.upsert({
-    where: { email: artistaDemo.email },
-    update: { role: "ARTISTA", name: artistaDemo.nome },
-    create: { role: "ARTISTA", name: artistaDemo.nome, email: artistaDemo.email },
-  });
-  const marina = await prisma.artist.upsert({
-    where: { slug: artistaDemo.slug },
-    update: { bio: artistaDemo.bio },
-    create: { userId: usuario.id, slug: artistaDemo.slug, bio: artistaDemo.bio },
-  });
-  await ligarEstilos(marina.id, artistaDemo.estilos);
-  await ligarEstilos(exemplo.id, estilosDoArtistaExemplo);
+  const artistas = new Map<string, string>();
+  for (const artista of artistasDemo) {
+    const usuario = await prisma.user.upsert({
+      where: { email: artista.email },
+      update: { role: "ARTISTA", name: artista.nome },
+      create: { role: "ARTISTA", name: artista.nome, email: artista.email },
+    });
+    const salvo = await prisma.artist.upsert({
+      where: { slug: artista.slug },
+      update: { instagram: artista.instagram },
+      create: { userId: usuario.id, slug: artista.slug, instagram: artista.instagram },
+    });
+    await ligarEstilos(salvo.id, artista.estilos);
+    artistas.set(artista.slug, salvo.id);
+  }
 
-  const artistas = new Map([
-    [artistaDemo.slug, marina.id],
-    [slugExemplo, exemplo.id],
-  ]);
+  // A conta de teste do db:seed não tatua na vitrine: sem estilo de demonstração, sai do
+  // agendamento (RF20).
+  await prisma.artistStyle.deleteMany({
+    where: { artistId: exemplo.id, tattooStyle: { slug: { in: estilosDemo.map((e) => e.slug) } } },
+  });
+
   for (const obra of obrasDemo) {
     const artistId = artistas.get(obra.artistaSlug);
     if (!artistId) throw new Error(`Artista ${obra.artistaSlug} fora da demonstração.`);
@@ -85,8 +90,20 @@ async function main(): Promise<void> {
     });
   }
 
+  // A artista fictícia da demonstração anterior sai depois que as obras mudaram de dono. As
+  // tatuagens dela vão junto (cascade) e o popular.ts recria cada uma com o novo artista.
+  const antiga = await prisma.artist.findUnique({
+    where: { slug: ARTISTA_DEMO_ANTIGO },
+    include: { _count: { select: { artworks: true, appointments: true } } },
+  });
+  if (antiga && antiga._count.artworks + antiga._count.appointments > 0) {
+    console.log(`! ${ARTISTA_DEMO_ANTIGO} mantida: ainda tem obras ou agendamentos fora da demo`);
+  } else if (antiga) {
+    await prisma.user.delete({ where: { id: antiga.userId } });
+  }
+
   console.log(
-    `Seed de demonstração: ${artistaDemo.slug}, ${estilosDemo.length} estilos, ${obrasDemo.length} obras`,
+    `Seed de demonstração: ${artistasDemo.length} artistas, ${estilosDemo.length} estilos, ${obrasDemo.length} obras`,
   );
 }
 

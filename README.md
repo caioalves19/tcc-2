@@ -20,7 +20,7 @@ imagem), rode depois do bloco acima:
 ```bash
 npm run db:migrate
 npm run db:seed
-npm run db:seed:demo                      # artista demo-marina-duarte, 3 estilos e 8 obras demo-*
+npm run db:seed:demo                      # os 4 artistas do Kolô, 3 estilos e 8 obras demo-*
 npx tsx prisma/imagens-demo/popular.ts    # imagens das obras e as 9 tatuagens do portfólio
 ```
 

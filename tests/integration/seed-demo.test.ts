@@ -27,17 +27,49 @@ afterAll(async () => {
   await db.end();
 });
 
-// PBI-49: num banco novo o seed de demonstração cria o artista, os estilos e as obras que o
-// popular.ts procura, e repetir o comando não duplica nada.
-it("PBI-49 db:seed:demo cadastra artista, estilos e obras de demonstração e pode rodar de novo", async () => {
+// PBI-49: num banco novo o seed de demonstração cria os artistas, os estilos e as obras que o
+// popular.ts procura, e repetir o comando não duplica nada. Um banco com a demonstração antiga
+// (Marina Duarte, artista-exemplo com estilo) perde as duas na vitrine e as obras mudam de dono.
+it("PBI-49 db:seed:demo cadastra os artistas do Kolô, estilos e obras e pode rodar de novo", async () => {
+  const marina = await db.query<{ id: string }>(
+    `INSERT INTO "user" (id, papel, nome, email, atualizado_em)
+     VALUES (gen_random_uuid(), 'ARTISTA', 'Marina Duarte', 'marina.duarte@kolo.test', NOW())
+     RETURNING id`,
+  );
+  const marinaArtista = await db.query<{ id: string }>(
+    `INSERT INTO artist (id, user_id, slug) VALUES (gen_random_uuid(), $1, 'demo-marina-duarte')
+     RETURNING id`,
+    [marina.rows[0]?.id],
+  );
+  await db.query(
+    `INSERT INTO artwork (id, artist_id, slug, titulo, preco_centavos, quantidade_estoque, situacao)
+     VALUES (gen_random_uuid(), $1, 'demo-minhocao', 'Minhocão', 120000, 1, 'DISPONIVEL')`,
+    [marinaArtista.rows[0]?.id],
+  );
+  await db.query(
+    `INSERT INTO tattoo_style (id, nome, slug) VALUES (gen_random_uuid(), 'Blackwork', 'demo-blackwork')`,
+  );
+  await db.query(
+    `INSERT INTO artist_style (artist_id, tattoo_style_id)
+     SELECT a.id, s.id FROM artist a, tattoo_style s
+     WHERE a.slug = 'artista-exemplo' AND s.slug = 'demo-blackwork'`,
+  );
+
   rodar("npm run db:seed:demo");
   rodar("npm run db:seed:demo");
 
-  const artista = await db.query<{ papel: string; nome: string }>(
-    `SELECT u.papel::text AS papel, u.nome FROM artist a JOIN "user" u ON u.id = a.user_id
-     WHERE a.slug = 'demo-marina-duarte'`,
+  const artistas = await db.query<{ papel: string; nome: string; instagram: string | null }>(
+    `SELECT u.papel::text AS papel, u.nome, a.instagram FROM artist a
+     JOIN "user" u ON u.id = a.user_id WHERE a.slug <> 'artista-exemplo' ORDER BY u.nome`,
   );
-  expect(artista.rows).toEqual([{ papel: "ARTISTA", nome: "Marina Duarte" }]);
+  expect(artistas.rows).toEqual([
+    { papel: "ARTISTA", nome: 'Gustavo Henrique "Cogu"', instagram: "co.guh" },
+    { papel: "ARTISTA", nome: 'Laura Manoel "Pucca"', instagram: "pucca.ink" },
+    { papel: "ARTISTA", nome: "Melanie Schwark", instagram: "melanfetamina" },
+    { papel: "ARTISTA", nome: "Rafael Lotufo", instagram: "rafa.lotufo" },
+  ]);
+  const semMarina = await db.query(`SELECT 1 FROM "user" WHERE email = 'marina.duarte@kolo.test'`);
+  expect(semMarina.rows).toEqual([]);
 
   const estilos = await db.query<{ slug: string; artista: string }>(
     `SELECT s.slug, a.slug AS artista FROM tattoo_style s
@@ -45,10 +77,16 @@ it("PBI-49 db:seed:demo cadastra artista, estilos e obras de demonstração e po
      ORDER BY s.slug`,
   );
   expect(estilos.rows).toEqual([
-    { slug: "demo-aquarela", artista: "demo-marina-duarte" },
-    { slug: "demo-blackwork", artista: "artista-exemplo" },
-    { slug: "demo-traco-fino", artista: "demo-marina-duarte" },
+    { slug: "demo-aquarela", artista: "pucca" },
+    { slug: "demo-blackwork", artista: "cogu" },
+    { slug: "demo-traco-fino", artista: "melanie-schwark" },
   ]);
+
+  const minhocao = await db.query<{ artista: string }>(
+    `SELECT a.slug AS artista FROM artwork o JOIN artist a ON a.id = o.artist_id
+     WHERE o.slug = 'demo-minhocao'`,
+  );
+  expect(minhocao.rows).toEqual([{ artista: "cogu" }]);
 
   const obras = await db.query<{ slug: string; situacao: string; estoque: number; aviso: boolean }>(
     `SELECT slug, situacao::text AS situacao, quantidade_estoque AS estoque,

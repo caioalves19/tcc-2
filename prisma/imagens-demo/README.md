@@ -12,7 +12,7 @@ real do Kolô.** A descrição de cada obra e de cada tatuagem termina com esse 
 | `imagens/` | As 34 imagens WebP já geradas (17 imagens e as miniaturas `_thumb.webp`, de 400 px). Versionadas para ninguém depender da IA de novo |
 | `gerar.ts` | Gera `imagens/` a partir dos prompts. Só é preciso para trocar alguma imagem |
 | `popular.ts` | Envia as imagens ao R2 (ou a `public/<pasta>` com `R2_PUBLIC_URL` relativa) e grava `artwork_image` e `portfolio_item`. Pode rodar de novo sem duplicar |
-| `../seed-demo.ts` | `npm run db:seed:demo`: cria a artista `demo-marina-duarte`, os estilos `demo-*` e as obras `demo-*` que o `popular.ts` procura |
+| `../seed-demo.ts` | `npm run db:seed:demo`: cria os 4 artistas do Kolô (Melanie, Rafael, Cogu e Pucca), os estilos `demo-*` e as obras `demo-*` que o `popular.ts` procura; tira da vitrine a antiga `demo-marina-duarte` |
 
 A ordem dos comandos está no README da raiz, na seção “Dados de demonstração”.
 
