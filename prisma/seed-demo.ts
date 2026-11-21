@@ -92,14 +92,31 @@ async function main(): Promise<void> {
 
   // A artista fictícia da demonstração anterior sai depois que as obras mudaram de dono. As
   // tatuagens dela vão junto (cascade) e o popular.ts recria cada uma com o novo artista.
+  // Com histórico que o banco protege (obra, agendamento, pedido, e-mail), ela não é apagada:
+  // sai da vitrine (excluído_em) e do agendamento (sem estilo).
   const antiga = await prisma.artist.findUnique({
     where: { slug: ARTISTA_DEMO_ANTIGO },
-    include: { _count: { select: { artworks: true, appointments: true } } },
+    include: {
+      _count: { select: { artworks: true, appointments: true } },
+      user: { include: { _count: { select: { orders: true, emailLogs: true } } } },
+    },
   });
-  if (antiga && antiga._count.artworks + antiga._count.appointments > 0) {
-    console.log(`! ${ARTISTA_DEMO_ANTIGO} mantida: ainda tem obras ou agendamentos fora da demo`);
-  } else if (antiga) {
-    await prisma.user.delete({ where: { id: antiga.userId } });
+  if (antiga) {
+    const historico =
+      antiga._count.artworks +
+      antiga._count.appointments +
+      antiga.user._count.orders +
+      antiga.user._count.emailLogs;
+    if (historico === 0) {
+      await prisma.user.delete({ where: { id: antiga.userId } });
+    } else {
+      await prisma.artistStyle.deleteMany({ where: { artistId: antiga.id } });
+      await prisma.user.update({
+        where: { id: antiga.userId },
+        data: { deletedAt: antiga.user.deletedAt ?? new Date(), status: "INATIVO" },
+      });
+      console.log(`! ${ARTISTA_DEMO_ANTIGO} tem histórico: saiu da vitrine sem ser apagada`);
+    }
   }
 
   console.log(

@@ -171,3 +171,38 @@ it("PBI-49 popular.ts liga uma imagem a cada obra e cria as 9 tatuagens, sem dup
     rmSync(pasta, { recursive: true, force: true });
   }
 }, 180_000);
+
+// A conta da Marina com histórico que o banco protege (e-mail enviado, pedido): o seed não pode
+// parar no meio. Ela sai da vitrine sem ser apagada.
+it("PBI-49 db:seed:demo tira da vitrine a artista antiga que tem histórico, sem falhar", async () => {
+  const marina = await db.query<{ id: string }>(
+    `INSERT INTO "user" (id, papel, nome, email, atualizado_em)
+     VALUES (gen_random_uuid(), 'ARTISTA', 'Marina Duarte', 'marina.duarte@kolo.test', NOW())
+     RETURNING id`,
+  );
+  const userId = marina.rows[0]?.id;
+  await db.query(
+    `INSERT INTO artist (id, user_id, slug) VALUES (gen_random_uuid(), $1, 'demo-marina-duarte')`,
+    [userId],
+  );
+  await db.query(
+    `INSERT INTO artist_style (artist_id, tattoo_style_id)
+     SELECT a.id, s.id FROM artist a, tattoo_style s
+     WHERE a.slug = 'demo-marina-duarte' AND s.slug = 'demo-aquarela'`,
+  );
+  await db.query(
+    `INSERT INTO email_log (id, user_id, destinatario, template, situacao)
+     VALUES (gen_random_uuid(), $1, 'marina.duarte@kolo.test', 'redefinir-senha', 'ENVIADO')`,
+    [userId],
+  );
+
+  rodar("npm run db:seed:demo");
+
+  const conta = await db.query<{ excluida: boolean; estilos: number }>(
+    `SELECT u.excluido_em IS NOT NULL AS excluida,
+            (SELECT count(*)::int FROM artist_style x WHERE x.artist_id = a.id) AS estilos
+     FROM "user" u JOIN artist a ON a.user_id = u.id WHERE u.id = $1`,
+    [userId],
+  );
+  expect(conta.rows).toEqual([{ excluida: true, estilos: 0 }]);
+}, 120_000);
