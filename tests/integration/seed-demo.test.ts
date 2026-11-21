@@ -206,3 +206,19 @@ it("PBI-49 db:seed:demo tira da vitrine a artista antiga que tem histórico, sem
   );
   expect(conta.rows).toEqual([{ excluida: true, estilos: 0 }]);
 }, 120_000);
+
+// Demonstração na banca: cada artista entra com a senha do .env (SEED_SENHA_<NOME>). Como a do
+// admin, o seed só cria a credencial que falta e nunca troca uma senha que já existe.
+it("db:seed:demo dá login ao artista com SEED_SENHA_* e não troca a senha ao repetir", async () => {
+  const { verifyPassword } = await import("better-auth/crypto");
+  rodar("npm run db:seed:demo", { SEED_SENHA_MELANIE: "senha-demo-melanie-1" });
+  rodar("npm run db:seed:demo", { SEED_SENHA_MELANIE: "outra-senha-melanie-2" });
+
+  const credenciais = await db.query<{ email: string; hash: string }>(
+    `SELECT u.email, a.senha_hash AS hash FROM account a JOIN "user" u ON u.id = a.user_id
+     WHERE u.email IN ('melanie@kolo.test', 'rafael@kolo.test') AND a.provedor = 'credential'`,
+  );
+  expect(credenciais.rows.map((c) => c.email)).toEqual(["melanie@kolo.test"]);
+  const hash = credenciais.rows[0]?.hash ?? "";
+  expect(await verifyPassword({ hash, password: "senha-demo-melanie-1" })).toBe(true);
+}, 120_000);

@@ -2,13 +2,14 @@
 // liga às imagens. Fica fora do db:seed para não ir ao banco do cliente sem querer.
 // Uso: npm run db:seed (antes) e depois npm run db:seed:demo. Pode rodar de novo: nada duplica.
 import "dotenv/config";
+import { hashPassword } from "better-auth/crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
 import { PrismaClient } from "../generated/prisma/client";
 import { databaseUrl } from "../src/lib/database-url";
 import { situacaoPorEstoque } from "../src/modules/catalog/index";
-import { planoDoSeed } from "../src/modules/identity/index";
+import { planoDoSeed, schemaSenhaNova } from "../src/modules/identity/index";
 import {
   ARTISTA_DEMO_ANTIGO,
   AVISO_DEMO,
@@ -29,6 +30,24 @@ async function ligarEstilos(artistId: string, slugs: string[]): Promise<void> {
       create: { artistId, tattooStyleId: estilo.id },
     });
   }
+}
+
+// Como a senha do admin no db:seed: só cria a credencial que falta, nunca troca a existente.
+async function darLogin(userId: string, variavel: string): Promise<void> {
+  const senha = process.env[variavel];
+  if (!senha) return;
+  const validacao = schemaSenhaNova.safeParse(senha);
+  if (!validacao.success) throw new Error(`${variavel} deve ter entre 8 e 128 caracteres.`);
+  await prisma.account.upsert({
+    where: { provider_externalId: { provider: "credential", externalId: userId } },
+    update: {},
+    create: {
+      userId,
+      provider: "credential",
+      externalId: userId,
+      passwordHash: await hashPassword(validacao.data),
+    },
+  });
 }
 
 async function main(): Promise<void> {
@@ -58,6 +77,7 @@ async function main(): Promise<void> {
       create: { userId: usuario.id, slug: artista.slug, instagram: artista.instagram },
     });
     await ligarEstilos(salvo.id, artista.estilos);
+    await darLogin(usuario.id, artista.variavelSenha);
     artistas.set(artista.slug, salvo.id);
   }
 

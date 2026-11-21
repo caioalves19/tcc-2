@@ -49,6 +49,8 @@ export type ArtistaDemo = {
   slug: string;
   instagram: string;
   estilos: string[];
+  // Senha de demonstração (só no .env, nunca no repositório); vazia = conta sem login.
+  variavelSenha: string;
 };
 
 export const artistasDemo: ArtistaDemo[] = [
@@ -57,6 +59,7 @@ export const artistasDemo: ArtistaDemo[] = [
     nome: "Melanie Schwark",
     slug: "melanie-schwark",
     instagram: "melanfetamina",
+    variavelSenha: "SEED_SENHA_MELANIE",
     estilos: ["demo-traco-fino"],
   },
   {
@@ -64,6 +67,7 @@ export const artistasDemo: ArtistaDemo[] = [
     nome: "Rafael Lotufo",
     slug: "rafael-lotufo",
     instagram: "rafa.lotufo",
+    variavelSenha: "SEED_SENHA_RAFAEL",
     estilos: [],
   },
   {
@@ -71,6 +75,7 @@ export const artistasDemo: ArtistaDemo[] = [
     nome: 'Gustavo Henrique "Cogu"',
     slug: "cogu",
     instagram: "co.guh",
+    variavelSenha: "SEED_SENHA_COGU",
     estilos: ["demo-blackwork"],
   },
   {
@@ -78,6 +83,7 @@ export const artistasDemo: ArtistaDemo[] = [
     nome: 'Laura Manoel "Pucca"',
     slug: "pucca",
     instagram: "pucca.ink",
+    variavelSenha: "SEED_SENHA_PUCCA",
     estilos: ["demo-aquarela"],
   },
 ];
