@@ -9,10 +9,12 @@ const estiloId = randomUUID();
 const tamanhoId = randomUUID();
 beforeAll(async () => {
   db = await prepararBancoDeTeste("kolo_pbi31_test");
+  // "Sem estilo" é artista plástico, não tatuador: fica fora do passo artista do wizard.
   for (const [nome, situacao, excluido] of [
     ["Ana", "ATIVO", null],
     ["Inativa", "INATIVO", null],
     ["Excluída", "ATIVO", new Date()],
+    ["Sem estilo", "ATIVO", null],
   ] as const) {
     const userId = randomUUID();
     await db.query(
@@ -86,7 +88,20 @@ it("RF20 valida a preferência sem sessão e sem gravar pedido ou reservar agend
   // RF21: concluir o wizard não cria agendamento nem solicitação.
   const total = await db.query("SELECT COUNT(*)::int AS total FROM appointment");
   expect(total.rows).toEqual([{ total: 0 }]);
-  await db.query("DELETE FROM artist_style WHERE artist_id = $1", [artistaId]);
+  // Ana continua tatuadora com outro estilo; só o escolhido deixa de valer.
+  const outroEstiloId = randomUUID();
+  await db.query(
+    "INSERT INTO tattoo_style (id, nome, slug) VALUES ($1, 'Blackwork', 'blackwork-pbi31')",
+    [outroEstiloId],
+  );
+  await db.query("INSERT INTO artist_style (artist_id, tattoo_style_id) VALUES ($1, $2)", [
+    artistaId,
+    outroEstiloId,
+  ]);
+  await db.query("DELETE FROM artist_style WHERE artist_id = $1 AND tattoo_style_id = $2", [
+    artistaId,
+    estiloId,
+  ]);
   const removido = await revisarPreferenciaWizard(
     entrada,
     new Headers({ "x-real-ip": "pbi31-revisao" }),
@@ -99,6 +114,7 @@ it("RF20 valida a preferência sem sessão e sem gravar pedido ou reservar agend
     artistaId,
     estiloId,
   ]);
+  await db.query("DELETE FROM tattoo_style WHERE id = $1", [outroEstiloId]);
 });
 
 it("RF21/RF31 o link do wizard usa o WhatsApp salvo nas configurações do site", async () => {

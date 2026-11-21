@@ -1,9 +1,13 @@
 import { obterPrisma } from "../../lib/prisma";
 
-// RF20: projeção pública deliberadamente sem e-mail, telefone ou dados da conta.
+// RF20: projeção pública deliberadamente sem e-mail, telefone ou dados da conta. Só entra quem
+// tatua, ou seja, quem tem ao menos um estilo; artista plástico sem estilo fica de fora.
 export async function listarArtistasParaWizard() {
   const artistas = await obterPrisma().artist.findMany({
-    where: { user: { role: "ARTISTA", status: "ATIVO", deletedAt: null } },
+    where: {
+      user: { role: "ARTISTA", status: "ATIVO", deletedAt: null },
+      styles: { some: {} },
+    },
     select: {
       id: true,
       user: { select: { name: true } },
