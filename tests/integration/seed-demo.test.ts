@@ -108,6 +108,12 @@ it("PBI-49 popular.ts liga uma imagem a cada obra e cria as 9 tatuagens, sem dup
   const pasta = join(process.cwd(), "public", PASTA_LOCAL);
   try {
     rodar("npm run db:seed:demo");
+    // Obra que mudou de dono (produção): a imagem antiga está na pasta do artista anterior.
+    await db.query(
+      `INSERT INTO artwork_image (id, artwork_id, url, ordem, principal)
+       SELECT gen_random_uuid(), id, 'obras/00000000-0000-4000-8000-0000000000aa/demo-minhocao.webp', 1, true
+       FROM artwork WHERE slug = 'demo-minhocao'`,
+    );
     rodar("npx tsx prisma/imagens-demo/popular.ts", { R2_PUBLIC_URL: `/${PASTA_LOCAL}` });
     // Banco que recebeu o popular.ts antes do aviso: repetir o script acrescenta o aviso.
     await db.query(
@@ -115,12 +121,20 @@ it("PBI-49 popular.ts liga uma imagem a cada obra e cria as 9 tatuagens, sem dup
     );
     rodar("npx tsx prisma/imagens-demo/popular.ts", { R2_PUBLIC_URL: `/${PASTA_LOCAL}` });
 
-    const imagens = await db.query<{ slug: string; principal: boolean; url: string }>(
-      `SELECT a.slug, i.principal, i.url FROM artwork_image i JOIN artwork a ON a.id = i.artwork_id
-       ORDER BY a.slug`,
+    const imagens = await db.query<{
+      slug: string;
+      principal: boolean;
+      url: string;
+      artista: string;
+    }>(
+      `SELECT a.slug, i.principal, i.url, a.artist_id::text AS artista FROM artwork_image i
+       JOIN artwork a ON a.id = i.artwork_id ORDER BY a.slug`,
     );
     expect(imagens.rows).toHaveLength(8);
     expect(imagens.rows.every((imagem) => imagem.principal)).toBe(true);
+    for (const imagem of imagens.rows) {
+      expect(imagem.url, imagem.slug).toBe(`obras/${imagem.artista}/${imagem.slug}.webp`);
+    }
 
     const tatuagens = await db.query<{ total: string; avisos: string }>(
       `SELECT count(*)::text AS total,

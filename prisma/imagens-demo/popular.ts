@@ -60,12 +60,17 @@ async function main(): Promise<void> {
       console.log(`= obra ${imagem.slug}`);
       continue;
     }
+    // Obra que mudou de dono: a imagem na pasta do artista anterior sai e a nova vira a principal.
+    const pasta = `obras/${obra.artistId}/`;
+    const foraDaPasta = obra.images.filter((i) => !i.url.startsWith(pasta));
+    await prisma.artworkImage.deleteMany({ where: { id: { in: foraDaPasta.map((i) => i.id) } } });
+    const restantes = obra.images.filter((i) => i.url.startsWith(pasta));
     await prisma.artworkImage.create({
       data: {
         artworkId: obra.id,
         url: chave,
-        order: Math.max(0, ...obra.images.map((i) => i.order)) + 1,
-        primary: obra.images.length === 0,
+        order: Math.max(0, ...restantes.map((i) => i.order)) + 1,
+        primary: !restantes.some((i) => i.primary),
         altText: imagem.textoAlternativo,
       },
     });
