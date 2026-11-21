@@ -114,7 +114,28 @@ it("PBI-49 popular.ts liga uma imagem a cada obra e cria as 9 tatuagens, sem dup
        SELECT gen_random_uuid(), id, 'obras/00000000-0000-4000-8000-0000000000aa/demo-minhocao.webp', 1, true
        FROM artwork WHERE slug = 'demo-minhocao'`,
     );
+    // Tatuagem que já estava no artista-exemplo (produção) e agora é do Cogu.
+    await db.query(
+      `INSERT INTO portfolio_item (id, artist_id, titulo, descricao, imagem_url, ordem)
+       SELECT '00000000-0000-4000-9000-000000000007', a.id, 'Mandala geométrica',
+              'Mandala em blackwork com pontilhismo entre as escápulas. Demonstração: imagem ilustrativa gerada por IA, fora do acervo real.',
+              'portfolio/' || a.id || '/00000000-0000-4000-9000-000000000007.webp', 1
+       FROM artist a WHERE a.slug = 'artista-exemplo'`,
+    );
     rodar("npx tsx prisma/imagens-demo/popular.ts", { R2_PUBLIC_URL: `/${PASTA_LOCAL}` });
+    const mandala = await db.query<{ artista: string; dono: boolean; estilos: string }>(
+      `SELECT a.slug AS artista, p.imagem_url LIKE 'portfolio/' || a.id || '/%' AS dono,
+              (SELECT string_agg(s.slug, ',') FROM portfolio_item_style x
+               JOIN tattoo_style s ON s.id = x.tattoo_style_id WHERE x.portfolio_item_id = p.id) AS estilos
+       FROM portfolio_item p JOIN artist a ON a.id = p.artist_id
+       WHERE p.id = '00000000-0000-4000-9000-000000000007'`,
+    );
+    expect(mandala.rows).toEqual([{ artista: "cogu", dono: true, estilos: "demo-blackwork" }]);
+    const doExemplo = await db.query(
+      `SELECT 1 FROM portfolio_item p JOIN artist a ON a.id = p.artist_id
+       WHERE a.slug = 'artista-exemplo'`,
+    );
+    expect(doExemplo.rows).toEqual([]);
     // Banco que recebeu o popular.ts antes do aviso: repetir o script acrescenta o aviso.
     await db.query(
       "UPDATE portfolio_item SET descricao = 'Sem aviso.' WHERE id = '00000000-0000-4000-9000-000000000001'",

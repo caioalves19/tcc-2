@@ -88,6 +88,25 @@ async function main(): Promise<void> {
     await enviar(`tatuagens/${t.id}.webp`, chave);
     const descricao = `${t.descricao} ${AVISO_DEMO}`;
     const existente = await prisma.portfolioItem.findUnique({ where: { id: t.id } });
+    if (existente && existente.artistId !== artista.id) {
+      // Tatuagem que mudou de dono (artista-exemplo → Cogu): vai inteira para o novo artista.
+      const ultimo = await prisma.portfolioItem.aggregate({
+        where: { artistId: artista.id },
+        _max: { order: true },
+      });
+      await prisma.portfolioItem.update({
+        where: { id: t.id },
+        data: {
+          artistId: artista.id,
+          imageUrl: chave,
+          description: descricao,
+          order: (ultimo._max.order ?? 0) + 1,
+          styles: { deleteMany: {}, create: [{ tattooStyleId: estilo.id }] },
+        },
+      });
+      console.log(`> tatuagem ${t.titulo} (novo artista)`);
+      continue;
+    }
     if (existente) {
       // Banco que recebeu este script antes do aviso de imagem ilustrativa (PBI-49).
       if (existente.description !== descricao) {
