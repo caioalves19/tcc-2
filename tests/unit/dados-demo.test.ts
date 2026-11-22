@@ -35,7 +35,7 @@ it("cada tatuador tem os estilos que trabalha e o Rafael nenhum", () => {
     { nome: "Melanie Schwark", estilos: ["Blackwork", "Surrealismo"] },
     { nome: "Rafael Lotufo", estilos: [] },
     { nome: 'Gustavo Henrique "Cogu"', estilos: ["Blackwork", "Old school"] },
-    { nome: 'Laura Manoel "Pucca"', estilos: ["Lettering"] },
+    { nome: 'Laura Manoel "Pucca"', estilos: ["Lettering", "Realismo"] },
   ]);
 });
 

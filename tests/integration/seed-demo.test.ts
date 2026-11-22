@@ -92,6 +92,7 @@ it("PBI-49 db:seed:demo cadastra os artistas do Kolô, estilos e obras e tira a 
     { slug: "blackwork", artista: "melanie-schwark" },
     { slug: "lettering", artista: "pucca" },
     { slug: "old-school", artista: "cogu" },
+    { slug: "realismo", artista: "pucca" },
     { slug: "surrealismo", artista: "melanie-schwark" },
   ]);
   const legado = await db.query(
@@ -106,18 +107,18 @@ it("PBI-49 db:seed:demo cadastra os artistas do Kolô, estilos e obras e tira a 
             descricao LIKE '%preço e disponibilidade fictícios%' AS aviso
      FROM artwork ORDER BY slug`,
   );
-  expect(obras.rows).toHaveLength(7);
+  expect(obras.rows).toHaveLength(11);
   expect(obras.rows.every((obra) => obra.aviso)).toBe(true);
   expect(obras.rows.find((obra) => obra.slug === "cogu-zoe")).toMatchObject({
     situacao: "ESGOTADA",
     estoque: 0,
   });
-  expect(obras.rows.filter((obra) => obra.situacao === "DISPONIVEL")).toHaveLength(6);
+  expect(obras.rows.filter((obra) => obra.situacao === "DISPONIVEL")).toHaveLength(10);
 }, 120_000);
 
 // PBI-49 (lacuna 1): com o seed de demonstração no banco, popular.ts liga todas as imagens. Com
 // R2_PUBLIC_URL relativa ele grava em public/<pasta>, sem R2.
-it("PBI-49 popular.ts liga uma imagem a cada obra e cria as 10 tatuagens, sem duplicar ao repetir", async () => {
+it("PBI-49 popular.ts liga uma imagem a cada obra e cria as 19 tatuagens, sem duplicar ao repetir", async () => {
   const pasta = join(process.cwd(), "public", PASTA_LOCAL);
   try {
     rodar("npm run db:seed:demo");
@@ -159,7 +160,7 @@ it("PBI-49 popular.ts liga uma imagem a cada obra e cria as 10 tatuagens, sem du
       `SELECT a.slug, i.principal, i.url, a.artist_id::text AS artista FROM artwork_image i
        JOIN artwork a ON a.id = i.artwork_id ORDER BY a.slug`,
     );
-    expect(imagens.rows).toHaveLength(7);
+    expect(imagens.rows).toHaveLength(11);
     expect(imagens.rows.every((imagem) => imagem.principal)).toBe(true);
     for (const imagem of imagens.rows) {
       expect(imagem.url, imagem.slug).toBe(`obras/${imagem.artista}/${imagem.slug}.webp`);
@@ -168,7 +169,7 @@ it("PBI-49 popular.ts liga uma imagem a cada obra e cria as 10 tatuagens, sem du
     const tatuagens = await db.query<{ total: string }>(
       "SELECT count(*)::text AS total FROM portfolio_item",
     );
-    expect(tatuagens.rows).toEqual([{ total: "10" }]);
+    expect(tatuagens.rows).toEqual([{ total: "19" }]);
 
     const primeira = imagens.rows[0];
     if (!primeira) throw new Error("Nenhuma imagem gravada");

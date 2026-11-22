@@ -9,8 +9,8 @@ duração das tatuagens.
 
 | Arquivo | Papel |
 | --- | --- |
-| `catalogo.ts` | Fonte única: os 4 artistas (Melanie, Rafael, Cogu e Pucca), os estilos de cada tatuador, as 7 obras e as 10 tatuagens (id fixo), com o post de origem de cada foto |
-| `imagens/` | As 17 fotos em WebP (lado maior até 1600 px) e as miniaturas `_thumb.webp`, de 400 px |
+| `catalogo.ts` | Fonte única: os 4 artistas (Melanie, Rafael, Cogu e Pucca), os estilos de cada tatuador, as 11 obras e as 19 tatuagens (id fixo), com o post de origem de cada foto |
+| `imagens/` | As 30 imagens em WebP (lado maior até 1600 px) e as miniaturas `_thumb.webp`, de 400 px |
 | `popular.ts` | Envia as imagens ao R2 (ou a `public/<pasta>` com `R2_PUBLIC_URL` relativa) e grava `artwork_image` e `portfolio_item`. Pode rodar de novo sem duplicar; move para o novo dono a obra ou tatuagem que mudou de artista |
 | `../seed-demo.ts` | `npm run db:seed:demo`: cria os artistas, os estilos e as obras que o `popular.ts` procura, dá login a quem tem `SEED_SENHA_<NOME>` no `.env` e tira do banco a demonstração anterior (a artista fictícia `demo-marina-duarte` e as obras, tatuagens e estilos `demo-*` gerados por IA) |
 
