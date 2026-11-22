@@ -54,6 +54,10 @@ services:
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
     expose:
       - "3000"
+    # Cache do next/image (imagens já otimizadas): sobrevive aos deploys, e a vitrine continua no
+    # ar se o R2 oscilar.
+    volumes:
+      - imagens_cache:/app/.next/cache/images
     depends_on:
       postgres:
         condition: service_healthy
@@ -101,3 +105,4 @@ volumes:
   caddy_config:
   postgres_data:
   backups:
+  imagens_cache:

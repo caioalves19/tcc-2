@@ -9,6 +9,11 @@ Pilha de produção: `docker-compose.prod.yml` com quatro contêineres.
 | `postgres` | PostgreSQL 17, volume `postgres_data`                              | não                |
 | `backup`   | `pg_dump` diário às 03:00, 7 dias na VPS + cópia no R2 `kolo-backups` | não             |
 
+O app guarda as imagens já otimizadas pelo `next/image` no volume `imagens_cache` (30 dias por
+imagem): o cache sobrevive aos deploys, e a vitrine continua no ar se o R2 oscilar. Uma imagem que
+nunca foi vista ainda depende do R2; antes de uma apresentação, abra a home, `/obras`,
+`/tatuagens` e o portfólio uma vez.
+
 Todos com `restart: unless-stopped` (RNF15). Os segredos ficam só no `.env.production` da VPS
 (RNF12); o modelo comentado é o [`.env.production.example`](../.env.production.example). Cada
 contêiner recebe só as variáveis que usa: o app não vê o token do backup nem a senha do Postgres,

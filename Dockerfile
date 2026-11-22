@@ -32,6 +32,8 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 COPY --from=build --chown=node:node /app ./
+# Ponto de montagem do volume do cache de imagens: o volume novo herda o dono node daqui.
+RUN mkdir -p .next/cache/images && chown -R node:node .next/cache
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
