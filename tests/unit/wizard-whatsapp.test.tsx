@@ -56,8 +56,18 @@ it("RF21 a etapa 8 mostra a prévia exata da mensagem e o link para a conversa c
   await concluirWizard();
 
   const etapas = screen.getByRole("list", { name: "Etapas do agendamento" });
-  expect(etapas.children).toHaveLength(8);
-  expect(within(etapas).getByText("8. WhatsApp").getAttribute("aria-current")).toBe("step");
+  // Nomes curtos para caber numa linha na fileira de 8 caixas (telas a partir de 1024 px).
+  expect([...etapas.children].map((li) => li.textContent)).toEqual([
+    "1. Nome",
+    "2. Artista",
+    "3. Estilo",
+    "4. Região",
+    "5. Tamanho",
+    "6. Data",
+    "7. Avisos",
+    "8. Enviar",
+  ]);
+  expect(within(etapas).getByText("8. Enviar").getAttribute("aria-current")).toBe("step");
 
   const previa = screen.getByRole("region", { name: "Prévia da sua mensagem" });
   expect(within(previa).getByText(/Olá! Sou Maria/).textContent).toBe(MENSAGEM);
