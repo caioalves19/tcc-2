@@ -105,11 +105,18 @@ async function main(): Promise<void> {
     artistas.set(artista.slug, salvo.id);
   }
 
-  // A conta de teste do db:seed não tatua na vitrine: sem estilo de demonstração, sai do
-  // agendamento (RF20).
+  // A conta de teste do db:seed ("Artista") não é do Kolô: sem estilo sai do agendamento (RF20) e,
+  // excluída, da gestão do portfólio e da vitrine. Fica no banco para o db:seed continuar valendo.
   await prisma.artistStyle.deleteMany({
     where: { artistId: exemplo.id, tattooStyle: { slug: { in: estilosDemo.map((e) => e.slug) } } },
   });
+  const contaExemplo = await prisma.user.findUniqueOrThrow({ where: { id: exemplo.userId } });
+  if (!contaExemplo.deletedAt) {
+    await prisma.user.update({
+      where: { id: exemplo.userId },
+      data: { deletedAt: new Date(), status: "INATIVO" },
+    });
+  }
 
   for (const obra of obrasDemo) {
     const artistId = artistas.get(obra.artistaSlug);

@@ -75,6 +75,12 @@ it("PBI-49 db:seed:demo cadastra os artistas do Kolô, estilos e obras e tira a 
   ]);
   const semMarina = await db.query(`SELECT 1 FROM "user" WHERE email = 'marina.duarte@kolo.test'`);
   expect(semMarina.rows).toEqual([]);
+  // A conta de teste do db:seed ("Artista") não é do Kolô: sai da gestão do portfólio e da vitrine.
+  const exemplo = await db.query<{ excluida: boolean; situacao: string }>(
+    `SELECT excluido_em IS NOT NULL AS excluida, situacao::text AS situacao FROM "user"
+     WHERE email = 'artista@kolo.test'`,
+  );
+  expect(exemplo.rows).toEqual([{ excluida: true, situacao: "INATIVO" }]);
 
   const estilos = await db.query<{ slug: string; artista: string }>(
     `SELECT s.slug, a.slug AS artista FROM tattoo_style s
