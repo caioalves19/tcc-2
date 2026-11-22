@@ -61,6 +61,10 @@ it("RF07/RF21 a chamada de tatuagem leva ao wizard; os passos terminam no WhatsA
   for (const chamada of chamadas) expect(chamada.getAttribute("href")).toBe("/agendamento");
   expect(within(bloco).getByRole("link", { name: "Agendar tatuagem" })).toBeDefined();
   expect(bloco.querySelector('a[href^="https://wa.me"]')).toBeNull();
+  // RF17: o bloco também leva à galeria de trabalhos, para ver o estilo antes de agendar.
+  expect(within(bloco).getByRole("link", { name: "Ver tatuagens" }).getAttribute("href")).toBe(
+    "/tatuagens",
+  );
 
   const passos = within(bloco)
     .getAllByRole("listitem")
