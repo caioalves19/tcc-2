@@ -2,6 +2,8 @@
 
 Fonte: seção 10 de `ESCOPO-E-STACK.md` (versão 2.2, setembro 2026).
 
+Imagem: [`DER.png`](DER.png) e [`DER.svg`](DER.svg) (vetorial, para dar zoom na banca), geradas em 21/11/2026 a partir do bloco Mermaid abaixo. Se o modelo mudar, gerar de novo.
+
 Convenções do modelo: identificadores UUID; valores monetários em centavos (`int`, RN07); datas em UTC, apresentadas em `America/Sao_Paulo` (RN09); exclusão lógica onde houver relevância contábil. Não há entidade de ficha clínica (`health_form`) nem armazenamento do teor do termo. Checks do wizard não persistem (RF23–RF25 só liberam o `wa.me`). Não existem `availability_rule`, `time_block`, `appointment_reference` nem `modelo_3d_url`.
 
 ```mermaid

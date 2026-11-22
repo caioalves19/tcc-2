@@ -40,7 +40,7 @@ Documento: [`docs/banca/Documento-de-Requisitos-Kolo.pdf`](banca/Documento-de-Re
 
 ### 2. Modelagem do banco de dados
 
-- [ ] Exportar o DER de `docs/DER.md` como imagem e deixá-lo aberto na demonstração
+- [x] Exportar o DER como imagem: [`DER.png`](DER.png) e [`DER.svg`](DER.svg) (21/11). No dia, deixar o SVG aberto no navegador, que permite zoom sem perder nitidez
 - [ ] Preparar exemplos de integridade garantida pelo banco: agenda sem sobreposição (RN08), um endereço por cliente, preços em centavos (RN07), pedido com cópia imutável do endereço
 - [ ] Saber mostrar o banco implementado: tabelas no Postgres (Prisma Studio ou `psql`) e a pasta `prisma/migrations/`
 
