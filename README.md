@@ -20,8 +20,8 @@ imagem), rode depois do bloco acima:
 ```bash
 npm run db:migrate
 npm run db:seed
-npm run db:seed:demo                      # os 4 artistas do Kolô, 5 estilos e 11 obras reais
-npx tsx prisma/imagens-demo/popular.ts    # imagens das obras e as 19 tatuagens do portfólio
+npm run db:seed:demo                      # os 4 artistas do Kolô, 5 estilos e 15 obras reais
+npx tsx prisma/imagens-demo/popular.ts    # imagens das obras e as 42 tatuagens do portfólio
 ```
 
 Os dois últimos comandos podem rodar de novo sem duplicar nada. O `db:seed:demo` fica fora do
