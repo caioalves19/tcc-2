@@ -249,8 +249,9 @@ export const obrasDemo: ObraDemo[] = [
   {
     slug: "cogu-borboleta",
     artistaSlug: "cogu",
-    titulo: "Borboleta",
-    descricao: "Borboleta laranja pousada sobre um fundo azul, com o pincel ainda na tela.",
+    titulo: "Border collie azul",
+    descricao:
+      "Border collie em tons de azul e amarelo, com uma borboleta laranja pousada na cabeça.",
     tecnica: "Acrílica sobre tela",
     dimensoes: "50 × 70 cm",
     ano: 2025,
@@ -258,7 +259,7 @@ export const obrasDemo: ObraDemo[] = [
     estoque: 1,
     destaque: false,
     textoAlternativo:
-      "Pintura de uma borboleta laranja de asas abertas sobre fundo azul, com a ponta de um pincel ao lado.",
+      "Pintura de um border collie azul de olho castanho, com uma borboleta laranja pousada na cabeça.",
     origem: `${COGU}/DRkp62UEgui/`,
   },
   {
@@ -440,8 +441,9 @@ export const tatuagens: Tatuagem[] = [
     id: tatuagem(15),
     artistaSlug: "pucca",
     estiloSlug: "realismo",
-    titulo: "Garça e castelo",
-    descricao: "Garça em voo sobre um castelo ambulante, em traço fino.",
+    titulo: "Castelo animado",
+    descricao:
+      "Castelo ambulante, garça, vassoura e o Sem-Rosto num só traço fino, inspirados nos filmes do Studio Ghibli.",
     regiaoCorpo: "Antebraço",
     duracaoMinutos: 210,
     destaque: false,
