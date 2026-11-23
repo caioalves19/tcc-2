@@ -14,6 +14,7 @@ vi.mock("@/app/conta/actions", () => ({
   atualizarPerfilAcao: vi.fn(),
   trocarSenhaAcao: vi.fn(),
   salvarEnderecoAcao: vi.fn(),
+  buscarCepAcao: vi.fn(),
   excluirContaAcao: vi.fn(),
 }));
 import PaginaConta from "@/app/conta/page";

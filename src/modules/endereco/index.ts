@@ -8,3 +8,4 @@ export {
   type EntradaEndereco,
   type ResultadoEndereco,
 } from "./endereco";
+export { buscarEnderecoPorCep, type EnderecoDoCep } from "./cep";
