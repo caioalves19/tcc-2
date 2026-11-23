@@ -1,0 +1,8 @@
+# Proxy reverso e HTTPS automático (RNF01). O certificado sai do Let's Encrypt para o DOMINIO;
+# em DOMINIO=localhost, o Caddy usa a própria autoridade local (simulação na máquina).
+# Os cabeçalhos de segurança (CSP, HSTS…) vêm do app (PBI-45); aqui só se tira o Server.
+{$DOMINIO} {
+	encode zstd gzip
+	header -Server
+	reverse_proxy app:3000
+}

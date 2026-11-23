@@ -1,0 +1,99 @@
+# Produção do Kolô na VPS (PBI-46). Sempre pelo deploy/deploy.sh, ou:
+#   docker compose --env-file .env.production -f docker-compose.prod.yml <comando>
+# Só o Caddy é público (80/443). App, Postgres e backup ficam na rede interna.
+name: kolo
+
+services:
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMINIO: ${DOMINIO:?defina DOMINIO no .env.production}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+  app:
+    build:
+      context: .
+      args:
+        R2_PUBLIC_URL: ${R2_PUBLIC_URL:-}
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+    image: kolo-app:${TAG:-latest}
+    restart: unless-stopped
+    init: true
+    # Lista explícita, sem env_file: o app não recebe o token do backup nem a senha do Postgres
+    # (RNF12). Variável nova do app entra aqui e no .env.production.example.
+    environment:
+      DATABASE_URL: postgresql://kolo:${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD}@postgres:5432/kolo
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?defina BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?defina BETTER_AUTH_URL}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      APP_URL: ${APP_URL:?defina APP_URL}
+      MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN:-}
+      MP_WEBHOOK_SECRET: ${MP_WEBHOOK_SECRET:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_REMETENTE: ${EMAIL_REMETENTE:-}
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}
+      R2_BUCKET: ${R2_BUCKET:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL:-}
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+    expose:
+      - "3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kolo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD}
+      POSTGRES_DB: kolo
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kolo -d kolo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RNF16: pg_dump diário, 7 dias na VPS e cópia no bucket R2 kolo-backups (que apaga sozinho
+  # o que passa de 7 dias). Recebe só as variáveis do backup, não os segredos do app.
+  backup:
+    build: ./deploy/backup
+    image: kolo-backup:latest
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGUSER: kolo
+      PGDATABASE: kolo
+      PGPASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD}
+      TZ: America/Sao_Paulo
+      HORA_BACKUP: ${HORA_BACKUP:-03:00}
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}
+      R2_BACKUP_BUCKET: ${R2_BACKUP_BUCKET:-}
+      R2_BACKUP_ACCESS_KEY_ID: ${R2_BACKUP_ACCESS_KEY_ID:-}
+      R2_BACKUP_SECRET_ACCESS_KEY: ${R2_BACKUP_SECRET_ACCESS_KEY:-}
+    volumes:
+      - backups:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  caddy_data:
+  caddy_config:
+  postgres_data:
+  backups:
