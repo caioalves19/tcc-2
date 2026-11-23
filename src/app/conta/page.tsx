@@ -12,6 +12,7 @@ import { FormularioTrocaSenha } from "@/components/auth/formulario-troca-senha";
 import { buttonVariants } from "@/components/ui/button";
 import {
   atualizarPerfilAcao,
+  buscarCepAcao,
   excluirContaAcao,
   salvarEnderecoAcao,
   trocarSenhaAcao,
@@ -45,7 +46,11 @@ export default async function PaginaConta() {
         <h2 id="endereco-entrega" className="mb-5 font-display text-xl">
           Endereço de entrega
         </h2>
-        <FormularioEndereco dados={endereco ?? ENDERECO_VAZIO} acao={salvarEnderecoAcao} />
+        <FormularioEndereco
+          dados={endereco ?? ENDERECO_VAZIO}
+          acao={salvarEnderecoAcao}
+          buscarCep={buscarCepAcao}
+        />
       </section>
       <section aria-labelledby="trocar-senha" className="mt-10">
         <h2 id="trocar-senha" className="mb-5 font-display text-xl">

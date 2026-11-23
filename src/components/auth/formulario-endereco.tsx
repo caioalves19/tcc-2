@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { unstable_rethrow } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { AvisoErro, Campo } from "@/components/auth/campo";
@@ -9,27 +9,55 @@ import { Button } from "@/components/ui/button";
 import {
   validarEndereco,
   type DadosEndereco,
+  type EnderecoDoCep,
   type EntradaEndereco,
   type ResultadoEndereco,
 } from "@/modules/endereco";
 
 const resolver = resolverDe(validarEndereco);
 
+const soDigitos = (cep: string) => cep.replace(/\D/g, "");
+
 export function FormularioEndereco({
   dados,
   acao,
+  buscarCep,
 }: {
   dados: EntradaEndereco;
   acao: (entrada: EntradaEndereco) => Promise<ResultadoEndereco>;
+  buscarCep?: (cep: string) => Promise<EnderecoDoCep | null>;
 }) {
   const [sucesso, setSucesso] = useState(false);
+  // Só consulta quando o CEP muda: passar pelo campo não sobrescreve o endereço já salvo.
+  const ultimoCep = useRef(soDigitos(dados.cep));
   const {
     register,
     handleSubmit,
     setError,
+    setValue,
+    setFocus,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<EntradaEndereco, unknown, DadosEndereco>({ resolver, defaultValues: dados });
+  // RF05: o CEP preenche rua, bairro, cidade e UF. Sem resposta, o formulário segue manual.
+  async function preencherPeloCep(cep: string) {
+    const digitos = soDigitos(cep);
+    if (buscarCep === undefined || digitos.length !== 8 || digitos === ultimoCep.current) return;
+    ultimoCep.current = digitos;
+    let encontrado: EnderecoDoCep | null = null;
+    try {
+      encontrado = await buscarCep(cep);
+    } catch (erro) {
+      unstable_rethrow(erro);
+    }
+    if (encontrado === null) return;
+    const opcoes = { shouldDirty: true, shouldValidate: false };
+    setValue("logradouro", encontrado.logradouro, opcoes);
+    setValue("bairro", encontrado.bairro, opcoes);
+    setValue("cidade", encontrado.cidade, opcoes);
+    setValue("uf", encontrado.uf, opcoes);
+    setFocus(encontrado.logradouro === "" ? "logradouro" : "numero");
+  }
   async function enviar(entrada: DadosEndereco) {
     try {
       const resultado = await acao({ ...entrada, complemento: entrada.complemento ?? "" });
@@ -73,7 +101,10 @@ export function FormularioEndereco({
         rotulo="CEP"
         tipo="text"
         autoComplete="shipping postal-code"
-        registro={register("cep")}
+        registro={register("cep", {
+          onBlur: (evento: React.FocusEvent<HTMLInputElement>) =>
+            void preencherPeloCep(evento.target.value),
+        })}
         erro={errors.cep?.message}
       />
       <Campo

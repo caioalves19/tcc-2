@@ -3,10 +3,15 @@
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { atualizarPerfil, sair, trocarSenha } from "@/lib/auth";
+import { atualizarPerfil, sair, trocarSenha, usuarioIdDaRequisicao } from "@/lib/auth";
 import { salvarEndereco } from "@/lib/endereco";
 import { excluirPropriaConta, type ResultadoExclusao } from "@/modules/customers";
-import type { EntradaEndereco, ResultadoEndereco } from "@/modules/endereco";
+import {
+  buscarEnderecoPorCep,
+  type EnderecoDoCep,
+  type EntradaEndereco,
+  type ResultadoEndereco,
+} from "@/modules/endereco";
 import type {
   EntradaPerfil,
   EntradaTrocaSenha,
@@ -28,6 +33,14 @@ export async function salvarEnderecoAcao(entrada: EntradaEndereco): Promise<Resu
   const resultado = await salvarEndereco(entrada, await headers());
   if (resultado.ok) revalidatePath("/conta");
   return resultado;
+}
+
+// RF05: preenche o endereço pelo CEP. Só com sessão, para o site não servir de intermediário
+// aberto de consultas ao ViaCEP; a entrada vem do navegador, então não se confia no tipo.
+export async function buscarCepAcao(cep: unknown): Promise<EnderecoDoCep | null> {
+  if (typeof cep !== "string") return null;
+  if ((await usuarioIdDaRequisicao(await headers())) === null) return null;
+  return buscarEnderecoPorCep(cep);
 }
 
 // RN12 (PBI-40): as sessões já saíram do banco; o sair só apaga o cookie deste navegador.
