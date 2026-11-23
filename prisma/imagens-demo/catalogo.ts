@@ -111,53 +111,6 @@ const PUCCA = "https://www.instagram.com/pucca.ink/p";
 
 export const obrasDemo: ObraDemo[] = [
   {
-    slug: "melanie-cavalo",
-    artistaSlug: "melanie-schwark",
-    titulo: "Cavalo",
-    descricao:
-      "Figura com cabeça de cavalo, de camiseta e jeans, ao lado de um cavalo de crina azul.",
-    tecnica: "Acrílica sobre tela",
-    dimensoes: "40 × 50 cm",
-    ano: 2025,
-    precoCentavos: 280_000,
-    estoque: 1,
-    destaque: true,
-    textoAlternativo:
-      "Pintura de uma figura com cabeça de cavalo, camiseta branca e jeans, ao lado de um cavalo escuro de crina azul.",
-    origem: `${MELANIE}/DPb6_gsjoFD/`,
-  },
-  {
-    slug: "melanie-o-fruto-proibido",
-    artistaSlug: "melanie-schwark",
-    titulo: "O Fruto Proibido",
-    descricao: "Eva e a maçã mordida, numa releitura sobre conhecimento e livre-arbítrio.",
-    tecnica: "Ilustração sobre gravura",
-    dimensoes: "30 × 40 cm",
-    ano: 2026,
-    precoCentavos: 90_000,
-    estoque: 3,
-    destaque: false,
-    textoAlternativo:
-      "Ilustração em preto e branco de maçãs mordidas em forma de corpo, sobre gravura antiga de Eva.",
-    origem: `${MELANIE}/Dcln27Xlpsp/`,
-  },
-  {
-    slug: "melanie-estudo-cavalo-humano",
-    artistaSlug: "melanie-schwark",
-    titulo: "Estudo de anatomia Cavalo-Humano",
-    descricao:
-      "Esqueleto de uma criatura cavalo-humana desenhada para fazer sentido anatomicamente.",
-    tecnica: "Grafite sobre papel",
-    dimensoes: "29,7 × 42 cm",
-    ano: 2026,
-    precoCentavos: 120_000,
-    estoque: 1,
-    destaque: false,
-    textoAlternativo:
-      "Desenho a grafite do esqueleto de uma criatura com corpo de cavalo e crânio humano, com anotações.",
-    origem: `${MELANIE}/DUI8QJtjtI7/`,
-  },
-  {
     slug: "rafael-preterito",
     artistaSlug: "rafael-lotufo",
     titulo: "Pretérito",
@@ -240,7 +193,7 @@ export const obrasDemo: ObraDemo[] = [
     dimensoes: "40 × 40 cm",
     ano: 2026,
     precoCentavos: 180_000,
-    estoque: 2,
+    estoque: 1,
     destaque: false,
     textoAlternativo:
       "Pintura a óleo quadrada de uma quadra verde-limão com prédios escuros ao fundo, coberta por uma grade de arame pregada na madeira.",
@@ -301,7 +254,7 @@ export const obrasDemo: ObraDemo[] = [
     dimensoes: "30 × 30 cm",
     ano: 2022,
     precoCentavos: 70000,
-    estoque: 3,
+    estoque: 5,
     destaque: false,
     textoAlternativo:
       "Ilustração de uma serpente e um dragão alado em verde e branco, sobre fundo roxo.",
@@ -316,7 +269,7 @@ export const obrasDemo: ObraDemo[] = [
     dimensoes: "30 × 30 cm",
     ano: 2021,
     precoCentavos: 85000,
-    estoque: 2,
+    estoque: 1,
     destaque: false,
     textoAlternativo:
       "Gravura em preto e branco de um rato diante de uma serpente cheia de escamas e pontos.",
@@ -331,7 +284,7 @@ export const obrasDemo: ObraDemo[] = [
     dimensoes: "20 × 30 cm",
     ano: 2021,
     precoCentavos: 110000,
-    estoque: 2,
+    estoque: 1,
     destaque: false,
     textoAlternativo:
       "Gravura de um unicórnio magro, de costelas à mostra, com título e assinatura a lápis.",
@@ -823,6 +776,13 @@ export const OBRAS_DEMO_ANTIGAS = [
   "demo-minhocao",
   "demo-feira-de-domingo",
   "demo-avenida-paulista",
+];
+// Obras reais que o estúdio tirou da demonstração em 22/11: o seed tira do banco as que ficaram
+// de uma rodada anterior, como faz com as de IA.
+export const OBRAS_RETIRADAS = [
+  "melanie-cavalo",
+  "melanie-o-fruto-proibido",
+  "melanie-estudo-cavalo-humano",
 ];
 export const TATUAGENS_DEMO_ANTIGAS = Array.from(
   { length: 9 },
