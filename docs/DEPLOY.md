@@ -56,11 +56,13 @@ usermod -aG docker kolo
 
 ## 2. Domínio
 
-Hoje: **`koloatelie.duckdns.org`** (conta DuckDNS do grupo). Em <https://www.duckdns.org/domains>,
-troque o IP de `koloatelie` pelo IP público da VPS e clique em *update ip*. Confira:
+Hoje: **`koloatelie.tech`**, com um registro `A` de `@` para o IP da VPS no registrador. O
+endereço anterior, **`koloatelie.duckdns.org`** (conta DuckDNS do grupo), continua apontando para a
+mesma VPS e redireciona para o domínio novo (`DOMINIO_ANTIGO`, seção 7). Confira:
 
 ```bash
-nslookup koloatelie.duckdns.org   # tem de devolver o IP da VPS
+nslookup koloatelie.tech          # tem de devolver o IP da VPS
+nslookup koloatelie.duckdns.org   # idem
 ```
 
 O Caddy só consegue o certificado depois que o nome aponta para a VPS e as portas 80/443 estão
@@ -80,14 +82,20 @@ $C run --rm app npm run db:seed
 $C run --rm app npm run db:seed:demo
 $C run --rm app npx tsx prisma/imagens-demo/popular.ts   # envia as imagens ao R2 de produção
 
-deploy/verificar.sh koloatelie.duckdns.org
+deploy/verificar.sh koloatelie.tech koloatelie.duckdns.org
 ```
+
+> **`db:seed:demo` é para a primeira subida.** Ele reescreve as obras de demonstração com os
+> valores de `prisma/imagens-demo/catalogo.ts` (preço, estoque, situação) e recria a que foi
+> apagada no admin e continua no arquivo. Rodado depois de uma venda, a obra vendida volta a
+> aparecer como disponível. Para tirar uma obra da demonstração, tire-a do `catalogo.ts` e ponha
+> o slug em `OBRAS_RETIRADAS`. Faça backup antes de rodar de novo.
 
 Depois do primeiro deploy, fora da VPS:
 
-- **Mercado Pago (painel → Webhooks):** URL `https://koloatelie.duckdns.org/api/webhooks/mercadopago`,
+- **Mercado Pago (painel → Webhooks):** URL `https://koloatelie.tech/api/webhooks/mercadopago`,
   evento *Pagamentos*; a assinatura secreta vai em `MP_WEBHOOK_SECRET` (rode o deploy de novo).
-- **R2 `kolo-imagens` → Settings → CORS:** `AllowedOrigins: ["https://koloatelie.duckdns.org"]`,
+- **R2 `kolo-imagens` → Settings → CORS:** `AllowedOrigins: ["https://koloatelie.tech", "https://koloatelie.duckdns.org"]`,
   métodos `GET, PUT, HEAD` (modelo no README, “Upload de imagens”).
 
 ## 4. Publicar uma versão nova
@@ -144,10 +152,30 @@ entrega.
 
 ## 7. Trocar o domínio (DuckDNS → domínio próprio)
 
-1. No registrador, criar um registro `A` do domínio novo para o IP da VPS.
-2. No `.env.production`: `DOMINIO`, `BETTER_AUTH_URL` e `APP_URL` com o domínio novo.
-3. `deploy/deploy.sh --sem-pull` (o Caddy pede o certificado novo sozinho).
-4. Atualizar a URL do webhook no Mercado Pago e o CORS do `kolo-imagens`.
+O endereço anterior continua no ar: o Caddy redireciona o navegador para o domínio novo (302,
+temporário, para não ficar no cache se for preciso voltar) e deixa passar `/api/webhooks/*`, para
+o aviso de pagamento de um pedido criado antes da troca ainda chegar ao app. O login só funciona no
+`BETTER_AUTH_URL`, por isso o anterior não serve o site diretamente.
+
+1. **DNS, no registrador:** registro `A` de `@` para o IP da VPS. Opcional: `CNAME` de `www` para o
+   domínio (o Caddyfile não atende `www`; acrescente um bloco se criar o registro).
+2. **Resend:** *Domains → Add* com o domínio novo; copiar os registros que ele mostra (MX e TXT em
+   `send`, DKIM em `resend._domainkey`) para o DNS do registrador e clicar em *Verify*.
+3. Esperar o `nslookup <domínio novo>` devolver o IP da VPS. Antes disso o certificado falha.
+4. **Backup** (`$C exec -T backup backup.sh`) e, no `.env.production`:
+   - `DOMINIO`, `BETTER_AUTH_URL` e `APP_URL` com o domínio novo;
+   - `DOMINIO_ANTIGO` com o endereço anterior;
+   - `EMAIL_REMETENTE` com um remetente do domínio novo, só depois do *Verify* do Resend.
+5. `deploy/deploy.sh` (o Caddy pede os certificados sozinho) e
+   `deploy/verificar.sh <domínio novo> <endereço anterior>`.
+6. **Fora da VPS:** URL do webhook no painel do Mercado Pago (a assinatura secreta não muda), o
+   domínio novo no CORS do `kolo-imagens` (mantendo o anterior) e, se o Turnstile usa uma chave
+   real, o hostname novo no widget.
+7. **Conferir pela tela:** entrar de novo com as contas (as sessões do endereço anterior não valem
+   no novo), uma compra no sandbox até o pedido **pago**, uma obra cadastrada com imagem (CORS) e a
+   recuperação de senha com um e-mail que não seja o do dono da conta do Resend.
+
+Para voltar ao endereço anterior: trocar de novo os valores do passo 4 e rodar o deploy.
 
 ## 8. Simular a produção na máquina local
 
@@ -164,8 +192,8 @@ Com `localhost`, o Caddy usa um certificado da própria autoridade local (o nave
 
 ## Checklist do PBI-46
 
-- [ ] VPS preparada (seção 1) e `koloatelie.duckdns.org` apontando para ela
-- [ ] `deploy/verificar.sh koloatelie.duckdns.org` sem falhas
+- [ ] VPS preparada (seção 1) e `koloatelie.tech` e `koloatelie.duckdns.org` apontando para ela
+- [ ] `deploy/verificar.sh koloatelie.tech koloatelie.duckdns.org` sem falhas
 - [ ] Nota A em <https://securityheaders.com> e certificado válido em <https://www.ssllabs.com/ssltest/>
 - [ ] Webhook do Mercado Pago com a URL pública; compra no sandbox até o pedido **pago**
 - [ ] Backup no R2 conferido no painel (`kolo-backups`) e `restaurar.sh` registrado

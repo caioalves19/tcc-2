@@ -6,7 +6,7 @@
 >
 > **Pré-requisito:** quem não entregar a monografia até 20/10 não apresenta (entregue: `docs/tcc-2.pdf`).
 >
-> **Endereço do sistema:** <https://koloatelie.duckdns.org>
+> **Endereço do sistema:** <https://koloatelie.tech>. O anterior, <https://koloatelie.duckdns.org>, redireciona para ele
 
 ---
 
@@ -112,9 +112,10 @@ Documento: [`docs/banca/Documento-de-Requisitos-Kolo.pdf`](banca/Documento-de-Re
 
 ### 9. Disponibilidade e acesso ao sistema
 
-No ar em <https://koloatelie.duckdns.org>, conferido em 21/11 (PBI-46). Guia: [`DEPLOY.md`](DEPLOY.md).
+No ar em <https://koloatelie.duckdns.org>, conferido em 21/11 (PBI-46); domínio próprio <https://koloatelie.tech> registrado em 22/11, com o anterior redirecionando para ele (`DEPLOY.md`, seção 7). Guia: [`DEPLOY.md`](DEPLOY.md).
 
 - [x] VPS e domínio (`koloatelie.duckdns.org`)
+- [ ] Domínio próprio `koloatelie.tech` no ar (`DEPLOY.md`, seção 7) e `deploy/verificar.sh koloatelie.tech koloatelie.duckdns.org` sem falhas
 - [x] Dockerfile, `docker-compose.prod.yml` (app, Postgres sem porta exposta, Caddy, backup) e Caddyfile com HTTPS automático
 - [x] Cabeçalhos de segurança (RNF07): HSTS, CSP com nonce, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` e `Permissions-Policy`, conferidos no site publicado em 21/11
 - [x] Seed do primeiro ADMIN e dados de demonstração carregados
@@ -136,7 +137,7 @@ Uma hospedagem que mantenha o processo Node rodando (VPS, como previsto) é a ma
   - [ ] o login de artista dela funcionando, para a tarefa 8
   - [ ] o login do comprador de teste do Mercado Pago, para a tarefa 3 (pagar com o saldo em conta; ver critério 5)
   - [ ] algumas compras já feitas, para o painel não mostrar um pedido só (critério 8)
-  - [ ] o endereço `https://koloatelie.duckdns.org` escrito no campo "Endereço do sistema" do termo
+  - [ ] o endereço `https://koloatelie.tech` escrito no campo "Endereço do sistema" do termo
 - [ ] Registrar o feedback: o que atende, o que não atende, sugestões
 - [ ] Corrigir o que for rápido e registrar o restante como trabalho futuro
 - [ ] Termo de validação e aceite assinado: lista dos RFs com "atende / atende parcialmente / não atende", comentários, nome, cargo, data e assinatura
