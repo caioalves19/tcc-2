@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ ler: vi.fn(), headers: new Headers({ cookie: "sessao=1" }) }));
 vi.mock("next/headers", () => ({ headers: async () => mocks.headers }));
@@ -8,6 +8,7 @@ vi.mock("next/navigation", () => ({
     throw new Error(`redirect:${url}`);
   },
   useRouter: () => ({ refresh: vi.fn() }),
+  usePathname: () => "/portfolio/gestao",
   unstable_rethrow: vi.fn(),
 }));
 vi.mock("@/modules/portfolio", () => ({ lerPortfolio: mocks.ler }));
@@ -57,4 +58,30 @@ it("RF19: carrega filtro da URL e entrega a tela da gestão", async () => {
   expect(mocks.ler).toHaveBeenCalledWith(mocks.headers, "ana", "2");
   expect(screen.getByRole("heading", { level: 1, name: "Gestão do portfólio" })).toBeDefined();
   expect(screen.getByRole("button", { name: "Novo trabalho" })).toBeDefined();
+});
+const dadosDe = (papel: "ADMIN" | "ARTISTA") => ({
+  ok: true,
+  dados: {
+    papel,
+    artistaId: "ana",
+    artistas: [],
+    estilos: [],
+    trabalhos: [],
+    total: 0,
+    pagina: 1,
+    totalPaginas: 0,
+  },
+});
+it("RF32: o admin continua com o menu da administração, com Portfólio marcado", async () => {
+  mocks.ler.mockResolvedValueOnce(dadosDe("ADMIN"));
+  render(await PaginaPortfolio(busca({})));
+  const menu = screen.getByRole("navigation", { name: "Administração" });
+  expect(within(menu).getByRole("link", { name: "Portfólio" }).getAttribute("aria-current")).toBe(
+    "page",
+  );
+});
+it("RF19: o artista vê a gestão sem o menu da administração", async () => {
+  mocks.ler.mockResolvedValueOnce(dadosDe("ARTISTA"));
+  render(await PaginaPortfolio(busca({})));
+  expect(screen.queryByRole("navigation", { name: "Administração" })).toBeNull();
 });

@@ -34,6 +34,10 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: hostsDeImagem(process.env.R2_PUBLIC_URL),
+    // Cada envio ganha uma chave nova (media/chave.ts), então a imagem de uma URL nunca muda: 30
+    // dias de cache poupam o R2 e seguram a vitrine se ele oscilar. Na produção o cache fica num
+    // volume (docker-compose.prod.yml) e sobrevive aos deploys.
+    minimumCacheTTL: 2_592_000,
   },
 };
 

@@ -11,6 +11,8 @@ const ITENS = [
   { rotulo: "Clientes", href: "/admin/clientes" },
   { rotulo: "Obras", href: "/admin/obras" },
   { rotulo: "Artistas", href: "/admin/artistas" },
+  // RF19: tatuagens do portfólio, numa tela fora de /admin que o artista também usa.
+  { rotulo: "Portfólio", href: "/portfolio/gestao" },
   { rotulo: "Estilos", href: "/admin/estilos" },
   { rotulo: "Tags", href: "/admin/tags" },
   { rotulo: "Configurações", href: "/admin/configuracoes" },

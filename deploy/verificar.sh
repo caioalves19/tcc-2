@@ -49,6 +49,11 @@ for variavel in BETTER_AUTH_SECRET MP_ACCESS_TOKEN R2_SECRET_ACCESS_KEY RESEND_A
   "${C[@]}" exec -T backup printenv "$variavel" >/dev/null 2>&1 && falha "backup recebe $variavel" || ok "backup sem $variavel"
 done
 
+echo "== 4c. Cache de imagens em volume (sobrevive ao deploy)"
+destino=$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/app/.next/cache/images"}}{{.Type}}{{end}}{{end}}' "$("${C[@]}" ps -q app)")
+[ "$destino" = "volume" ] && ok "cache de imagens num volume" || falha "cache de imagens fora de volume ('${destino:-sem montagem}')"
+"${C[@]}" exec -T app sh -c 'test -w .next/cache/images' && ok "app grava no cache de imagens" || falha "app não grava no cache de imagens"
+
 echo "== 5. Backup e restauração (RNF16)"
 if "${C[@]}" exec -T backup backup.sh; then
   ok "backup gerado"

@@ -26,6 +26,8 @@ it("RF32 o menu do admin leva a todas as telas da administração, com Painel e 
     ["Clientes", "/admin/clientes"],
     ["Obras", "/admin/obras"],
     ["Artistas", "/admin/artistas"],
+    // RF19: o cadastro de tatuagens do portfólio fica fora de /admin, mas o admin chega por aqui.
+    ["Portfólio", "/portfolio/gestao"],
     ["Estilos", "/admin/estilos"],
     ["Tags", "/admin/tags"],
     ["Configurações", "/admin/configuracoes"],

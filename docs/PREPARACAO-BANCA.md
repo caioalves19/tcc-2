@@ -2,30 +2,30 @@
 
 > **Data:** 24/11/2026, nos laboratórios, a partir das 19h10. **Sem apresentação em PowerPoint:** a avaliação é feita sobre o sistema funcionando.
 >
-> **Formato:** 10 critérios sobre o sistema, cada um valendo de 0 a 0,5 (total 5,0). Fonte: mensagem da coordenação com os critérios da banca.
->
-> **Atenção:** o documento NORMAS DISCIPLINA TCC2 (04/08/2026) traz outros critérios (Apresentação, Complexidade, Técnica, Mercado e Domínio, 1,0 ponto cada). A mensagem da banca é mais nova; confirmar com a Profa. Elisa qual vale.
+> **Formato:** 10 critérios sobre o sistema, cada um valendo de 0 a 0,5 (total 5,0). Fonte: mensagem da coordenação com os critérios da banca, confirmada pelo grupo em 20/11 como a que vale.
 >
 > **Pré-requisito:** quem não entregar a monografia até 20/10 não apresenta (entregue: `docs/tcc-2.pdf`).
+>
+> **Endereço do sistema:** <https://koloatelie.duckdns.org>
 
 ---
 
-## Panorama em 16/10
+## Panorama em 21/11
 
-| #  | Critério                               | Evidência exigida pela banca                                   | Situação                                             | Nota estimada hoje |
-| -- | -------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------- | ------------------ |
-| 1  | Levantamento de requisitos             | Documento de requisitos **validado e assinado** pela empresa    | Documento pronto, **sem assinatura**                 | 0,3                |
-| 2  | Modelagem do banco de dados            | DER e banco implementado                                       | ✅ DER, schema e 9 migrações                         | 0,5                |
-| 3  | Implementação do back-end              | Demonstração e código-fonte                                    | ✅ forte                                             | 0,5                |
-| 4  | Implementação do front-end             | Demonstração das interfaces                                    | ✅ público completo; admin visualmente cru           | 0,4–0,5            |
-| 5  | Integração front × back                | Operações completas pela interface                              | ✅; webhook ao vivo depende de URL pública           | 0,5                |
-| 6  | Usabilidade e UX                       | Demonstração dos fluxos                                        | 🟡 sem E2E nem revisão de acessibilidade final       | 0,35–0,4           |
-| 7  | Autenticação e perfis                  | Acesso e funcionalidades de cada perfil                         | ✅ Cliente, Artista e Admin                          | 0,5                |
-| 8  | Relatórios e consultas                 | Consultas e relatórios gerados pelo sistema                     | ❌ só filtros e buscas; **nenhum relatório**         | 0,2                |
-| 9  | Disponibilidade e acesso               | Sistema acessível, de preferência por endereço eletrônico       | ❌ **sem deploy**                                    | 0–0,1              |
-| 10 | Validação com o cliente                | Documento de validação, aceite ou feedback da empresa           | ❌ **nada registrado**                               | 0–0,1              |
+| #  | Critério                               | Evidência exigida pela banca                                   | Situação                                                                       | Nota estimada hoje |
+| -- | -------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------ |
+| 1  | Levantamento de requisitos             | Documento de requisitos **validado e assinado** pela empresa    | 🟡 documento pronto (`docs/banca/`), **falta a assinatura**                    | 0,3                |
+| 2  | Modelagem do banco de dados            | DER e banco implementado                                       | ✅ DER, schema e 10 migrações                                                  | 0,5                |
+| 3  | Implementação do back-end              | Demonstração e código-fonte                                    | ✅ forte; 625 testes unitários verdes em 21/11                                  | 0,5                |
+| 4  | Implementação do front-end             | Demonstração das interfaces                                    | ✅ público e admin com o visual do site                                        | 0,5                |
+| 5  | Integração front × back                | Operações completas pela interface                              | 🟡 coberto pelo E2E; falta uma compra no sandbox **em produção**               | 0,4–0,5            |
+| 6  | Usabilidade e UX                       | Demonstração dos fluxos                                        | ✅ axe-core nas 35 telas, Lighthouse ≥ 97, E2E; teclado em aberto              | 0,45–0,5           |
+| 7  | Autenticação e perfis                  | Acesso e funcionalidades de cada perfil                         | ✅ Cliente, Artista e Admin; falta testar as contas em produção                | 0,5                |
+| 8  | Relatórios e consultas                 | Consultas e relatórios gerados pelo sistema                     | 🟡 painel e relatório implementados, **sem dados em produção**                 | 0,3                |
+| 9  | Disponibilidade e acesso               | Sistema acessível, de preferência por endereço eletrônico       | ✅ no ar com HTTPS; PRs 116 e 117 ainda abertas                                | 0,5                |
+| 10 | Validação com o cliente                | Documento de validação, aceite ou feedback da empresa           | 🟡 termo pronto (`docs/banca/`), **falta a sessão e a assinatura**             | 0                  |
 
-**Estimativa hoje: 3,3 a 3,6 de 5,0.** As maiores perdas estão nos critérios 8, 9 e 10, que exigem pouco código. É uma estimativa do grupo, não da banca.
+**Estimativa hoje: cerca de 3,9 de 5,0.** Com os dois documentos assinados e pedidos reais no painel, chega perto de 5,0. O que falta é quase todo fora do código. É uma estimativa do grupo, não da banca.
 
 ---
 
@@ -33,14 +33,14 @@
 
 ### 1. Levantamento de requisitos
 
-- [ ] Gerar um PDF "Documento de Requisitos" a partir de `ESCOPO-E-STACK.md` v2.2: identificação do cliente e da equipe, contexto, escopo, RF01–RF32, RNF01–RNF24, RN01–RN12, papéis e permissões, fora de escopo
-- [ ] Campo final de aceite: nome, cargo, data e assinatura do responsável pelo Kolô. Uma assinatura digital (gov.br) também serve
-- [ ] Imprimir uma cópia assinada para levar no dia
+Documento: [`docs/banca/Documento-de-Requisitos-Kolo.pdf`](banca/Documento-de-Requisitos-Kolo.pdf) (8 páginas, aceite na página 8).
+
+- [ ] Assinatura da Melanie na página 8 (a assinatura digital pelo gov.br também serve). O repositório é público: a cópia assinada fica fora do git
 - [ ] Saber explicar na banca por que 3D, Google Calendar e motor de horários foram adiados (`ESCOPO-E-STACK.md` §§2 e 14)
 
 ### 2. Modelagem do banco de dados
 
-- [ ] Exportar o DER de `docs/DER.md` como imagem e deixá-lo aberto na demonstração
+- [x] Exportar o DER como imagem: [`DER.png`](DER.png) e [`DER.svg`](DER.svg) (21/11). No dia, deixar o SVG aberto no navegador, que permite zoom sem perder nitidez
 - [ ] Preparar exemplos de integridade garantida pelo banco: agenda sem sobreposição (RN08), um endereço por cliente, preços em centavos (RN07), pedido com cópia imutável do endereço
 - [ ] Saber mostrar o banco implementado: tabelas no Postgres (Prisma Studio ou `psql`) e a pasta `prisma/migrations/`
 
@@ -68,7 +68,12 @@
   - [ ] admin muda a situação do pedido e registra o rastreio → cliente vê em `/conta/pedidos`
   - [ ] admin cadastra uma obra com imagens → ela aparece no catálogo
   - [ ] artista cadastra um horário → tentativa de sobreposição é recusada
-- [ ] Sem deploy, o webhook do Mercado Pago precisa de túnel https (como no PBI-28); com deploy, configurar a URL de produção no painel do Mercado Pago
+- Riscos encontrados na revisão de 21/11, a resolver antes da sessão com a cliente:
+  - [x] **Webhook (RF14):** conferido em 21/11 com o pedido `20261121-4HE7DN`, que passou sozinho para **pago** com o pagamento aprovado registrado. A URL do aviso vai em cada preferência (`APP_URL` + `/api/webhooks/mercadopago`), não sai do painel. O webhook do painel da conta real ainda aponta para um túnel antigo do PBI-28 (`trycloudflare.com`); só importa se a loja passar a vender de verdade
+  - [ ] **Pagamento no sandbox (RF13):** janela anônima (InPrivate), opção "Com sua conta Mercado Pago" e login como **comprador de teste**; pagar com o **saldo em conta** ou com um cartão já salvo nessa conta. Cartão de teste digitado à mão em "Novo cartão" foi recusado em 21/11 ("A transação não aceita este meio de pagamento"), com e sem login
+  - [ ] **Recuperação de senha (RF03):** o remetente padrão é `onboarding@resend.dev`, que só entrega ao dono da conta do Resend. Verificar um domínio no Resend ou testar em produção com um e-mail que não seja o do dono
+  - [ ] **Frete (RF12):** os valores em `src/modules/orders/frete.ts` são de exemplo (R$ 30 na capital, R$ 45 no resto de SP, R$ 65 a R$ 85 em outros estados). Confirmar com a Melanie na sessão
+  - [x] **Horários (RF31):** salvos em `/admin/configuracoes` em 21/11 (domingo a quinta, 10h às 22h; sexta e sábado, 10h à meia-noite) e conferidos no rodapé do site
 
 ### 6. Usabilidade e experiência do usuário
 
@@ -101,20 +106,23 @@
   - [x] agendamentos dos próximos 7 dias
 - [x] Relatório de vendas por período (este mês, últimos 30 dias, intervalo escolhido) com obras mais vendidas e faturamento por artista: `/admin/relatorio` (PBI-48)
 - [x] Registrar a decisão num PBI novo, justificada pelo critério da banca: PBI-48 (RF32), em 18/10
+- [ ] Gerar pedidos e agenda reais pelo site: o seed de demonstração não cria pedidos nem horários, e sem eles o painel e o relatório aparecem zerados. Fazer de 3 a 5 compras no sandbox em produção (obras e artistas diferentes), marcar uma como enviada com código de rastreio e cadastrar alguns horários na agenda
 - [ ] No dia, mostrar também as consultas que já existem: filtros e busca de pedidos e clientes, busca no catálogo tolerante a acento, filtros e busca no portfólio, perfil do cliente com total gasto, agenda semanal
 - [x] Opcional: exportar o relatório (CSV ou impressão em PDF). Decidido no PBI-48: versão para impressão (o navegador salva em PDF); CSV continua fora (§14 do escopo)
 
 ### 9. Disponibilidade e acesso ao sistema
 
-**É a maior lacuna.** Sem endereço público a nota tende a zero, e os critérios 5 e 10 também sofrem.
+No ar em <https://koloatelie.duckdns.org>, conferido em 21/11 (PBI-46). Guia: [`DEPLOY.md`](DEPLOY.md).
 
-- [ ] Contratar a VPS e o domínio (orçamento previsto: R$ 30 a 60 por mês, `ESCOPO-E-STACK.md` §2)
-- [ ] Criar Dockerfile da aplicação, `docker-compose` de produção (app, Postgres sem porta exposta, Caddy, backup) e Caddyfile com HTTPS automático (PBI-46)
-- [ ] Configurar cabeçalhos de segurança (RNF07), que hoje não existem
-- [ ] Configurar as variáveis de produção: bucket R2 de produção, Mercado Pago (sandbox, ou produção se o cliente quiser vender), Resend, Turnstile
-- [ ] Fazer o seed do primeiro ADMIN e carregar os dados de demonstração
-- [ ] Backup diário e um teste de restauração documentado (RNF16)
-- [ ] Atualizar a URL do webhook no Mercado Pago e o CORS do R2 para o domínio
+- [x] VPS e domínio (`koloatelie.duckdns.org`)
+- [x] Dockerfile, `docker-compose.prod.yml` (app, Postgres sem porta exposta, Caddy, backup) e Caddyfile com HTTPS automático
+- [x] Cabeçalhos de segurança (RNF07): HSTS, CSP com nonce, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` e `Permissions-Policy`, conferidos no site publicado em 21/11
+- [x] Seed do primeiro ADMIN e dados de demonstração carregados
+- [x] Backup diário no R2 e prova de restauração (RNF16)
+- [x] Webhook do Mercado Pago chegando no domínio: pedido pago em 21/11 (ver critério 5)
+- [ ] Domínio verificado no Resend para a recuperação de senha (ver critério 5)
+- [ ] Integrar na `main` as PRs 116 (deploy) e 117 (artistas reais): hoje o site publicado roda a partir da branch
+- O alerta do GitGuardian na PR 116 é **falso positivo**: ele marcou `${POSTGRES_PASSWORD:?...}` no `docker-compose.prod.yml`, que só referencia a variável; nenhuma senha está no arquivo. Marcar como ignorado no painel do GitGuardian
 - [ ] **Plano B para o dia:** ambiente local pronto em um notebook (Docker, banco e seed) e um vídeo curto das operações completas, caso a rede do laboratório falhe
 
 Uma hospedagem que mantenha o processo Node rodando (VPS, como previsto) é a mais adequada. O worker do pg-boss que libera reservas sobe junto com o servidor (`src/instrumentation.ts`).
@@ -122,7 +130,13 @@ Uma hospedagem que mantenha o processo Node rodando (VPS, como previsto) é a ma
 ### 10. Validação e atendimento às necessidades do cliente
 
 - [ ] Agendar uma sessão com o responsável pelo Kolô **depois do deploy**, usando o endereço público
-- [ ] Roteiro assistido: o cliente executa as tarefas principais (cadastrar obra, ver o catálogo, acompanhar um pedido, cadastrar horário, ver o painel)
+- [ ] Roteiro assistido: as 8 tarefas da seção 2 do [termo](banca/Termo-de-Validacao-e-Aceite-Kolo.pdf), na ordem do termo. A tarefa 3 (compra) gera o pedido que as tarefas 6 (situação e rastreio) e 7 (painel e relatório) usam: não pular a 3
+- [ ] Deixar pronto antes de ela sentar:
+  - [ ] conta de admin para ela usar nas tarefas 5 a 7
+  - [ ] o login de artista dela funcionando, para a tarefa 8
+  - [ ] o login do comprador de teste do Mercado Pago, para a tarefa 3 (pagar com o saldo em conta; ver critério 5)
+  - [ ] algumas compras já feitas, para o painel não mostrar um pedido só (critério 8)
+  - [ ] o endereço `https://koloatelie.duckdns.org` escrito no campo "Endereço do sistema" do termo
 - [ ] Registrar o feedback: o que atende, o que não atende, sugestões
 - [ ] Corrigir o que for rápido e registrar o restante como trabalho futuro
 - [ ] Termo de validação e aceite assinado: lista dos RFs com "atende / atende parcialmente / não atende", comentários, nome, cargo, data e assinatura
@@ -132,7 +146,8 @@ Uma hospedagem que mantenha o processo Node rodando (VPS, como previsto) é a ma
 
 ## Dados e roteiro da demonstração
 
-- [ ] Seed de demonstração. Hoje `prisma/seed.ts` cria só três usuários e as faixas de tamanho. Incluir artistas com estilos, obras com fotos (de preferência as reais do Kolô, com autorização), itens de portfólio, um pedido pago, um pendente e um enviado, e horários na agenda
+- [x] Seed de demonstração (`npm run db:seed:demo`): os artistas reais do Kolô, com estilos, obras e tatuagens com fotos, já estão no site publicado (PR 117)
+- [ ] Pedidos e horários: o seed não cria; gerar pelo site (ver critério 8)
 - [ ] Roteiro de 10 a 15 minutos, cobrindo os 10 critérios em ordem:
   1. Requisitos assinados e DER (1, 2)
   2. Visitante: home, catálogo, ficha da obra, portfólio, wizard até o WhatsApp (4, 6)
@@ -144,23 +159,20 @@ Uma hospedagem que mantenha o processo Node rodando (VPS, como previsto) é a ma
 - [ ] Ensaiar pelo menos duas vezes com cronômetro, uma delas no laboratório ou numa rede diferente
 - [ ] Preparar respostas para perguntas prováveis: por que monolito; por que Next.js e não o React + Laravel do TCC1; como evitam vender a mesma obra duas vezes; por que o pedido só é pago pelo webhook; o que fazem com dados de saúde (nada, RNF18); o que ficou fora e por quê
 
-## Cronograma sugerido até 24/11
+## Cronograma até 24/11
 
-| Semana       | Foco                                                                                     |
-| ------------ | ---------------------------------------------------------------------------------------- |
-| até 20/10    | Monografia (prioridade total)                                                            |
-| 21–27/10     | Deploy na VPS com HTTPS (critério 9); integrar o PBI-40 e o PR 68                        |
-| 28/10–03/11  | Painel de indicadores e relatório (8); seed de demonstração; documento de requisitos para assinatura (1) |
-| 04–10/11     | Sessão de validação com o cliente e termo de aceite (10); ajustes do feedback             |
-| 11–17/11     | Qualidade: axe-core, Lighthouse, teste com usuários, E2E se der (6); melhorar o admin (4) |
-| 18–23/11     | Código congelado; ensaios do roteiro; plano B pronto; documentos impressos               |
-| 24/11        | Banca, a partir das 19h10                                                                |
+| Dia   | Foco                                                                                                   |
+| ----- | ------------------------------------------------------------------------------------------------------ |
+| 22/11 | Riscos do critério 5 resolvidos; compras de teste (8); sessão com a cliente e assinaturas (1 e 10)     |
+| 23/11 | Integrar as PRs 116 e 117; ensaios do roteiro com cronômetro; plano B pronto; documentos impressos     |
+| 24/11 | Banca, a partir das 19h10                                                                              |
 
 ## Checklist do dia
 
 - [ ] Sistema no ar pelo endereço público, conferido no mesmo dia
+- [ ] Cache de imagens aquecido: abrir a home, `/obras`, `/tatuagens` e algumas fichas de obra antes de começar (`DEPLOY.md`)
 - [ ] Contas de demonstração dos três perfis funcionando
-- [ ] Pagamento sandbox testado no dia
+- [ ] Pagamento sandbox testado no dia, com os cartões de teste do Mercado Pago à mão
 - [ ] Notebook com o ambiente local e o vídeo do plano B
-- [ ] Documento de requisitos assinado e termo de aceite impressos
+- [ ] Documento de requisitos e termo de aceite **assinados** e impressos
 - [ ] DER e diagrama de arquitetura abertos para mostrar

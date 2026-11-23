@@ -1,26 +1,21 @@
-// Imagens ilustrativas geradas por IA (Pollinations.ai) para os dados de demonstração.
-// gerar.ts baixa cada prompt para imagens/; popular.ts publica os arquivos (R2 ou public/) e grava no banco.
-// Também traz o cadastro (artista, estilos, obras) que ../seed-demo.ts grava antes do popular.ts.
+// Dados de demonstração com o pessoal e o trabalho real do Kolô. As fotos vêm dos posts do
+// Instagram de cada artista (campo `origem`), usadas com autorização deles, e ficam em imagens/.
+// ../seed-demo.ts grava artistas, estilos e obras; popular.ts publica as imagens (R2 ou public/)
+// e grava as tatuagens. Preço e estoque das obras são fictícios.
 
-export type ImagemObra = {
-  slug: string; // slug da obra já cadastrada
-  textoAlternativo: string;
-  prompt: string;
+export type ArtistaDemo = {
+  email: string;
+  nome: string;
+  slug: string;
+  instagram: string;
+  estilos: string[];
+  // Senha de demonstração (só no .env, nunca no repositório); vazia = conta sem login.
+  variavelSenha: string;
 };
 
-export type Tatuagem = {
-  id: string; // fixo: repetir popular.ts não duplica
-  artistaSlug: string;
-  estiloSlug: string;
-  titulo: string;
-  descricao: string;
-  regiaoCorpo: string;
-  duracaoMinutos: number;
-  destaque: boolean;
-  prompt: string;
-};
+export type EstiloDemo = { slug: string; nome: string; descricao: string };
 
-// Cadastro que o seed de demonstração (prisma/seed-demo.ts) grava antes do popular.ts.
+// Cadastro que o seed de demonstração grava; a imagem é imagens/obras/<slug>.webp.
 export type ObraDemo = {
   slug: string;
   artistaSlug: string;
@@ -32,291 +27,805 @@ export type ObraDemo = {
   precoCentavos: number; // RN07
   estoque: number; // RN02; 0 deixa a obra esgotada (RN11)
   destaque: boolean;
+  textoAlternativo: string;
+  origem: string; // post do Instagram de onde veio a foto
 };
 
-export type EstiloDemo = { slug: string; nome: string; descricao: string };
-
-// PBI-49: as imagens são ilustrativas, não obras do acervo real.
-// Vai ao fim da descrição das obras (seed-demo.ts) e das tatuagens (popular.ts).
-export const AVISO_DEMO = "Demonstração: imagem ilustrativa gerada por IA, fora do acervo real.";
-
-export const artistaDemo = {
-  email: "marina.duarte@kolo.test",
-  nome: "Marina Duarte",
-  slug: "demo-marina-duarte",
-  bio: "Artista fictícia de demonstração. Desenha em traço fino e aquarela, na pele e no papel.",
-  estilos: ["demo-traco-fino", "demo-aquarela"],
+// Trabalho do portfólio; a imagem é imagens/tatuagens/<id>.webp.
+export type Tatuagem = {
+  id: string; // fixo: repetir popular.ts não duplica
+  artistaSlug: string;
+  estiloSlug: string;
+  titulo: string;
+  descricao: string;
+  regiaoCorpo: string;
+  duracaoMinutos: number; // fictícia
+  destaque: boolean;
+  origem: string;
 };
 
-// O artista-exemplo vem do prisma/seed.ts; aqui só ganha o estilo das tatuagens dele.
-export const estilosDoArtistaExemplo = ["demo-blackwork"];
+// Vai ao fim da descrição das obras: as obras são reais, a venda não.
+export const AVISO_DEMO = "Demonstração: preço e disponibilidade fictícios.";
 
-export const estilosDemo: EstiloDemo[] = [
+// Quem tem estilo tatua e aparece no agendamento (RF20); o Rafael é só artista plástico. Sem bio
+// até eles mandarem um texto.
+export const artistasDemo: ArtistaDemo[] = [
   {
-    slug: "demo-traco-fino",
-    nome: "Traço fino",
-    descricao: "Linhas finas e delicadas, feitas com agulha única.",
+    email: "melanie@kolo.test",
+    nome: "Melanie Schwark",
+    slug: "melanie-schwark",
+    instagram: "melanfetamina",
+    variavelSenha: "SEED_SENHA_MELANIE",
+    estilos: ["blackwork", "surrealismo"],
   },
   {
-    slug: "demo-aquarela",
-    nome: "Aquarela",
-    descricao: "Manchas e aguadas de cor que imitam a pintura em aquarela.",
+    email: "rafael@kolo.test",
+    nome: "Rafael Lotufo",
+    slug: "rafael-lotufo",
+    instagram: "rafa.lotufo",
+    variavelSenha: "SEED_SENHA_RAFAEL",
+    estilos: [],
   },
   {
-    slug: "demo-blackwork",
-    nome: "Blackwork",
-    descricao: "Preto sólido, geometria e pontilhismo.",
+    email: "cogu@kolo.test",
+    nome: 'Gustavo Henrique "Cogu"',
+    slug: "cogu",
+    instagram: "co.guh",
+    variavelSenha: "SEED_SENHA_COGU",
+    estilos: ["blackwork", "old-school"],
+  },
+  {
+    email: "pucca@kolo.test",
+    nome: 'Laura Manoel "Pucca"',
+    slug: "pucca",
+    instagram: "pucca.ink",
+    variavelSenha: "SEED_SENHA_PUCCA",
+    estilos: ["lettering", "realismo"],
   },
 ];
 
-export const obrasDemo: ObraDemo[] = [
+export const estilosDemo: EstiloDemo[] = [
+  { slug: "blackwork", nome: "Blackwork", descricao: "Preto sólido, contraste e traço marcado." },
   {
-    slug: "demo-estudo-de-maos",
-    artistaSlug: "artista-exemplo",
-    titulo: "Estudo de mãos",
-    descricao: "Mãos em gestos diferentes, desenhadas a grafite.",
-    tecnica: "Grafite sobre papel",
-    dimensoes: "29,7 × 42 cm",
-    ano: 2024,
-    precoCentavos: 45_000,
-    estoque: 1,
-    destaque: false,
+    slug: "surrealismo",
+    nome: "Surrealismo",
+    descricao: "Figuras e cenas oníricas, misturando o real e o imaginário.",
   },
   {
-    slug: "demo-noturno-em-azul",
-    artistaSlug: "artista-exemplo",
-    titulo: "Noturno em azul",
-    descricao: "Telhados da cidade à noite, sob a lua cheia.",
+    slug: "old-school",
+    nome: "Old school",
+    descricao: "Contorno grosso e desenho direto da tatuagem tradicional.",
+  },
+  { slug: "lettering", nome: "Lettering", descricao: "Palavras e frases em letras desenhadas." },
+  {
+    slug: "realismo",
+    nome: "Realismo",
+    descricao: "Anatomia, objetos e cenas reproduzidos com riqueza de detalhes e sombras.",
+  },
+];
+
+const MELANIE = "https://www.instagram.com/melanfetamina/p";
+const RAFAEL = "https://www.instagram.com/rafa.lotufo/p";
+const COGU = "https://www.instagram.com/co.guh/p";
+const PUCCA = "https://www.instagram.com/pucca.ink/p";
+
+export const obrasDemo: ObraDemo[] = [
+  {
+    slug: "melanie-cavalo",
+    artistaSlug: "melanie-schwark",
+    titulo: "Cavalo",
+    descricao:
+      "Figura com cabeça de cavalo, de camiseta e jeans, ao lado de um cavalo de crina azul.",
     tecnica: "Acrílica sobre tela",
-    dimensoes: "60 × 80 cm",
+    dimensoes: "40 × 50 cm",
     ano: 2025,
     precoCentavos: 280_000,
     estoque: 1,
     destaque: true,
+    textoAlternativo:
+      "Pintura de uma figura com cabeça de cavalo, camiseta branca e jeans, ao lado de um cavalo escuro de crina azul.",
+    origem: `${MELANIE}/DPb6_gsjoFD/`,
   },
   {
-    slug: "demo-raizes",
-    artistaSlug: "artista-exemplo",
-    titulo: "Raízes",
-    descricao: "Raízes entrelaçadas na terra vermelha, em empastes de ocre e marrom.",
-    tecnica: "Óleo sobre tela",
-    dimensoes: "70 × 100 cm",
-    ano: 2023,
-    precoCentavos: 420_000,
-    estoque: 0,
-    destaque: false,
-  },
-  {
-    slug: "demo-mare-baixa",
-    artistaSlug: "artista-exemplo",
-    titulo: "Maré baixa",
-    descricao: "Barcos de pesca na areia molhada, na luz da manhã.",
-    tecnica: "Óleo sobre tela",
-    dimensoes: "50 × 70 cm",
-    ano: 2024,
-    precoCentavos: 350_000,
-    estoque: 1,
-    destaque: true,
-  },
-  {
-    slug: "demo-serie-varandas",
-    artistaSlug: "demo-marina-duarte",
-    titulo: "Série Varandas",
-    descricao: "Varandas antigas com grades de ferro trabalhado, a nanquim.",
-    tecnica: "Nanquim sobre papel",
-    dimensoes: "21 × 29,7 cm",
-    ano: 2025,
-    precoCentavos: 32_000,
+    slug: "melanie-o-fruto-proibido",
+    artistaSlug: "melanie-schwark",
+    titulo: "O Fruto Proibido",
+    descricao: "Eva e a maçã mordida, numa releitura sobre conhecimento e livre-arbítrio.",
+    tecnica: "Ilustração sobre gravura",
+    dimensoes: "30 × 40 cm",
+    ano: 2026,
+    precoCentavos: 90_000,
     estoque: 3,
     destaque: false,
+    textoAlternativo:
+      "Ilustração em preto e branco de maçãs mordidas em forma de corpo, sobre gravura antiga de Eva.",
+    origem: `${MELANIE}/Dcln27Xlpsp/`,
   },
   {
-    slug: "demo-minhocao",
-    artistaSlug: "demo-marina-duarte",
-    titulo: "Minhocão",
-    descricao: "O Elevado ao entardecer, com gente caminhando sob o céu laranja.",
-    tecnica: "Aquarela sobre papel",
-    dimensoes: "30 × 40 cm",
-    ano: 2025,
+    slug: "melanie-estudo-cavalo-humano",
+    artistaSlug: "melanie-schwark",
+    titulo: "Estudo de anatomia Cavalo-Humano",
+    descricao:
+      "Esqueleto de uma criatura cavalo-humana desenhada para fazer sentido anatomicamente.",
+    tecnica: "Grafite sobre papel",
+    dimensoes: "29,7 × 42 cm",
+    ano: 2026,
     precoCentavos: 120_000,
     estoque: 1,
-    destaque: true,
+    destaque: false,
+    textoAlternativo:
+      "Desenho a grafite do esqueleto de uma criatura com corpo de cavalo e crânio humano, com anotações.",
+    origem: `${MELANIE}/DUI8QJtjtI7/`,
   },
   {
-    slug: "demo-feira-de-domingo",
-    artistaSlug: "demo-marina-duarte",
-    titulo: "Feira de domingo",
-    descricao: "Barracas de frutas com toldos listrados numa feira de rua.",
-    tecnica: "Aquarela sobre papel",
-    dimensoes: "30 × 40 cm",
-    ano: 2024,
-    precoCentavos: 98_000,
+    slug: "rafael-preterito",
+    artistaSlug: "rafael-lotufo",
+    titulo: "Pretérito",
+    descricao: "Jogador de futebol de colete laranja dominando a bola num campo de terra.",
+    tecnica: "Óleo sobre algodão",
+    dimensoes: "80 × 60 cm",
+    ano: 2026,
+    precoCentavos: 420_000,
+    estoque: 1,
+    destaque: true,
+    textoAlternativo:
+      "Pintura de um jogador de chapéu e colete laranja dominando a bola, sobre fundo laranja.",
+    origem: `${RAFAEL}/DbV1ASoxf9S/`,
+  },
+  {
+    slug: "rafael-eclipse",
+    artistaSlug: "rafael-lotufo",
+    titulo: "Eclipse",
+    descricao: "O carro verde-limão de corrida das telas, com o asfalto molhado refletindo a cor.",
+    tecnica: "Óleo sobre tela",
+    dimensoes: "100 × 60 cm",
+    ano: 2026,
+    precoCentavos: 380_000,
     estoque: 1,
     destaque: false,
+    textoAlternativo:
+      "Pintura de um carro esportivo verde-limão com detalhes azuis, num cavalete do ateliê.",
+    origem: `${RAFAEL}/Dfry1sIIGOc/`,
   },
   {
-    slug: "demo-avenida-paulista",
-    artistaSlug: "demo-marina-duarte",
-    titulo: "Avenida Paulista",
-    descricao: "Prédios, árvores e trânsito da avenida em aguadas soltas.",
-    tecnica: "Aquarela sobre papel",
-    dimensoes: "36 × 48 cm",
-    ano: 2025,
-    precoCentavos: 150_000,
+    slug: "rafael-sao-jorge",
+    artistaSlug: "rafael-lotufo",
+    titulo: "São Jorge",
+    descricao: "O santo guerreiro no cavalo branco, vencendo o dragão.",
+    tecnica: "Óleo sobre tela",
+    dimensoes: "50 × 40 cm",
+    ano: 2026,
+    precoCentavos: 240_000,
+    estoque: 1,
+    destaque: false,
+    textoAlternativo:
+      "Pintura de São Jorge de armadura e capa vermelha, num cavalo branco sobre o dragão.",
+    origem: `${RAFAEL}/DU_Dn2YkZQU/`,
+  },
+  {
+    slug: "cogu-zoe",
+    artistaSlug: "cogu",
+    titulo: "Zoe",
+    descricao: "Retrato de uma pequena Boston terrier, feito sob encomenda.",
+    tecnica: "Acrílica sobre tela",
+    dimensoes: "30 × 40 cm",
+    ano: 2026,
+    precoCentavos: 120_000,
+    estoque: 0,
+    destaque: false,
+    textoAlternativo: "Pintura de uma Boston terrier preta e branca sentada, em tons de lilás.",
+    origem: `${COGU}/DdiIgvUDIBR/`,
+  },
+  {
+    slug: "rafael-encapuzado",
+    artistaSlug: "rafael-lotufo",
+    titulo: "Encapuzado",
+    descricao: "Figura de capuz branco e óculos escuros, com o escudo do Corinthians na máscara.",
+    tecnica: "Óleo sobre tela",
+    dimensoes: "60 × 80 cm",
+    ano: 2026,
+    precoCentavos: 260_000,
+    estoque: 1,
+    destaque: false,
+    textoAlternativo:
+      "Pintura de uma figura coberta por um capuz branco, de óculos escuros e com o escudo do Corinthians na máscara, sobre fundo azul.",
+    origem: `${RAFAEL}/DcGwHbJxNBL/`,
+  },
+  {
+    slug: "rafael-quadra",
+    artistaSlug: "rafael-lotufo",
+    titulo: "Quadra",
+    descricao: "Quadra de futebol vista através de uma grade de arame pregada na própria pintura.",
+    tecnica: "Óleo sobre madeira com arame",
+    dimensoes: "40 × 40 cm",
+    ano: 2026,
+    precoCentavos: 180_000,
     estoque: 2,
     destaque: false,
+    textoAlternativo:
+      "Pintura a óleo quadrada de uma quadra verde-limão com prédios escuros ao fundo, coberta por uma grade de arame pregada na madeira.",
+    origem: `${RAFAEL}/DcEAvMQkdCx/`,
+  },
+  {
+    slug: "cogu-borboleta",
+    artistaSlug: "cogu",
+    titulo: "Border collie azul",
+    descricao:
+      "Border collie em tons de azul e amarelo, com uma borboleta laranja pousada na cabeça.",
+    tecnica: "Acrílica sobre tela",
+    dimensoes: "50 × 70 cm",
+    ano: 2025,
+    precoCentavos: 150_000,
+    estoque: 1,
+    destaque: false,
+    textoAlternativo:
+      "Pintura de um border collie azul de olho castanho, com uma borboleta laranja pousada na cabeça.",
+    origem: `${COGU}/DRkp62UEgui/`,
+  },
+  {
+    slug: "cogu-border-collie-rosa",
+    artistaSlug: "cogu",
+    titulo: "Border collie em rosa",
+    descricao: "Border collie deitado, pintado em roxo e lilás sobre fundo rosa.",
+    tecnica: "Acrílica sobre tela",
+    dimensoes: "30 × 60 cm",
+    ano: 2026,
+    precoCentavos: 130_000,
+    estoque: 1,
+    destaque: false,
+    textoAlternativo:
+      "Pintura de um border collie deitado, em tons de roxo e lilás sobre fundo rosa, apoiada num cavalete.",
+    origem: `${COGU}/DduO4EzGDRE/`,
+  },
+  {
+    slug: "melanie-cavalo-e-cavaleiro",
+    artistaSlug: "melanie-schwark",
+    titulo: "Cavalo e cavaleiro",
+    descricao: "Figura de cabeça de cavalo, de camiseta e jeans, montada num cavalo marrom.",
+    tecnica: "Acrílica sobre tela",
+    dimensoes: "40 × 50 cm",
+    ano: 2024,
+    precoCentavos: 240000,
+    estoque: 1,
+    destaque: false,
+    textoAlternativo:
+      "Pintura de uma figura com cabeça de cavalo, de camiseta branca e jeans azul, montada num cavalo marrom sobre fundo escuro.",
+    origem: `${MELANIE}/C5mE_UPPuy3/`,
+  },
+  {
+    slug: "melanie-serpente-e-dragao",
+    artistaSlug: "melanie-schwark",
+    titulo: "Serpente e dragão",
+    descricao: "Serpente e dragão enroscados, em verde e branco sobre fundo roxo.",
+    tecnica: "Ilustração sobre papel",
+    dimensoes: "30 × 30 cm",
+    ano: 2022,
+    precoCentavos: 70000,
+    estoque: 3,
+    destaque: false,
+    textoAlternativo:
+      "Ilustração de uma serpente e um dragão alado em verde e branco, sobre fundo roxo.",
+    origem: `${MELANIE}/CipzlgIOK0-/`,
+  },
+  {
+    slug: "melanie-rato-e-serpente",
+    artistaSlug: "melanie-schwark",
+    titulo: "Rato e serpente",
+    descricao: "Rato diante de uma serpente em escamas, em preto e branco.",
+    tecnica: "Gravura em linóleo",
+    dimensoes: "30 × 30 cm",
+    ano: 2021,
+    precoCentavos: 85000,
+    estoque: 2,
+    destaque: false,
+    textoAlternativo:
+      "Gravura em preto e branco de um rato diante de uma serpente cheia de escamas e pontos.",
+    origem: `${MELANIE}/CaSHRfMuUDA/`,
+  },
+  {
+    slug: "melanie-fome",
+    artistaSlug: "melanie-schwark",
+    titulo: "Fome",
+    descricao: "Unicórnio magro e de costelas à mostra, gravado em tom de cinza.",
+    tecnica: "Gravura em metal",
+    dimensoes: "20 × 30 cm",
+    ano: 2021,
+    precoCentavos: 110000,
+    estoque: 2,
+    destaque: false,
+    textoAlternativo:
+      "Gravura de um unicórnio magro, de costelas à mostra, com título e assinatura a lápis.",
+    origem: `${MELANIE}/CU26ca7J_Yj/`,
   },
 ];
 
-const OBRA =
-  "the artwork photographed flat and straight on, filling the frame, no text, no signature";
-const TATUAGEM =
-  "professional tattoo portfolio photo, close-up of a healed tattoo on real skin, soft studio light, sharp focus, no text";
-
-export const obras: ImagemObra[] = [
-  {
-    slug: "demo-estudo-de-maos",
-    textoAlternativo: "Desenho a grafite de mãos em gestos diferentes sobre papel texturizado.",
-    prompt: `graphite pencil study of human hands in several gestures on textured cream paper, fine cross-hatching, sketchbook page, ${OBRA}`,
-  },
-  {
-    slug: "demo-noturno-em-azul",
-    textoAlternativo:
-      "Pintura em acrílica de telhados da cidade à noite em tons de azul, com a lua.",
-    prompt: `acrylic painting of Sao Paulo rooftops at night in deep blue tones, full moon, lit windows, expressive brushstrokes, ${OBRA}`,
-  },
-  {
-    slug: "demo-raizes",
-    textoAlternativo: "Pintura a óleo de raízes de árvore entrelaçadas na terra, em ocre e marrom.",
-    prompt: `oil painting on canvas of large intertwined tree roots gripping red earth, warm ochre and brown palette, thick impasto, ${OBRA}`,
-  },
-  {
-    slug: "demo-mare-baixa",
-    textoAlternativo:
-      "Pintura a óleo de praia na maré baixa, com barcos de pesca na areia molhada.",
-    prompt: `oil painting of a Brazilian beach at low tide, small wooden fishing boats resting on wet sand, soft morning light, ${OBRA}`,
-  },
-  {
-    slug: "demo-serie-varandas",
-    textoAlternativo: "Esboço a nanquim de varandas antigas com grades de ferro trabalhado.",
-    prompt: `loose india ink sketch of old colonial balconies with wrought iron railings and potted plants, pen lines on white paper, ${OBRA}`,
-  },
-  {
-    slug: "demo-minhocao",
-    textoAlternativo:
-      "Aquarela do Elevado Minhocão ao entardecer, com pessoas caminhando sob o céu laranja.",
-    prompt: `watercolor painting of the Minhocao elevated highway in Sao Paulo at sunset, people walking on it, warm orange sky, loose washes, ${OBRA}`,
-  },
-  {
-    slug: "demo-feira-de-domingo",
-    textoAlternativo: "Aquarela de feira de rua num domingo, com barracas coloridas de frutas.",
-    prompt: `watercolor painting of a Sunday street market in Sao Paulo, colorful fruit stalls with striped awnings, shoppers, loose washes, ${OBRA}`,
-  },
-  {
-    slug: "demo-avenida-paulista",
-    textoAlternativo: "Aquarela da Avenida Paulista com prédios altos, árvores e trânsito.",
-    prompt: `loose watercolor painting of Avenida Paulista in Sao Paulo, tall buildings, trees along the sidewalk, traffic, wet-on-wet sky, ${OBRA}`,
-  },
-];
+const tatuagem = (n: number) => `00000000-0000-4000-9100-${String(n).padStart(12, "0")}`;
 
 export const tatuagens: Tatuagem[] = [
   {
-    id: "00000000-0000-4000-9000-000000000001",
-    artistaSlug: "demo-marina-duarte",
-    estiloSlug: "demo-traco-fino",
-    titulo: "Ramo de oliveira",
-    descricao: "Ramo delicado em traço fino acompanhando o antebraço.",
+    id: tatuagem(1),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Cavalo empinado",
+    descricao: "Cavalo empinado com uma estrela no peito.",
+    regiaoCorpo: "Coxa",
+    duracaoMinutos: 240,
+    destaque: true,
+    origem: `${MELANIE}/DWzn7xgFpe9/`,
+  },
+  {
+    id: tatuagem(2),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "surrealismo",
+    titulo: "Lhama",
+    descricao: "Lhama mágica e ancestral, criada para representar raízes bolivianas.",
     regiaoCorpo: "Antebraço",
-    duracaoMinutos: 90,
-    destaque: true,
-    prompt: `fine line single needle tattoo of a slender olive branch along the inner forearm, ${TATUAGEM}`,
-  },
-  {
-    id: "00000000-0000-4000-9000-000000000002",
-    artistaSlug: "demo-marina-duarte",
-    estiloSlug: "demo-traco-fino",
-    titulo: "Constelação de Escorpião",
-    descricao: "Pontos e linhas finas formando a constelação.",
-    regiaoCorpo: "Clavícula",
-    duracaoMinutos: 45,
-    destaque: false,
-    prompt: `minimalist fine line tattoo of the Scorpius constellation with tiny dots below the collarbone, ${TATUAGEM}`,
-  },
-  {
-    id: "00000000-0000-4000-9000-000000000003",
-    artistaSlug: "demo-marina-duarte",
-    estiloSlug: "demo-traco-fino",
-    titulo: "Gato em linha contínua",
-    descricao: "Gato desenhado numa única linha, sem tirar a agulha.",
-    regiaoCorpo: "Tornozelo",
-    duracaoMinutos: 40,
-    destaque: false,
-    prompt: `fine line tattoo of a cat drawn in one continuous line on the outer ankle, ${TATUAGEM}`,
-  },
-  {
-    id: "00000000-0000-4000-9000-000000000004",
-    artistaSlug: "demo-marina-duarte",
-    estiloSlug: "demo-aquarela",
-    titulo: "Beija-flor",
-    descricao: "Beija-flor com manchas de aquarela em verde e azul.",
-    regiaoCorpo: "Ombro",
-    duracaoMinutos: 180,
-    destaque: true,
-    prompt: `watercolor style tattoo of a hummingbird with green and turquoise paint splashes on the shoulder, ${TATUAGEM}`,
-  },
-  {
-    id: "00000000-0000-4000-9000-000000000005",
-    artistaSlug: "demo-marina-duarte",
-    estiloSlug: "demo-aquarela",
-    titulo: "Ipê amarelo",
-    descricao: "Galho de ipê florido com respingos amarelos.",
-    regiaoCorpo: "Panturrilha",
-    duracaoMinutos: 150,
-    destaque: false,
-    prompt: `watercolor style tattoo of a yellow ipe tree branch in bloom with yellow paint drips on the calf, ${TATUAGEM}`,
-  },
-  {
-    id: "00000000-0000-4000-9000-000000000006",
-    artistaSlug: "demo-marina-duarte",
-    estiloSlug: "demo-aquarela",
-    titulo: "Carpa",
-    descricao: "Carpa em laranja e vermelho com aguadas suaves.",
-    regiaoCorpo: "Costela",
     duracaoMinutos: 210,
     destaque: false,
-    prompt: `watercolor style tattoo of an orange and red koi fish with soft color washes on the side ribs, ${TATUAGEM}`,
+    origem: `${MELANIE}/Da3j_qsFhdh/`,
   },
   {
-    id: "00000000-0000-4000-9000-000000000007",
-    artistaSlug: "artista-exemplo",
-    estiloSlug: "demo-blackwork",
-    titulo: "Mandala geométrica",
-    descricao: "Mandala em blackwork com pontilhismo entre as escápulas.",
-    regiaoCorpo: "Costas",
+    id: tatuagem(3),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Camaleão",
+    descricao: "Camaleão sobre um galho, com textura em traço preto.",
+    regiaoCorpo: "Coxa",
+    duracaoMinutos: 180,
+    destaque: false,
+    origem: `${MELANIE}/DUTw1O4j1pv/`,
+  },
+  {
+    id: tatuagem(4),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "surrealismo",
+    titulo: "Máscaras",
+    descricao: "Três máscaras entre cactos e folhagens.",
+    regiaoCorpo: "Ombro",
     duracaoMinutos: 300,
-    destaque: true,
-    prompt: `blackwork tattoo of a symmetrical geometric mandala with dotwork shading on the upper back between the shoulder blades, ${TATUAGEM}`,
+    destaque: false,
+    origem: `${MELANIE}/DUB3GOljzgo/`,
   },
   {
-    id: "00000000-0000-4000-9000-000000000008",
-    artistaSlug: "artista-exemplo",
-    estiloSlug: "demo-blackwork",
-    titulo: "Bracelete ornamental",
-    descricao: "Faixa ornamental em preto sólido ao redor do antebraço.",
+    id: tatuagem(5),
+    artistaSlug: "cogu",
+    estiloSlug: "blackwork",
+    titulo: "Lobo em pele de cordeiro",
+    descricao: "Lobo com pele de cordeiro, em preto e cinza.",
+    regiaoCorpo: "Costas",
+    duracaoMinutos: 240,
+    destaque: true,
+    origem: `${COGU}/DXxTIyZGKmN/`,
+  },
+  {
+    id: tatuagem(6),
+    artistaSlug: "cogu",
+    estiloSlug: "old-school",
+    titulo: "Cão bravo",
+    descricao: "Cão bravo saindo de uma porta em arco, desenho dos disponíveis.",
+    regiaoCorpo: "Braço",
+    duracaoMinutos: 150,
+    destaque: false,
+    origem: `${COGU}/DXh4tk0D39U/`,
+  },
+  {
+    id: tatuagem(7),
+    artistaSlug: "pucca",
+    estiloSlug: "lettering",
+    titulo: "Amor",
+    descricao: "Lettering com arabescos e uma estrela.",
+    regiaoCorpo: "Antebraço",
+    duracaoMinutos: 180,
+    destaque: true,
+    origem: `${PUCCA}/DV1LUFsDjaV/`,
+  },
+  {
+    id: tatuagem(8),
+    artistaSlug: "pucca",
+    estiloSlug: "lettering",
+    titulo: "Próspera",
+    descricao: "Palavra que carrega movimento, crescimento e intenção.",
+    regiaoCorpo: "Coxa",
+    duracaoMinutos: 120,
+    destaque: false,
+    origem: `${PUCCA}/DUlT9i2jtR2/`,
+  },
+  {
+    id: tatuagem(9),
+    artistaSlug: "pucca",
+    estiloSlug: "lettering",
+    titulo: "Kaizen",
+    descricao: "Kai e Zen: mudança, fluxo e evolução constante.",
     regiaoCorpo: "Antebraço",
     duracaoMinutos: 120,
     destaque: false,
-    prompt: `blackwork tattoo of an ornamental band with solid black filigree wrapping around the forearm, ${TATUAGEM}`,
+    origem: `${PUCCA}/DVghg-MDiNZ/`,
   },
   {
-    id: "00000000-0000-4000-9000-000000000009",
-    artistaSlug: "artista-exemplo",
-    estiloSlug: "demo-blackwork",
-    titulo: "Corvo",
-    descricao: "Corvo de asas abertas em preto sólido.",
+    id: tatuagem(10),
+    artistaSlug: "pucca",
+    estiloSlug: "lettering",
+    titulo: "Herege",
+    descricao: "Palavra que carrega ruptura, questionamento e coragem.",
+    regiaoCorpo: "Coxa",
+    duracaoMinutos: 120,
+    destaque: false,
+    origem: `${PUCCA}/DWSCkVQFHde/`,
+  },
+  {
+    id: tatuagem(11),
+    artistaSlug: "cogu",
+    estiloSlug: "blackwork",
+    titulo: "Bonnie",
+    descricao: "Cachorro de pelo longo e ar bravo, em preto e cinza.",
+    regiaoCorpo: "Braço",
+    duracaoMinutos: 210,
+    destaque: false,
+    origem: `${COGU}/DeNM6MvGIQY/`,
+  },
+  {
+    id: tatuagem(12),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Cavalo no antebraço",
+    descricao: "Cavalo empinado em traço fino, acompanhando o antebraço.",
+    regiaoCorpo: "Antebraço",
+    duracaoMinutos: 150,
+    destaque: false,
+    origem: `${MELANIE}/DVzIYdAmtAr/`,
+  },
+  {
+    id: tatuagem(13),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "surrealismo",
+    titulo: "Cavalo de camiseta",
+    descricao:
+      "Figura com cabeça de cavalo, de camiseta e calça, ao lado de uma criatura de cabeça humana.",
+    regiaoCorpo: "Costelas",
+    duracaoMinutos: 270,
+    destaque: false,
+    origem: `${MELANIE}/DXcjdn3Fr7o/`,
+  },
+  {
+    id: tatuagem(14),
+    artistaSlug: "pucca",
+    estiloSlug: "realismo",
+    titulo: "Coração anatômico",
+    descricao: "Coração anatômico com fita de DNA e formas geométricas.",
+    regiaoCorpo: "Panturrilha",
+    duracaoMinutos: 240,
+    destaque: false,
+    origem: `${PUCCA}/DFoKX-yPUz0/`,
+  },
+  {
+    id: tatuagem(15),
+    artistaSlug: "pucca",
+    estiloSlug: "realismo",
+    titulo: "Castelo animado",
+    descricao:
+      "Castelo ambulante, garça, vassoura e o Sem-Rosto num só traço fino, inspirados nos filmes do Studio Ghibli.",
+    regiaoCorpo: "Antebraço",
+    duracaoMinutos: 210,
+    destaque: false,
+    origem: `${PUCCA}/DcRqfTZSpMU/`,
+  },
+  {
+    id: tatuagem(16),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Cavalo-humano empinado",
+    descricao: "Cavalo empinado com rosto humano, desenho disponível do flash de cavalos.",
+    regiaoCorpo: "A definir",
+    duracaoMinutos: 180,
+    destaque: false,
+    origem: `${MELANIE}/DVZWybdj0IM/`,
+  },
+  {
+    id: tatuagem(17),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Cavalo de tênis",
+    descricao:
+      "Cavalo de cabeça baixa e pernas humanas de tênis, desenho disponível do flash de cavalos.",
+    regiaoCorpo: "A definir",
+    duracaoMinutos: 180,
+    destaque: false,
+    origem: `${MELANIE}/DVZWybdj0IM/`,
+  },
+  {
+    id: tatuagem(18),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Cavalo curvado",
+    descricao:
+      "Cavalo de pernas humanas curvado para a frente, desenho disponível do flash de cavalos.",
+    regiaoCorpo: "A definir",
+    duracaoMinutos: 180,
+    destaque: false,
+    origem: `${MELANIE}/DVZWybdj0IM/`,
+  },
+  {
+    id: tatuagem(19),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Cabeça humana de cavalo",
+    descricao:
+      "Cabeça humana com pernas e crina de cavalo, desenho disponível do flash de cavalos.",
+    regiaoCorpo: "A definir",
+    duracaoMinutos: 150,
+    destaque: false,
+    origem: `${MELANIE}/DVZWybdj0IM/`,
+  },
+  {
+    id: tatuagem(20),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Cavalo malhado",
+    descricao: "Cavalo malhado empinado, desenho disponível.",
+    regiaoCorpo: "A definir",
+    duracaoMinutos: 180,
+    destaque: false,
+    origem: `${MELANIE}/DFbQX1lBwJ2/`,
+  },
+  {
+    id: tatuagem(21),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Cavalo malhado de crina longa",
+    descricao: "Cavalo malhado de crina longa, desenho disponível.",
+    regiaoCorpo: "A definir",
+    duracaoMinutos: 180,
+    destaque: false,
+    origem: `${MELANIE}/DFbQX1lBwJ2/`,
+  },
+  {
+    id: tatuagem(22),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Lobo e cordeiro",
+    descricao: "Lobo vestido de pele de cordeiro, feito em pele sintética.",
+    regiaoCorpo: "Pele sintética",
+    duracaoMinutos: 90,
+    destaque: false,
+    origem: `${MELANIE}/DACRebxPLSS/`,
+  },
+  {
+    id: tatuagem(23),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "surrealismo",
+    titulo: "Rato de salto",
+    descricao: "Rato de colar de pérolas e salto alto, apoiado num balde, desenho disponível.",
+    regiaoCorpo: "A definir",
+    duracaoMinutos: 150,
+    destaque: false,
+    origem: `${MELANIE}/DCUK7FtuBqI/`,
+  },
+  {
+    id: tatuagem(24),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "surrealismo",
+    titulo: "Rato de botas",
+    descricao: "Rato de pé, com botas de salto, desenho disponível.",
+    regiaoCorpo: "A definir",
+    duracaoMinutos: 150,
+    destaque: false,
+    origem: `${MELANIE}/DCUK7FtuBqI/`,
+  },
+  {
+    id: tatuagem(25),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Jacaré e onça",
+    descricao: "Jacaré e onça entrelaçados, em blackwork de muito detalhe.",
+    regiaoCorpo: "Perna",
+    duracaoMinutos: 300,
+    destaque: false,
+    origem: `${MELANIE}/DTslZs8Dtnr/`,
+  },
+  {
+    id: tatuagem(26),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Cavalo no tornozelo",
+    descricao: "Cavalo empinado com triângulos no corpo.",
+    regiaoCorpo: "Tornozelo",
+    duracaoMinutos: 120,
+    destaque: false,
+    origem: `${MELANIE}/DRIb1cNDww6/`,
+  },
+  {
+    id: tatuagem(27),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Antebraço de cavalo e figuras",
+    descricao: "Antebraço com cavalo, rosto e figuras em traço contínuo.",
+    regiaoCorpo: "Antebraço",
+    duracaoMinutos: 360,
+    destaque: false,
+    origem: `${MELANIE}/DQ7jMZ0j0i5/`,
+  },
+  {
+    id: tatuagem(28),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Cavalo galopando",
+    descricao: "Cavalo galopando de crina ao vento.",
+    regiaoCorpo: "Braço",
+    duracaoMinutos: 150,
+    destaque: false,
+    origem: `${MELANIE}/DP6dmmHjnnO/`,
+  },
+  {
+    id: tatuagem(29),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Lobo",
+    descricao: "Lobo de pelo desenhado em linhas finas.",
+    regiaoCorpo: "Braço",
+    duracaoMinutos: 180,
+    destaque: false,
+    origem: `${MELANIE}/DPmB1XpDgl6/`,
+  },
+  {
+    id: tatuagem(30),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Cavalinho de estrelas",
+    descricao: "Cavalo pequeno com estrelas no corpo.",
+    regiaoCorpo: "Braço",
+    duracaoMinutos: 120,
+    destaque: false,
+    origem: `${MELANIE}/DPRX9U-Dvo3/`,
+  },
+  {
+    id: tatuagem(31),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "surrealismo",
+    titulo: "Tubarão de pernas",
+    descricao: "Tubarão com patas, em traço fino.",
+    regiaoCorpo: "Coxa",
+    duracaoMinutos: 90,
+    destaque: false,
+    origem: `${MELANIE}/DNBxJunhk9o/`,
+  },
+  {
+    id: tatuagem(32),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "surrealismo",
+    titulo: "Peixe-figura",
+    descricao: "Figura de corpo de peixe e pernas humanas.",
+    regiaoCorpo: "Joelho",
+    duracaoMinutos: 90,
+    destaque: false,
+    origem: `${MELANIE}/DLpy_4cuHN0/`,
+  },
+  {
+    id: tatuagem(33),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "surrealismo",
+    titulo: "Peixe-lanterna",
+    descricao: "Peixe-lanterna de mãos e pés humanos.",
+    regiaoCorpo: "Joelho",
+    duracaoMinutos: 90,
+    destaque: false,
+    origem: `${MELANIE}/DLpy_4cuHN0/`,
+  },
+  {
+    id: tatuagem(34),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Cabra e romã",
+    descricao: "Cabra e romã cercadas de espinhos.",
+    regiaoCorpo: "Panturrilha",
+    duracaoMinutos: 240,
+    destaque: false,
+    origem: `${MELANIE}/DLBDC8mhIXR/`,
+  },
+  {
+    id: tatuagem(35),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "surrealismo",
+    titulo: "Gato de duas cabeças",
+    descricao: "Gato egípcio de duas cabeças, com colar e detalhes.",
+    regiaoCorpo: "Braço",
+    duracaoMinutos: 270,
+    destaque: false,
+    origem: `${MELANIE}/DJKHBd-upn3/`,
+  },
+  {
+    id: tatuagem(36),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "surrealismo",
+    titulo: "Figura sentada",
+    descricao: "Figura de chifres sentada à mesa, de botas altas.",
+    regiaoCorpo: "Panturrilha",
+    duracaoMinutos: 150,
+    destaque: false,
+    origem: `${MELANIE}/DDIFXyfPUU9/`,
+  },
+  {
+    id: tatuagem(37),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Cavalo de corações",
+    descricao: "Cavalo de corações no corpo e rabo preto.",
+    regiaoCorpo: "Braço",
+    duracaoMinutos: 180,
+    destaque: false,
+    origem: `${MELANIE}/DCkXDllB6_k/`,
+  },
+  {
+    id: tatuagem(38),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Cabeça de cavalo com faca",
+    descricao: "Cabeça de cavalo atravessada por uma faca.",
     regiaoCorpo: "Coxa",
     duracaoMinutos: 240,
     destaque: false,
-    prompt: `bold blackwork tattoo of a raven with spread wings in solid black ink on the thigh, ${TATUAGEM}`,
+    origem: `${MELANIE}/DBhHa8_P-gn/`,
+  },
+  {
+    id: tatuagem(39),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Cabeça de cavalo",
+    descricao: "Cabeça de cavalo de cabresto, em traço grosso.",
+    regiaoCorpo: "Panturrilha",
+    duracaoMinutos: 150,
+    destaque: false,
+    origem: `${MELANIE}/C_GnXCDvy18/`,
+  },
+  {
+    id: tatuagem(40),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Cervo com flecha",
+    descricao: "Cervo atravessado por uma flecha, em traço fino.",
+    regiaoCorpo: "Braço",
+    duracaoMinutos: 180,
+    destaque: false,
+    origem: `${MELANIE}/C-smW7aOizH/`,
+  },
+  {
+    id: tatuagem(41),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "blackwork",
+    titulo: "Gato magro",
+    descricao: "Gato magro de costelas à mostra.",
+    regiaoCorpo: "Panturrilha",
+    duracaoMinutos: 180,
+    destaque: false,
+    origem: `${MELANIE}/C8UrE8rOXmR/`,
+  },
+  {
+    id: tatuagem(42),
+    artistaSlug: "melanie-schwark",
+    estiloSlug: "surrealismo",
+    titulo: "Coração de chifres",
+    descricao: "Coração com rosto e chifres, ao lado de uma figura.",
+    regiaoCorpo: "Antebraço",
+    duracaoMinutos: 150,
+    destaque: false,
+    origem: `${MELANIE}/DEkhKxSu_Hc/`,
   },
 ];
+
+// Demonstrações anteriores, que o seed tira do banco: a artista fictícia, as obras, tatuagens e
+// estilos com imagem gerada por IA.
+export const ARTISTA_DEMO_ANTIGO = "demo-marina-duarte";
+export const OBRAS_DEMO_ANTIGAS = [
+  "demo-estudo-de-maos",
+  "demo-noturno-em-azul",
+  "demo-raizes",
+  "demo-mare-baixa",
+  "demo-serie-varandas",
+  "demo-minhocao",
+  "demo-feira-de-domingo",
+  "demo-avenida-paulista",
+];
+export const TATUAGENS_DEMO_ANTIGAS = Array.from(
+  { length: 9 },
+  (_, i) => `00000000-0000-4000-9000-${String(i + 1).padStart(12, "0")}`,
+);
+export const ESTILOS_DEMO_ANTIGOS = ["demo-traco-fino", "demo-aquarela", "demo-blackwork"];

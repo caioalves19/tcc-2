@@ -11,17 +11,9 @@ import type {
   ResultadoWizard,
 } from "@/modules/scheduling";
 
-// A etapa 8 (WhatsApp, PBI-33) é a revisão: o formulário vai até os Avisos.
-const ETAPAS = [
-  "Nome",
-  "Artista",
-  "Estilo",
-  "Região",
-  "Tamanho",
-  "Preferência",
-  "Avisos",
-  "WhatsApp",
-];
+// A etapa 8 (Enviar, PBI-33) é a revisão que abre o WhatsApp: o formulário vai até os Avisos.
+// Nomes curtos: cabem numa linha na fileira de 8 caixas (93 px cada a partir de 1024 px).
+const ETAPAS = ["Nome", "Artista", "Estilo", "Região", "Tamanho", "Data", "Avisos", "Enviar"];
 const ULTIMA = ETAPAS.length - 2;
 const FINAL = ETAPAS.length - 1;
 // RF23–RF25: avisos sobre o que acontece no estúdio; o aceite não é gravado (RNF18).
@@ -163,7 +155,7 @@ export function WizardAgendamento({
             <li
               key={nome}
               aria-current={atual ? "step" : undefined}
-              className={`rounded-campo border p-2 ${atual ? "border-[var(--kolo-acao)] font-bold" : "border-[var(--kolo-contorno)]"}`}
+              className={`rounded-campo border p-2 lg:px-1 ${atual ? "border-[var(--kolo-acao)] font-bold" : "border-[var(--kolo-contorno)]"}`}
             >
               {indice + 1}. {nome}
             </li>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { MenuAdmin } from "@/components/admin/menu-admin";
 import { GestaoPortfolio } from "@/components/portfolio/gestao-portfolio";
 import { urlDeLogin } from "@/modules/identity";
 import { lerPortfolio } from "@/modules/portfolio";
@@ -24,8 +25,14 @@ export default async function PaginaPortfolio({ searchParams }: Props) {
   );
   if (!resultado.ok && resultado.erro === "nao_autenticado")
     redirect(urlDeLogin("/portfolio/gestao"));
+  // O admin chega aqui pelo menu da administração e continua com ele à vista, no mesmo lugar das
+  // telas de /admin (RF32).
+  const admin = resultado.ok && resultado.dados.papel === "ADMIN";
   return (
-    <section className="mx-auto w-full max-w-pagina px-margem py-12 md:px-margem-desktop md:py-16">
+    <section
+      className={`mx-auto w-full max-w-pagina px-margem py-12 md:px-margem-desktop ${admin ? "" : "md:py-16"}`}
+    >
+      {admin && <MenuAdmin />}
       {resultado.ok ? (
         <GestaoPortfolio
           key={resultado.dados.artistaId ?? "selecao"}

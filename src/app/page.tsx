@@ -120,9 +120,14 @@ export default async function Home() {
               </li>
             ))}
           </ol>
-          <a href="/agendamento" className={buttonVariants({ className: "mt-4" })}>
-            Agendar tatuagem
-          </a>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <a href="/agendamento" className={buttonVariants()}>
+              Agendar tatuagem
+            </a>
+            <a href="/tatuagens" className={buttonVariants({ variant: "contorno" })}>
+              Ver tatuagens
+            </a>
+          </div>
         </div>
       </section>
 
