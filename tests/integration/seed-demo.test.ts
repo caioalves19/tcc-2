@@ -107,13 +107,13 @@ it("PBI-49 db:seed:demo cadastra os artistas do Kolô, estilos e obras e tira a 
             descricao LIKE '%preço e disponibilidade fictícios%' AS aviso
      FROM artwork ORDER BY slug`,
   );
-  expect(obras.rows).toHaveLength(15);
+  expect(obras.rows).toHaveLength(12);
   expect(obras.rows.every((obra) => obra.aviso)).toBe(true);
   expect(obras.rows.find((obra) => obra.slug === "cogu-zoe")).toMatchObject({
     situacao: "ESGOTADA",
     estoque: 0,
   });
-  expect(obras.rows.filter((obra) => obra.situacao === "DISPONIVEL")).toHaveLength(14);
+  expect(obras.rows.filter((obra) => obra.situacao === "DISPONIVEL")).toHaveLength(11);
 }, 120_000);
 
 // PBI-49 (lacuna 1): com o seed de demonstração no banco, popular.ts liga todas as imagens. Com
@@ -160,7 +160,7 @@ it("PBI-49 popular.ts liga uma imagem a cada obra e cria as 42 tatuagens, sem du
       `SELECT a.slug, i.principal, i.url, a.artist_id::text AS artista FROM artwork_image i
        JOIN artwork a ON a.id = i.artwork_id ORDER BY a.slug`,
     );
-    expect(imagens.rows).toHaveLength(15);
+    expect(imagens.rows).toHaveLength(12);
     expect(imagens.rows.every((imagem) => imagem.principal)).toBe(true);
     for (const imagem of imagens.rows) {
       expect(imagem.url, imagem.slug).toBe(`obras/${imagem.artista}/${imagem.slug}.webp`);
@@ -200,6 +200,34 @@ it("db:seed:demo tira do catálogo a obra de IA presa a um carrinho, sem falhar"
     "SELECT excluido_em IS NOT NULL AS excluida FROM artwork WHERE slug = 'demo-raizes'",
   );
   expect(raizes.rows).toEqual([{ excluida: true }]);
+}, 120_000);
+
+// Obras que o estúdio tirou da demonstração em 22/11 (Cavalo, O Fruto Proibido e o Estudo de
+// anatomia): o seed não as recria e tira do banco as que ficaram de uma rodada anterior. Presa a
+// carrinho ou pedido (Restrict), a obra fica excluída em vez de apagada.
+it("db:seed:demo tira do banco as obras retiradas da demonstração", async () => {
+  await db.query(
+    `INSERT INTO artwork (id, artist_id, slug, titulo, preco_centavos, quantidade_estoque, situacao)
+     SELECT gen_random_uuid(), a.id, x.slug, x.titulo, 100000, 1, 'DISPONIVEL'
+     FROM artist a, (VALUES ('melanie-cavalo', 'Cavalo'),
+                            ('melanie-o-fruto-proibido', 'O Fruto Proibido'),
+                            ('melanie-estudo-cavalo-humano', 'Estudo de anatomia Cavalo-Humano')) AS x(slug, titulo)
+     WHERE a.slug = 'artista-exemplo'`,
+  );
+  await db.query(
+    `WITH c AS (INSERT INTO cart (id, cookie_token, atualizado_em)
+                VALUES (gen_random_uuid(), 'carrinho-fruto', NOW()) RETURNING id)
+     INSERT INTO cart_item (id, cart_id, artwork_id, quantidade)
+     SELECT gen_random_uuid(), c.id, o.id, 1 FROM c, artwork o WHERE o.slug = 'melanie-o-fruto-proibido'`,
+  );
+
+  rodar("npm run db:seed:demo");
+
+  const retiradas = await db.query<{ slug: string; excluida: boolean }>(
+    `SELECT slug, excluido_em IS NOT NULL AS excluida FROM artwork
+     WHERE slug IN ('melanie-cavalo', 'melanie-o-fruto-proibido', 'melanie-estudo-cavalo-humano')`,
+  );
+  expect(retiradas.rows).toEqual([{ slug: "melanie-o-fruto-proibido", excluida: true }]);
 }, 120_000);
 
 // A conta da Marina com histórico que o banco protege (e-mail enviado, pedido): o seed não pode
