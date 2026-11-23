@@ -15,6 +15,7 @@ import {
   AVISO_DEMO,
   ESTILOS_DEMO_ANTIGOS,
   OBRAS_DEMO_ANTIGAS,
+  OBRAS_RETIRADAS,
   TATUAGENS_DEMO_ANTIGAS,
   artistasDemo,
   estilosDemo,
@@ -54,11 +55,11 @@ async function darLogin(userId: string, variavel: string): Promise<void> {
 }
 
 // A demonstração anterior tinha obras, tatuagens e estilos com imagem gerada por IA. Saem antes
-// dos estilos reais (o nome "Blackwork" é único). Obra presa a carrinho ou pedido (Restrict) não
-// é apagada: fica excluída e some do catálogo.
+// dos estilos reais (o nome "Blackwork" é único), junto com as obras reais que o estúdio retirou.
+// Obra presa a carrinho ou pedido (Restrict) não é apagada: fica excluída e some do catálogo.
 async function tirarDemonstracaoDeIa(): Promise<void> {
   const obras = await prisma.artwork.findMany({
-    where: { slug: { in: OBRAS_DEMO_ANTIGAS } },
+    where: { slug: { in: [...OBRAS_DEMO_ANTIGAS, ...OBRAS_RETIRADAS] } },
     include: { _count: { select: { cartItems: true, orderItems: true } } },
   });
   for (const obra of obras) {

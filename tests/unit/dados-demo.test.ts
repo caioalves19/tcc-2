@@ -70,6 +70,25 @@ it("PBI-49 as obras de demonstração respeitam preço, estoque e mostram uma es
   expect(obrasDemo.filter((obra) => obra.estoque === 0)).toHaveLength(1);
 });
 
+// Combinado com o estúdio em 22/11: Cavalo, O Fruto Proibido e o Estudo de anatomia saem; cada
+// obra é peça única, exceto Serpente e Dragão (5) e a Zoe, já vendida (esgotada).
+it("as obras de demonstração têm estoque 1, exceto Serpente e Dragão (5) e Zoe (0)", () => {
+  expect(Object.fromEntries(obrasDemo.map((obra) => [obra.slug, obra.estoque]))).toEqual({
+    "rafael-preterito": 1,
+    "rafael-eclipse": 1,
+    "rafael-sao-jorge": 1,
+    "cogu-zoe": 0,
+    "rafael-encapuzado": 1,
+    "rafael-quadra": 1,
+    "cogu-borboleta": 1,
+    "cogu-border-collie-rosa": 1,
+    "melanie-cavalo-e-cavaleiro": 1,
+    "melanie-serpente-e-dragao": 5,
+    "melanie-rato-e-serpente": 1,
+    "melanie-fome": 1,
+  });
+});
+
 // popular.ts pula a tatuagem cujo artista ou estilo não existe; o artista também precisa
 // trabalhar com o estilo que aparece no portfólio dele.
 it("PBI-49 cada tatuagem aponta para um artista e um estilo que o seed cria e que andam juntos", () => {
