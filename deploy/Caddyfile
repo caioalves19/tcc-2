@@ -6,3 +6,17 @@
 	header -Server
 	reverse_proxy app:3000
 }
+
+# Endereço anterior (DOMINIO_ANTIGO, ex.: koloatelie.duckdns.org). O navegador vai para o DOMINIO,
+# onde o login funciona (BETTER_AUTH_URL). O redirecionamento é temporário (302) para não ficar
+# preso no cache do navegador se for preciso voltar ao endereço anterior. O aviso de pagamento de
+# um pedido criado antes da troca ainda chega a este endereço e segue direto para o app (RF14).
+{$DOMINIO_ANTIGO} {
+	header -Server
+	handle /api/webhooks/* {
+		reverse_proxy app:3000
+	}
+	handle {
+		redir https://{$DOMINIO}{uri} 302
+	}
+}

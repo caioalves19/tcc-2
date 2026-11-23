@@ -13,6 +13,9 @@ services:
       - "443:443/udp"
     environment:
       DOMINIO: ${DOMINIO:?defina DOMINIO no .env.production}
+      # Endereço anterior, que redireciona para o DOMINIO (deploy/Caddyfile). Sem ele, um nome
+      # local que não sai da máquina.
+      DOMINIO_ANTIGO: ${DOMINIO_ANTIGO:-antigo.localhost}
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

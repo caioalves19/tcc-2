@@ -2,11 +2,15 @@
 # Gate do PBI-46: confere a pilha de produção que já está de pé.
 #   deploy/verificar.sh                 → contra https://localhost (simulação local)
 #   deploy/verificar.sh meu.dominio     → contra o domínio publicado, rodando na VPS
+#   deploy/verificar.sh meu.dominio antigo.dominio → também confere o endereço anterior
 # Sai com código 0 só se todas as conferências passarem.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
 DOMINIO="${1:-localhost}"
+# Na simulação local o endereço anterior é antigo.localhost (padrão do docker-compose.prod.yml).
+DOMINIO_ANTIGO="${2:-}"
+[ "$DOMINIO" = "localhost" ] && DOMINIO_ANTIGO="${DOMINIO_ANTIGO:-antigo.localhost}"
 C=(docker compose --env-file .env.production -f docker-compose.prod.yml)
 falhas=0
 ok() { echo "ok     $1"; }
@@ -34,6 +38,22 @@ echo "== 3. HTTP redireciona para HTTPS (RNF01)"
 redirecionamento=$(curl -sS --max-time 15 -o /dev/null -D - "http://$DOMINIO/" 2>&1)
 echo "$redirecionamento" | head -1 | grep -Eq " 30[18]" && echo "$redirecionamento" | grep -qi "^location: https://" \
   && ok "http → https" || falha "http não redireciona para https: $(echo "$redirecionamento" | head -1)"
+
+if [ -n "$DOMINIO_ANTIGO" ]; then
+  echo "== 3b. Endereço anterior leva ao domínio novo"
+  # Redirecionamento temporário (302): se o domínio novo falhar, voltar para o anterior não fica
+  # preso no cache do navegador.
+  antigo=$("${CURL[@]}" -o /dev/null -D - "https://$DOMINIO_ANTIGO/obras?pagina=2" 2>&1)
+  echo "$antigo" | head -1 | grep -q " 302" && echo "$antigo" | grep -qi "^location: https://$DOMINIO/obras?pagina=2" \
+    && ok "https://$DOMINIO_ANTIGO/obras → https://$DOMINIO/obras (302)" \
+    || falha "https://$DOMINIO_ANTIGO não redireciona para https://$DOMINIO: $(echo "$antigo" | head -1)"
+  # O aviso de pagamento de um pedido criado antes da troca ainda vai para o endereço anterior.
+  aviso=$("${CURL[@]}" -o /dev/null -w '%{http_code}' -X POST "https://$DOMINIO_ANTIGO/api/webhooks/mercadopago" 2>&1)
+  case "$aviso" in
+    3*|000|404) falha "webhook no endereço anterior não chega ao app (HTTP $aviso)" ;;
+    *) ok "webhook no endereço anterior chega ao app (HTTP $aviso)" ;;
+  esac
+fi
 
 echo "== 4. Banco e app fora da internet"
 for servico in postgres app backup; do
